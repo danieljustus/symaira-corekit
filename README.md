@@ -4,6 +4,17 @@ Shared Go library for the Symaira public-core tools (`symvault`, `symmemory`, `s
 
 Bundles domain-free infrastructure that is otherwise duplicated across tools: MCP server scaffold, TOML config loading, exit codes, logging, path safety, SQLite setup, and update checking.
 
+## Standalone-First Contract
+
+Corekit is a shared foundation, not a runtime dependency graph between products.
+Consumers must keep working when every other Symaira tool is absent. Optional
+cross-tool behavior belongs behind runtime detection and fallback in the
+consumer, not as imports from sibling tool repositories.
+
+Corekit must stay free of Vault crypto, Memory PII policy, Seek ranking, Fetch
+fingerprinting, Pro billing, Firebase, Stripe, GCP SDKs, and other product- or
+cloud-specific behavior.
+
 ## Packages
 
 | Package | Purpose |
