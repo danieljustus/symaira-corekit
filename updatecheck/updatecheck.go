@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"strconv"
 	"strings"
@@ -18,6 +19,11 @@ import (
 const (
 	// DefaultCacheTTL is the default time-to-live for cached update check results.
 	DefaultCacheTTL = 24 * time.Hour
+
+	// maxResponseBody caps how many bytes are read from the release API. A
+	// release JSON payload is a few KB; the limit guards against a compromised,
+	// MITM'd, or redirected endpoint streaming an unbounded body.
+	maxResponseBody = 1 << 20 // 1 MiB
 )
 
 // Release represents a GitHub release.
@@ -174,7 +180,7 @@ func (c *Checker) fetchLatestRelease(ctx context.Context, currentVersion string)
 	}
 
 	var apiResp latestReleaseResponse
-	if err := json.NewDecoder(resp.Body).Decode(&apiResp); err != nil {
+	if err := json.NewDecoder(io.LimitReader(resp.Body, maxResponseBody)).Decode(&apiResp); err != nil {
 		return nil, fmt.Errorf("decode latest release response: %w", err)
 	}
 
@@ -288,5 +294,28 @@ func newSecureClient() *http.Client {
 				MinVersion: tls.VersionTLS13,
 			},
 		},
+		// Keep redirects on the GitHub API host so the request cannot be
+		// bounced to an attacker-controlled origin (which would invalidate the
+		// "URL points to GitHub API" justification on the request call).
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			if !isGitHubHost(req.URL.Host) {
+				return fmt.Errorf("refusing redirect to non-GitHub host %q", req.URL.Host)
+			}
+			if len(via) >= 10 {
+				return errors.New("stopped after 10 redirects")
+			}
+			return nil
+		},
 	}
+}
+
+// isGitHubHost reports whether host belongs to github.com (api or download hosts).
+func isGitHubHost(host string) bool {
+	if i := strings.IndexByte(host, ':'); i != -1 {
+		host = host[:i]
+	}
+	host = strings.ToLower(host)
+	return host == "github.com" || host == "api.github.com" ||
+		strings.HasSuffix(host, ".github.com") ||
+		strings.HasSuffix(host, ".githubusercontent.com")
 }
