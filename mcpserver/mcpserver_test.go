@@ -43,8 +43,20 @@ func readResponse(t *testing.T, buf *bytes.Buffer) jsonRPCResponse {
 	return resp
 }
 
+func readLineResponse(t *testing.T, buf *bytes.Buffer) jsonRPCResponse {
+	t.Helper()
+	var resp jsonRPCResponse
+	if err := json.Unmarshal(bytes.TrimSpace(buf.Bytes()), &resp); err != nil {
+		t.Fatalf("read line response: %v\nraw: %s", err, buf.String())
+	}
+	return resp
+}
+
 func readFramedResponse(data []byte, resp *jsonRPCResponse) error {
 	s := string(data)
+	if !strings.HasPrefix(s, "Content-Length:") {
+		return fmt.Errorf("response does not start with Content-Length")
+	}
 	idx := strings.Index(s, "\r\n\r\n")
 	if idx < 0 {
 		return fmt.Errorf("no header separator found")
@@ -149,6 +161,45 @@ func TestInitialize(t *testing.T) {
 	caps := result["capabilities"].(map[string]any)
 	if caps["tools"] == nil {
 		t.Error("expected tools capability")
+	}
+}
+
+func TestInitializeFromJSONLine(t *testing.T) {
+	srv := New("myserver", "2.0.0")
+	req := `{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"test","version":"1.0"}}}` + "\n"
+	buf := runServer(t, srv, req)
+
+	resp := readLineResponse(t, buf)
+	if resp.Error != nil {
+		t.Fatalf("unexpected error: %v", resp.Error)
+	}
+
+	result, ok := resp.Result.(map[string]any)
+	if !ok {
+		t.Fatalf("result is not a map: %T", resp.Result)
+	}
+	if result["protocolVersion"] != ProtocolVersion {
+		t.Errorf("protocolVersion = %v, want %v", result["protocolVersion"], ProtocolVersion)
+	}
+}
+
+func TestInitializeFromFrameWithLeadingHeader(t *testing.T) {
+	srv := New("myserver", "2.0.0")
+	body := `{"jsonrpc":"2.0","id":1,"method":"initialize"}`
+	req := fmt.Sprintf("Content-Type: application/vscode-jsonrpc; charset=utf-8\r\nContent-Length: %d\r\n\r\n%s", len(body), body)
+	buf := runServer(t, srv, req)
+
+	resp := readResponse(t, buf)
+	if resp.Error != nil {
+		t.Fatalf("unexpected error: %v", resp.Error)
+	}
+
+	result, ok := resp.Result.(map[string]any)
+	if !ok {
+		t.Fatalf("result is not a map: %T", resp.Result)
+	}
+	if result["protocolVersion"] != ProtocolVersion {
+		t.Errorf("protocolVersion = %v, want %v", result["protocolVersion"], ProtocolVersion)
 	}
 }
 
