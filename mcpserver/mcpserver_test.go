@@ -500,3 +500,19 @@ func TestNilHandlerTool(t *testing.T) {
 		t.Errorf("error code = %v, want %v", errObj["code"], CodeInternalError)
 	}
 }
+
+func TestServeIORejectsOversizedLine(t *testing.T) {
+	srv := New("test", "1.0.0")
+	// A single line far larger than maxLineBytes with no newline must be
+	// rejected instead of buffered without bound.
+	oversized := strings.Repeat("a", maxLineBytes+10)
+
+	var buf bytes.Buffer
+	err := srv.ServeIO(context.Background(), strings.NewReader(oversized), &buf)
+	if err == nil {
+		t.Fatal("expected error for oversized line, got nil")
+	}
+	if !strings.Contains(err.Error(), "exceeds") {
+		t.Errorf("expected size-limit error, got %v", err)
+	}
+}

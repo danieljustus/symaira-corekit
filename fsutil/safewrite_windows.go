@@ -16,36 +16,16 @@ import (
 // partial writes or crashes from leaving the target file in an inconsistent
 // state and avoids temp file name collisions under concurrency.
 func AtomicWriteFile(path string, data []byte, perm os.FileMode) error {
-	f, err := os.CreateTemp(filepath.Dir(path), filepath.Base(path)+".tmp-*")
-	if err != nil {
-		return err
-	}
-	tmp := f.Name()
-	if err := f.Chmod(perm); err != nil {
-		f.Close()
-		os.Remove(tmp)
-		return err
-	}
-	if _, err := f.Write(data); err != nil {
-		f.Close()
-		os.Remove(tmp)
-		return err
-	}
-	if err := f.Sync(); err != nil {
-		f.Close()
-		os.Remove(tmp)
-		return err
-	}
-	if err := f.Close(); err != nil {
-		os.Remove(tmp)
-		return err
-	}
-	// On Windows, renaming over an existing file can fail transiently if the
-	// file is still held by the OS, antivirus, or search indexing. Retry with
-	// a short backoff to absorb these races.
+	return writeTempThenRename(path, data, perm, renameWithRetry)
+}
+
+// renameWithRetry renames tmp to dst, retrying with a short backoff. On Windows,
+// renaming over an existing file can fail transiently if the file is still held
+// by the OS, antivirus, or search indexing.
+func renameWithRetry(tmp, dst string) error {
 	var renameErr error
 	for i := 0; i < 10; i++ {
-		renameErr = os.Rename(tmp, path)
+		renameErr = os.Rename(tmp, dst)
 		if renameErr == nil {
 			return nil
 		}
@@ -53,7 +33,6 @@ func AtomicWriteFile(path string, data []byte, perm os.FileMode) error {
 			time.Sleep(10 * time.Millisecond)
 		}
 	}
-	os.Remove(tmp)
 	return renameErr
 }
 

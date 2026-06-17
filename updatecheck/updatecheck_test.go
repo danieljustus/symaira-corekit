@@ -725,3 +725,53 @@ func TestCheckCacheUnparseableVersion(t *testing.T) {
 		t.Fatalf("TagName = %v, want v1.5.0", release)
 	}
 }
+
+func TestFetchLatestReleaseBoundsBodySize(t *testing.T) {
+	// Body far larger than maxResponseBody: a leading "{" then megabytes of
+	// padding with no closing brace. The bounded reader truncates the stream,
+	// so decode must fail with an error rather than buffering the whole body.
+	c := NewChecker("owner", "repo")
+	c.HTTPClient = stubHTTPDoer{
+		do: func(req *http.Request) (*http.Response, error) {
+			body := io.MultiReader(
+				strings.NewReader(`{"tag_name":"v9.9.9","body":"`),
+				io.LimitReader(neverEnding('a'), 4*maxResponseBody),
+			)
+			return &http.Response{
+				StatusCode: http.StatusOK,
+				Body:       io.NopCloser(body),
+				Header:     make(http.Header),
+			}, nil
+		},
+	}
+
+	_, err := c.Check(context.Background(), "1.0.0")
+	if err == nil {
+		t.Fatal("expected decode error for oversized response body, got nil")
+	}
+}
+
+func TestIsGitHubHost(t *testing.T) {
+	cases := map[string]bool{
+		"github.com":                    true,
+		"api.github.com":                true,
+		"objects.githubusercontent.com": true,
+		"api.github.com:443":            true,
+		"evil.com":                      false,
+		"api.github.com.evil.com":       false,
+	}
+	for host, want := range cases {
+		if got := isGitHubHost(host); got != want {
+			t.Errorf("isGitHubHost(%q) = %v, want %v", host, got, want)
+		}
+	}
+}
+
+type neverEnding byte
+
+func (b neverEnding) Read(p []byte) (int, error) {
+	for i := range p {
+		p[i] = byte(b)
+	}
+	return len(p), nil
+}

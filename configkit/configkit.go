@@ -148,13 +148,17 @@ func mergeFile[T any](cfg *T, path string) error {
 		return fmt.Errorf("failed to parse %s: %w", path, err)
 	}
 
-	applyMapToStruct(reflect.ValueOf(cfg).Elem(), raw)
+	if err := applyMapToStruct(reflect.ValueOf(cfg).Elem(), raw); err != nil {
+		return fmt.Errorf("failed to apply %s: %w", path, err)
+	}
 	return nil
 }
 
 // applyMapToStruct applies values from a map to a struct using json tags.
 // Only non-zero values are applied (except pointer fields, which are set when present).
-func applyMapToStruct(val reflect.Value, raw map[string]interface{}) {
+// A value whose type cannot be converted to the target field returns an error
+// instead of being silently ignored, matching the env-override path.
+func applyMapToStruct(val reflect.Value, raw map[string]interface{}) error {
 	typ := val.Type()
 	for i := 0; i < val.NumField(); i++ {
 		field := val.Field(i)
@@ -180,18 +184,25 @@ func applyMapToStruct(val reflect.Value, raw map[string]interface{}) {
 				continue
 			}
 			ptrVal := reflect.New(field.Type().Elem())
-			setFromInterface(ptrVal.Elem(), rawVal)
+			if err := setFromInterface(ptrVal.Elem(), rawVal); err != nil {
+				return fmt.Errorf("field %q: %w", tag, err)
+			}
 			field.Set(ptrVal)
 		case reflect.Struct:
 			if subMap, ok := rawVal.(map[string]interface{}); ok {
-				applyMapToStruct(field, subMap)
+				if err := applyMapToStruct(field, subMap); err != nil {
+					return fmt.Errorf("field %q: %w", tag, err)
+				}
 			}
 		default:
 			if !isZeroInterface(rawVal) {
-				setFromInterface(field, rawVal)
+				if err := setFromInterface(field, rawVal); err != nil {
+					return fmt.Errorf("field %q: %w", tag, err)
+				}
 			}
 		}
 	}
+	return nil
 }
 
 // applyEnvOverrides sets struct fields from environment variables.
@@ -300,9 +311,11 @@ func setFromInterface(field reflect.Value, raw interface{}) error {
 
 	switch field.Kind() {
 	case reflect.String:
-		if s, ok := raw.(string); ok {
-			field.SetString(s)
+		s, ok := raw.(string)
+		if !ok {
+			return fmt.Errorf("cannot convert %T to string", raw)
 		}
+		field.SetString(s)
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		switch v := raw.(type) {
 		case int64:
@@ -311,17 +324,23 @@ func setFromInterface(field reflect.Value, raw interface{}) error {
 			field.SetInt(int64(v))
 		case float64:
 			field.SetInt(int64(v))
+		default:
+			return fmt.Errorf("cannot convert %T to int", raw)
 		}
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 		switch v := raw.(type) {
 		case int64:
-			if v >= 0 {
-				field.SetUint(uint64(v))
+			if v < 0 {
+				return fmt.Errorf("cannot convert negative value %d to uint", v)
 			}
+			field.SetUint(uint64(v))
 		case float64:
-			if v >= 0 {
-				field.SetUint(uint64(v))
+			if v < 0 {
+				return fmt.Errorf("cannot convert negative value %v to uint", v)
 			}
+			field.SetUint(uint64(v))
+		default:
+			return fmt.Errorf("cannot convert %T to uint", raw)
 		}
 	case reflect.Float32, reflect.Float64:
 		switch v := raw.(type) {
@@ -329,11 +348,15 @@ func setFromInterface(field reflect.Value, raw interface{}) error {
 			field.SetFloat(v)
 		case int64:
 			field.SetFloat(float64(v))
+		default:
+			return fmt.Errorf("cannot convert %T to float", raw)
 		}
 	case reflect.Bool:
-		if b, ok := raw.(bool); ok {
-			field.SetBool(b)
+		b, ok := raw.(bool)
+		if !ok {
+			return fmt.Errorf("cannot convert %T to bool", raw)
 		}
+		field.SetBool(b)
 	}
 	return nil
 }

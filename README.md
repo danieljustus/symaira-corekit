@@ -33,7 +33,9 @@ cloud-specific behavior.
 ```go
 import "github.com/danieljustus/symaira-corekit/logkit"
 
-logger := logkit.Setup("myapp")
+// Reads MYAPP_LOG_LEVEL (debug|info|warn|error, default warn) and
+// MYAPP_LOG_FORMAT (text|json, default text) from the environment.
+logger := logkit.NewFromEnv("myapp")
 logger.Info("started", "version", "1.0.0")
 ```
 

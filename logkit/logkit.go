@@ -11,21 +11,49 @@ import (
 	"github.com/danieljustus/symaira-corekit/envutil"
 )
 
+// fallbackApp is the neutral env prefix used by Default() when InitDefault has
+// not been called. It is intentionally product-agnostic ("SYM_LOG_LEVEL" /
+// "SYM_LOG_FORMAT") so a shared consumer never silently inherits another tool's
+// configuration. Call InitDefault(appName) at startup to use the app's own prefix.
+const fallbackApp = "sym"
+
 var (
+	defaultMu     sync.Mutex
+	defaultApp    string
 	defaultLogger *slog.Logger
-	initOnce      sync.Once
 )
+
+// InitDefault sets the application name that Default() uses to read its
+// environment configuration. Call it once at program startup, before the first
+// Default() call. It resets any previously constructed default logger so the
+// next Default() call rebuilds it with the new prefix.
+//
+// For example, InitDefault("symfetch") makes Default() read SYMFETCH_LOG_LEVEL
+// and SYMFETCH_LOG_FORMAT.
+func InitDefault(appName string) {
+	defaultMu.Lock()
+	defer defaultMu.Unlock()
+	defaultApp = appName
+	defaultLogger = nil
+}
 
 // Default returns the package-default structured logger configured via
 // environment variables. It is safe for concurrent use.
 //
-// Environment variables (using "symvault" as example appName):
-//   - SYMVAULT_LOG_LEVEL: debug, info, warn, error (default: warn)
-//   - SYMVAULT_LOG_FORMAT: text (default), json
+// The env prefix is the app name passed to InitDefault (uppercased); if
+// InitDefault was not called it falls back to the neutral "SYM" prefix:
+//   - {PREFIX}_LOG_LEVEL: debug, info, warn, error (default: warn)
+//   - {PREFIX}_LOG_FORMAT: text (default), json
 func Default() *slog.Logger {
-	initOnce.Do(func() {
-		defaultLogger = NewFromEnv("symvault")
-	})
+	defaultMu.Lock()
+	defer defaultMu.Unlock()
+	if defaultLogger == nil {
+		app := defaultApp
+		if app == "" {
+			app = fallbackApp
+		}
+		defaultLogger = NewFromEnv(app)
+	}
 	return defaultLogger
 }
 
@@ -79,7 +107,13 @@ func parseLevel(s string) slog.Level {
 // ReplaceLogger allows tests to swap the default logger.
 // The returned function restores the previous logger.
 func ReplaceLogger(l *slog.Logger) func() {
+	defaultMu.Lock()
 	old := defaultLogger
 	defaultLogger = l
-	return func() { defaultLogger = old }
+	defaultMu.Unlock()
+	return func() {
+		defaultMu.Lock()
+		defaultLogger = old
+		defaultMu.Unlock()
+	}
 }

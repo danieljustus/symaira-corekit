@@ -5,10 +5,11 @@ import (
 	"database/sql"
 	"fmt"
 	"io/fs"
-	"os"
 	"path/filepath"
 	"sort"
 	"strings"
+
+	"github.com/danieljustus/symaira-corekit/fsutil"
 )
 
 // Open opens a SQLite database at the given path with WAL mode and recommended pragmas.
@@ -16,7 +17,7 @@ import (
 // timeout, and foreign key enforcement. Returns a ready-to-use *sql.DB.
 func Open(path string) (*sql.DB, error) {
 	dir := filepath.Dir(path)
-	if err := os.MkdirAll(dir, 0700); err != nil {
+	if err := fsutil.SafeMkdirAll(dir, 0700); err != nil {
 		return nil, fmt.Errorf("failed to create database directory: %w", err)
 	}
 
