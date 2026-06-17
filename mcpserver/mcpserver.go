@@ -19,6 +19,11 @@ import (
 
 const ProtocolVersion = "2024-11-05"
 
+// maxLineBytes bounds a single newline-delimited line (a header line or a
+// line-mode JSON message). It matches the 1 MiB cap on framed message bodies so
+// a peer cannot cause unbounded buffering by sending data without a newline.
+const maxLineBytes = 1 << 20
+
 const (
 	CodeParseError     = -32700
 	CodeInvalidRequest = -32600
@@ -169,7 +174,7 @@ func readRequest(br *bufio.Reader) (*jsonRPCRequest, responseMode, error) {
 	}
 
 	for {
-		line, err := br.ReadString('\n')
+		line, err := readLineLimited(br)
 		if err != nil {
 			return nil, responseModeFramed, err
 		}
@@ -208,7 +213,7 @@ func readRequest(br *bufio.Reader) (*jsonRPCRequest, responseMode, error) {
 
 func readNonEmptyLine(br *bufio.Reader) (string, error) {
 	for {
-		line, err := br.ReadString('\n')
+		line, err := readLineLimited(br)
 		if err != nil {
 			if err == io.EOF && line != "" {
 				return strings.TrimSpace(line), nil
@@ -220,6 +225,28 @@ func readNonEmptyLine(br *bufio.Reader) (string, error) {
 		if line != "" {
 			return line, nil
 		}
+	}
+}
+
+// readLineLimited reads a single '\n'-terminated line from br, including the
+// trailing newline, and returns an error if the line would exceed maxLineBytes.
+// On EOF it returns whatever was read so far together with io.EOF, matching
+// bufio.Reader.ReadString semantics.
+func readLineLimited(br *bufio.Reader) (string, error) {
+	var buf []byte
+	for {
+		chunk, err := br.ReadSlice('\n')
+		if len(buf)+len(chunk) > maxLineBytes {
+			return "", fmt.Errorf("line exceeds %d bytes", maxLineBytes)
+		}
+		buf = append(buf, chunk...)
+		if err == nil {
+			return string(buf), nil
+		}
+		if err == bufio.ErrBufferFull {
+			continue
+		}
+		return string(buf), err
 	}
 }
 
