@@ -136,3 +136,34 @@ func TestReplaceLogger(t *testing.T) {
 		t.Error("restore did not restore original logger")
 	}
 }
+
+func TestInitDefaultUsesAppPrefix(t *testing.T) {
+	t.Setenv("SYMFETCH_LOG_LEVEL", "debug")
+
+	restore := ReplaceLogger(nil) // park current default so we can rebuild it
+	defer restore()
+
+	InitDefault("symfetch")
+	got := Default()
+	if got == nil {
+		t.Fatal("Default() returned nil after InitDefault")
+	}
+	if !got.Enabled(nil, slog.LevelDebug) {
+		t.Error("expected debug level from SYMFETCH_LOG_LEVEL, but debug is disabled")
+	}
+
+	// Reset to avoid leaking the configured app into other tests.
+	InitDefault("")
+}
+
+func TestDefaultFallbackPrefixIsNeutral(t *testing.T) {
+	t.Setenv("SYM_LOG_LEVEL", "error")
+
+	InitDefault("") // no app configured -> neutral "SYM" prefix
+	got := Default()
+	if got.Enabled(nil, slog.LevelWarn) {
+		t.Error("expected error level from SYM_LOG_LEVEL, but warn is enabled")
+	}
+	InitDefault("")
+	ReplaceLogger(nil)()
+}
