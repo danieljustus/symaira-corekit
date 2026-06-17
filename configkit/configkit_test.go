@@ -465,3 +465,28 @@ func TestConfigNameDefaultsToAppName(t *testing.T) {
 		t.Errorf("ConfigName = %q, want %q", loader.opts.ConfigName, "myapp")
 	}
 }
+
+func TestTypeMismatchReturnsError(t *testing.T) {
+	dir := t.TempDir()
+	origDir, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { os.Chdir(origDir) })
+	if err := os.Chdir(dir); err != nil {
+		t.Fatal(err)
+	}
+
+	// Timeout is an int field, but the TOML provides a string.
+	projectFile := filepath.Join(dir, ".mismatch-test.toml")
+	if err := os.WriteFile(projectFile, []byte(`timeout = "not-a-number"`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	loader := NewLoader(Options{AppName: "mismatch-test"}, testDefaults)
+	if _, err := loader.Load(); err == nil {
+		t.Fatal("expected error for type-mismatched TOML value, got nil")
+	} else if !strings.Contains(err.Error(), "timeout") {
+		t.Errorf("expected error to mention the field, got %v", err)
+	}
+}
