@@ -34,8 +34,8 @@ func Default() *slog.Logger {
 // reads SYMFETCH_LOG_LEVEL and SYMFETCH_LOG_FORMAT.
 func NewFromEnv(appName string) *slog.Logger {
 	prefix := strings.ToUpper(appName)
-	level := parseLevel(envutil.Getenv(prefix+"_LOG_LEVEL"))
-	format := strings.ToLower(envutil.Getenv(prefix+"_LOG_FORMAT"))
+	level := parseLevel(envutil.Getenv(prefix + "_LOG_LEVEL"))
+	format := strings.ToLower(envutil.Getenv(prefix + "_LOG_FORMAT"))
 	if format == "" {
 		format = "text"
 	}

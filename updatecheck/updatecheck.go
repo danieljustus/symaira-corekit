@@ -55,12 +55,12 @@ type cacheEntry struct {
 }
 
 type latestReleaseResponse struct {
-	Draft      bool             `json:"draft"`
-	HTMLURL    string           `json:"html_url"`
-	Prerelease bool             `json:"prerelease"`
-	TagName    string           `json:"tag_name"`
-	Body       string           `json:"body"`
-	Assets     []githubAsset    `json:"assets"`
+	Draft      bool          `json:"draft"`
+	HTMLURL    string        `json:"html_url"`
+	Prerelease bool          `json:"prerelease"`
+	TagName    string        `json:"tag_name"`
+	Body       string        `json:"body"`
+	Assets     []githubAsset `json:"assets"`
 }
 
 type githubAsset struct {

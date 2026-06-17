@@ -212,7 +212,7 @@ func TestPointerFieldFromTOML(t *testing.T) {
 	dir := t.TempDir()
 	tomlPath := filepath.Join(dir, "config.toml")
 
-_false := false
+	_false := false
 	content := `
 [server]
 port = 7777
