@@ -15,7 +15,7 @@ var ErrInvalidPath = errors.New("invalid path")
 // It rejects paths containing:
 //   - Parent directory traversal (..)
 //   - Null bytes (\x00)
-//   - Control characters (< 0x20)
+//   - Control characters (< 0x20), including tab and newline
 //   - Absolute paths
 //   - Empty segments (double slashes)
 //
@@ -30,9 +30,9 @@ func ValidatePath(path string) error {
 		return fmt.Errorf("%w: path contains null byte", ErrInvalidPath)
 	}
 
-	// Check for control characters (anything below 0x20 except tab, newline which we allow)
+	// Check for control characters (anything below 0x20)
 	for _, r := range path {
-		if r < 0x20 && r != '\t' && r != '\n' {
+		if r < 0x20 {
 			return fmt.Errorf("%w: path contains control character 0x%02x", ErrInvalidPath, r)
 		}
 	}

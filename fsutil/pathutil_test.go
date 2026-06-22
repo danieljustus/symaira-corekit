@@ -39,9 +39,6 @@ func TestValidatePath_NullByte(t *testing.T) {
 
 func TestValidatePath_ControlChar(t *testing.T) {
 	for i := rune(1); i < 0x20; i++ {
-		if i == '\t' || i == '\n' {
-			continue
-		}
 		p := "foo" + string(i) + "bar"
 		if err := ValidatePath(p); err == nil {
 			t.Errorf("ValidatePath with control char 0x%02x = nil, want error", i)
@@ -49,10 +46,10 @@ func TestValidatePath_ControlChar(t *testing.T) {
 	}
 }
 
-func TestValidatePath_TabAndNewlineAllowed(t *testing.T) {
+func TestValidatePath_TabAndNewlineRejected(t *testing.T) {
 	for _, p := range []string{"foo\tbar", "foo\nbar"} {
-		if err := ValidatePath(p); err != nil {
-			t.Errorf("ValidatePath(%q) = %v, want nil (tab/newline should be allowed)", p, err)
+		if err := ValidatePath(p); err == nil {
+			t.Errorf("ValidatePath(%q) = nil, want error (tab/newline must be rejected)", p)
 		}
 	}
 }
@@ -140,9 +137,6 @@ func TestValidatePath_AllControlChars(t *testing.T) {
 	}
 
 	for i := 1; i < 0x20; i++ {
-		if i == '\t' || i == '\n' {
-			continue
-		}
 		p := string(rune(i))
 		if err := ValidatePath(p); err == nil {
 			if !strings.Contains(err.Error(), "control character") {
