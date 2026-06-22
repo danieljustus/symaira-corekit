@@ -154,11 +154,10 @@ func mergeFile[T any](cfg *T, path string) error {
 	return nil
 }
 
-// applyMapToStruct applies values from a map to a struct using json tags.
-// Only non-zero values are applied (except pointer fields, which are set when present).
-// A value whose type cannot be converted to the target field returns an error
-// instead of being silently ignored, matching the env-override path.
-func applyMapToStruct(val reflect.Value, raw map[string]interface{}) error {
+// walkStructFields iterates settable struct fields with json tags.
+// For each field, fn is called with the field value and its json tag.
+// This is the shared field-walking implementation for both TOML and env sources.
+func walkStructFields(val reflect.Value, fn func(field reflect.Value, tag string) error) error {
 	typ := val.Type()
 	for i := 0; i < val.NumField(); i++ {
 		field := val.Field(i)
@@ -173,18 +172,31 @@ func applyMapToStruct(val reflect.Value, raw map[string]interface{}) error {
 			continue
 		}
 
+		if err := fn(field, tag); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// applyMapToStruct applies values from a TOML-decoded map to a struct using json tags.
+// Only non-zero values are applied (except pointer fields, which are set when present).
+// A value whose type cannot be converted to the target field returns an error
+// instead of being silently ignored.
+func applyMapToStruct(val reflect.Value, raw map[string]interface{}) error {
+	return walkStructFields(val, func(field reflect.Value, tag string) error {
 		rawVal, ok := raw[tag]
 		if !ok {
-			continue
+			return nil
 		}
 
 		switch field.Kind() {
 		case reflect.Ptr:
 			if rawVal == nil {
-				continue
+				return nil
 			}
 			ptrVal := reflect.New(field.Type().Elem())
-			if err := setFromInterface(ptrVal.Elem(), rawVal); err != nil {
+			if err := setFieldValue(ptrVal.Elem(), rawVal); err != nil {
 				return fmt.Errorf("field %q: %w", tag, err)
 			}
 			field.Set(ptrVal)
@@ -196,13 +208,13 @@ func applyMapToStruct(val reflect.Value, raw map[string]interface{}) error {
 			}
 		default:
 			if !isZeroInterface(rawVal) {
-				if err := setFromInterface(field, rawVal); err != nil {
+				if err := setFieldValue(field, rawVal); err != nil {
 					return fmt.Errorf("field %q: %w", tag, err)
 				}
 			}
 		}
-	}
-	return nil
+		return nil
+	})
 }
 
 // applyEnvOverrides sets struct fields from environment variables.
@@ -213,27 +225,14 @@ func applyEnvOverrides[T any](cfg *T, prefix string) error {
 }
 
 func applyEnvToFields(val reflect.Value, prefix string) error {
-	typ := val.Type()
-	for i := 0; i < val.NumField(); i++ {
-		field := val.Field(i)
-		fieldType := typ.Field(i)
-
-		if !field.CanSet() {
-			continue
-		}
-
-		tag := jsonTag(fieldType)
-		if tag == "" {
-			continue
-		}
-
+	return walkStructFields(val, func(field reflect.Value, tag string) error {
 		envKey := prefix + "_" + strings.ToUpper(tag)
 
 		switch field.Kind() {
 		case reflect.Ptr:
 			if v := os.Getenv(envKey); v != "" {
 				ptrVal := reflect.New(field.Type().Elem())
-				if err := setFieldFromString(ptrVal.Elem(), v); err != nil {
+				if err := setFieldValue(ptrVal.Elem(), v); err != nil {
 					return fmt.Errorf("env %s: %w", envKey, err)
 				}
 				field.Set(ptrVal)
@@ -242,17 +241,28 @@ func applyEnvToFields(val reflect.Value, prefix string) error {
 			if err := applyEnvToFields(field, envKey); err != nil {
 				return err
 			}
-		case reflect.Slice, reflect.Map:
+		case reflect.Slice:
+			// Env slices use comma-separated values, e.g. TAGS=web,api,production.
+			if v := os.Getenv(envKey); v != "" {
+				items := strings.Split(v, ",")
+				for i := range items {
+					items[i] = strings.TrimSpace(items[i])
+				}
+				if err := setFieldValue(field, items); err != nil {
+					return fmt.Errorf("env %s: %w", envKey, err)
+				}
+			}
+		case reflect.Map:
 			// Not supported for env var overrides; skip silently.
 		default:
 			if v := os.Getenv(envKey); v != "" {
-				if err := setFieldFromString(field, v); err != nil {
+				if err := setFieldValue(field, v); err != nil {
 					return fmt.Errorf("env %s: %w", envKey, err)
 				}
 			}
 		}
-	}
-	return nil
+		return nil
+	})
 }
 
 func jsonTag(fieldType reflect.StructField) string {
@@ -284,29 +294,34 @@ func isZeroInterface(v interface{}) bool {
 	}
 }
 
-// setFromInterface sets a reflect.Value from a decoded TOML interface{} value.
-// BurntSushi/toml decodes into map[string]interface{} with these Go types:
-// string, int64, float64, bool, []interface{}, map[string]interface{}, time.Time.
-func setFromInterface(field reflect.Value, raw interface{}) error {
+// setFieldValue sets a reflect.Value from a decoded TOML interface{} or env string value.
+// This is the single shared conversion path for both TOML and env sources.
+// The TOML source passes interface{} values directly from the decoder.
+// The env source passes string values (or []string for comma-separated slices).
+// Type support is identical across both sources: string, int*, uint*, float*,
+// bool, time.Duration, slices ([]interface{} from TOML, []string from env),
+// and maps (error).
+func setFieldValue(field reflect.Value, raw interface{}) error {
 	if raw == nil {
 		return nil
 	}
 
-	// time.Duration is int64 under the hood; TOML encodes it as a string.
+	// time.Duration is int64 under the hood; check type before the int64 case.
 	if field.Type() == reflect.TypeOf(time.Duration(0)) {
-		if s, ok := raw.(string); ok {
-			d, err := time.ParseDuration(s)
+		switch v := raw.(type) {
+		case string:
+			d, err := time.ParseDuration(v)
 			if err != nil {
-				return err
+				return fmt.Errorf("cannot parse %q as duration: %w", v, err)
 			}
 			field.SetInt(int64(d))
 			return nil
-		}
-		if n, ok := raw.(int64); ok {
-			field.SetInt(n)
+		case int64:
+			field.SetInt(v)
 			return nil
+		default:
+			return fmt.Errorf("cannot convert %T to duration", raw)
 		}
-		return fmt.Errorf("cannot convert %T to duration", raw)
 	}
 
 	switch field.Kind() {
@@ -324,6 +339,12 @@ func setFromInterface(field reflect.Value, raw interface{}) error {
 			field.SetInt(int64(v))
 		case float64:
 			field.SetInt(int64(v))
+		case string:
+			n, err := strconv.ParseInt(v, 10, 64)
+			if err != nil {
+				return fmt.Errorf("cannot parse %q as int: %w", v, err)
+			}
+			field.SetInt(n)
 		default:
 			return fmt.Errorf("cannot convert %T to int", raw)
 		}
@@ -339,6 +360,12 @@ func setFromInterface(field reflect.Value, raw interface{}) error {
 				return fmt.Errorf("cannot convert negative value %v to uint", v)
 			}
 			field.SetUint(uint64(v))
+		case string:
+			n, err := strconv.ParseUint(v, 10, 64)
+			if err != nil {
+				return fmt.Errorf("cannot parse %q as uint: %w", v, err)
+			}
+			field.SetUint(n)
 		default:
 			return fmt.Errorf("cannot convert %T to uint", raw)
 		}
@@ -348,61 +375,55 @@ func setFromInterface(field reflect.Value, raw interface{}) error {
 			field.SetFloat(v)
 		case int64:
 			field.SetFloat(float64(v))
+		case string:
+			n, err := strconv.ParseFloat(v, 64)
+			if err != nil {
+				return fmt.Errorf("cannot parse %q as float: %w", v, err)
+			}
+			field.SetFloat(n)
 		default:
 			return fmt.Errorf("cannot convert %T to float", raw)
 		}
 	case reflect.Bool:
-		b, ok := raw.(bool)
-		if !ok {
+		switch v := raw.(type) {
+		case bool:
+			field.SetBool(v)
+		case string:
+			b, err := strconv.ParseBool(v)
+			if err != nil {
+				return fmt.Errorf("cannot parse %q as bool: %w", v, err)
+			}
+			field.SetBool(b)
+		default:
 			return fmt.Errorf("cannot convert %T to bool", raw)
 		}
-		field.SetBool(b)
-	}
-	return nil
-}
-
-// setFieldFromString sets a reflect.Value from a string representation.
-// Used for env var overrides. Supported types: string, int*, uint*, float*, bool, time.Duration.
-func setFieldFromString(field reflect.Value, v string) error {
-	// time.Duration is int64 under the hood; check type before the int64 case.
-	if field.Type() == reflect.TypeOf(time.Duration(0)) {
-		d, err := time.ParseDuration(v)
-		if err != nil {
-			return fmt.Errorf("cannot parse %q as duration: %w", v, err)
+	case reflect.Slice:
+		switch v := raw.(type) {
+		case []interface{}:
+			// From TOML: array of decoded values.
+			slice := reflect.MakeSlice(field.Type(), len(v), len(v))
+			for i, item := range v {
+				if err := setFieldValue(slice.Index(i), item); err != nil {
+					return fmt.Errorf("slice element %d: %w", i, err)
+				}
+			}
+			field.Set(slice)
+		case []string:
+			// From env: comma-separated string values.
+			slice := reflect.MakeSlice(field.Type(), len(v), len(v))
+			for i, item := range v {
+				if err := setFieldValue(slice.Index(i), item); err != nil {
+					return fmt.Errorf("slice element %d: %w", i, err)
+				}
+			}
+			field.Set(slice)
+		default:
+			return fmt.Errorf("cannot convert %T to %s", raw, field.Type())
 		}
-		field.SetInt(int64(d))
-		return nil
-	}
-
-	switch field.Kind() {
-	case reflect.String:
-		field.SetString(v)
-	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		n, err := strconv.ParseInt(v, 10, 64)
-		if err != nil {
-			return fmt.Errorf("cannot parse %q as int: %w", v, err)
-		}
-		field.SetInt(n)
-	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-		n, err := strconv.ParseUint(v, 10, 64)
-		if err != nil {
-			return fmt.Errorf("cannot parse %q as uint: %w", v, err)
-		}
-		field.SetUint(n)
-	case reflect.Float32, reflect.Float64:
-		n, err := strconv.ParseFloat(v, 64)
-		if err != nil {
-			return fmt.Errorf("cannot parse %q as float: %w", v, err)
-		}
-		field.SetFloat(n)
-	case reflect.Bool:
-		b, err := strconv.ParseBool(v)
-		if err != nil {
-			return fmt.Errorf("cannot parse %q as bool: %w", v, err)
-		}
-		field.SetBool(b)
+	case reflect.Map:
+		return fmt.Errorf("map fields are not supported from config")
 	default:
-		return fmt.Errorf("unsupported field type %s", field.Kind())
+		return fmt.Errorf("unsupported field kind %s", field.Kind())
 	}
 	return nil
 }
