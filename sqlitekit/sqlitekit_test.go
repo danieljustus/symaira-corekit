@@ -1,6 +1,7 @@
 package sqlitekit
 
 import (
+	"context"
 	"database/sql"
 	"embed"
 	"io/fs"
@@ -55,6 +56,58 @@ func TestOpen(t *testing.T) {
 
 	if _, err := os.Stat(dbPath); os.IsNotExist(err) {
 		t.Error("database file was not created")
+	}
+}
+
+// TestOpen_PragmasOnEveryConnection guards against the per-connection pragma
+// pitfall: PRAGMA statements run once on a *sql.DB only affect the single pooled
+// connection they execute on, while foreign_keys and busy_timeout are
+// per-connection settings that otherwise reset to SQLite defaults on every other
+// connection the pool opens. Holding several connections open at once forces the
+// pool to create distinct connections, each of which must carry the pragmas.
+// The path deliberately contains a space to exercise DSN path handling.
+func TestOpen_PragmasOnEveryConnection(t *testing.T) {
+	tmpDir := t.TempDir()
+	dbPath := filepath.Join(tmpDir, "with space", "test.db")
+
+	db, err := Open(dbPath)
+	if err != nil {
+		t.Fatalf("Open() error = %v", err)
+	}
+	defer db.Close()
+
+	ctx := context.Background()
+	const n = 5
+	conns := make([]*sql.Conn, 0, n)
+	for i := 0; i < n; i++ {
+		c, err := db.Conn(ctx)
+		if err != nil {
+			t.Fatalf("db.Conn() #%d error = %v", i, err)
+		}
+		conns = append(conns, c)
+	}
+	defer func() {
+		for _, c := range conns {
+			_ = c.Close()
+		}
+	}()
+
+	for i, c := range conns {
+		var fkEnabled int
+		if err := c.QueryRowContext(ctx, "PRAGMA foreign_keys").Scan(&fkEnabled); err != nil {
+			t.Fatalf("conn #%d query foreign_keys: %v", i, err)
+		}
+		if fkEnabled != 1 {
+			t.Errorf("conn #%d foreign_keys = %d, want 1", i, fkEnabled)
+		}
+
+		var busyTimeout int
+		if err := c.QueryRowContext(ctx, "PRAGMA busy_timeout").Scan(&busyTimeout); err != nil {
+			t.Fatalf("conn #%d query busy_timeout: %v", i, err)
+		}
+		if busyTimeout != 5000 {
+			t.Errorf("conn #%d busy_timeout = %d, want 5000", i, busyTimeout)
+		}
 	}
 }
 

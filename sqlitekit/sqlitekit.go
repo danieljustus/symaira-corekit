@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"io/fs"
+	"net/url"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -15,33 +16,44 @@ import (
 // Open opens a SQLite database at the given path with WAL mode and recommended pragmas.
 // The database is configured for concurrent reads/writes (WAL mode), a 5-second busy
 // timeout, and foreign key enforcement. Returns a ready-to-use *sql.DB.
+//
+// The pragmas are carried in the connection DSN rather than executed once via
+// db.Exec. database/sql maintains a connection pool and opens connections lazily;
+// a PRAGMA run once only affects the single connection it executed on, and
+// busy_timeout and foreign_keys are per-connection settings that otherwise reset
+// to SQLite defaults (timeout 0, foreign keys OFF) on every other pooled
+// connection. Putting them in the DSN guarantees they apply to every connection.
 func Open(path string) (*sql.DB, error) {
 	dir := filepath.Dir(path)
 	if err := fsutil.SafeMkdirAll(dir, 0700); err != nil {
 		return nil, fmt.Errorf("failed to create database directory: %w", err)
 	}
 
-	db, err := sql.Open("sqlite", path)
+	db, err := sql.Open("sqlite", dsn(path))
 	if err != nil {
 		return nil, fmt.Errorf("failed to open sqlite database: %w", err)
 	}
 
-	if _, err := db.Exec("PRAGMA journal_mode=WAL;"); err != nil {
+	// Establish a connection eagerly so DSN/pragma errors surface here rather
+	// than on the first query.
+	if err := db.Ping(); err != nil {
 		db.Close()
-		return nil, fmt.Errorf("failed to enable WAL: %w", err)
-	}
-
-	if _, err := db.Exec("PRAGMA busy_timeout=5000;"); err != nil {
-		db.Close()
-		return nil, fmt.Errorf("failed to set busy timeout: %w", err)
-	}
-
-	if _, err := db.Exec("PRAGMA foreign_keys=ON;"); err != nil {
-		db.Close()
-		return nil, fmt.Errorf("failed to enable foreign keys: %w", err)
+		return nil, fmt.Errorf("failed to open sqlite database: %w", err)
 	}
 
 	return db, nil
+}
+
+// dsn builds a modernc.org/sqlite connection string that applies the recommended
+// pragmas to every new connection. The path is carried as the opaque part of a
+// file: URI so paths containing spaces or other special characters survive.
+func dsn(path string) string {
+	q := url.Values{}
+	q.Add("_pragma", "busy_timeout(5000)")
+	q.Add("_pragma", "foreign_keys(1)")
+	q.Add("_pragma", "journal_mode(WAL)")
+	u := url.URL{Scheme: "file", Opaque: path, RawQuery: q.Encode()}
+	return u.String()
 }
 
 // Migrate applies pending SQL migrations from the given filesystem.
