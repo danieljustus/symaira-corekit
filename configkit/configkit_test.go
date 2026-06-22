@@ -23,6 +23,14 @@ type testServerConfig struct {
 	Enabled *bool  `json:"enabled"`
 }
 
+type testSliceConfig struct {
+	Tags    []string       `json:"tags"`
+	Ports   []int          `json:"ports"`
+	Rates   []float64      `json:"rates"`
+	Flags   []bool         `json:"flags"`
+	Allowed map[string]int `json:"allowed"`
+}
+
 func testDefaults() *testConfig {
 	return &testConfig{
 		Server:  testServerConfig{Port: 8080, Host: "localhost"},
@@ -488,5 +496,107 @@ func TestTypeMismatchReturnsError(t *testing.T) {
 		t.Fatal("expected error for type-mismatched TOML value, got nil")
 	} else if !strings.Contains(err.Error(), "timeout") {
 		t.Errorf("expected error to mention the field, got %v", err)
+	}
+}
+
+func TestSliceFromTOML(t *testing.T) {
+	dir := t.TempDir()
+	tomlPath := filepath.Join(dir, "config.toml")
+	content := `
+tags = ["web", "api", "production"]
+ports = [80, 443, 8080]
+rates = [1.5, 2.7, 3.14]
+flags = [true, false, true]
+`
+	if err := os.WriteFile(tomlPath, []byte(content), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	cfg := &testSliceConfig{}
+	if err := mergeFile(cfg, tomlPath); err != nil {
+		t.Fatalf("mergeFile() error = %v", err)
+	}
+
+	wantTags := []string{"web", "api", "production"}
+	if len(cfg.Tags) != len(wantTags) {
+		t.Fatalf("Tags len = %d, want %d", len(cfg.Tags), len(wantTags))
+	}
+	for i, v := range cfg.Tags {
+		if v != wantTags[i] {
+			t.Errorf("Tags[%d] = %q, want %q", i, v, wantTags[i])
+		}
+	}
+
+	wantPorts := []int{80, 443, 8080}
+	if len(cfg.Ports) != len(wantPorts) {
+		t.Fatalf("Ports len = %d, want %d", len(cfg.Ports), len(wantPorts))
+	}
+	for i, v := range cfg.Ports {
+		if v != wantPorts[i] {
+			t.Errorf("Ports[%d] = %d, want %d", i, v, wantPorts[i])
+		}
+	}
+
+	wantRates := []float64{1.5, 2.7, 3.14}
+	if len(cfg.Rates) != len(wantRates) {
+		t.Fatalf("Rates len = %d, want %d", len(cfg.Rates), len(wantRates))
+	}
+	for i, v := range cfg.Rates {
+		if v != wantRates[i] {
+			t.Errorf("Rates[%d] = %f, want %f", i, v, wantRates[i])
+		}
+	}
+
+	wantFlags := []bool{true, false, true}
+	if len(cfg.Flags) != len(wantFlags) {
+		t.Fatalf("Flags len = %d, want %d", len(cfg.Flags), len(wantFlags))
+	}
+	for i, v := range cfg.Flags {
+		if v != wantFlags[i] {
+			t.Errorf("Flags[%d] = %v, want %v", i, v, wantFlags[i])
+		}
+	}
+}
+
+func TestMapFieldReturnsError(t *testing.T) {
+	dir := t.TempDir()
+	tomlPath := filepath.Join(dir, "config.toml")
+	content := `
+[allowed]
+admin = 3
+user = 1
+`
+	if err := os.WriteFile(tomlPath, []byte(content), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	cfg := &testSliceConfig{}
+	err := mergeFile(cfg, tomlPath)
+	if err == nil {
+		t.Fatal("mergeFile() should return error for map field, got nil")
+	}
+	if !strings.Contains(err.Error(), "allowed") {
+		t.Errorf("error = %q, want it to mention the field name 'allowed'", err.Error())
+	}
+}
+
+func TestSliceMismatchReturnsError(t *testing.T) {
+	dir := t.TempDir()
+	tomlPath := filepath.Join(dir, "config.toml")
+	// tags is []string, but TOML provides int elements.
+	content := `
+tags = [1, 2, 3]
+`
+	if err := os.WriteFile(tomlPath, []byte(content), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	cfg := &testSliceConfig{}
+	err := mergeFile(cfg, tomlPath)
+	if err == nil {
+		t.Fatal("mergeFile() should return error for type-mismatched slice elements, got nil")
+	}
+	if !strings.Contains(err.Error(), "tags") {
+		t.Errorf("error = %q, want it to mention the field name 'tags'", err.Error())
 	}
 }

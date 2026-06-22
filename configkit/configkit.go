@@ -357,6 +357,22 @@ func setFromInterface(field reflect.Value, raw interface{}) error {
 			return fmt.Errorf("cannot convert %T to bool", raw)
 		}
 		field.SetBool(b)
+	case reflect.Slice:
+		list, ok := raw.([]interface{})
+		if !ok {
+			return fmt.Errorf("cannot convert %T to %s", raw, field.Type())
+		}
+		slice := reflect.MakeSlice(field.Type(), len(list), len(list))
+		for i, item := range list {
+			if err := setFromInterface(slice.Index(i), item); err != nil {
+				return fmt.Errorf("slice element %d: %w", i, err)
+			}
+		}
+		field.Set(slice)
+	case reflect.Map:
+		return fmt.Errorf("map fields are not supported from TOML config")
+	default:
+		return fmt.Errorf("unsupported field kind %s", field.Kind())
 	}
 	return nil
 }
