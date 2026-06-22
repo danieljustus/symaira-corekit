@@ -600,3 +600,215 @@ tags = [1, 2, 3]
 		t.Errorf("error = %q, want it to mention the field name 'tags'", err.Error())
 	}
 }
+
+// Parity tests verify that TOML and env paths produce identical results
+// when setting the same logical field. This ensures the unified setFieldValue
+// converter works correctly for both source types.
+
+func TestParityStringTOMLAndEnv(t *testing.T) {
+	tomlDir := t.TempDir()
+	tomlPath := filepath.Join(tomlDir, "config.toml")
+	if err := os.WriteFile(tomlPath, []byte(`name = "parity-test"`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	tomlCfg := testDefaults()
+	if err := mergeFile(tomlCfg, tomlPath); err != nil {
+		t.Fatalf("mergeFile() error = %v", err)
+	}
+
+	t.Setenv("PARSTR_NAME", "parity-test")
+	envCfg := testDefaults()
+	loader := NewLoader(Options{AppName: "parstr"}, testDefaults)
+	envCfg, err := loader.Load()
+	if err != nil {
+		t.Fatalf("Load() error = %v", err)
+	}
+
+	if tomlCfg.Name != envCfg.Name {
+		t.Errorf("string parity: TOML=%q, env=%q, want equal", tomlCfg.Name, envCfg.Name)
+	}
+}
+
+func TestParityIntTOMLAndEnv(t *testing.T) {
+	tomlDir := t.TempDir()
+	tomlPath := filepath.Join(tomlDir, "config.toml")
+	if err := os.WriteFile(tomlPath, []byte(`timeout = 42`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	tomlCfg := testDefaults()
+	if err := mergeFile(tomlCfg, tomlPath); err != nil {
+		t.Fatalf("mergeFile() error = %v", err)
+	}
+
+	t.Setenv("PARINT_TIMEOUT", "42")
+	loader := NewLoader(Options{AppName: "parint"}, testDefaults)
+	envCfg, err := loader.Load()
+	if err != nil {
+		t.Fatalf("Load() error = %v", err)
+	}
+
+	if tomlCfg.Timeout != envCfg.Timeout {
+		t.Errorf("int parity: TOML=%d, env=%d, want equal", tomlCfg.Timeout, envCfg.Timeout)
+	}
+}
+
+func TestParityFloatTOMLAndEnv(t *testing.T) {
+	tomlDir := t.TempDir()
+	tomlPath := filepath.Join(tomlDir, "config.toml")
+	if err := os.WriteFile(tomlPath, []byte(`rate = 2.718`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	tomlCfg := testDefaults()
+	if err := mergeFile(tomlCfg, tomlPath); err != nil {
+		t.Fatalf("mergeFile() error = %v", err)
+	}
+
+	t.Setenv("PARFLOAT_RATE", "2.718")
+	loader := NewLoader(Options{AppName: "parfloat"}, testDefaults)
+	envCfg, err := loader.Load()
+	if err != nil {
+		t.Fatalf("Load() error = %v", err)
+	}
+
+	if tomlCfg.Rate != envCfg.Rate {
+		t.Errorf("float parity: TOML=%f, env=%f, want equal", tomlCfg.Rate, envCfg.Rate)
+	}
+}
+
+func TestParityBoolTOMLAndEnv(t *testing.T) {
+	tomlDir := t.TempDir()
+	tomlPath := filepath.Join(tomlDir, "config.toml")
+	if err := os.WriteFile(tomlPath, []byte(`debug = true`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	tomlCfg := testDefaults()
+	if err := mergeFile(tomlCfg, tomlPath); err != nil {
+		t.Fatalf("mergeFile() error = %v", err)
+	}
+
+	t.Setenv("PARBOOL_DEBUG", "true")
+	loader := NewLoader(Options{AppName: "parbool"}, testDefaults)
+	envCfg, err := loader.Load()
+	if err != nil {
+		t.Fatalf("Load() error = %v", err)
+	}
+
+	if tomlCfg.Debug != envCfg.Debug {
+		t.Errorf("bool parity: TOML=%v, env=%v, want equal", tomlCfg.Debug, envCfg.Debug)
+	}
+}
+
+func TestParityDurationTOMLAndEnv(t *testing.T) {
+	tomlDir := t.TempDir()
+	tomlPath := filepath.Join(tomlDir, "config.toml")
+	if err := os.WriteFile(tomlPath, []byte(`ttl = "2h30m"`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	tomlCfg := testDefaults()
+	if err := mergeFile(tomlCfg, tomlPath); err != nil {
+		t.Fatalf("mergeFile() error = %v", err)
+	}
+
+	t.Setenv("PARDUR_TTL", "2h30m")
+	loader := NewLoader(Options{AppName: "pardur"}, testDefaults)
+	envCfg, err := loader.Load()
+	if err != nil {
+		t.Fatalf("Load() error = %v", err)
+	}
+
+	want := 2*time.Hour + 30*time.Minute
+	if tomlCfg.TTL != want {
+		t.Errorf("duration parity TOML: TTL = %v, want %v", tomlCfg.TTL, want)
+	}
+	if envCfg.TTL != want {
+		t.Errorf("duration parity env: TTL = %v, want %v", envCfg.TTL, want)
+	}
+	if tomlCfg.TTL != envCfg.TTL {
+		t.Errorf("duration parity: TOML=%v, env=%v, want equal", tomlCfg.TTL, envCfg.TTL)
+	}
+}
+
+func TestSliceFromEnv(t *testing.T) {
+	t.Setenv("ENVSLICE_TAGS", "web,api,production")
+	t.Setenv("ENVSLICE_PORTS", "80,443,8080")
+
+	cfg := &testSliceConfig{}
+	loader := NewLoader(Options{AppName: "envslice"}, func() *testSliceConfig { return cfg })
+	_, err := loader.Load()
+	if err != nil {
+		t.Fatalf("Load() error = %v", err)
+	}
+
+	wantTags := []string{"web", "api", "production"}
+	if len(cfg.Tags) != len(wantTags) {
+		t.Fatalf("Tags len = %d, want %d", len(cfg.Tags), len(wantTags))
+	}
+	for i, v := range cfg.Tags {
+		if v != wantTags[i] {
+			t.Errorf("Tags[%d] = %q, want %q", i, v, wantTags[i])
+		}
+	}
+
+	wantPorts := []int{80, 443, 8080}
+	if len(cfg.Ports) != len(wantPorts) {
+		t.Fatalf("Ports len = %d, want %d", len(cfg.Ports), len(wantPorts))
+	}
+	for i, v := range cfg.Ports {
+		if v != wantPorts[i] {
+			t.Errorf("Ports[%d] = %d, want %d", i, v, wantPorts[i])
+		}
+	}
+}
+
+func TestParitySliceTOMLAndEnv(t *testing.T) {
+	tomlDir := t.TempDir()
+	tomlPath := filepath.Join(tomlDir, "config.toml")
+	if err := os.WriteFile(tomlPath, []byte(`tags = ["alpha","beta"]`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	tomlCfg := &testSliceConfig{}
+	if err := mergeFile(tomlCfg, tomlPath); err != nil {
+		t.Fatalf("mergeFile() error = %v", err)
+	}
+
+	t.Setenv("PARSLICE_TAGS", "alpha,beta")
+	envCfg := &testSliceConfig{}
+	loader := NewLoader(Options{AppName: "parslice"}, func() *testSliceConfig { return envCfg })
+	if _, err := loader.Load(); err != nil {
+		t.Fatalf("Load() error = %v", err)
+	}
+
+	if len(tomlCfg.Tags) != len(envCfg.Tags) {
+		t.Fatalf("slice parity: TOML len=%d, env len=%d, want equal", len(tomlCfg.Tags), len(envCfg.Tags))
+	}
+	for i := range tomlCfg.Tags {
+		if tomlCfg.Tags[i] != envCfg.Tags[i] {
+			t.Errorf("slice parity: Tags[%d] TOML=%q env=%q, want equal", i, tomlCfg.Tags[i], envCfg.Tags[i])
+		}
+	}
+}
+
+func TestTypeErrorConsistency(t *testing.T) {
+	tomlDir := t.TempDir()
+	tomlPath := filepath.Join(tomlDir, "config.toml")
+	if err := os.WriteFile(tomlPath, []byte(`timeout = "not-a-number"`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	tomlErr := mergeFile(testDefaults(), tomlPath)
+	if tomlErr == nil {
+		t.Fatal("TOML type mismatch should error")
+	}
+
+	t.Setenv("TYPCHECK_TIMEOUT", "not-a-number")
+	_, envErr := NewLoader(Options{AppName: "typcheck"}, testDefaults).Load()
+	if envErr == nil {
+		t.Fatal("env type mismatch should error")
+	}
+
+	if !strings.Contains(tomlErr.Error(), "timeout") {
+		t.Errorf("TOML error = %q, want it to mention 'timeout'", tomlErr.Error())
+	}
+	if !strings.Contains(envErr.Error(), "TIMEOUT") {
+		t.Errorf("env error = %q, want it to mention 'TIMEOUT'", envErr.Error())
+	}
+}
