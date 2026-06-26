@@ -82,10 +82,11 @@ type jsonRPCResponse struct {
 
 // Server is a JSON-RPC 2.0 MCP server that dispatches to registered tools.
 type Server struct {
-	name    string
-	version string
-	tools   map[string]*Tool
-	order   []string
+	name         string
+	version      string
+	instructions string
+	tools        map[string]*Tool
+	order        []string
 }
 
 // New creates a new MCP server.
@@ -95,6 +96,15 @@ func New(name, version string) *Server {
 		version: version,
 		tools:   make(map[string]*Tool),
 	}
+}
+
+// SetInstructions sets the server-level usage guidance returned to clients in
+// the "instructions" field of the initialize response. MCP clients typically
+// surface this text to the model as system context, so it is the primary lever
+// for telling agents when and how to use the server's tools. An empty string
+// (the default) omits the field entirely.
+func (s *Server) SetInstructions(text string) {
+	s.instructions = text
 }
 
 // RegisterTool adds a tool to the server. Panics on duplicate names.
@@ -298,7 +308,7 @@ func (s *Server) handleRequest(ctx context.Context, w responseWriter, req *jsonR
 }
 
 func (s *Server) handleInitialize(w responseWriter, req *jsonRPCRequest) {
-	sendResponse(w, req.ID, map[string]any{
+	result := map[string]any{
 		"protocolVersion": ProtocolVersion,
 		"capabilities": map[string]any{
 			"tools": map[string]any{},
@@ -307,7 +317,11 @@ func (s *Server) handleInitialize(w responseWriter, req *jsonRPCRequest) {
 			"name":    s.name,
 			"version": s.version,
 		},
-	})
+	}
+	if s.instructions != "" {
+		result["instructions"] = s.instructions
+	}
+	sendResponse(w, req.ID, result)
 }
 
 func (s *Server) handleToolsList(w responseWriter, req *jsonRPCRequest) {
