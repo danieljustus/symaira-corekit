@@ -1,8 +1,10 @@
 # symaira-corekit
 
-Shared Go library for the Symaira public-core tools (`symvault`, `symmemory`, `symseek`, `symfetch`).
+Shared Go library for the Symaira public-core tools (`symvault`, `symmemory`, `symseek`, `symfetch`, `symscope`).
 
 Bundles domain-free infrastructure that is otherwise duplicated across tools: MCP server scaffold, TOML config loading, exit codes, logging, path safety, SQLite setup, and update checking.
+
+Although `corekit` is a Go library, its conventions also guide the non-Go free tools (`symoperate`, `symtune`, `symterminal`, `symeraseme`). See [`docs/cross-language-conventions.md`](docs/cross-language-conventions.md) for the shared contracts that apply across languages.
 
 ## Standalone-First Contract
 
@@ -12,8 +14,8 @@ cross-tool behavior belongs behind runtime detection and fallback in the
 consumer, not as imports from sibling tool repositories.
 
 Corekit must stay free of Vault crypto, Memory PII policy, Seek ranking, Fetch
-fingerprinting, Pro billing, Firebase, Stripe, GCP SDKs, and other product- or
-cloud-specific behavior.
+fingerprinting, Scope port scanning, Pro billing, Firebase, Stripe, GCP SDKs,
+and other product- or cloud-specific behavior.
 
 ## Packages
 
@@ -45,4 +47,4 @@ Strict SemVer. Each tool pins its corekit version in `go.mod`.
 
 ## License
 
-MIT — Daniel Justus
+Apache-2.0 — Daniel Justus
