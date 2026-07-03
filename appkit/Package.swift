@@ -1,0 +1,27 @@
+// swift-tools-version: 6.0
+import PackageDescription
+
+let package = Package(
+    name: "symaira-appkit",
+    platforms: [
+        .macOS(.v14)
+    ],
+    products: [
+        .library(name: "SymairaTheme", targets: ["SymairaTheme"]),
+        .library(name: "SymairaCLIRunner", targets: ["SymairaCLIRunner"]),
+        .library(name: "SymairaToolKit", targets: ["SymairaToolKit"]),
+        .library(name: "SymairaKeychain", targets: ["SymairaKeychain"]),
+        .library(name: "SymairaUpdateCheck", targets: ["SymairaUpdateCheck"]),
+    ],
+    targets: [
+        .target(name: "SymairaTheme"),
+        .target(name: "SymairaCLIRunner"),
+        .target(name: "SymairaToolKit", dependencies: ["SymairaCLIRunner"]),
+        .target(name: "SymairaKeychain"),
+        .target(name: "SymairaUpdateCheck"),
+        .testTarget(name: "SymairaThemeTests", dependencies: ["SymairaTheme"]),
+        .testTarget(name: "SymairaCLIRunnerTests", dependencies: ["SymairaCLIRunner"]),
+        .testTarget(name: "SymairaToolKitTests", dependencies: ["SymairaToolKit"]),
+        .testTarget(name: "SymairaUpdateCheckTests", dependencies: ["SymairaUpdateCheck"]),
+    ]
+)
