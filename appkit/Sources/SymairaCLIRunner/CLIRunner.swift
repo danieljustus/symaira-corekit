@@ -76,16 +76,19 @@ public struct CLIRunner: Sendable {
 
     /// Run an executable and return stdout/stderr/exit code. Does NOT throw on
     /// non-zero exit codes — use `runChecked`/`runDecoding` for that.
+    /// `environment` entries are merged over the inherited (PATH-augmented)
+    /// environment — for tool config like `SYMINGEST_VAULT`.
     public func run(
         _ executable: URL,
         arguments: [String] = [],
         stdin: Data? = nil,
-        timeout: Double? = nil
+        timeout: Double? = nil,
+        environment: [String: String] = [:]
     ) async throws -> CLIResult {
         let seconds = timeout ?? defaultTimeout
         return try await withThrowingTaskGroup(of: CLIResult?.self) { group in
             group.addTask {
-                try await Self.execute(executable: executable, arguments: arguments, stdin: stdin)
+                try await Self.execute(executable: executable, arguments: arguments, stdin: stdin, environment: environment)
             }
             group.addTask {
                 try await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000))
@@ -105,9 +108,10 @@ public struct CLIRunner: Sendable {
         _ executable: URL,
         arguments: [String] = [],
         stdin: Data? = nil,
-        timeout: Double? = nil
+        timeout: Double? = nil,
+        environment: [String: String] = [:]
     ) async throws -> Data {
-        let result = try await run(executable, arguments: arguments, stdin: stdin, timeout: timeout)
+        let result = try await run(executable, arguments: arguments, stdin: stdin, timeout: timeout, environment: environment)
         guard result.exitCode == 0 else {
             throw CLIRunnerError.executionFailed(code: result.exitCode, stderr: result.stderrText)
         }
@@ -120,9 +124,10 @@ public struct CLIRunner: Sendable {
         executable: URL,
         arguments: [String] = [],
         stdin: Data? = nil,
-        timeout: Double? = nil
+        timeout: Double? = nil,
+        environment: [String: String] = [:]
     ) async throws -> T {
-        let data = try await runChecked(executable, arguments: arguments, stdin: stdin, timeout: timeout)
+        let data = try await runChecked(executable, arguments: arguments, stdin: stdin, timeout: timeout, environment: environment)
         let decoder = JSONDecoder()
         decoder.keyDecodingStrategy = .convertFromSnakeCase
         do {
@@ -134,13 +139,14 @@ public struct CLIRunner: Sendable {
 
     // MARK: - Subprocess plumbing
 
-    private static func execute(executable: URL, arguments: [String], stdin: Data?) async throws -> CLIResult {
+    private static func execute(executable: URL, arguments: [String], stdin: Data?, environment: [String: String]) async throws -> CLIResult {
         let box = ProcessBox()
         box.process.executableURL = executable
         box.process.arguments = arguments
 
         var env = ProcessInfo.processInfo.environment
         env["PATH"] = env["PATH"].map { "\(augmentedPATHPrefix):\($0)" } ?? augmentedPATHPrefix
+        environment.forEach { env[$0.key] = $0.value }
         box.process.environment = env
 
         let stdoutPipe = Pipe()

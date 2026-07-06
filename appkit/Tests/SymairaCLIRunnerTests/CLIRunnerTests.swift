@@ -29,6 +29,18 @@ final class CLIRunnerTests: XCTestCase {
         }
     }
 
+    func testEnvironmentIsMergedOverInherited() async throws {
+        let result = try await runner.run(
+            sh,
+            arguments: ["-c", "printf '%s' \"$SYMTEST_FLAG\""],
+            environment: ["SYMTEST_FLAG": "on"]
+        )
+        XCTAssertEqual(result.stdoutText, "on")
+        // PATH augmentation must survive the merge.
+        let path = try await runner.run(sh, arguments: ["-c", "printf '%s' \"$PATH\""], environment: ["X": "y"])
+        XCTAssertTrue(path.stdoutText.hasPrefix(CLIRunner.augmentedPATHPrefix))
+    }
+
     func testStdinIsForwarded() async throws {
         let result = try await runner.run(sh, arguments: ["-c", "cat"], stdin: Data("piped".utf8))
         XCTAssertEqual(result.stdoutText, "piped")
