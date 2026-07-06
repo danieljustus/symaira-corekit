@@ -138,6 +138,13 @@ public enum SymairaToolRegistry {
             homebrewFormula: "danieljustus/tap/symoperate",
             mcpArgs: ["mcp"]
         ),
+        SymairaTool(
+            id: "symdesk",
+            displayName: "Symaira Desktop",
+            binaryName: "symdesk",
+            homebrewFormula: "danieljustus/tap/symdesk",
+            mcpArgs: ["mcp"]
+        ),
     ]
 
     public static func tool(id: String) -> SymairaTool? {
