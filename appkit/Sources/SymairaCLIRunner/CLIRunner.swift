@@ -1,3 +1,4 @@
+#if os(macOS)
 import Foundation
 
 /// Result of a completed CLI invocation.
@@ -198,3 +199,4 @@ public struct CLIRunner: Sendable {
         }
     }
 }
+#endif

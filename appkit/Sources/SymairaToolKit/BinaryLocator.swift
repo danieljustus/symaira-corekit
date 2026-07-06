@@ -1,3 +1,4 @@
+#if os(macOS)
 import Foundation
 
 /// Locates a Symaira CLI binary using the ecosystem-wide discovery order:
@@ -83,3 +84,4 @@ public struct BinaryLocator: Sendable {
         return nil
     }
 }
+#endif

@@ -4,7 +4,8 @@ import PackageDescription
 let package = Package(
     name: "symaira-appkit",
     platforms: [
-        .macOS(.v14)
+        .macOS(.v14),
+        .iOS(.v17)
     ],
     products: [
         .library(name: "SymairaTheme", targets: ["SymairaTheme"]),
@@ -12,6 +13,7 @@ let package = Package(
         .library(name: "SymairaToolKit", targets: ["SymairaToolKit"]),
         .library(name: "SymairaKeychain", targets: ["SymairaKeychain"]),
         .library(name: "SymairaUpdateCheck", targets: ["SymairaUpdateCheck"]),
+        .library(name: "SymairaDaemonKit", targets: ["SymairaDaemonKit"]),
     ],
     targets: [
         .target(name: "SymairaTheme"),
@@ -19,9 +21,11 @@ let package = Package(
         .target(name: "SymairaToolKit", dependencies: ["SymairaCLIRunner"]),
         .target(name: "SymairaKeychain"),
         .target(name: "SymairaUpdateCheck"),
+        .target(name: "SymairaDaemonKit"),
         .testTarget(name: "SymairaThemeTests", dependencies: ["SymairaTheme"]),
         .testTarget(name: "SymairaCLIRunnerTests", dependencies: ["SymairaCLIRunner"]),
         .testTarget(name: "SymairaToolKitTests", dependencies: ["SymairaToolKit"]),
         .testTarget(name: "SymairaUpdateCheckTests", dependencies: ["SymairaUpdateCheck"]),
+        .testTarget(name: "SymairaDaemonKitTests", dependencies: ["SymairaDaemonKit"]),
     ]
 )

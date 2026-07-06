@@ -1,3 +1,4 @@
+#if os(macOS)
 import Foundation
 import SymairaCLIRunner
 
@@ -119,3 +120,4 @@ public struct ToolDetector: Sendable {
         return nil
     }
 }
+#endif
