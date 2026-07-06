@@ -33,6 +33,7 @@ make lint               # gofmt -l + go vet
 - **No cross-tool coupling**: Do not import `symaira-vault`, `symaira-memory`, `symaira-seek`, `symaira-fetch`, `symaira-scope`, or any of their `internal/` packages. Optional integrations must remain runtime contracts implemented by consumers.
 - **Cross-language conventions**: `corekit` is Go, but its conventions (exit codes, XDG paths, env var naming, MCP stdio framing, zero stdout pollution) also guide the Swift and Python free tools. See `docs/cross-language-conventions.md`.
 - **Strict SemVer**: API stability guaranteed within major versions. Consumers pin versions in `go.mod`.
+- **GUI handshake contract (`versionkit`)**: every core's `version --json` subcommand must emit the `versionkit.Info` payload (`{tool, version, schema_version}`). symaira-appkit's `SymairaToolKit` performs its schema handshake against exactly these field names — never rename them. Bump the tool's `schema_version` whenever its machine-readable JSON output changes incompatibly. The plain `version` output should match `Info.String()` ("tool vX.Y.Z") so appkit's fallback parser keeps working.
 
 ## Key Dependencies
 
