@@ -30,6 +30,7 @@ and other product- or cloud-specific behavior.
 | `sqlitekit` | `modernc.org/sqlite` wrapper with WAL mode and embedded migrations |
 | `updatecheck` | GitHub release checker (opt-in, max 1×/24h) |
 | `vectorkit/turboquant` | CGO-free TurboQuant scalar vector quantization: deterministic rotation, packed encode/decode, inner-product/cosine scoring, sidecar metadata, benchmarks |
+| `versionkit` | Standardized handshake payload (`{tool, version, schema_version}`) for CLI tools |
 
 ## Usage
 
