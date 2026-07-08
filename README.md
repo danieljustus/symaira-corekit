@@ -26,6 +26,7 @@ and other product- or cloud-specific behavior.
 | `envutil` | Safe environment variable access with alias support |
 | `fsutil` | Atomic file writes, path traversal validation, temp-file safety |
 | `configkit` | TOML config loader with XDG paths, project overrides, and env vars |
+| `evidencekit` | Grounded extraction contract (`SourceRef`, `Span`, `Extraction`, `AlignmentStatus`), JSONL sidecar encode/decode, exact/normalized text-span alignment, and grounded-only validation |
 | `mcpserver` | Generic JSON-RPC 2.0 stdio server for MCP tool registration |
 | `sqlitekit` | `modernc.org/sqlite` wrapper with WAL mode and embedded migrations |
 | `updatecheck` | GitHub release checker (opt-in, max 1×/24h) |
