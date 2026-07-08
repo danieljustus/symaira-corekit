@@ -93,7 +93,16 @@ func New(cfg Config) *Client {
 	return &Client{
 		baseURL: baseURL,
 		model:   cfg.Model,
-		http:    &http.Client{Timeout: timeout},
+		http: &http.Client{
+			Timeout: timeout,
+			// Ollama is expected to answer directly; a redirect is either a
+			// misconfigured host or a hostile one. Do not follow it, so a
+			// consumer's configured local endpoint can never be silently
+			// bounced to an unexpected host.
+			CheckRedirect: func(req *http.Request, via []*http.Request) error {
+				return http.ErrUseLastResponse
+			},
+		},
 	}
 }
 

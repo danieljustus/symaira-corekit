@@ -365,3 +365,34 @@ func TestChatRequiresCallback(t *testing.T) {
 		t.Error("expected error for nil callback")
 	}
 }
+
+// TestRedirectNotFollowed verifies that the client does not follow a
+// redirect response — a redirected Ollama host is treated as an error, not
+// silently rerouted, so a misconfigured or hostile endpoint cannot bounce
+// requests to an unexpected host.
+func TestRedirectNotFollowed(t *testing.T) {
+	var targetHits int32
+	target := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		targetHits++
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer target.Close()
+
+	var redirectorHits int32
+	redirector := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		redirectorHits++
+		http.Redirect(w, r, target.URL, http.StatusMovedPermanently)
+	}))
+	defer redirector.Close()
+
+	c := New(Config{BaseURL: redirector.URL, Model: "m"})
+	if _, err := c.Embed(context.Background(), "", []string{"x"}); err == nil {
+		t.Fatal("expected an error from the redirect response, got nil")
+	}
+	if redirectorHits != 1 {
+		t.Errorf("expected 1 hit on the redirector, got %d", redirectorHits)
+	}
+	if targetHits != 0 {
+		t.Errorf("expected 0 hits on the redirect target (redirect was followed!), got %d", targetHits)
+	}
+}
