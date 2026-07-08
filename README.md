@@ -28,6 +28,7 @@ and other product- or cloud-specific behavior.
 | `configkit` | TOML config loader with XDG paths, project overrides, and env vars |
 | `evidencekit` | Grounded extraction contract (`SourceRef`, `Span`, `Extraction`, `AlignmentStatus`), JSONL sidecar encode/decode, exact/normalized text-span alignment, and grounded-only validation |
 | `mcpserver` | Generic JSON-RPC 2.0 stdio server for MCP tool registration |
+| `ollamakit` | CGO-free shared Ollama HTTP client: embeddings, streamed generation/chat, model discovery, and typed errors |
 | `sqlitekit` | `modernc.org/sqlite` wrapper with WAL mode and embedded migrations |
 | `updatecheck` | GitHub release checker (opt-in, max 1×/24h) |
 | `vectorkit/turboquant` | CGO-free TurboQuant scalar vector quantization: deterministic rotation, packed encode/decode, inner-product/cosine scoring, sidecar metadata, benchmarks |
