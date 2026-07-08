@@ -290,6 +290,12 @@ type GenerateOptions struct {
 	// Temperature controls sampling randomness. Ollama ignores a zero value
 	// by default, so we use a *float32 to distinguish unset from zero.
 	Temperature *float32 `json:"temperature,omitempty"`
+	// Format requests a structured response, e.g. "json" for Ollama's JSON
+	// mode. Empty means the model's default (unstructured) text output.
+	Format string `json:"format,omitempty"`
+	// System sets a system prompt for this request, overriding any system
+	// message baked into the model.
+	System string `json:"system,omitempty"`
 }
 
 // GenerateResponse is one chunk from a streaming /api/generate response.
@@ -319,8 +325,16 @@ func (c *Client) Generate(ctx context.Context, model, prompt string, opts *Gener
 		"prompt": prompt,
 		"stream": true,
 	}
-	if opts != nil && opts.Temperature != nil {
-		body["temperature"] = *opts.Temperature
+	if opts != nil {
+		if opts.Temperature != nil {
+			body["temperature"] = *opts.Temperature
+		}
+		if opts.Format != "" {
+			body["format"] = opts.Format
+		}
+		if opts.System != "" {
+			body["system"] = opts.System
+		}
 	}
 
 	return c.stream(ctx, "/api/generate", body, func(raw []byte) error {
@@ -341,6 +355,9 @@ type Message struct {
 // ChatOptions carries optional parameters for chat.
 type ChatOptions struct {
 	Temperature *float32 `json:"temperature,omitempty"`
+	// Format requests a structured response, e.g. "json" for Ollama's JSON
+	// mode. Empty means the model's default (unstructured) text output.
+	Format string `json:"format,omitempty"`
 }
 
 // ChatResponse is one chunk from a streaming /api/chat response.
@@ -371,8 +388,13 @@ func (c *Client) Chat(ctx context.Context, model string, messages []Message, opt
 		"messages": messages,
 		"stream":   true,
 	}
-	if opts != nil && opts.Temperature != nil {
-		body["temperature"] = *opts.Temperature
+	if opts != nil {
+		if opts.Temperature != nil {
+			body["temperature"] = *opts.Temperature
+		}
+		if opts.Format != "" {
+			body["format"] = opts.Format
+		}
 	}
 
 	return c.stream(ctx, "/api/chat", body, func(raw []byte) error {

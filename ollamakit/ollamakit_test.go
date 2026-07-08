@@ -393,6 +393,63 @@ func TestChatRequiresCallback(t *testing.T) {
 	}
 }
 
+// TestGenerateSendsFormatAndSystem verifies that GenerateOptions.Format and
+// .System are forwarded on the request body, so callers that need Ollama's
+// JSON mode and a system prompt (not baked into the model) can rely on it.
+func TestGenerateSendsFormatAndSystem(t *testing.T) {
+	var gotBody map[string]any
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body, _ := io.ReadAll(r.Body)
+		_ = json.Unmarshal(body, &gotBody)
+		w.Header().Set("Content-Type", "application/x-ndjson")
+		fmt.Fprintln(w, `{"model":"m","response":"ok","done":true}`)
+	}))
+	defer server.Close()
+
+	c := New(Config{BaseURL: server.URL, Model: "m"})
+	var got GenerateResponse
+	err := c.Generate(context.Background(), "", "prompt", &GenerateOptions{Format: "json", System: "be terse"}, func(r GenerateResponse) error {
+		got = r
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("expected success, got %v", err)
+	}
+	if got.Response != "ok" {
+		t.Errorf("expected response %q, got %q", "ok", got.Response)
+	}
+	if gotBody["format"] != "json" {
+		t.Errorf("expected format=json in request body, got %v", gotBody["format"])
+	}
+	if gotBody["system"] != "be terse" {
+		t.Errorf("expected system=%q in request body, got %v", "be terse", gotBody["system"])
+	}
+}
+
+// TestChatSendsFormat verifies that ChatOptions.Format is forwarded on the
+// request body.
+func TestChatSendsFormat(t *testing.T) {
+	var gotBody map[string]any
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body, _ := io.ReadAll(r.Body)
+		_ = json.Unmarshal(body, &gotBody)
+		w.Header().Set("Content-Type", "application/x-ndjson")
+		fmt.Fprintln(w, `{"model":"m","message":{"role":"assistant","content":"ok"},"done":true}`)
+	}))
+	defer server.Close()
+
+	c := New(Config{BaseURL: server.URL, Model: "m"})
+	err := c.Chat(context.Background(), "", []Message{{Role: "user", Content: "x"}}, &ChatOptions{Format: "json"}, func(ChatResponse) error {
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("expected success, got %v", err)
+	}
+	if gotBody["format"] != "json" {
+		t.Errorf("expected format=json in request body, got %v", gotBody["format"])
+	}
+}
+
 // TestRedirectNotFollowed verifies that the client does not follow a
 // redirect response — a redirected Ollama host is treated as an error, not
 // silently rerouted, so a misconfigured or hostile endpoint cannot bounce
