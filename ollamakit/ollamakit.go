@@ -50,6 +50,21 @@ var (
 	ErrResponse = errors.New("ollamakit: unexpected response")
 )
 
+// ResponseError wraps ErrResponse with the HTTP status code Ollama
+// returned, so callers can classify a failure as transient (5xx — worth
+// retrying) versus non-transient (a client error like a malformed request)
+// without parsing the error string. Use errors.As to extract it.
+type ResponseError struct {
+	StatusCode int
+	Body       string
+}
+
+func (e *ResponseError) Error() string {
+	return fmt.Sprintf("%v: status %d: %s", ErrResponse, e.StatusCode, e.Body)
+}
+
+func (e *ResponseError) Unwrap() error { return ErrResponse }
+
 // Config holds the client settings. A zero Config uses the package defaults.
 type Config struct {
 	// BaseURL is the Ollama server root. Defaults to DefaultBaseURL.
@@ -177,7 +192,7 @@ func (c *Client) post(ctx context.Context, path string, body, dst any) error {
 	}
 	if resp.StatusCode >= 300 {
 		b, _ := io.ReadAll(io.LimitReader(resp.Body, 4<<10))
-		return fmt.Errorf("ollamakit: %w: status %d: %s", ErrResponse, resp.StatusCode, strings.TrimSpace(string(b)))
+		return &ResponseError{StatusCode: resp.StatusCode, Body: strings.TrimSpace(string(b))}
 	}
 
 	if dst != nil {
@@ -210,7 +225,7 @@ func (c *Client) get(ctx context.Context, path string, dst any) error {
 
 	if resp.StatusCode >= 300 {
 		b, _ := io.ReadAll(io.LimitReader(resp.Body, 4<<10))
-		return fmt.Errorf("ollamakit: %w: status %d: %s", ErrResponse, resp.StatusCode, strings.TrimSpace(string(b)))
+		return &ResponseError{StatusCode: resp.StatusCode, Body: strings.TrimSpace(string(b))}
 	}
 
 	if dst != nil {
@@ -402,7 +417,7 @@ func (c *Client) stream(ctx context.Context, path string, body any, handle func(
 	}
 	if resp.StatusCode >= 300 {
 		b, _ := io.ReadAll(io.LimitReader(resp.Body, 4<<10))
-		return fmt.Errorf("ollamakit: %w: status %d: %s", ErrResponse, resp.StatusCode, strings.TrimSpace(string(b)))
+		return &ResponseError{StatusCode: resp.StatusCode, Body: strings.TrimSpace(string(b))}
 	}
 
 	started := false

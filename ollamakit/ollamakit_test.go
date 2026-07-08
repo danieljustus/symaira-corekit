@@ -342,6 +342,33 @@ func TestUnexpectedResponse(t *testing.T) {
 	}
 }
 
+// TestResponseErrorExposesStatusCode verifies that a non-2xx, non-404
+// response surfaces a *ResponseError callers can use to classify a failure
+// as transient (5xx) versus not, without parsing the error string.
+func TestResponseErrorExposesStatusCode(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusBadGateway)
+		io.WriteString(w, "upstream down")
+	}))
+	defer server.Close()
+
+	c := New(Config{BaseURL: server.URL, Model: "m"})
+	_, err := c.Embed(context.Background(), "", []string{"x"})
+	if !errors.Is(err, ErrResponse) {
+		t.Fatalf("expected ErrResponse, got %v", err)
+	}
+	var respErr *ResponseError
+	if !errors.As(err, &respErr) {
+		t.Fatalf("expected *ResponseError, got %T: %v", err, err)
+	}
+	if respErr.StatusCode != http.StatusBadGateway {
+		t.Errorf("expected StatusCode %d, got %d", http.StatusBadGateway, respErr.StatusCode)
+	}
+	if respErr.Body != "upstream down" {
+		t.Errorf("expected Body %q, got %q", "upstream down", respErr.Body)
+	}
+}
+
 func TestUnreachable(t *testing.T) {
 	c := New(Config{BaseURL: "http://localhost:1", Model: "m", Timeout: 500 * time.Millisecond})
 	if _, err := c.Embed(context.Background(), "", []string{"x"}); !errors.Is(err, ErrUnreachable) {
