@@ -184,6 +184,66 @@ func TestAtomicSwapRollsBackOnFailedRename(t *testing.T) {
 	}
 }
 
+func TestApplyRejectsNilRelease(t *testing.T) {
+	a := &Applier{HTTPClient: http.DefaultClient}
+	err := a.Apply(context.Background(), nil, filepath.Join(t.TempDir(), "mytool"))
+	if err == nil {
+		t.Fatal("expected error for nil release, got nil")
+	}
+}
+
+func TestApplyRejectsEmptyTargetPath(t *testing.T) {
+	release := &updatecheck.Release{
+		Assets: []updatecheck.Asset{{Name: "mytool_linux_amd64", BrowserDownloadURL: "https://example.com/asset"}},
+	}
+	a := &Applier{HTTPClient: http.DefaultClient, GOOS: "linux", GOARCH: "amd64"}
+	err := a.Apply(context.Background(), release, "")
+	if err == nil {
+		t.Fatal("expected error for empty targetPath, got nil")
+	}
+	err = a.Apply(context.Background(), release, "   ")
+	if err == nil {
+		t.Fatal("expected error for whitespace-only targetPath, got nil")
+	}
+}
+
+func TestApplyFailsWhenChecksumsMissingEntryForAsset(t *testing.T) {
+	assetBody := []byte("fake-binary-content")
+	// checksums.txt lists a different asset name than the one selected.
+	checksums := fmt.Sprintf("%s  some_other_asset\n", sha256Hex(assetBody))
+
+	server, assetURL, checksumsURL := newTestServer(t, assetBody, checksums)
+	defer server.Close()
+
+	release := &updatecheck.Release{
+		Assets: []updatecheck.Asset{
+			{Name: "mytool_linux_amd64", BrowserDownloadURL: assetURL},
+			{Name: "checksums.txt", BrowserDownloadURL: checksumsURL},
+		},
+	}
+
+	dir := t.TempDir()
+	target := filepath.Join(dir, "mytool")
+	original := []byte("old-binary")
+	if err := os.WriteFile(target, original, 0o755); err != nil { //nolint:gosec
+		t.Fatalf("seed target: %v", err)
+	}
+
+	a := &Applier{HTTPClient: http.DefaultClient, GOOS: "linux", GOARCH: "amd64"}
+	err := a.Apply(context.Background(), release, target)
+	if err == nil {
+		t.Fatal("expected error for missing checksum entry, got nil")
+	}
+
+	got, readErr := os.ReadFile(target) //nolint:gosec
+	if readErr != nil {
+		t.Fatalf("read target: %v", readErr)
+	}
+	if string(got) != string(original) {
+		t.Fatalf("target was modified despite missing checksum entry: got %q, want %q", got, original)
+	}
+}
+
 func TestSelectAssetSkipsChecksumsFile(t *testing.T) {
 	assets := []updatecheck.Asset{
 		{Name: "checksums.txt"},
