@@ -258,3 +258,153 @@ func TestSelectAssetSkipsChecksumsFile(t *testing.T) {
 		t.Fatalf("selectAsset() = %q, want %q", asset.Name, "mytool_linux_amd64")
 	}
 }
+
+func TestApplyFailsOnNon200AssetDownload(t *testing.T) {
+	assetBody := []byte("fake-binary-content")
+	checksums := fmt.Sprintf("%s  mytool_linux_amd64\n", sha256Hex(assetBody))
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("/asset", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+	})
+	mux.HandleFunc("/checksums.txt", func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte(checksums))
+	})
+	server := httptest.NewServer(mux)
+	defer server.Close()
+
+	release := &updatecheck.Release{
+		Assets: []updatecheck.Asset{
+			{Name: "mytool_linux_amd64", BrowserDownloadURL: server.URL + "/asset"},
+			{Name: "checksums.txt", BrowserDownloadURL: server.URL + "/checksums.txt"},
+		},
+	}
+
+	dir := t.TempDir()
+	target := filepath.Join(dir, "mytool")
+	if err := os.WriteFile(target, []byte("old-binary"), 0o755); err != nil { //nolint:gosec
+		t.Fatalf("seed target: %v", err)
+	}
+
+	a := &Applier{HTTPClient: http.DefaultClient, GOOS: "linux", GOARCH: "amd64"}
+	err := a.Apply(context.Background(), release, target)
+	if err == nil {
+		t.Fatal("expected error for HTTP 500 asset download, got nil")
+	}
+}
+
+func TestFetchChecksumsFailsWhenAssetMissing(t *testing.T) {
+	assetBody := []byte("fake-binary-content")
+	server, assetURL, _ := newTestServer(t, assetBody, "")
+	defer server.Close()
+
+	release := &updatecheck.Release{
+		Assets: []updatecheck.Asset{
+			{Name: "mytool_linux_amd64", BrowserDownloadURL: assetURL},
+			// No "checksums.txt" asset in the release at all.
+		},
+	}
+
+	dir := t.TempDir()
+	target := filepath.Join(dir, "mytool")
+
+	a := &Applier{HTTPClient: http.DefaultClient, GOOS: "linux", GOARCH: "amd64"}
+	err := a.Apply(context.Background(), release, target)
+	if err == nil {
+		t.Fatal("expected error for release with no checksums.txt asset, got nil")
+	}
+}
+
+func TestFetchChecksumsFailsOnNoParseableEntries(t *testing.T) {
+	assetBody := []byte("fake-binary-content")
+	// checksums.txt exists but has no valid "<sha>  <name>" lines.
+	server, assetURL, checksumsURL := newTestServer(t, assetBody, "not a valid checksums file\n")
+	defer server.Close()
+
+	release := &updatecheck.Release{
+		Assets: []updatecheck.Asset{
+			{Name: "mytool_linux_amd64", BrowserDownloadURL: assetURL},
+			{Name: "checksums.txt", BrowserDownloadURL: checksumsURL},
+		},
+	}
+
+	dir := t.TempDir()
+	target := filepath.Join(dir, "mytool")
+
+	a := &Applier{HTTPClient: http.DefaultClient, GOOS: "linux", GOARCH: "amd64"}
+	err := a.Apply(context.Background(), release, target)
+	if err == nil {
+		t.Fatal("expected error for checksums.txt with no parseable entries, got nil")
+	}
+}
+
+func TestApplyFailsOnIncompleteDownload(t *testing.T) {
+	assetBody := []byte("fake-binary-content")
+	checksums := fmt.Sprintf("%s  mytool_linux_amd64\n", sha256Hex(assetBody))
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("/asset", func(w http.ResponseWriter, r *http.Request) {
+		// Claim a larger body than what is actually written, then cut the
+		// connection short by returning early — downloadToTemp must detect
+		// the short read via the advertised Content-Length.
+		w.Header().Set("Content-Length", fmt.Sprintf("%d", len(assetBody)+100))
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write(assetBody)
+	})
+	mux.HandleFunc("/checksums.txt", func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte(checksums))
+	})
+	server := httptest.NewServer(mux)
+	defer server.Close()
+
+	release := &updatecheck.Release{
+		Assets: []updatecheck.Asset{
+			{Name: "mytool_linux_amd64", BrowserDownloadURL: server.URL + "/asset"},
+			{Name: "checksums.txt", BrowserDownloadURL: server.URL + "/checksums.txt"},
+		},
+	}
+
+	dir := t.TempDir()
+	target := filepath.Join(dir, "mytool")
+	if err := os.WriteFile(target, []byte("old-binary"), 0o755); err != nil { //nolint:gosec
+		t.Fatalf("seed target: %v", err)
+	}
+
+	a := &Applier{HTTPClient: http.DefaultClient, GOOS: "linux", GOARCH: "amd64"}
+	err := a.Apply(context.Background(), release, target)
+	if err == nil {
+		t.Fatal("expected error for incomplete download, got nil")
+	}
+}
+
+type stubDoer struct {
+	do func(req *http.Request) (*http.Response, error)
+}
+
+func (s stubDoer) Do(req *http.Request) (*http.Response, error) {
+	return s.do(req)
+}
+
+func TestApplyFailsWhenHTTPClientErrors(t *testing.T) {
+	release := &updatecheck.Release{
+		Assets: []updatecheck.Asset{
+			{Name: "mytool_linux_amd64", BrowserDownloadURL: "https://example.invalid/asset"},
+			{Name: "checksums.txt", BrowserDownloadURL: "https://example.invalid/checksums.txt"},
+		},
+	}
+
+	dir := t.TempDir()
+	target := filepath.Join(dir, "mytool")
+
+	a := &Applier{
+		HTTPClient: stubDoer{do: func(req *http.Request) (*http.Response, error) {
+			return nil, fmt.Errorf("simulated transport failure")
+		}},
+		GOOS:   "linux",
+		GOARCH: "amd64",
+	}
+	err := a.Apply(context.Background(), release, target)
+	if err == nil {
+		t.Fatal("expected error when the HTTP client fails, got nil")
+	}
+}
