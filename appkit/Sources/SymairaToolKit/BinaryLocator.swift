@@ -18,6 +18,7 @@ public struct BinaryLocator: Sendable {
     public var extraDirectories: [String]
     private let bundleResourceURL: URL?
     private let executableDirectory: URL?
+    private let ownExecutablePath: String?
 
     public init(
         bundle: Bundle? = Bundle.main,
@@ -30,6 +31,7 @@ public struct BinaryLocator: Sendable {
         self.extraDirectories = extraDirectories
         self.bundleResourceURL = bundle?.resourceURL
         self.executableDirectory = bundle?.executableURL?.deletingLastPathComponent()
+        self.ownExecutablePath = bundle?.executableURL?.path
     }
 
     /// Where a located binary came from — useful for diagnostics views.
@@ -55,14 +57,14 @@ public struct BinaryLocator: Sendable {
 
         if let bundleResourceURL {
             let candidate = bundleResourceURL.appendingPathComponent(binaryName)
-            if fm.isExecutableFile(atPath: candidate.path) {
+            if fm.isExecutableFile(atPath: candidate.path), !isOwnExecutable(candidate) {
                 return Located(url: candidate, source: .bundle)
             }
         }
 
         if let executableDirectory {
             let candidate = executableDirectory.appendingPathComponent(binaryName)
-            if fm.isExecutableFile(atPath: candidate.path) {
+            if fm.isExecutableFile(atPath: candidate.path), !isOwnExecutable(candidate) {
                 return Located(url: candidate, source: .executableDirectory)
             }
         }
@@ -82,6 +84,19 @@ public struct BinaryLocator: Sendable {
         }
 
         return nil
+    }
+
+    /// True when `candidate` resolves to this app's own main executable.
+    ///
+    /// On the default case-insensitive APFS volume, a candidate path built
+    /// from a lowercase `binaryName` (e.g. "symdesk") can resolve to the
+    /// bundle's own differently-cased executable (e.g. "SymDesk") sitting in
+    /// the same directory. Without this check, the app would relaunch
+    /// itself as a "CLI" subprocess — which never exits, since it boots the
+    /// full GUI runloop instead of parsing CLI arguments.
+    private func isOwnExecutable(_ candidate: URL) -> Bool {
+        guard let ownExecutablePath else { return false }
+        return candidate.path.caseInsensitiveCompare(ownExecutablePath) == .orderedSame
     }
 }
 #endif

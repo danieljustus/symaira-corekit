@@ -89,6 +89,62 @@ final class BinaryLocatorTests: XCTestCase {
         let locator = BinaryLocator(bundle: nil, searchPATH: tempDir.path, extraDirectories: [])
         XCTAssertNil(locator.locate("symfake"))
     }
+
+    /// On the default case-insensitive APFS volume, a lowercase `binaryName`
+    /// candidate in `Contents/MacOS/` can resolve to the app's own
+    /// differently-cased executable (e.g. locating "symdesk" actually hits
+    /// "SymDesk"). Locating it as a "CLI" would relaunch the GUI app as a
+    /// subprocess that never exits.
+    func testSkipsOwnExecutableOnCaseInsensitiveCollision() throws {
+        let appDir = tempDir.appendingPathComponent("FakeApp.app/Contents/MacOS")
+        try FileManager.default.createDirectory(at: appDir, withIntermediateDirectories: true)
+        _ = try makeExecutable(named: "FakeApp", in: appDir)
+        let bundle = try makeFakeBundle(executableName: "FakeApp", in: appDir)
+
+        // A real CLI binary is also reachable further down the search order.
+        let pathDir = tempDir.appendingPathComponent("path")
+        try FileManager.default.createDirectory(at: pathDir, withIntermediateDirectories: true)
+        let realCLI = try makeExecutable(named: "fakeapp", in: pathDir)
+
+        let locator = BinaryLocator(bundle: bundle, searchPATH: pathDir.path, extraDirectories: [])
+        let located = locator.locate("fakeapp")
+
+        XCTAssertEqual(located?.url.path, realCLI.path)
+        XCTAssertEqual(located?.source, .path)
+    }
+
+    func testExecutableDirectoryStillMatchesDistinctCLIName() throws {
+        let appDir = tempDir.appendingPathComponent("FakeApp.app/Contents/MacOS")
+        try FileManager.default.createDirectory(at: appDir, withIntermediateDirectories: true)
+        _ = try makeExecutable(named: "FakeApp", in: appDir)
+        let cli = try makeExecutable(named: "fakeapp-cli", in: appDir)
+        let bundle = try makeFakeBundle(executableName: "FakeApp", in: appDir)
+
+        let locator = BinaryLocator(bundle: bundle, searchPATH: "", extraDirectories: [])
+        let located = locator.locate("fakeapp-cli")
+
+        XCTAssertEqual(located?.url.path, cli.path)
+        XCTAssertEqual(located?.source, .executableDirectory)
+    }
+
+    /// Builds a minimal, loadable app bundle so `Bundle.executableURL` resolves.
+    private func makeFakeBundle(executableName: String, in macOSDir: URL) throws -> Bundle {
+        let contentsDir = macOSDir.deletingLastPathComponent()
+        let infoPlist = contentsDir.appendingPathComponent("Info.plist")
+        let plist: [String: Any] = [
+            "CFBundleExecutable": executableName,
+            "CFBundleIdentifier": "com.symaira.fakeapp.test",
+            "CFBundlePackageType": "APPL",
+        ]
+        let data = try PropertyListSerialization.data(fromPropertyList: plist, format: .xml, options: 0)
+        try data.write(to: infoPlist)
+
+        let bundleURL = contentsDir.deletingLastPathComponent()
+        guard let bundle = Bundle(url: bundleURL) else {
+            throw NSError(domain: "BinaryLocatorTests", code: 1, userInfo: [NSLocalizedDescriptionKey: "Failed to load fake bundle at \(bundleURL.path)"])
+        }
+        return bundle
+    }
 }
 
 final class ToolDetectorTests: XCTestCase {
