@@ -9,6 +9,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 
 	"github.com/danieljustus/symaira-corekit/updatecheck"
@@ -33,6 +34,22 @@ func newTestServer(t *testing.T, assetBody []byte, checksumsBody string) (*httpt
 	assetURL = server.URL + "/asset"
 	checksumsURL = server.URL + "/checksums.txt"
 	return server, assetURL, checksumsURL
+}
+
+func TestNewApplierDefaults(t *testing.T) {
+	a := NewApplier()
+	if a == nil {
+		t.Fatal("NewApplier() returned nil")
+	}
+	if a.HTTPClient != http.DefaultClient {
+		t.Errorf("HTTPClient = %T, want http.DefaultClient", a.HTTPClient)
+	}
+	if a.GOOS != runtime.GOOS {
+		t.Errorf("GOOS = %q, want %q", a.GOOS, runtime.GOOS)
+	}
+	if a.GOARCH != runtime.GOARCH {
+		t.Errorf("GOARCH = %q, want %q", a.GOARCH, runtime.GOARCH)
+	}
 }
 
 func TestApplyInstallsMatchingAsset(t *testing.T) {
