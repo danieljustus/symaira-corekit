@@ -425,3 +425,96 @@ func TestApplyFailsWhenHTTPClientErrors(t *testing.T) {
 		t.Fatal("expected error when the HTTP client fails, got nil")
 	}
 }
+
+func TestApplyFailsOnMalformedAssetURL(t *testing.T) {
+	// A control character in the URL makes http.NewRequestWithContext itself
+	// fail (net/url: invalid control character in URL), before any request
+	// is ever sent.
+	release := &updatecheck.Release{
+		Assets: []updatecheck.Asset{
+			{Name: "mytool_linux_amd64", BrowserDownloadURL: "https://example.invalid/asset"},
+			{Name: "checksums.txt", BrowserDownloadURL: "https://example.invalid/checksums\x7f.txt"},
+		},
+	}
+
+	dir := t.TempDir()
+	target := filepath.Join(dir, "mytool")
+
+	a := &Applier{HTTPClient: http.DefaultClient, GOOS: "linux", GOARCH: "amd64"}
+	err := a.Apply(context.Background(), release, target)
+	if err == nil {
+		t.Fatal("expected error for a malformed asset URL, got nil")
+	}
+}
+
+func TestDownloadToTempFailsWhenTempDirUnwritable(t *testing.T) {
+	assetBody := []byte("fake-binary-content")
+	checksums := fmt.Sprintf("%s  mytool_linux_amd64\n", sha256Hex(assetBody))
+	server, assetURL, checksumsURL := newTestServer(t, assetBody, checksums)
+	defer server.Close()
+
+	release := &updatecheck.Release{
+		Assets: []updatecheck.Asset{
+			{Name: "mytool_linux_amd64", BrowserDownloadURL: assetURL},
+			{Name: "checksums.txt", BrowserDownloadURL: checksumsURL},
+		},
+	}
+
+	dir := t.TempDir()
+	target := filepath.Join(dir, "mytool")
+
+	// os.CreateTemp("", ...) resolves its directory via os.TempDir(), which
+	// reads $TMPDIR on unix. Pointing it at a nonexistent directory makes
+	// downloadToTemp's os.CreateTemp call fail.
+	t.Setenv("TMPDIR", filepath.Join(dir, "does-not-exist"))
+
+	a := &Applier{HTTPClient: http.DefaultClient, GOOS: "linux", GOARCH: "amd64"}
+	err := a.Apply(context.Background(), release, target)
+	if err == nil {
+		t.Fatal("expected error when the temp directory is unwritable, got nil")
+	}
+}
+
+// erroringReadCloser returns a fixed error on Read after yielding no bytes,
+// simulating a connection that dies mid-download (a non-EOF read error).
+type erroringReadCloser struct{}
+
+func (erroringReadCloser) Read(_ []byte) (int, error) {
+	return 0, fmt.Errorf("simulated read failure")
+}
+
+func (erroringReadCloser) Close() error { return nil }
+
+func TestDownloadToTempFailsOnBodyReadError(t *testing.T) {
+	checksums := fmt.Sprintf("%s  mytool_linux_amd64\n", sha256Hex([]byte("fake-binary-content")))
+	checksumsServer, _, checksumsURL := newTestServer(t, nil, checksums)
+	defer checksumsServer.Close()
+
+	release := &updatecheck.Release{
+		Assets: []updatecheck.Asset{
+			{Name: "mytool_linux_amd64", BrowserDownloadURL: "https://example.invalid/asset"},
+			{Name: "checksums.txt", BrowserDownloadURL: checksumsURL},
+		},
+	}
+
+	dir := t.TempDir()
+	target := filepath.Join(dir, "mytool")
+
+	a := &Applier{
+		HTTPClient: stubDoer{do: func(req *http.Request) (*http.Response, error) {
+			if req.URL.String() == checksumsURL {
+				return http.DefaultClient.Do(req)
+			}
+			return &http.Response{
+				StatusCode: http.StatusOK,
+				Body:       erroringReadCloser{},
+			}, nil
+		}},
+		GOOS:   "linux",
+		GOARCH: "amd64",
+	}
+	err := a.Apply(context.Background(), release, target)
+	if err == nil {
+		t.Fatal("expected error when the asset body read fails, got nil")
+	}
+}
