@@ -181,6 +181,16 @@ final class ToolDetectorTests: XCTestCase {
         XCTAssertEqual(detected?.versionInfo, ToolVersionInfo(version: "1.2.3", schemaVersion: 2))
     }
 
+    func testDetectsSymmeetRegistryEntryWithSchemaOne() async throws {
+        _ = try makeFakeTool(
+            named: "symmeet",
+            script: "#!/bin/sh\necho '{\"version\":\"0.4.0\",\"schema_version\":1}'\n"
+        )
+        let tool = try XCTUnwrap(SymairaToolRegistry.tool(id: "symmeet"))
+        let detected = await detector.detect(tool)
+        XCTAssertEqual(detected?.versionInfo, ToolVersionInfo(version: "0.4.0", schemaVersion: 1))
+    }
+
     func testDetectFallsBackToPlainVersionOutput() async throws {
         let tool = try makeFakeTool(
             named: "symplain",
