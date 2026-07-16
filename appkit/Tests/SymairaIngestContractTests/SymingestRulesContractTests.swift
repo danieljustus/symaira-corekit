@@ -19,9 +19,9 @@ final class SymingestRulesContractTests: XCTestCase {
 
     func testMailEnvelopeDecodesAndMasksRemainData() throws {
         let response = try SymingestRulesContract.decodeMail(from: Data("""
-        {"schema_version":1,"operation":"list","config_path":"/tmp/config.toml","accounts":[{"id":"daniel@imap.example.com:993/INBOX","host":"imap.example.com","port":993,"username":"daniel","password_secret":"\u003credacted\u003e","password_secret_kind":"plaintext","password_secret_configured":true,"folder":"INBOX","from":[],"subject":[],"has_attachment":false,"action":"mark_seen","move_to":"","archive_mail":false}],"reload_required":false}
+        {"schema_version":1,"operation":"list","config_path":"/tmp/config.toml","accounts":[{"id":"daniel@imap.example.com:993/INBOX","host":"imap.example.com","port":993,"username":"daniel","password_secret":"<redacted>","password_secret_kind":"plaintext","password_secret_configured":true,"folder":"INBOX","from":[],"subject":[],"has_attachment":false,"action":"mark_seen","move_to":"","archive_mail":false}],"reload_required":false}
         """.utf8))
-        XCTAssertEqual(response.accounts.first?.passwordSecret, "\u003credacted\u003e")
+        XCTAssertEqual(response.accounts.first?.passwordSecret, "<redacted>")
         XCTAssertFalse(response.reloadRequired)
     }
 
@@ -33,7 +33,7 @@ final class SymingestRulesContractTests: XCTestCase {
 
     func testSchemaVersionCheckDecode() throws {
         struct Dummy: Decodable, Sendable {}
-        XCTAssertThrowsError(try SymingestRulesContract.decodeWithSchemaCheck(Dummy.self, Data("{\"schema_version\":2}".utf8))) { error in
+        XCTAssertThrowsError(try SymingestRulesContract.decodeWithSchemaCheck(Data("{\"schema_version\":2}".utf8)) as Dummy) { error in
             XCTAssertEqual(error as? SymingestRulesError, .unsupportedSchema(2))
         }
     }
@@ -57,7 +57,7 @@ final class SymingestRulesContractTests: XCTestCase {
         let plain = MailAccount(host: "imap.example.com", username: "daniel", passwordSecret: "hunter2")
         XCTAssertEqual(plain.passwordSecretKind, "plaintext")
 
-        let redacted = MailAccount(host: "imap.example.com", username: "daniel", passwordSecret: "\u003credacted\u003e")
+        let redacted = MailAccount(host: "imap.example.com", username: "daniel", passwordSecret: "<redacted>")
         XCTAssertEqual(redacted.passwordSecretKind, "redacted")
     }
 }

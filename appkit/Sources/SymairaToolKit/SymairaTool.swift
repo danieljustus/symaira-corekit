@@ -33,7 +33,7 @@ public struct SymairaTool: Equatable, Sendable, Identifiable {
 ///
 /// MCP subcommands verified against each repo's cobra commands (2026-07):
 /// vault `serve --stdio`, memory/seek/skills/vibecoder `serve`,
-/// fetch/scope/fritz/print/ingest `mcp` (symingest since v0.6.0).
+/// fetch/scope/fritz/print/ingest/meet `mcp` (symingest since v0.6.0).
 /// `symguard` does not expose an MCP server yet; `symeraseme` is a
 /// Python CLI without one.
 public enum SymairaToolRegistry {
@@ -143,6 +143,13 @@ public enum SymairaToolRegistry {
             displayName: "Symaira Desktop",
             binaryName: "symdesk",
             homebrewFormula: "danieljustus/tap/symdesk",
+            mcpArgs: ["mcp"]
+        ),
+        SymairaTool(
+            id: "symmeet",
+            displayName: "Symaira Meet",
+            binaryName: "symmeet",
+            homebrewFormula: "danieljustus/tap/symmeet",
             mcpArgs: ["mcp"]
         ),
     ]

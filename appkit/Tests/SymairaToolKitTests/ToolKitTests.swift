@@ -12,6 +12,7 @@ final class RegistryTests: XCTestCase {
             "symvault", "symmemory", "symseek", "symfetch", "symscope",
             "symfritz", "symprint", "symskills", "symvibe", "symguard",
             "symingest", "symeraseme", "symtune", "symoperate", "symdesk",
+            "symmeet",
         ]
         for id in expected {
             XCTAssertNotNil(SymairaToolRegistry.tool(id: id), "missing tool: \(id)")
