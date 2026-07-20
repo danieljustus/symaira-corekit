@@ -18,6 +18,11 @@ public struct ClassificationRule: Codable, Equatable, Identifiable, Sendable {
         self.value = value
         self.createdAt = createdAt
     }
+
+    private enum CodingKeys: String, CodingKey {
+        case id, pattern, kind, value
+        case createdAt = "created_at"
+    }
 }
 
 public struct ClassificationRuleMatch: Codable, Equatable, Identifiable, Sendable {
@@ -59,6 +64,13 @@ public struct RulesDryRunMatch: Codable, Equatable, Identifiable, Sendable {
         self.title = title
         self.matchedRuleIDs = matchedRuleIDs
     }
+
+    private enum CodingKeys: String, CodingKey {
+        case documentID = "document_id"
+        case notePath = "note_path"
+        case title
+        case matchedRuleIDs = "matched_rule_ids"
+    }
 }
 
 public struct RulesDryRunSkipped: Codable, Equatable, Identifiable, Sendable {
@@ -71,6 +83,12 @@ public struct RulesDryRunSkipped: Codable, Equatable, Identifiable, Sendable {
         self.documentID = documentID
         self.notePath = notePath
         self.reason = reason
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case documentID = "document_id"
+        case notePath = "note_path"
+        case reason
     }
 }
 
@@ -105,6 +123,17 @@ public struct RulesDryRunResponse: Codable, Equatable, Sendable {
         self.skippedDocuments = skippedDocuments
         self.matches = matches
         self.skipped = skipped
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case schemaVersion = "schema_version"
+        case operation
+        case proposedRule = "proposed_rule"
+        case vaultPath = "vault_path"
+        case totalDocuments = "total_documents"
+        case matchedDocuments = "matched_documents"
+        case skippedDocuments = "skipped_documents"
+        case matches, skipped
     }
 }
 
@@ -160,6 +189,16 @@ public struct MailAccount: Codable, Equatable, Sendable {
         self.moveTo = moveTo
         self.archiveMail = archiveMail
     }
+
+    private enum CodingKeys: String, CodingKey {
+        case id, host, port, username
+        case passwordSecret = "password_secret"
+        case folder, from, subject
+        case hasAttachment = "has_attachment"
+        case action
+        case moveTo = "move_to"
+        case archiveMail = "archive_mail"
+    }
 }
 
 public struct MailConfigurationResponse: Codable, Equatable, Sendable {
@@ -184,6 +223,25 @@ public struct MailConfigurationResponse: Codable, Equatable, Sendable {
         self.accounts = accounts
         self.reloadRequired = reloadRequired
         self.warnings = warnings
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case schemaVersion = "schema_version"
+        case operation
+        case configPath = "config_path"
+        case accounts
+        case reloadRequired = "reload_required"
+        case warnings
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        schemaVersion = try container.decode(Int.self, forKey: .schemaVersion)
+        operation = try container.decode(String.self, forKey: .operation)
+        configPath = try container.decode(String.self, forKey: .configPath)
+        accounts = try container.decode([MailAccount].self, forKey: .accounts)
+        reloadRequired = try container.decode(Bool.self, forKey: .reloadRequired)
+        warnings = try container.decodeIfPresent([String].self, forKey: .warnings) ?? []
     }
 }
 
@@ -213,22 +271,42 @@ public enum SymingestRulesContract {
     public struct ListResponse: Codable, Sendable {
         public let schemaVersion: Int
         public let rules: [ClassificationRule]
+
+        private enum CodingKeys: String, CodingKey {
+            case schemaVersion = "schema_version"
+            case rules
+        }
     }
 
     public struct RuleResponse: Codable, Sendable {
         public let schemaVersion: Int
         public let rule: ClassificationRule
+
+        private enum CodingKeys: String, CodingKey {
+            case schemaVersion = "schema_version"
+            case rule
+        }
     }
 
     public struct TestResponse: Codable, Sendable {
         public let schemaVersion: Int
         public let matches: [ClassificationRuleMatch]
+
+        private enum CodingKeys: String, CodingKey {
+            case schemaVersion = "schema_version"
+            case matches
+        }
     }
 
     public struct DeleteResponse: Codable, Sendable {
         public let schemaVersion: Int
         public let id: Int64
         public let deleted: Bool
+
+        private enum CodingKeys: String, CodingKey {
+            case schemaVersion = "schema_version"
+            case id, deleted
+        }
     }
 
     public static func decodeList(from data: Data) throws -> ListResponse {
@@ -258,10 +336,14 @@ public enum SymingestRulesContract {
     private static func decoded<T: Decodable>(
         _ data: Data
     ) throws -> T {
-        let decoder = JSONDecoder()
-        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        let version = try decodeSchemaVersion(from: data)
+        guard version == 1 else {
+            throw SymingestRulesError.unsupportedSchema(version)
+        }
         do {
-            return try decoder.decode(T.self, from: data)
+            return try JSONDecoder().decode(T.self, from: data)
+        } catch let error as SymingestRulesError {
+            throw error
         } catch {
             throw SymingestRulesError.invalidResponse
         }
@@ -280,10 +362,8 @@ public enum SymingestRulesContract {
         guard version == 1 else {
             throw SymingestRulesError.unsupportedSchema(version)
         }
-        let decoder = JSONDecoder()
-        decoder.keyDecodingStrategy = .convertFromSnakeCase
         do {
-            return try decoder.decode(T.self, from: data)
+            return try JSONDecoder().decode(T.self, from: data)
         } catch {
             throw SymingestRulesError.invalidResponse
         }

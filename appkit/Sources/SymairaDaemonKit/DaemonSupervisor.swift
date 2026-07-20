@@ -33,6 +33,7 @@ public final class DaemonSupervisor: @unchecked Sendable {
     private var stdoutFH: FileHandle?
     private var stderrFH: FileHandle?
     private var logContinuation: AsyncStream<DaemonLogLine>.Continuation?
+    private var stopRequested = false
     
     private var _state: DaemonState = .stopped
     private var _logs: [DaemonLogLine] = []
@@ -78,9 +79,6 @@ public final class DaemonSupervisor: @unchecked Sendable {
         arguments: [String],
         environment: [String: String]? = nil
     ) -> AsyncStream<DaemonLogLine> {
-        lock.lock()
-        defer { lock.unlock() }
-        
         stopInternal()
         
         updateState(.starting)
@@ -118,9 +116,12 @@ public final class DaemonSupervisor: @unchecked Sendable {
         let outFH = stdoutPipe.fileHandleForReading
         let errFH = stderrPipe.fileHandleForReading
         
-        self.stdoutFH = outFH
-        self.stderrFH = errFH
-        self.process = proc
+        lock.lock()
+        stdoutFH = outFH
+        stderrFH = errFH
+        process = proc
+        stopRequested = false
+        lock.unlock()
         
         return AsyncStream<DaemonLogLine> { continuation in
             lock.lock()
@@ -144,7 +145,7 @@ public final class DaemonSupervisor: @unchecked Sendable {
                 let exitCode = proc.terminationStatus
                 
                 self.lock.lock()
-                if exitCode != 0 {
+                if exitCode != 0, !self.stopRequested {
                     self._state = .failed("Process exited with code \(exitCode)")
                     self.appendLogLineInternal("[daemon] Process exited with code \(exitCode)", isError: true)
                 } else {
@@ -153,12 +154,12 @@ public final class DaemonSupervisor: @unchecked Sendable {
                 }
                 let changeCallback = self.onStateChange
                 let stateCopy = self._state
-                
+                let continuation = self.logContinuation
                 self.cleanup()
-                self.logContinuation?.finish()
                 self.logContinuation = nil
                 self.lock.unlock()
-                
+
+                continuation?.finish()
                 if let changeCallback {
                     changeCallback(stateCopy)
                 }
@@ -184,21 +185,31 @@ public final class DaemonSupervisor: @unchecked Sendable {
     
     /// Stops the process gracefully. Escalates to force-killing via SIGINT and SIGKILL if the process fails to exit.
     public func stop() {
-        lock.lock()
-        defer { lock.unlock() }
         stopInternal()
     }
     
     private func stopInternal() {
-        guard let proc = process, proc.isRunning else {
+        lock.lock()
+        let currentProcess = process
+        lock.unlock()
+
+        guard let proc = currentProcess, proc.isRunning else {
             updateState(.stopped)
+
+            lock.lock()
             cleanup()
-            logContinuation?.finish()
+            let continuation = logContinuation
             logContinuation = nil
+            lock.unlock()
+
+            continuation?.finish()
             return
         }
         
         appendLogLine("[daemon] Stopping process...", isError: false)
+        lock.lock()
+        stopRequested = true
+        lock.unlock()
         proc.terminate()
         
         let processToKill = proc
@@ -210,7 +221,7 @@ public final class DaemonSupervisor: @unchecked Sendable {
             self?.appendLogLine("[daemon] Escalating stop: sending SIGINT to PID \(pid)...", isError: true)
             processToKill.interrupt()
             
-            DispatchQueue.global(qos: .userInitiated).asyncAfter(deadline: .now() + 1.5) {
+            DispatchQueue.global(qos: .userInitiated).asyncAfter(deadline: .now() + 1.5) { [weak self, processToKill] in
                 guard processToKill.isRunning else { return }
                 self?.appendLogLine("[daemon] Force killing process: sending SIGKILL to PID \(pid)...", isError: true)
                 Darwin.kill(pid, SIGKILL)
@@ -224,6 +235,7 @@ public final class DaemonSupervisor: @unchecked Sendable {
         stdoutFH = nil
         stderrFH = nil
         process = nil
+        stopRequested = false
     }
     
     private func processIncomingOutput(_ text: String, isError: Bool) {
@@ -239,15 +251,14 @@ public final class DaemonSupervisor: @unchecked Sendable {
         lock.lock()
         let line = appendLogLineInternal(message, isError: isError)
         let logCallback = onLog
+        let continuation = logContinuation
         lock.unlock()
         
         if let logCallback {
             logCallback(line)
         }
         
-        lock.lock()
-        logContinuation?.yield(line)
-        lock.unlock()
+        continuation?.yield(line)
     }
     
     @discardableResult

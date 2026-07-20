@@ -37,7 +37,7 @@ final class SymingestReOCRContractTests: XCTestCase {
     }
 
     func testMissingBinaryFailsClearly() async {
-        let locator = BinaryLocator(searchPATH: "")
+        let locator = BinaryLocator(searchPATH: "", extraDirectories: [])
         let client = SymingestReOCRClient(locator: locator)
         do {
             _ = try await client.reprocess(documentID: 1)

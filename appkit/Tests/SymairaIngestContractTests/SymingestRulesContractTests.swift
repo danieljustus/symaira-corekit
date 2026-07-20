@@ -39,7 +39,7 @@ final class SymingestRulesContractTests: XCTestCase {
     }
 
     func testMissingBinaryFailsClearly() async {
-        let locator = BinaryLocator(searchPATH: "")
+        let locator = BinaryLocator(searchPATH: "", extraDirectories: [])
         let client = SymingestRulesClient(locator: locator)
         do {
             _ = try await client.listRules()
@@ -59,5 +59,24 @@ final class SymingestRulesContractTests: XCTestCase {
 
         let redacted = MailAccount(host: "imap.example.com", username: "daniel", passwordSecret: "<redacted>")
         XCTAssertEqual(redacted.passwordSecretKind, "redacted")
+    }
+
+    func testMailAccountEncodesSnakeCaseProtocolKeys() throws {
+        let account = MailAccount(
+            host: "imap.example.com",
+            username: "daniel",
+            passwordSecret: "symvault://imap/daniel",
+            hasAttachment: true,
+            moveTo: "Archive",
+            archiveMail: true
+        )
+        let object = try XCTUnwrap(
+            JSONSerialization.jsonObject(with: JSONEncoder().encode(account)) as? [String: Any]
+        )
+        XCTAssertEqual(object["password_secret"] as? String, "symvault://imap/daniel")
+        XCTAssertEqual(object["has_attachment"] as? Bool, true)
+        XCTAssertEqual(object["move_to"] as? String, "Archive")
+        XCTAssertEqual(object["archive_mail"] as? Bool, true)
+        XCTAssertNil(object["passwordSecret"])
     }
 }

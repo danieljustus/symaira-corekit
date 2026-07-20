@@ -37,6 +37,15 @@ public struct ReOCRResponse: Codable, Equatable, Sendable {
         self.outputPath = outputPath
         self.error = error
     }
+
+    private enum CodingKeys: String, CodingKey {
+        case schemaVersion = "schema_version"
+        case documentID = "document_id"
+        case jobID = "job_id"
+        case status
+        case outputPath = "output_path"
+        case error
+    }
 }
 
 public enum ReOCRRequest: Equatable, Sendable {
@@ -82,10 +91,8 @@ public enum ReOCRContractError: Error, LocalizedError, Equatable, Sendable {
 
 public enum ReOCRContract {
     public static func decode(from data: Data) throws -> ReOCRResponse {
-        let decoder = JSONDecoder()
-        decoder.keyDecodingStrategy = .convertFromSnakeCase
         do {
-            return try decoder.decode(ReOCRResponse.self, from: data)
+            return try JSONDecoder().decode(ReOCRResponse.self, from: data)
         } catch {
             throw ReOCRContractError.invalidResponse
         }
@@ -163,4 +170,3 @@ public struct SymingestReOCRClient: ReOCRClient, Sendable {
         try await ReOCRContract.decodeWithSchemaCheck(from: run(reocrArguments(.archivePath(archivePath))))
     }
 }
-
