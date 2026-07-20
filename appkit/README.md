@@ -8,7 +8,7 @@ Every Symaira app stays fully standalone: this package is consumed as a **pinned
 
 | Product | Purpose |
 | :--- | :--- |
-| `SymairaTheme` | Design tokens (gold/glassmorphism brand), `Color(hex:)`, glass panel/card modifiers, button styles. Includes the legacy `Color.symaira*` aliases for painless migration. |
+| `SymairaTheme` | Cross-platform design foundation: adaptive Symaira tokens, Apple materials and Liquid Glass, backgrounds, surfaces, controls, feedback states, and accessibility-aware fallbacks. Includes legacy `Color.symaira*` aliases. |
 | `SymairaCLIRunner` | Subprocess execution for Symaira CLIs: mandatory timeout, stderr capture, snake_case JSON decoding, unified `CLIRunnerError`. |
 | `SymairaToolKit` | `SymairaToolRegistry` (single source of truth for all tools), `BinaryLocator` (bundle → exe dir → PATH → Homebrew prefixes → user override), `ToolDetector` with the `version --json` schema handshake. |
 | `SymairaKeychain` | Keychain wrapper, service-namespaced `dev.symaira.<app>`. |
@@ -35,6 +35,49 @@ if let seek = await detector.detect(SymairaToolRegistry.tool(id: "symseek")!) {
 }
 ```
 
+### Shared UI foundation
+
+```swift
+import SwiftUI
+import SymairaTheme
+
+struct Dashboard: View {
+    var body: some View {
+        ZStack {
+            SymairaBackdrop(gridStyle: .dots)
+
+            VStack(spacing: SymairaSpacing.xLarge) {
+                SymairaNotice(
+                    title: "Core connected",
+                    message: "Local features are ready.",
+                    tone: .positive
+                )
+
+                Text("Content uses a standard Apple material.")
+                    .padding(SymairaSpacing.xLarge)
+                    .glassCard()
+
+                SymairaGlassEffectContainer {
+                    HStack {
+                        Button("Cancel") {}
+                            .symairaButtonStyle(.secondary)
+                        Button("Continue") {}
+                            .symairaButtonStyle(.primary)
+                    }
+                }
+            }
+            .padding()
+        }
+    }
+}
+```
+
+Use Liquid Glass for controls and navigation chrome, not as the background of
+every content card. `symairaButtonStyle`, `symairaGlassChrome`, and
+`SymairaGlassEffectContainer` adopt the native macOS/iOS 26 effects and provide
+material or opaque accessibility fallbacks on earlier systems. See
+[`DESIGN.md`](DESIGN.md) for the design rules and migration guidance.
+
 ## Build & Test
 
 ```bash
@@ -42,7 +85,8 @@ swift build
 swift test
 ```
 
-Requires macOS 14+, Swift 6.
+Requires macOS 14+ or iOS 17+, Swift 6. Native Liquid Glass is enabled on
+macOS/iOS 26+ when built with a compatible SDK.
 
 ## License
 

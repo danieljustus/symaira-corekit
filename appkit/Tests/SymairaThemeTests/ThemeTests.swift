@@ -22,4 +22,34 @@ final class ThemeTests: XCTestCase {
         XCTAssertEqual(Color.symairaText, SymairaTheme.textPrimary)
         XCTAssertEqual(Color.symairaCard, SymairaTheme.bgCard)
     }
+
+    func testMutedTextMeetsUpdatedBrandSpec() {
+        XCTAssertEqual(SymairaTheme.textMuted, Color(hex: "837D74"))
+    }
+
+    func testAdaptivePalettePreservesDarkBrandAndAddsWarmLightAppearance() {
+        XCTAssertEqual(SymairaTheme.backgroundPrimary(for: .dark), SymairaTheme.bgDark)
+        XCTAssertEqual(SymairaTheme.foregroundPrimary(for: .dark), SymairaTheme.textPrimary)
+        XCTAssertEqual(SymairaTheme.backgroundPrimary(for: .light), Color(hex: "F7F3EC"))
+        XCTAssertEqual(SymairaTheme.foregroundPrimary(for: .light), Color(hex: "211D17"))
+    }
+
+    func testSemanticTonesAdaptForLightAppearance() {
+        XCTAssertEqual(SymairaTone.critical.foreground, SymairaTheme.critical)
+        XCTAssertEqual(SymairaTone.critical.foreground(for: .light), Color(hex: "B3261E"))
+        XCTAssertEqual(SymairaTone.positive.systemImage, "checkmark.circle.fill")
+    }
+
+    @MainActor
+    func testFoundationComponentsCanBeConstructed() {
+        _ = SymairaBackdrop(gridStyle: .dots)
+        _ = SymairaBadge("Ready", tone: .positive)
+        _ = SymairaNotice(title: "Connected", message: "The local core is ready.", tone: .positive)
+        _ = SymairaEmptyState(systemImage: "tray", title: "No items", message: "Add your first item.")
+        _ = SymairaLoadingState("Loading")
+        _ = SymairaGlassEffectContainer {
+            Button("Refresh") {}
+                .symairaButtonStyle(.toolbar)
+        }
+    }
 }

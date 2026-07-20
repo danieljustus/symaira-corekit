@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Canonical Symaira design tokens (gold/glassmorphism brand).
+/// Canonical Symaira design tokens (champagne gold, warm neutrals, and glass).
 ///
 /// Color values are taken 1:1 from the most mature donor (symaira-print);
 /// member names match the former per-app `Theme` enums so migration is a
@@ -25,7 +25,8 @@ public enum SymairaTheme {
     // Text
     public static let textPrimary = Color(hex: "F5F4F0")
     public static let textSecondary = Color(hex: "B5AEA5")
-    public static let textMuted = Color(hex: "6E6860")
+    /// Muted text that still clears a 4.5:1 contrast ratio on `bgDark`.
+    public static let textMuted = Color(hex: "837D74")
 
     // Glass borders
     public static let borderGlass = Color.white.opacity(0.06)
@@ -35,9 +36,71 @@ public enum SymairaTheme {
     public static let glowSoft = goldPrimary.opacity(0.04)
     public static let glowIntense = goldPrimary.opacity(0.12)
 
+    // Semantic feedback
+    public static let positive = Color(hex: "7FD49A")
+    public static let warning = Color(hex: "E9BC73")
+    public static let critical = Color(hex: "FF8A80")
+    public static let informative = Color(hex: "8CC8F2")
+
+    // MARK: Adaptive semantic colors
+
+    /// Warm Symaira canvas that follows the system appearance.
+    public static func backgroundPrimary(for colorScheme: ColorScheme) -> Color {
+        colorScheme == .dark ? bgDark : Color(hex: "F7F3EC")
+    }
+
+    public static func backgroundSecondary(for colorScheme: ColorScheme) -> Color {
+        colorScheme == .dark ? bgDarker : Color(hex: "EEE7DC")
+    }
+
+    public static func surfaceOpaque(for colorScheme: ColorScheme) -> Color {
+        colorScheme == .dark ? Color(hex: "171510") : Color(hex: "FFFCF7")
+    }
+
+    public static func foregroundPrimary(for colorScheme: ColorScheme) -> Color {
+        colorScheme == .dark ? textPrimary : Color(hex: "211D17")
+    }
+
+    public static func foregroundSecondary(for colorScheme: ColorScheme) -> Color {
+        colorScheme == .dark ? textSecondary : Color(hex: "5F584F")
+    }
+
+    public static func foregroundMuted(for colorScheme: ColorScheme) -> Color {
+        colorScheme == .dark ? textMuted : Color(hex: "756D63")
+    }
+
     // Motion
     public static let transitionSmooth = Animation.timingCurve(0.16, 1, 0.3, 1, duration: 0.4)
     public static let transitionFast = Animation.easeOut(duration: 0.2)
+}
+
+/// Shared spacing scale. Keeping layout values here prevents each client from
+/// inventing subtly different cards and content rhythm.
+public enum SymairaSpacing {
+    public static let xSmall: CGFloat = 4
+    public static let small: CGFloat = 8
+    public static let medium: CGFloat = 12
+    public static let large: CGFloat = 16
+    public static let xLarge: CGFloat = 24
+    public static let section: CGFloat = 32
+    public static let spacious: CGFloat = 48
+}
+
+public enum SymairaRadius {
+    public static let control: CGFloat = 10
+    public static let card: CGFloat = 16
+    public static let panel: CGFloat = 20
+}
+
+public enum SymairaMetrics {
+    #if os(iOS)
+    public static let minimumControlHeight: CGFloat = 44
+    #else
+    public static let minimumControlHeight: CGFloat = 34
+    #endif
+
+    public static let readableContentWidth: CGFloat = 760
+    public static let glassGroupSpacing: CGFloat = 12
 }
 
 extension Color {
