@@ -31,7 +31,10 @@ and other product- or cloud-specific behavior.
 | `ollamakit` | CGO-free shared Ollama HTTP client: embeddings, streamed generation/chat, model discovery, and typed errors |
 | `sqlitekit` | `modernc.org/sqlite` wrapper with WAL mode and embedded migrations |
 | `updatecheck` | GitHub release checker (opt-in, max 1×/24h) |
-| `updatecheck/updateapply` | Self-update installer: matching-asset download, checksum verification, atomic replacement with rollback, and re-exec |
+| `updatecheck/updateapply` | Self-update installer: matching-asset download, checksum verification, atomic replacement with rollback, re-exec, and optional Cosign verification, archive extraction, and install-method detection |
+| `updatecheck/cosign` | Cosign keyless signature verification for release checksums (Repo/BinaryName/IdentityRegexp parametrisierbar) |
+| `updatecheck/extract` | Safe archive extraction (tar.gz/zip) with path-traversal protection |
+| `updatecheck/installmethod` | Install-method detection: Homebrew, `go install`, package-manager, direct-download, build-from-source |
 | `vectorkit/turboquant` | CGO-free TurboQuant scalar vector quantization: deterministic rotation, packed encode/decode, inner-product/cosine scoring, sidecar metadata, benchmarks |
 | `versionkit` | Standardized handshake payload (`{tool, version, schema_version}`) for CLI tools |
 
