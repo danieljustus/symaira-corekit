@@ -127,18 +127,31 @@ for historical reasons; new tools should prefer `snake_case`.
 
 ## Update Checking
 
-The recommended update-check contract:
+The recommended update-check contract is shared across Go and Swift tools to
+ensure consistent behavior regardless of implementation language.
 
-- Query the GitHub releases API for the latest version.
-- Respect an opt-out via `SYM<NAME>_CHECK_UPDATES=false` and/or a config key
-  such as `[general] check_updates = false`.
-- Cache the result per process (or on disk with a 24-hour TTL) to avoid repeated
-  network calls.
-- Emit a non-fatal warning to `stderr` when an update is available.
+### Invariant Semantics
 
-`symtune` implements this pattern most completely. `symoperate` checks GitHub
-but currently has no opt-out. `symterminal` and `symeraseme` have no update
-checker.
+| Property | Contract |
+|----------|----------|
+| **Cache TTL** | 24 hours (`DefaultCacheTTL`). In-memory per-process cache; no disk cache. |
+| **SemVer parsing** | Only strict `v?MAJOR.MINOR.PATCH` without pre-release or build-metadata suffixes. Versions containing `-` or `+` are silently ignored (treated as dev/unparseable). |
+| **Dev / pre-release builds** | Skipped silently. `parseStableVersion` rejects anything non-stable; pre-release tags and dev version strings produce `nil` (no update offered). |
+| **Non-blocking guarantee** | The *check* phase must never block startup or critical paths. A network timeout (default 3s) or failure produces a silent skip — the user never sees an error from the check itself. |
+| **Error behavior** | Check failures (HTTP error, timeout, TLS error) are silently swallowed. The apply phase (download+verify+replace) returns all errors to the caller — here the user must be informed. |
+| **V0-major gap** | When `current.major == 0` and `latest.major > 0`, the update is suppressed. This prevents a pre-v1.0 tool from suddenly advertising a v1.0+ release before the ecosystem is ready. |
+| **Opt-out** | `SYM<NAME>_CHECK_UPDATES=false` environment variable or `[general] check_updates = false` config key. |
+| **Apply hardening** | The apply phase (download, verify, swap) is composable: SHA-256 checksum verification (always), optional Cosign keyless signature verification (via `updatecheck/cosign`), optional archive extraction (via `updatecheck/extract`), and optional install-method detection that rejects Homebrew in-place replacement (via `updatecheck/installmethod`). |
+
+### Reference Implementations
+
+- **Go** — `corekit/updatecheck` (`Checker.Check`, `Applier.Apply`)
+  Repository: `danieljustus/symaira-corekit`, package `updatecheck/`
+  See also: `updatecheck/updateapply/`, `updatecheck/cosign/`, `updatecheck/extract/`, `updatecheck/installmethod/`
+
+- **Swift** — `symaira-appkit/SymairaUpdateCheck/UpdateChecker.swift`
+  Repository: `danieljustus/symaira-appkit`, target `SymairaUpdateCheck`
+  Documents itself as a Swift port of `corekit/updatecheck`.
 
 ## Version Source
 

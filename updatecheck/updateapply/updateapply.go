@@ -2,6 +2,11 @@
 // updatecheck.Release, it downloads the matching asset, verifies its
 // checksum against the release's goreleaser checksums.txt, and atomically
 // replaces the running binary with backup + rollback.
+//
+// Optional hardening:
+//   - Cosign keyless signature verification (set CosignConfig)
+//   - Archive extraction from tar.gz/zip releases (set ExtractBinary)
+//   - Install method detection rejecting Homebrew installs (set CheckInstallMethod)
 package updateapply
 
 import (
@@ -19,6 +24,9 @@ import (
 	"syscall"
 
 	"github.com/danieljustus/symaira-corekit/updatecheck"
+	"github.com/danieljustus/symaira-corekit/updatecheck/cosign"
+	"github.com/danieljustus/symaira-corekit/updatecheck/extract"
+	"github.com/danieljustus/symaira-corekit/updatecheck/installmethod"
 )
 
 // maxAssetBody caps how many bytes are read for a single downloaded asset or
@@ -45,6 +53,28 @@ type Applier struct {
 
 	// Progress, when set, is called during asset download.
 	Progress ProgressFunc
+
+	// CheckInstallMethod, when true, detects the installation method of the
+	// target binary and rejects self-update for Homebrew-managed binaries
+	// with a clear error message directing the user to brew upgrade instead.
+	CheckInstallMethod bool
+
+	// BinaryName is the display name used in install method detection
+	// guidance messages and archive extraction. Defaults to
+	// filepath.Base(targetPath) when empty.
+	BinaryName string
+
+	// CosignConfig, when non-nil, enables Cosign keyless signature
+	// verification of the release checksums. The checksums are verified
+	// against their attached cosign signature+certificate before any
+	// downloaded asset is trusted.
+	CosignConfig *cosign.Config
+
+	// ExtractBinary, when non-empty, treats the downloaded release asset
+	// as an archive (tar.gz or zip). After successful checksum verification,
+	// the archive is extracted and the binary matching ExtractBinary is
+	// used for installation.
+	ExtractBinary string
 }
 
 // NewApplier creates an Applier using the running binary's OS/arch.
@@ -61,12 +91,37 @@ func NewApplier() *Applier {
 // replaces targetPath with the downloaded binary. On any failure prior to a
 // successful swap, targetPath is left untouched. If the swap itself fails
 // partway, the previous binary is restored from backup.
+//
+// Optional hardening steps (configured via Applier fields) run in this order:
+//
+//  1. Install method detection (CheckInstallMethod): rejects Homebrew installs.
+//  2. Cosign verification (CosignConfig): verifies checksums.txt signature.
+//  3. Archive extraction (ExtractBinary): unpacks the downloaded archive.
 func (a *Applier) Apply(ctx context.Context, release *updatecheck.Release, targetPath string) error {
 	if release == nil {
 		return errors.New("updateapply: release is nil")
 	}
 	if strings.TrimSpace(targetPath) == "" {
 		return errors.New("updateapply: targetPath is empty")
+	}
+
+	binaryName := a.BinaryName
+	if binaryName == "" {
+		binaryName = filepath.Base(targetPath)
+	}
+
+	// Step 1: Optional install method detection.
+	if a.CheckInstallMethod {
+		method, err := installmethod.Detect(targetPath)
+		if err != nil {
+			return fmt.Errorf("updateapply: detect install method: %w", err)
+		}
+		if !installmethod.IsSelfUpdateSupported(method) {
+			return fmt.Errorf(
+				"updateapply: self-update is not supported for %s installation — %s",
+				method, installmethod.Guidance(method, binaryName),
+			)
+		}
 	}
 
 	goos := a.GOOS
@@ -87,6 +142,27 @@ func (a *Applier) Apply(ctx context.Context, release *updatecheck.Release, targe
 	if err != nil {
 		return fmt.Errorf("updateapply: fetch checksums: %w", err)
 	}
+
+	// Step 2: Optional cosign verification of checksums.
+	if cfg := a.CosignConfig; cfg != nil {
+		sig, sigErr := cfg.FetchSignature(ctx, release.TagName)
+		if sigErr != nil {
+			return fmt.Errorf("updateapply: fetch cosign signature: %w", sigErr)
+		}
+		cert, certErr := cfg.FetchCertificate(ctx, release.TagName)
+		if certErr != nil {
+			return fmt.Errorf("updateapply: fetch cosign certificate: %w", certErr)
+		}
+		// Build the checksums content from the parsed map for verification.
+		var checksumsData strings.Builder
+		for name, sum := range checksums {
+			checksumsData.WriteString(fmt.Sprintf("%s  %s\n", sum, name))
+		}
+		if vErr := cfg.VerifySignature([]byte(checksumsData.String()), sig, cert); vErr != nil {
+			return fmt.Errorf("updateapply: cosign verification failed: %w", vErr)
+		}
+	}
+
 	wantSum, ok := checksums[asset.Name]
 	if !ok {
 		return fmt.Errorf("updateapply: no checksum entry for asset %q", asset.Name)
@@ -102,6 +178,27 @@ func (a *Applier) Apply(ctx context.Context, release *updatecheck.Release, targe
 		return fmt.Errorf("updateapply: checksum mismatch for %q: got %s, want %s", asset.Name, gotSum, wantSum)
 	}
 
+	// Step 3: Optional archive extraction.
+	installTarget := tmpFile
+	if a.ExtractBinary != "" {
+		extractedDir, err := os.MkdirTemp("", "updateapply-extract-*")
+		if err != nil {
+			return fmt.Errorf("updateapply: create extract temp dir: %w", err)
+		}
+		defer func() { _ = os.RemoveAll(extractedDir) }()
+
+		archiveData, err := os.ReadFile(tmpFile)
+		if err != nil {
+			return fmt.Errorf("updateapply: read downloaded archive: %w", err)
+		}
+
+		extracted, extErr := extractFromArchive(archiveData, extractedDir, a.ExtractBinary)
+		if extErr != nil {
+			return fmt.Errorf("updateapply: extract binary %q from archive: %w", a.ExtractBinary, extErr)
+		}
+		installTarget = extracted
+	}
+
 	absTarget, err := filepath.Abs(targetPath)
 	if err != nil {
 		return fmt.Errorf("updateapply: resolve target path: %w", err)
@@ -110,11 +207,41 @@ func (a *Applier) Apply(ctx context.Context, release *updatecheck.Release, targe
 		return fmt.Errorf("updateapply: %w", err)
 	}
 
-	if err := os.Chmod(tmpFile, 0o755); err != nil { //nolint:gosec // installed binary must be executable
+	if err := os.Chmod(installTarget, 0o755); err != nil { //nolint:gosec // installed binary must be executable
 		return fmt.Errorf("updateapply: make downloaded asset executable: %w", err)
 	}
 
-	return atomicSwap(tmpFile, absTarget)
+	return atomicSwap(installTarget, absTarget)
+}
+
+// InstallMethod detects the installation method of the given binary path.
+// It is a convenience wrapper around installmethod.Detect.
+func InstallMethod(binaryPath string) (installmethod.InstallMethod, error) {
+	return installmethod.Detect(binaryPath)
+}
+
+// extractFromArchive dispatches to ExtractTarGz or ExtractZip based on the
+// archive filename.
+func extractFromArchive(archiveData []byte, destDir, binaryName string) (string, error) {
+	// Try tar.gz first (most common for macOS/Linux).
+	path, err := extract.ExtractTarGz(archiveData, destDir, binaryName)
+	if err == nil {
+		return path, nil
+	}
+	if !errors.Is(err, extract.ErrBinaryNotFound) && !strings.Contains(err.Error(), "gzip") {
+		return "", err
+	}
+
+	// Fall back to zip (Windows/packaged releases).
+	path, zipErr := extract.ExtractZip(archiveData, destDir, binaryName)
+	if zipErr != nil {
+		// Return the original tar.gz error if zip also fails — it was the first attempt.
+		if errors.Is(err, extract.ErrBinaryNotFound) {
+			return "", err
+		}
+		return "", zipErr
+	}
+	return path, nil
 }
 
 // Reexec replaces the current process image with targetPath via
