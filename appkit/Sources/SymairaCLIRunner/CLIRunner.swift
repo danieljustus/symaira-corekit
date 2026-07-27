@@ -103,6 +103,19 @@ public struct CLIRunner: Sendable {
         }
     }
 
+    /// Run and return the full result regardless of exit code. Use this when
+    /// stdout is meaningful even on a non-zero exit (e.g. a health-check
+    /// command that exits 1 on warnings but still writes a complete report).
+    public func runAllowingFailure(
+        _ executable: URL,
+        arguments: [String] = [],
+        stdin: Data? = nil,
+        timeout: Double? = nil,
+        environment: [String: String] = [:]
+    ) async throws -> CLIResult {
+        try await run(executable, arguments: arguments, stdin: stdin, timeout: timeout, environment: environment)
+    }
+
     /// Run and throw `executionFailed` on non-zero exit, returning stdout.
     @discardableResult
     public func runChecked(
