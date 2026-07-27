@@ -27,7 +27,7 @@ public struct DaemonLogLine: Sendable, Identifiable, Equatable {
 /// A long-running background process supervisor that handles start/stop lifecycle,
 /// environment setup, stdout/stderr pipe streaming, and termination escalation.
 public final class DaemonSupervisor: @unchecked Sendable {
-    private let lock = NSLock()
+    private let lock = NSRecursiveLock()
     
     private var process: Process?
     private var stdoutFH: FileHandle?
