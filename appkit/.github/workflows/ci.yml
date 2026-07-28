@@ -32,9 +32,9 @@ jobs:
       - name: Swift version
         run: swift --version
       - name: Build
-        run: swift build -v
+        run: swift build -v -j 2
       # PR gate is build-only; the XCTest suite runs on main pushes and the
       # weekly schedule (macOS GitHub runners queue badly — local runs are faster).
       - name: Test
         if: github.event_name != 'pull_request'
-        run: swift test -v
+        run: swift test -v -j 2
