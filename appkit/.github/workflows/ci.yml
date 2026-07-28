@@ -3,7 +3,23 @@ name: CI
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - 'docs/**'
+      - '**.md'
+      - 'LICENSE'
+      - '.github/ISSUE_TEMPLATE/**'
   pull_request:
+    paths-ignore:
+      - 'docs/**'
+      - '**.md'
+      - 'LICENSE'
+      - '.github/ISSUE_TEMPLATE/**'
+  schedule:
+    - cron: '37 5 * * 1'  # weekly Monday 05:37 UTC — full suite incl. tests
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   test:
@@ -14,5 +30,8 @@ jobs:
         run: swift --version
       - name: Build
         run: swift build -v
+      # PR gate is build-only; the XCTest suite runs on main pushes and the
+      # weekly schedule (macOS GitHub runners queue badly — local runs are faster).
       - name: Test
+        if: github.event_name != 'pull_request'
         run: swift test -v
