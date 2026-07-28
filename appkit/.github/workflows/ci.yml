@@ -21,6 +21,9 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  PATH: /usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
+
 jobs:
   test:
     runs-on: [self-hosted, macOS, X64, mac-mini]  # Mac Mini runner (GitHub macOS queue is the bottleneck)
