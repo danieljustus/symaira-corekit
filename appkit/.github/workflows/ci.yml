@@ -23,7 +23,7 @@ concurrency:
 
 jobs:
   test:
-    runs-on: macos-15
+    runs-on: [self-hosted, macOS, X64, mac-mini]  # Mac Mini runner (GitHub macOS queue is the bottleneck)
     steps:
       - uses: actions/checkout@v4
       - name: Swift version
