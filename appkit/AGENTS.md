@@ -28,4 +28,5 @@ swift test
 
 ## Release
 
-Tag `vX.Y.Z` on main. Strict SemVer — breaking API changes bump the minor pre-1.0, per-app migration is explicit (each app updates its pin deliberately).
+1. Update `CHANGELOG.md` with the new version entry following Keep-a-Changelog format. Gather changes from `git log` since the last tag and categorize them as Added, Changed, Deprecated, Removed, Fixed, Security, or Breaking.
+2. Tag `vX.Y.Z` on main. Strict SemVer — breaking API changes bump the minor pre-1.0, per-app migration is explicit (each app updates its pin deliberately).

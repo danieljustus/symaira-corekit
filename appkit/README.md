@@ -25,6 +25,8 @@ Every Symaira app stays fully standalone: this package is consumed as a **pinned
 .package(url: "https://github.com/danieljustus/symaira-appkit.git", exact: "0.2.3")
 ```
 
+Review the [CHANGELOG](CHANGELOG.md) before bumping your pin — every release documents its additions, fixes, and breaking changes.
+
 ```swift
 import SymairaToolKit
 
