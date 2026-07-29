@@ -51,8 +51,42 @@ jobs:
       # PR gate is build-only; the XCTest suite runs on main pushes and the
       # weekly schedule (macOS GitHub runners queue badly — local runs are faster).
       - name: Test
-        if: github.event_name != 'pull_request'
         run: |
           MEM_GB=$(($(sysctl -n hw.memsize) / 1073741824))
           if [ "$MEM_GB" -le 8 ]; then JOBS=2; elif [ "$MEM_GB" -le 16 ]; then JOBS=4; else JOBS=6; fi
           swift test -v -j "$JOBS"
+
+  ios-build:
+    runs-on: [self-hosted, macOS, X64, mac-mini]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          clean: false
+      - name: Select Xcode
+        run: |
+          if [ -d /Applications/Xcode_16.4.app ]; then XCODE=/Applications/Xcode_16.4.app; else XCODE="$(ls -d /Applications/Xcode*.app | sort -V | tail -1)"; fi
+          sudo -n xcode-select -s "$XCODE" 2>/dev/null || true
+          echo "DEVELOPER_DIR=$XCODE/Contents/Developer" >> "$GITHUB_ENV"
+      - name: Swift version
+        run: swift --version
+      - name: Build (iOS)
+        run: |
+          swift build --sdk "$(xcrun --sdk iphoneos --show-sdk-path)" --target arm64-apple-ios17.0
+
+  swift-62-build:
+    runs-on: [self-hosted, macOS, X64, mac-mini]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          clean: false
+      - name: Select Xcode 26 (Swift 6.2+)
+        run: |
+          XCODE="$(ls -d /Applications/Xcode*.app | sort -V | tail -1)"
+          echo "DEVELOPER_DIR=$XCODE/Contents/Developer" >> "$GITHUB_ENV"
+      - name: Swift version
+        run: swift --version
+      - name: Build (Swift 6.2+)
+        run: |
+          MEM_GB=$(($(sysctl -n hw.memsize) / 1073741824))
+          if [ "$MEM_GB" -le 8 ]; then JOBS=2; elif [ "$MEM_GB" -le 16 ]; then JOBS=4; else JOBS=6; fi
+          swift build -v -j "$JOBS"
