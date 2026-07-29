@@ -245,25 +245,7 @@ public struct MailConfigurationResponse: Codable, Equatable, Sendable {
     }
 }
 
-public enum SymingestRulesError: Error, LocalizedError, Equatable, Sendable {
-    case missingBinary
-    case unsupportedSchema(Int)
-    case invalidResponse
-    case commandFailed(String)
-
-    public var errorDescription: String? {
-        switch self {
-        case .missingBinary:
-            return "symingest is not installed or not on PATH."
-        case .unsupportedSchema(let version):
-            return "Unsupported symingest rules schema version \(version)."
-        case .invalidResponse:
-            return "Invalid symingest rules JSON response."
-        case .commandFailed(let message):
-            return message
-        }
-    }
-}
+public typealias SymingestRulesError = SymingestContractError
 
 // MARK: - Envelopes
 
@@ -336,37 +318,11 @@ public enum SymingestRulesContract {
     private static func decoded<T: Decodable>(
         _ data: Data
     ) throws -> T {
-        let version = try decodeSchemaVersion(from: data)
-        guard version == 1 else {
-            throw SymingestRulesError.unsupportedSchema(version)
-        }
-        do {
-            return try JSONDecoder().decode(T.self, from: data)
-        } catch let error as SymingestRulesError {
-            throw error
-        } catch {
-            throw SymingestRulesError.invalidResponse
-        }
-    }
-
-    private static func decodeSchemaVersion(from data: Data) throws -> Int {
-        guard let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-              let version = object["schema_version"] as? Int else {
-            throw SymingestRulesError.invalidResponse
-        }
-        return version
+        try decodeSchemaChecked(data)
     }
 
     public static func decodeWithSchemaCheck<T: Decodable>(_ data: Data) throws -> T {
-        let version = try decodeSchemaVersion(from: data)
-        guard version == 1 else {
-            throw SymingestRulesError.unsupportedSchema(version)
-        }
-        do {
-            return try JSONDecoder().decode(T.self, from: data)
-        } catch {
-            throw SymingestRulesError.invalidResponse
-        }
+        try decodeSchemaChecked(data)
     }
 }
 
@@ -404,7 +360,7 @@ public struct SymingestRulesClient: ClassificationRulesClient, Sendable {
     }
 
     private func locate() throws -> URL {
-        let tool = SymairaToolRegistry.ingestTool
+        let tool = try SymairaToolRegistry.ingestTool
         guard let located = locator.locate(tool.binaryName) else {
             throw SymingestRulesError.missingBinary
         }
@@ -476,6 +432,11 @@ public struct SymingestRulesClient: ClassificationRulesClient, Sendable {
 
 public extension SymairaToolRegistry {
     static var ingestTool: SymairaTool {
-        all.first { $0.id == "symingest" }!
+        get throws {
+            guard let tool = all.first(where: { $0.id == "symingest" }) else {
+                throw SymingestContractError.missingBinary
+            }
+            return tool
+        }
     }
 }

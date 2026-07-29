@@ -79,4 +79,10 @@ final class SymingestRulesContractTests: XCTestCase {
         XCTAssertEqual(object["archive_mail"] as? Bool, true)
         XCTAssertNil(object["passwordSecret"])
     }
+
+    func testRegistryIngestToolReachableWithoutTrapping() throws {
+        let tool = try SymairaToolRegistry.ingestTool
+        XCTAssertEqual(tool.id, "symingest")
+        XCTAssertEqual(tool.binaryName, "symingest")
+    }
 }

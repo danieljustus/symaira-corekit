@@ -67,25 +67,7 @@ public enum ReOCRRequest: Equatable, Sendable {
     }
 }
 
-public enum ReOCRContractError: Error, LocalizedError, Equatable, Sendable {
-    case missingBinary
-    case unsupportedSchema(Int)
-    case invalidResponse
-    case commandFailed(String)
-
-    public var errorDescription: String? {
-        switch self {
-        case .missingBinary:
-            return "symingest is not installed or not on PATH."
-        case .unsupportedSchema(let version):
-            return "Unsupported symingest reocr schema version \(version)."
-        case .invalidResponse:
-            return "Invalid symingest reocr JSON response."
-        case .commandFailed(let message):
-            return message
-        }
-    }
-}
+public typealias ReOCRContractError = SymingestContractError
 
 // MARK: - Envelope
 
@@ -99,14 +81,7 @@ public enum ReOCRContract {
     }
 
     public static func decodeWithSchemaCheck(from data: Data) throws -> ReOCRResponse {
-        guard let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-              let version = object["schema_version"] as? Int else {
-            throw ReOCRContractError.invalidResponse
-        }
-        guard version == 1 else {
-            throw ReOCRContractError.unsupportedSchema(version)
-        }
-        return try decode(from: data)
+        try decodeSchemaChecked(data)
     }
 }
 
@@ -136,7 +111,7 @@ public struct SymingestReOCRClient: ReOCRClient, Sendable {
     }
 
     private func locate() throws -> URL {
-        let tool = SymairaToolRegistry.ingestTool
+        let tool = try SymairaToolRegistry.ingestTool
         guard let located = locator.locate(tool.binaryName) else {
             throw ReOCRContractError.missingBinary
         }
