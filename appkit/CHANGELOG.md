@@ -5,6 +5,42 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2026-07-29
+
+### Added
+
+- `UpdateApplier`: download, SHA256-verify, and bundle-install pipeline (Swift port from `corekit/updateapply`)
+- `AppUpdateStatus.installing` and `readyToRelaunch` states for GUI update flows
+- Cosign keyless signature verification and Homebrew installation detection in `UpdateApplier`
+- `AutoUpdatePreferenceStore` with `checkOnLaunchIfEnabled()` launch hook
+- CI: iOS build job and Swift 6.2+ toolchain job
+- `CHANGELOG.md` with entries for all published tags
+- `CLIRunner.augmentedEnvironment(_:)` — shared PATH augmentation helper
+
+### Changed
+
+- CI now runs the XCTest suite on pull requests (was build-only)
+- `SymairaDaemonKit` depends on `SymairaCLIRunner` for shared PATH logic
+- Tool detection runs handshakes concurrently (bounded to 4) with per-binary caching
+
+### Fixed
+
+- DaemonSupervisor restart race: stale termination handlers no longer tear down new sessions
+- Keychain items now use data-protection keychain and device-bound accessibility
+- CLI binary provenance verified via code-signature check before execution
+- Raw subprocess stderr no longer interpolated into user-facing error messages
+- Subprocess output buffering capped at 16 MiB with truncation flag
+- Duplicated Ingest contract decode paths consolidated; force-unwrap removed
+
+### Security
+
+- Reject binaries in non-root-owned or group/world-writable directories
+- Secret shapes (PEM blocks, long tokens, key-prefixed values) redacted from error messages
+
+### Breaking
+
+- Keychain storage migrated to data-protection keychain — existing items are migrated on first access but consumers should verify access patterns after updating
+
 ## [0.2.3] - 2026-07-27
 
 ### Fixed
@@ -83,6 +119,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `SymairaToolKit`: `SymairaToolRegistry` (single source of truth for all tools), `BinaryLocator`, `ToolDetector` with `version --json` schema handshake
 - `SymairaKeychain`: Keychain wrapper, service-namespaced `dev.symaira.<app>`
 
+[0.6.0]: https://github.com/danieljustus/symaira-appkit/compare/0.5.0...0.6.0
 [0.2.3]: https://github.com/danieljustus/symaira-appkit/compare/v0.2.2...v0.2.3
 [0.2.2]: https://github.com/danieljustus/symaira-appkit/compare/v0.2.1...v0.2.2
 [0.5.0]: https://github.com/danieljustus/symaira-appkit/compare/0.4.0...0.5.0
