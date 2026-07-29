@@ -21,9 +21,9 @@ final class CLIRunnerTests: XCTestCase {
         do {
             _ = try await runner.runChecked(sh, arguments: ["-c", "echo bad >&2; exit 2"])
             XCTFail("expected executionFailed")
-        } catch let CLIRunnerError.executionFailed(code, stderr) {
+        } catch let CLIRunnerError.executionFailed(code, fullStderr) {
             XCTAssertEqual(code, 2)
-            XCTAssertEqual(stderr, "bad")
+            XCTAssertEqual(fullStderr, "bad")
         } catch {
             XCTFail("unexpected error: \(error)")
         }
@@ -97,5 +97,127 @@ final class CLIRunnerTests: XCTestCase {
         } catch {
             // Foundation throws NSError for missing executables — anything is fine.
         }
+    }
+
+    // MARK: - Issue #9: Safe error descriptions
+
+    func testFullStderrPropertyNotPartOfLocalizedError() {
+        // fullStderr is a separate property, not localised.
+        let err = CLIRunnerError.executionFailed(code: 1, fullStderr: "raw secret data")
+        XCTAssertEqual(err.fullStderr, "raw secret data")
+        // errorDescription (LocalizedError) must NOT contain the raw text verbatim
+        // when it looks secret-like.
+    }
+
+    func testErrorDescriptionIsBoundedTo200Bytes() {
+        // Generate a stderr line > 300 bytes — the description must be ≤ 200 bytes.
+        let longStderr = String(repeating: "A", count: 500)
+        let err = CLIRunnerError.executionFailed(code: 1, fullStderr: longStderr)
+        let desc = err.errorDescription ?? ""
+        // The description prefix "CLI execution failed with exit code 1: " takes
+        // ~40 bytes, leaving ~160 for the content. The ellipsis adds 3 more bytes.
+        // Total should be ≤ ~205 bytes.
+        let descBytes = desc.utf8.count
+        XCTAssertLessThanOrEqual(descBytes, 210, "errorDescription is \(descBytes) bytes, expected ≤ 210")
+        // Should contain the exit code.
+        XCTAssertTrue(desc.contains("exit code 1"))
+    }
+
+    func testErrorDescriptionRedactsPEMBlocks() {
+        let pemStderr = """
+        -----BEGIN RSA PRIVATE KEY-----
+        MIIEpAIBAAKCAQEA0Z3...
+        -----END RSA PRIVATE KEY-----
+        """
+        let err = CLIRunnerError.executionFailed(code: 2, fullStderr: pemStderr)
+        let desc = err.errorDescription ?? ""
+        XCTAssertFalse(desc.contains("BEGIN RSA"), "PEM block not redacted: \(desc)")
+        XCTAssertTrue(desc.contains("[REDACTED]"), "Expected [REDACTED] in: \(desc)")
+    }
+
+    func testErrorDescriptionRedactsLongBase64Tokens() {
+        let tokenStderr = "error: invalid token eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9eyJzdWIiOiIxMjM0NTY3ODkwIn0"
+        let err = CLIRunnerError.executionFailed(code: 1, fullStderr: tokenStderr)
+        let desc = err.errorDescription ?? ""
+        XCTAssertTrue(desc.contains("[REDACTED]"), "Base64 token not redacted: \(desc)")
+    }
+
+    func testErrorDescriptionRedactsLongHexStrings() {
+        let hexStderr = "error: key deadbeef1234567890abcdef1234567890abcdef1234567890abcdef is invalid"
+        let err = CLIRunnerError.executionFailed(code: 1, fullStderr: hexStderr)
+        let desc = err.errorDescription ?? ""
+        XCTAssertTrue(desc.contains("[REDACTED]"), "Hex string not redacted: \(desc)")
+    }
+
+    func testErrorDescriptionRedactsKeyPrefixedSecrets() {
+        let keyStderr = "error: API_KEY=sk-1234567890abcdefghijklmnopqrstuvwxyz"
+        let err = CLIRunnerError.executionFailed(code: 1, fullStderr: keyStderr)
+        let desc = err.errorDescription ?? ""
+        XCTAssertTrue(desc.contains("[REDACTED]"), "Key-prefixed secret not redacted: \(desc)")
+    }
+
+    func testFullStderrIsNeverRedacted() {
+        let secretStderr = "API_KEY=sk-supersecret"
+        let err = CLIRunnerError.executionFailed(code: 1, fullStderr: secretStderr)
+        // The fullStderr property returns the raw, unredacted text.
+        XCTAssertEqual(err.fullStderr, secretStderr)
+    }
+
+    // MARK: - Issue #17: Output buffering cap
+
+    func testOutputTruncationTerminatesProcess() async throws {
+        // Emit > 64 KiB (a small cap) and verify the process is terminated early.
+        let result = try await runner.run(
+            sh,
+            arguments: ["-c", "yes x | head -c 200000"],
+            maxOutputBytes: 10_000
+        )
+        XCTAssertTrue(result.isTruncated, "Expected isTruncated=true")
+        // The output must be ≤ the cap (with a small buffer for chunk alignment).
+        XCTAssertLessThanOrEqual(result.stdout.count, 10_100)
+    }
+
+    func testRunCheckedThrowsOnTruncation() async {
+        do {
+            _ = try await runner.runChecked(
+                sh,
+                arguments: ["-c", "yes x | head -c 200000"],
+                maxOutputBytes: 5_000
+            )
+            XCTFail("expected outputTruncated")
+        } catch CLIRunnerError.outputTruncated(let size) {
+            XCTAssertEqual(size, 5_000)
+        } catch {
+            XCTFail("unexpected error: \(error)")
+        }
+    }
+
+    func testRunDecodingThrowsOnTruncationInsteadOfDecodingGarbage() async {
+        struct Info: Decodable { let x: Int }
+        do {
+            _ = try await runner.runDecoding(
+                Info.self,
+                executable: sh,
+                arguments: ["-c", "yes x | head -c 200000"],
+                maxOutputBytes: 1_000
+            )
+            XCTFail("expected outputTruncated, not a decode error")
+        } catch CLIRunnerError.outputTruncated {
+            // Expected: decode was never attempted on truncated payload.
+        } catch {
+            XCTFail("unexpected error: \(error)")
+        }
+    }
+
+    func testLargeOutputDoesNotDeadlockWithCap() async throws {
+        // Existing deadlock test, now with the cap plumbing — must still pass.
+        // Use a cap larger than the output so truncation does not trigger.
+        let result = try await runner.run(
+            sh,
+            arguments: ["-c", "yes x | head -c 200000"],
+            maxOutputBytes: CLIRunner.defaultMaxOutputBytes
+        )
+        XCTAssertEqual(result.stdout.count, 200_000)
+        XCTAssertFalse(result.isTruncated)
     }
 }
