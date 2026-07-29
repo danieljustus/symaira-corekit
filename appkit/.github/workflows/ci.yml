@@ -30,6 +30,9 @@ jobs:
     runs-on: [self-hosted, macOS, X64, mac-mini]  # Mac Mini runner (GitHub macOS queue is the bottleneck)
     steps:
       - uses: actions/checkout@v4
+        with:
+          # clean=false: skip Post-Run git cleanup (hangs on self-hosted macOS runners)
+          clean: false
       - name: Select Xcode
         # CLT lacks XCTest; DEVELOPER_DIR points swift at the full Xcode toolchain
         # without needing sudo (macbook runner has no passwordless sudo).
