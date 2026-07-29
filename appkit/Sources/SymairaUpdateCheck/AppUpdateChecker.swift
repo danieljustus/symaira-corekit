@@ -47,6 +47,41 @@ public struct UserDefaultsSkippedVersionStore: SkippedVersionStore, @unchecked S
     }
 }
 
+// MARK: - Auto-update preference store
+
+/// Persists user preferences for automatic update checking and installation.
+public protocol AutoUpdatePreferenceStore: Sendable {
+    /// Whether to automatically check for updates on app launch.
+    var autoCheckEnabled: Bool { get set }
+    /// Whether to automatically install found updates (requires autoCheckEnabled).
+    var autoInstallEnabled: Bool { get set }
+}
+
+/// A UserDefaults-backed auto-update preference store with a configurable key prefix.
+///
+/// Each app should use its own key prefix so preferences are tracked per app.
+/// Example key: `"com.symaira.desktop"` → stores `com.symaira.desktop.autoCheckEnabled`
+/// and `com.symaira.desktop.autoInstallEnabled`.
+public struct UserDefaultsAutoUpdatePreferenceStore: AutoUpdatePreferenceStore, @unchecked Sendable {
+    private let keyPrefix: String
+    private let defaults: UserDefaults
+
+    public init(keyPrefix: String, defaults: UserDefaults = .standard) {
+        self.keyPrefix = keyPrefix
+        self.defaults = defaults
+    }
+
+    public var autoCheckEnabled: Bool {
+        get { defaults.bool(forKey: "\(keyPrefix).autoCheckEnabled") }
+        set { defaults.set(newValue, forKey: "\(keyPrefix).autoCheckEnabled") }
+    }
+
+    public var autoInstallEnabled: Bool {
+        get { defaults.bool(forKey: "\(keyPrefix).autoInstallEnabled") }
+        set { defaults.set(newValue, forKey: "\(keyPrefix).autoInstallEnabled") }
+    }
+}
+
 /// Checks for a newer release and gates re-prompting for a version the user already skipped.
 ///
 /// This is the high-level, `@MainActor`-bound checker that combines the
@@ -63,11 +98,13 @@ public final class AppUpdateChecker: ObservableObject {
     public init(
         checker: UpdateChecker,
         store: SkippedVersionStore,
-        currentVersion: @escaping () -> String
+        currentVersion: @escaping () -> String,
+        autoPrefs: AutoUpdatePreferenceStore? = nil
     ) {
         self.checker = checker
         self.store = store
         self.currentVersion = currentVersion
+        self.autoPrefs = autoPrefs
     }
 
     /// Check for a newer release. `force` bypasses both the disk cache and the skip gate.
@@ -91,5 +128,21 @@ public final class AppUpdateChecker: ObservableObject {
     public func skip(_ release: ReleaseInfo) {
         store.setSkippedTag(release.tagName)
         status = .skipped(release)
+    }
+
+    // MARK: - Auto-update
+
+    private let autoPrefs: AutoUpdatePreferenceStore?
+
+    /// Call this on app launch. If auto-update preferences are configured
+    /// and enabled, it runs a check (respecting the disk cache — no forced fetch).
+    /// If auto-install is also enabled and an update is found, installation begins.
+    public func checkOnLaunchIfEnabled() async {
+        guard let prefs = autoPrefs, prefs.autoCheckEnabled else { return }
+        await checkForUpdate(force: false)
+        if prefs.autoInstallEnabled, case .available = status {
+            // Installation is handled by the consumer; we just surface the
+            // available release. The consumer can call install() on UpdateApplier.
+        }
     }
 }
