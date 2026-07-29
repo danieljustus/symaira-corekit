@@ -126,19 +126,35 @@ func Align(source, evidenceText string) (Span, AlignmentStatus) {
 	return Span{}, AlignmentUnmatched
 }
 
+// Sentinel errors returned (wrapped with %w) by Validate so callers can
+// branch with errors.Is without matching on message text.
+var (
+	// ErrUnmatched marks an Extraction whose EvidenceText could not be
+	// located in the source text by any alignment strategy.
+	ErrUnmatched = errors.New("evidencekit: extraction is unmatched, not grounded")
+	// ErrEmptyEvidence marks an Extraction with empty EvidenceText.
+	ErrEmptyEvidence = errors.New("evidencekit: empty evidence text")
+	// ErrInvalidSpan marks an Extraction whose Span has negative or
+	// decreasing bounds.
+	ErrInvalidSpan = errors.New("evidencekit: invalid span")
+)
+
 // Validate checks that an Extraction is grounded: its AlignmentStatus is not
 // AlignmentUnmatched, its EvidenceText is non-empty, and its Span has
 // non-negative, non-decreasing bounds. Callers implementing grounded-only
 // ingestion should reject any Extraction that fails Validate.
+//
+// Returned errors wrap ErrUnmatched, ErrEmptyEvidence, or ErrInvalidSpan
+// (see errors.Is).
 func Validate(e Extraction) error {
 	if e.AlignmentStatus == AlignmentUnmatched {
-		return errors.New("evidencekit: extraction is unmatched, not grounded")
+		return fmt.Errorf("%w", ErrUnmatched)
 	}
 	if e.EvidenceText == "" {
-		return errors.New("evidencekit: empty evidence text")
+		return fmt.Errorf("%w", ErrEmptyEvidence)
 	}
 	if e.Span.Start < 0 || e.Span.End < e.Span.Start {
-		return fmt.Errorf("evidencekit: invalid span [%d,%d)", e.Span.Start, e.Span.End)
+		return fmt.Errorf("%w [%d,%d)", ErrInvalidSpan, e.Span.Start, e.Span.End)
 	}
 	return nil
 }
