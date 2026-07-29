@@ -1,13 +1,28 @@
 import Foundation
 
+/// A downloadable release asset (binary, checksums, etc.).
+public struct Asset: Sendable, Equatable, Codable {
+    public let name: String
+    public let browserDownloadURL: String
+    public let size: Int64
+
+    public init(name: String, browserDownloadURL: String, size: Int64) {
+        self.name = name
+        self.browserDownloadURL = browserDownloadURL
+        self.size = size
+    }
+}
+
 /// An available newer release on GitHub.
 public struct ReleaseInfo: Sendable, Equatable, Codable {
     public let tagName: String
     public let htmlURL: String
+    public let assets: [Asset]
 
-    public init(tagName: String, htmlURL: String) {
+    public init(tagName: String, htmlURL: String, assets: [Asset] = []) {
         self.tagName = tagName
         self.htmlURL = htmlURL
+        self.assets = assets
     }
 }
 
