@@ -259,7 +259,7 @@ final class CLIRunnerTests: XCTestCase {
         XCTAssertTrue(result.stdoutText.hasPrefix(CLIRunner.augmentedPATHPrefix),
                       "Subprocess PATH should start with augmented prefix, got: \(result.stdoutText)")
         // The prefix should match what augmentedEnvironment produces.
-        XCTAssertEqual(cliPath.prefix(CLIRunner.augmentedPATHPrefix.count),
+        XCTAssertEqual(String(cliPath.prefix(CLIRunner.augmentedPATHPrefix.count)),
                        CLIRunner.augmentedPATHPrefix)
     }
 }

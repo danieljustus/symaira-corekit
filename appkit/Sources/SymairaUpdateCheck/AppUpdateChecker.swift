@@ -6,6 +6,10 @@ public enum AppUpdateStatus: Equatable, Sendable {
     case upToDate
     case available(ReleaseInfo)
     case skipped(ReleaseInfo)
+    /// Download and installation is in progress. `progress` ranges from 0.0 to 1.0.
+    case installing(progress: Double)
+    /// The updated app bundle has been installed and is ready for relaunch.
+    case readyToRelaunch
     case error(String)
 }
 
