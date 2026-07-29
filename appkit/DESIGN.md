@@ -3,6 +3,14 @@
 `SymairaTheme` keeps the existing champagne-gold, warm-black Symaira identity
 while following the interaction and material conventions of macOS and iOS.
 
+## Product and distribution assets
+
+[`Brand/README.md`](Brand/README.md) defines the shared app-icon shell,
+user-facing naming convention, and Finder disk-image presentation. Generic
+sources and deterministic renderers live in AppKit; each product owns only its
+recognizable glyph and vendors the finished release assets so standalone
+builds never depend on a sibling checkout.
+
 ## Material hierarchy
 
 Use the smallest amount of glass needed to make the interface hierarchy clear:

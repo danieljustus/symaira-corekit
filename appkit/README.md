@@ -1,5 +1,7 @@
 # symaira-appkit
 
+![Symaira AppKit social preview](docs/assets/social-preview.png)
+
 Shared Swift foundations for the macOS clients of the [Symaira](https://symaira.com) ecosystem — the GUI counterpart to [`symaira-corekit`](https://github.com/danieljustus/symaira-corekit).
 
 Every Symaira app stays fully standalone: this package is consumed as a **pinned SPM dependency** (exact version), never as a required runtime service.
@@ -13,12 +15,14 @@ Every Symaira app stays fully standalone: this package is consumed as a **pinned
 | `SymairaToolKit` | `SymairaToolRegistry` (single source of truth for all tools), `BinaryLocator` (bundle → exe dir → PATH → Homebrew prefixes → user override), `ToolDetector` with the `version --json` schema handshake. |
 | `SymairaKeychain` | Keychain wrapper, service-namespaced `dev.symaira.<app>`. |
 | `SymairaUpdateCheck` | GitHub latest-release checker with disk cache and stable-semver comparison (port of `corekit/updatecheck`). |
+| `SymairaDaemonKit` | `DaemonSupervisor` for launching and supervising long-running Symaira core daemon processes. |
+| `SymairaIngestContract` | JSON contract clients for `symingest` rules/mail config and ReOCR requests. |
 
 ## Usage
 
 ```swift
 // Package.swift of a client app — always pin exactly:
-.package(url: "https://github.com/danieljustus/symaira-appkit.git", exact: "0.5.0")
+.package(url: "https://github.com/danieljustus/symaira-appkit.git", exact: "0.2.3")
 ```
 
 ```swift
