@@ -27,6 +27,26 @@ public struct DetectedTool: Sendable {
     public var isUsable: Bool { versionInfo != nil }
 }
 
+/// Caches handshake results keyed by binary path + modification time so
+/// repeated `detect` calls within the same session skip redundant subprocess
+/// spawns.
+private actor HandshakeCache {
+    private struct Key: Hashable {
+        let path: String
+        let mtime: TimeInterval
+    }
+
+    private var storage: [Key: ToolVersionInfo?] = [:]
+
+    func get(path: String, mtime: TimeInterval) -> ToolVersionInfo?? {
+        storage[Key(path: path, mtime: mtime)]
+    }
+
+    func set(path: String, mtime: TimeInterval, value: ToolVersionInfo?) {
+        storage[Key(path: path, mtime: mtime)] = value
+    }
+}
+
 /// Detects installed Symaira tools and performs the version handshake.
 public struct ToolDetector: Sendable {
     public let locator: BinaryLocator
@@ -37,14 +57,30 @@ public struct ToolDetector: Sendable {
     /// detection with a timeout and graceful fallback).
     public let handshakeTimeout: Double
 
+    /// Maximum number of concurrent handshake spawns. Kept low so detection
+    /// does not overwhelm the system on machines with many registered tools.
+    public let maxConcurrentHandshakes: Int
+
+    /// When `true`, `locate` is called with `allowUnverified: true` so
+    /// binaries in non-root-owned directories and unsigned binaries are
+    /// still returned. Useful for local dev builds and testing.
+    public let allowUnverified: Bool
+
+    private let handshakeCache: HandshakeCache
+
     public init(
         locator: BinaryLocator = BinaryLocator(),
         runner: CLIRunner = CLIRunner(),
-        handshakeTimeout: Double = 5
+        handshakeTimeout: Double = 5,
+        maxConcurrentHandshakes: Int = 4,
+        allowUnverified: Bool = false
     ) {
         self.locator = locator
         self.runner = runner
         self.handshakeTimeout = handshakeTimeout
+        self.maxConcurrentHandshakes = maxConcurrentHandshakes
+        self.allowUnverified = allowUnverified
+        self.handshakeCache = HandshakeCache()
     }
 
     /// Locate a tool's binary and query its version. Returns nil when the
@@ -52,22 +88,46 @@ public struct ToolDetector: Sendable {
     /// version query is still returned (with `versionInfo == nil`) so UIs
     /// can show a repair hint instead of "not installed".
     public func detect(_ tool: SymairaTool) async -> DetectedTool? {
-        guard let location = locator.locate(tool.binaryName) else {
+        guard let location = locator.locate(tool.binaryName, allowUnverified: allowUnverified) else {
             return nil
         }
-        let info = await queryVersion(at: location.url)
+        let info = await queryVersionCached(at: location.url)
         return DetectedTool(tool: tool, location: location, versionInfo: info)
     }
 
     /// Detect every registry tool that is installed on this machine.
+    ///
+    /// Handshakes run concurrently in bounded chunks (default 4) so a single
+    /// slow binary does not serialise the others. Results are returned in the
+    /// same order as the input `tools` array.
     public func detectInstalled(from tools: [SymairaTool] = SymairaToolRegistry.all) async -> [DetectedTool] {
-        var detected: [DetectedTool] = []
-        for tool in tools {
-            if let hit = await detect(tool) {
-                detected.append(hit)
+        let chunkSize = maxConcurrentHandshakes
+        var results: [(Int, DetectedTool)] = []
+
+        var offset = 0
+        while offset < tools.count {
+            let end = min(offset + chunkSize, tools.count)
+            let chunk = Array(tools[offset..<end])
+
+            await withTaskGroup(of: (Int, DetectedTool?).self) { group in
+                for (i, tool) in chunk.enumerated() {
+                    let index = offset + i
+                    group.addTask {
+                        let result = await self.detect(tool)
+                        return (index, result)
+                    }
+                }
+                for await (index, opt) in group {
+                    if let hit = opt {
+                        results.append((index, hit))
+                    }
+                }
             }
+
+            offset += chunkSize
         }
-        return detected
+
+        return results.sorted { $0.0 < $1.0 }.map { $0.1 }
     }
 
     /// Verify a detected tool satisfies the schema version this app expects.
@@ -83,6 +143,25 @@ public struct ToolDetector: Sendable {
     private struct VersionJSON: Decodable {
         let version: String
         let schemaVersion: Int?
+    }
+
+    private func queryVersionCached(at url: URL) async -> ToolVersionInfo? {
+        let path = url.path
+        let mtime: TimeInterval
+        if let values = try? url.resourceValues(forKeys: [.contentModificationDateKey]),
+           let date = values.contentModificationDate {
+            mtime = date.timeIntervalSinceReferenceDate
+        } else {
+            mtime = 0
+        }
+
+        if let cached = await handshakeCache.get(path: path, mtime: mtime) {
+            return cached
+        }
+
+        let info = await queryVersion(at: url)
+        await handshakeCache.set(path: path, mtime: mtime, value: info)
+        return info
     }
 
     private func queryVersion(at url: URL) async -> ToolVersionInfo? {
