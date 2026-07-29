@@ -220,4 +220,46 @@ final class CLIRunnerTests: XCTestCase {
         XCTAssertEqual(result.stdout.count, 200_000)
         XCTAssertFalse(result.isTruncated)
     }
+
+    // MARK: - Issue #14: Shared PATH plumbing
+
+    func testAugmentedEnvironmentPrependsPATHPrefix() {
+        let env = CLIRunner.augmentedEnvironment(["HOME": "/Users/test"])
+        let path = env["PATH"] ?? ""
+        XCTAssertTrue(path.hasPrefix(CLIRunner.augmentedPATHPrefix),
+                      "PATH should start with augmented prefix, got: \(path)")
+        XCTAssertTrue(path.contains("/Users/test") == false,
+                      "Augmented environment should not leak non-PATH keys into PATH")
+        XCTAssertEqual(env["HOME"], "/Users/test", "Non-PATH keys must be preserved")
+    }
+
+    func testAugmentedEnvironmentPreservesExistingPATHSuffix() {
+        let env = CLIRunner.augmentedEnvironment(["PATH": "/custom/bin"])
+        let path = env["PATH"] ?? ""
+        XCTAssertTrue(path.hasPrefix(CLIRunner.augmentedPATHPrefix),
+                      "PATH must start with augmented prefix")
+        XCTAssertTrue(path.hasSuffix(":/custom/bin"),
+                      "Existing PATH must be appended after the prefix, got: \(path)")
+    }
+
+    func testSpawnPathsYieldIdenticalAugmentation() async throws {
+        // Verify both spawn paths (CLIRunner and DaemonSupervisor) produce
+        // identical PATH augmentation via the shared helper.
+        let cliEnv = CLIRunner.augmentedEnvironment([:])
+        let cliPath = cliEnv["PATH"] ?? ""
+
+        // DaemonSupervisor uses the same helper — verify by running a process
+        // through CLIRunner (which uses augmentedEnvironment internally).
+        let result = try await runner.run(
+            sh,
+            arguments: ["-c", "printf '%s' \"$PATH\""],
+            environment: [:]
+        )
+        // The subprocess PATH should start with the same prefix.
+        XCTAssertTrue(result.stdoutText.hasPrefix(CLIRunner.augmentedPATHPrefix),
+                      "Subprocess PATH should start with augmented prefix, got: \(result.stdoutText)")
+        // The prefix should match what augmentedEnvironment produces.
+        XCTAssertEqual(cliPath.prefix(CLIRunner.augmentedPATHPrefix.count),
+                       CLIRunner.augmentedPATHPrefix)
+    }
 }

@@ -22,7 +22,7 @@ let package = Package(
         .target(name: "SymairaToolKit", dependencies: ["SymairaCLIRunner"]),
         .target(name: "SymairaKeychain"),
         .target(name: "SymairaUpdateCheck"),
-        .target(name: "SymairaDaemonKit"),
+        .target(name: "SymairaDaemonKit", dependencies: ["SymairaCLIRunner"]),
         .target(name: "SymairaIngestContract", dependencies: ["SymairaToolKit", "SymairaCLIRunner"]),
         .testTarget(name: "SymairaThemeTests", dependencies: ["SymairaTheme"]),
         .testTarget(name: "SymairaCLIRunnerTests", dependencies: ["SymairaCLIRunner"]),

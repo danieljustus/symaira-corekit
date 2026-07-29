@@ -177,6 +177,15 @@ public struct CLIRunner: Sendable {
     /// find Homebrew-installed binaries and helpers like docker.
     public static let augmentedPATHPrefix = "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin"
 
+    /// Returns `base` with the augmented `PATH` prefix merged in.
+    /// If `base` already contains a `PATH` key the prefix is prepended;
+    /// otherwise the prefix is used as the sole `PATH` value.
+    public static func augmentedEnvironment(_ base: [String: String]) -> [String: String] {
+        var env = base
+        env["PATH"] = env["PATH"].map { "\(augmentedPATHPrefix):\($0)" } ?? augmentedPATHPrefix
+        return env
+    }
+
     /// Default per-stream byte limit for subprocess output (16 MiB).
     /// When either stdout or stderr exceeds this limit the process is
     /// terminated and the returned `CLIResult.isTruncated` is `true`.
@@ -329,8 +338,7 @@ public struct CLIRunner: Sendable {
         box.process.executableURL = executable
         box.process.arguments = arguments
 
-        var env = ProcessInfo.processInfo.environment
-        env["PATH"] = env["PATH"].map { "\(augmentedPATHPrefix):\($0)" } ?? augmentedPATHPrefix
+        var env = CLIRunner.augmentedEnvironment(ProcessInfo.processInfo.environment)
         environment.forEach { env[$0.key] = $0.value }
         box.process.environment = env
 

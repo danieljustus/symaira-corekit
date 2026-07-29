@@ -1,5 +1,6 @@
 #if os(macOS)
 import Foundation
+import SymairaCLIRunner
 
 /// Defines the operational state of a background daemon.
 public enum DaemonState: Sendable, Equatable {
@@ -37,6 +38,10 @@ public final class DaemonSupervisor: @unchecked Sendable {
     
     private var _state: DaemonState = .stopped
     private var _logs: [DaemonLogLine] = []
+    
+    /// Monotonically increasing token that lets termination handlers and
+    /// scheduled escalations detect that they belong to a stale run.
+    private var generation: UInt64 = 0
     
     private let maxLogsLimit = 1000
     
@@ -81,6 +86,9 @@ public final class DaemonSupervisor: @unchecked Sendable {
     ) -> AsyncStream<DaemonLogLine> {
         stopInternal()
         
+        generation += 1
+        let myGen = generation
+        
         updateState(.starting)
         appendLogLine("[daemon] Starting \(executable.lastPathComponent) \(arguments.joined(separator: " "))…", isError: false)
         
@@ -95,12 +103,7 @@ public final class DaemonSupervisor: @unchecked Sendable {
         proc.executableURL = executable
         proc.arguments = arguments
         
-        var mergedEnv = ProcessInfo.processInfo.environment
-        if let path = mergedEnv["PATH"] {
-            mergedEnv["PATH"] = "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:\(path)"
-        } else {
-            mergedEnv["PATH"] = "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin"
-        }
+        var mergedEnv = CLIRunner.augmentedEnvironment(ProcessInfo.processInfo.environment)
         if let environment = environment {
             for (key, val) in environment {
                 mergedEnv[key] = val
@@ -145,6 +148,11 @@ public final class DaemonSupervisor: @unchecked Sendable {
                 let exitCode = proc.terminationStatus
                 
                 self.lock.lock()
+                guard myGen == self.generation else {
+                    self.lock.unlock()
+                    continuation.finish() // finish the stale generation's stream
+                    return
+                }
                 if exitCode != 0, !self.stopRequested {
                     self._state = .failed("Process exited with code \(exitCode)")
                     self.appendLogLineInternal("[daemon] Process exited with code \(exitCode)", isError: true)
@@ -154,12 +162,11 @@ public final class DaemonSupervisor: @unchecked Sendable {
                 }
                 let changeCallback = self.onStateChange
                 let stateCopy = self._state
-                let continuation = self.logContinuation
                 self.cleanup()
                 self.logContinuation = nil
                 self.lock.unlock()
 
-                continuation?.finish()
+                continuation.finish()
                 if let changeCallback {
                     changeCallback(stateCopy)
                 }
@@ -191,6 +198,7 @@ public final class DaemonSupervisor: @unchecked Sendable {
     private func stopInternal() {
         lock.lock()
         let currentProcess = process
+        let currentGen = generation
         lock.unlock()
 
         guard let proc = currentProcess, proc.isRunning else {
@@ -215,15 +223,19 @@ public final class DaemonSupervisor: @unchecked Sendable {
         let processToKill = proc
         let pid = proc.processIdentifier
         
-        // Schedule fallback escalation
+        // Schedule fallback escalation — guards against stale generation.
         DispatchQueue.global(qos: .userInitiated).asyncAfter(deadline: .now() + 2.0) { [weak self] in
+            guard let self = self else { return }
+            guard self.generation == currentGen else { return }
             guard processToKill.isRunning else { return }
-            self?.appendLogLine("[daemon] Escalating stop: sending SIGINT to PID \(pid)...", isError: true)
+            self.appendLogLine("[daemon] Escalating stop: sending SIGINT to PID \(pid)...", isError: true)
             processToKill.interrupt()
             
-            DispatchQueue.global(qos: .userInitiated).asyncAfter(deadline: .now() + 1.5) { [weak self, processToKill] in
+            DispatchQueue.global(qos: .userInitiated).asyncAfter(deadline: .now() + 1.5) { [weak self] in
+                guard let self = self else { return }
+                guard self.generation == currentGen else { return }
                 guard processToKill.isRunning else { return }
-                self?.appendLogLine("[daemon] Force killing process: sending SIGKILL to PID \(pid)...", isError: true)
+                self.appendLogLine("[daemon] Force killing process: sending SIGKILL to PID \(pid)...", isError: true)
                 Darwin.kill(pid, SIGKILL)
             }
         }
