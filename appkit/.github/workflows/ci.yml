@@ -22,13 +22,21 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  PATH: /usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
+  # /opt/homebrew = Apple Silicon (macbook runner), /usr/local = Intel (mac-mini runner)
+  PATH: /opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
 
 jobs:
   test:
     runs-on: [self-hosted, macOS, X64, mac-mini]  # Mac Mini runner (GitHub macOS queue is the bottleneck)
     steps:
       - uses: actions/checkout@v4
+      - name: Select Xcode
+        # CLT lacks XCTest; DEVELOPER_DIR points swift at the full Xcode toolchain
+        # without needing sudo (macbook runner has no passwordless sudo).
+        run: |
+          if [ -d /Applications/Xcode_16.4.app ]; then XCODE=/Applications/Xcode_16.4.app; else XCODE="$(ls -d /Applications/Xcode*.app | sort -V | tail -1)"; fi
+          sudo -n xcode-select -s "$XCODE" 2>/dev/null || true
+          echo "DEVELOPER_DIR=$XCODE/Contents/Developer" >> "$GITHUB_ENV"
       - name: Swift version
         run: swift --version
       - name: Build
