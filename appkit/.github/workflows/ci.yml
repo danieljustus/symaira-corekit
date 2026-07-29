@@ -40,9 +40,16 @@ jobs:
       - name: Swift version
         run: swift --version
       - name: Build
-        run: swift build -v -j 2
+        # Scale parallelism by RAM: Mini (8GB) needs -j2, MacBook (24GB) can do more
+        run: |
+          MEM_GB=$(($(sysctl -n hw.memsize) / 1073741824))
+          if [ "$MEM_GB" -le 8 ]; then JOBS=2; elif [ "$MEM_GB" -le 16 ]; then JOBS=4; else JOBS=6; fi
+          swift build -v -j "$JOBS"
       # PR gate is build-only; the XCTest suite runs on main pushes and the
       # weekly schedule (macOS GitHub runners queue badly — local runs are faster).
       - name: Test
         if: github.event_name != 'pull_request'
-        run: swift test -v -j 2
+        run: |
+          MEM_GB=$(($(sysctl -n hw.memsize) / 1073741824))
+          if [ "$MEM_GB" -le 8 ]; then JOBS=2; elif [ "$MEM_GB" -le 16 ]; then JOBS=4; else JOBS=6; fi
+          swift test -v -j "$JOBS"
