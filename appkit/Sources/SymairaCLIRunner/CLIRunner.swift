@@ -94,7 +94,7 @@ public enum CLIRunnerError: Error, LocalizedError, Sendable {
 
         // 1. Redact PEM blocks (multiline — must happen before we split to
         //    first line, otherwise BEGIN/END markers span lines).
-        let pemPattern = #"-----BEGIN [A-Z ]+-----[A-Za-z0-9+/=.\\s]+?-----END [A-Z ]+-----"#
+        let pemPattern = #"-----BEGIN [A-Z ]+-----[A-Za-z0-9+/=.\s]+?-----END [A-Z ]+-----"#
         if let regex = try? NSRegularExpression(pattern: pemPattern, options: [.dotMatchesLineSeparators]) {
             redacted = regex.stringByReplacingMatches(
                 in: redacted,

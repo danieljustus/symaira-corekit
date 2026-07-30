@@ -5,7 +5,6 @@ let package = Package(
     name: "symaira-appkit",
     platforms: [
         .macOS(.v14),
-        .iOS(.v17)
     ],
     products: [
         .library(name: "SymairaTheme", targets: ["SymairaTheme"]),
