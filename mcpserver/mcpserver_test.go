@@ -640,8 +640,8 @@ func TestToolsListWithAnnotations(t *testing.T) {
 		Description: "Read a file from disk",
 		InputSchema: json.RawMessage(`{"type":"object"}`),
 		Annotations: &ToolAnnotations{
-			Title:         "Read File",
-			ReadOnlyHint:  true,
+			Title:          "Read File",
+			ReadOnlyHint:   true,
 			IdempotentHint: true,
 		},
 	})
@@ -650,8 +650,8 @@ func TestToolsListWithAnnotations(t *testing.T) {
 		Description: "Delete a file",
 		InputSchema: json.RawMessage(`{"type":"object"}`),
 		Annotations: &ToolAnnotations{
-			Title:            "Delete File",
-			DestructiveHint:  true,
+			Title:           "Delete File",
+			DestructiveHint: true,
 		},
 	})
 
@@ -722,11 +722,11 @@ func TestToolsListAnnotationsAllHints(t *testing.T) {
 		Name:        "full-annotations",
 		Description: "Tool with every annotation set",
 		Annotations: &ToolAnnotations{
-			Title:            "Full",
-			ReadOnlyHint:     false,
-			IdempotentHint:   true,
-			OpenWorldHint:    true,
-			DestructiveHint:  false,
+			Title:           "Full",
+			ReadOnlyHint:    false,
+			IdempotentHint:  true,
+			OpenWorldHint:   true,
+			DestructiveHint: false,
 		},
 	})
 
