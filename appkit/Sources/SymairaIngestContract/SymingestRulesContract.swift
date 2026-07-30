@@ -341,6 +341,7 @@ public protocol ClassificationRulesClient: Sendable {
     func deleteMailRule(id: String) async throws
 }
 
+#if os(macOS)
 public struct SymingestRulesClient: ClassificationRulesClient, Sendable {
     private let locator: BinaryLocator
     private let runner: CLIRunner
@@ -429,6 +430,7 @@ public struct SymingestRulesClient: ClassificationRulesClient, Sendable {
         _ = try await SymingestRulesContract.decodeMail(from: run(mailArguments("delete", id)))
     }
 }
+#endif
 
 public extension SymairaToolRegistry {
     static var ingestTool: SymairaTool {
