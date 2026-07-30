@@ -144,6 +144,7 @@ public struct CosignConfig: Sendable {
 
 /// Default `CosignVerifier` implementation that shells out to the `cosign` CLI.
 /// Falls back gracefully with a clear error when cosign is not installed.
+#if os(macOS)
 public struct CosignCLIVerifier: CosignVerifier, Sendable {
     /// The GitHub repository slug.
     public let repo: String
@@ -286,6 +287,7 @@ public struct CosignCLIVerifier: CosignVerifier, Sendable {
         }
     }
 }
+#endif
 
 // MARK: - Errors
 
@@ -330,6 +332,7 @@ public enum UpdateApplierError: Error, Sendable, Equatable {
 /// - Cosign verification (`cosignConfig`): verifies checksums.txt signature.
 ///
 /// This is the Swift port of corekit/updatecheck/updateapply.
+#if os(macOS)
 public struct UpdateApplier: Sendable {
 
     /// The target operating system for asset selection (e.g. "darwin", "linux").
@@ -1033,3 +1036,4 @@ public struct UpdateApplier: Sendable {
 #endif
     }
 }
+#endif
