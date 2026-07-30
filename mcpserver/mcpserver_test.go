@@ -501,6 +501,107 @@ func TestNilHandlerTool(t *testing.T) {
 	}
 }
 
+func TestToolsCallStructuredResult(t *testing.T) {
+	srv := New("test", "1.0")
+	srv.RegisterTool(&Tool{
+		Name:        "ports",
+		Description: "List open ports",
+		Handler: func(ctx context.Context, input json.RawMessage) (any, error) {
+			return map[string]any{"free": []int{39000, 39001}}, nil
+		},
+	})
+
+	req := frameRequest(t, "tools/call", map[string]any{
+		"name":      "ports",
+		"arguments": map[string]any{},
+	}, 10)
+	buf := runServer(t, srv, string(req))
+
+	resp := readResponse(t, buf)
+	if resp.Error != nil {
+		t.Fatalf("unexpected JSON-RPC error: %v", resp.Error)
+	}
+
+	result := resp.Result.(map[string]any)
+	content := result["content"].([]any)
+	item := content[0].(map[string]any)
+	text, ok := item["text"].(string)
+	if !ok {
+		t.Fatalf("text field is not a string: %T", item["text"])
+	}
+	if text != `{"free":[39000,39001]}` {
+		t.Errorf("text = %q, want %q", text, `{"free":[39000,39001]}`)
+	}
+	if result["isError"] != false {
+		t.Error("expected isError=false")
+	}
+}
+
+func TestToolsCallScalarResult(t *testing.T) {
+	srv := New("test", "1.0")
+	srv.RegisterTool(&Tool{
+		Name:        "count",
+		Description: "Return a number",
+		Handler: func(ctx context.Context, input json.RawMessage) (any, error) {
+			return 42, nil
+		},
+	})
+
+	req := frameRequest(t, "tools/call", map[string]any{
+		"name":      "count",
+		"arguments": map[string]any{},
+	}, 11)
+	buf := runServer(t, srv, string(req))
+
+	resp := readResponse(t, buf)
+	if resp.Error != nil {
+		t.Fatalf("unexpected JSON-RPC error: %v", resp.Error)
+	}
+
+	result := resp.Result.(map[string]any)
+	content := result["content"].([]any)
+	item := content[0].(map[string]any)
+	text, ok := item["text"].(string)
+	if !ok {
+		t.Fatalf("text field is not a string: %T", item["text"])
+	}
+	if text != "42" {
+		t.Errorf("text = %q, want %q", text, "42")
+	}
+}
+
+func TestToolsCallBooleanResult(t *testing.T) {
+	srv := New("test", "1.0")
+	srv.RegisterTool(&Tool{
+		Name:        "check",
+		Description: "Return a boolean",
+		Handler: func(ctx context.Context, input json.RawMessage) (any, error) {
+			return true, nil
+		},
+	})
+
+	req := frameRequest(t, "tools/call", map[string]any{
+		"name":      "check",
+		"arguments": map[string]any{},
+	}, 12)
+	buf := runServer(t, srv, string(req))
+
+	resp := readResponse(t, buf)
+	if resp.Error != nil {
+		t.Fatalf("unexpected JSON-RPC error: %v", resp.Error)
+	}
+
+	result := resp.Result.(map[string]any)
+	content := result["content"].([]any)
+	item := content[0].(map[string]any)
+	text, ok := item["text"].(string)
+	if !ok {
+		t.Fatalf("text field is not a string: %T", item["text"])
+	}
+	if text != "true" {
+		t.Errorf("text = %q, want %q", text, "true")
+	}
+}
 func TestServeIORejectsOversizedLine(t *testing.T) {
 	srv := New("test", "1.0.0")
 	// A single line far larger than maxLineBytes with no newline must be

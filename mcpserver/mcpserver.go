@@ -387,8 +387,30 @@ func sendResponse(w responseWriter, id any, result any) {
 }
 
 func sendToolResponseRaw(w responseWriter, id any, raw json.RawMessage) {
-	envelope := fmt.Sprintf(`{"content":[{"type":"text","text":%s}],"isError":false}`, raw)
-	writeResponse(w, jsonRPCResponse{JSONRPC: "2.0", ID: id, Result: json.RawMessage(envelope)})
+	// raw is the JSON-marshalled handler return value. MCP TextContent.text
+	// must be a JSON string, so we convert any non-string JSON (maps,
+	// slices, scalars) to its string representation. This keeps the
+	// existing correct behaviour for string-typed handler returns while
+	// fixing the schema violation for structured results.
+	var text string
+	if len(raw) > 0 && raw[0] == '"' {
+		// raw is already a JSON string — extract the Go string value.
+		if err := json.Unmarshal(raw, &text); err != nil {
+			text = string(raw)
+		}
+	} else {
+		text = string(raw)
+	}
+	writeResponse(w, jsonRPCResponse{
+		JSONRPC: "2.0",
+		ID:      id,
+		Result: map[string]any{
+			"content": []map[string]any{
+				{"type": "text", "text": text},
+			},
+			"isError": false,
+		},
+	})
 }
 
 func sendToolError(w responseWriter, id any, text string) {
