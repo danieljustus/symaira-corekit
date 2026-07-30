@@ -1,0 +1,42 @@
+name: Bug Report
+description: File a bug report
+title: "bug: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out this bug report!
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: What happened? What did you expect to happen?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      description: Minimal code or steps to reproduce the issue.
+      value: |
+        1.
+        2.
+        3.
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: |
+        Examples:
+          - **macOS**: 15.x
+          - **Xcode**: 16.x
+          - **Swift**: 6.x
+          - **Package version**: 0.6.0
+      value: |
+        - macOS:
+        - Xcode:
+        - Swift:
+        - Package version:
+    validations:
+      required: true
