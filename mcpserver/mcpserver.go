@@ -53,11 +53,40 @@ type responseWriter struct {
 	mode responseMode
 }
 
+// ToolAnnotations carries optional MCP tool-behaviour hints that are
+// serialised as the standard "annotations" field in tools/list. These are
+// client-facing advisory hints, not Guard-style enforcement. A nil/zero
+// value omits the field entirely from the protocol response.
+type ToolAnnotations struct {
+	// Title is a human-readable title for the tool.
+	Title string `json:"title,omitempty"`
+
+	// ReadOnlyHint, when true, tells the client that this tool performs no
+	// side-effect state changes.
+	ReadOnlyHint bool `json:"readOnlyHint,omitempty"`
+
+	// IdempotentHint, when true, tells the client that calling this tool
+	// repeatedly with the same arguments produces the same result.
+	IdempotentHint bool `json:"idempotentHint,omitempty"`
+
+	// OpenWorldHint, when true, tells the client that this tool may
+	// interact with external entities outside the MCP server's control.
+	OpenWorldHint bool `json:"openWorldHint,omitempty"`
+
+	// DestructiveHint, when true, tells the client that this tool may
+	// perform destructive updates (deletes, overwrites, etc.).
+	DestructiveHint bool `json:"destructiveHint,omitempty"`
+}
+
 // Tool defines a MCP tool that can be called by clients.
 type Tool struct {
 	Name        string
 	Description string
 	InputSchema json.RawMessage
+
+	// Annotations carries optional MCP tool-behaviour hints. When nil or
+	// all-zero, no "annotations" field is emitted in tools/list.
+	Annotations *ToolAnnotations
 
 	// Handler is invoked when the client calls this tool. input is the raw JSON
 	// "arguments" object from the tools/call request. The returned value is
@@ -339,6 +368,9 @@ func (s *Server) handleToolsList(w responseWriter, req *jsonRPCRequest) {
 			} else {
 				tool["inputSchema"] = json.RawMessage(t.InputSchema)
 			}
+		}
+		if t.Annotations != nil {
+			tool["annotations"] = t.Annotations
 		}
 		tools = append(tools, tool)
 	}
