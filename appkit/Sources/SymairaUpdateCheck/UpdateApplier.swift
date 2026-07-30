@@ -751,11 +751,11 @@ public struct UpdateApplier: Sendable {
         // Normalize to absolute path.
         let absPath = URL(fileURLWithPath: realPath).standardized.path
 
-        // Check env vars first.
-        if let method = detectFromEnv(absPath) { return method }
-
-        // Check path patterns.
+        // Check path patterns first (more specific than env vars).
         if let method = detectFromPath(absPath) { return method }
+
+        // Check env vars.
+        if let method = detectFromEnv(absPath) { return method }
 
         // Check Cellar receipts.
         if absPath.contains("/Cellar/") { return .homebrew }
