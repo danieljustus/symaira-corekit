@@ -92,6 +92,7 @@ public protocol ReOCRClient: Sendable {
     func reprocess(archivePath: String) async throws -> ReOCRResponse
 }
 
+#if os(macOS)
 public struct SymingestReOCRClient: ReOCRClient, Sendable {
     private let locator: BinaryLocator
     private let runner: CLIRunner
@@ -145,3 +146,4 @@ public struct SymingestReOCRClient: ReOCRClient, Sendable {
         try await ReOCRContract.decodeWithSchemaCheck(from: run(reocrArguments(.archivePath(archivePath))))
     }
 }
+#endif
