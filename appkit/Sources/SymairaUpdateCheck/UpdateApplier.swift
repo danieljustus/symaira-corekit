@@ -739,7 +739,14 @@ public struct UpdateApplier: Sendable {
     public static func detectInstallMethod(at binaryPath: String) -> InstallMethod {
         guard !binaryPath.isEmpty else { return .unknown }
 
-        // Resolve symlinks.
+        // Check the original path against known patterns FIRST.
+        // Symlink resolution follows: a user-facing path like
+        // /usr/local/bin/foo must be classified as directDownload
+        // even if the file is a symlink into a Homebrew Cellar.
+        let originalAbs = URL(fileURLWithPath: binaryPath).standardized.path
+        if let method = detectFromPath(originalAbs) { return method }
+
+        // Resolve symlinks (throws for nonexistent paths).
         let realPath: String
         if let resolved = try? FileManager.default
             .destinationOfSymbolicLink(atPath: binaryPath) {
@@ -750,9 +757,6 @@ public struct UpdateApplier: Sendable {
 
         // Normalize to absolute path.
         let absPath = URL(fileURLWithPath: realPath).standardized.path
-
-        // Check path patterns first (more specific than env vars).
-        if let method = detectFromPath(absPath) { return method }
 
         // Check env vars.
         if let method = detectFromEnv(absPath) { return method }
