@@ -29,7 +29,7 @@ jobs:
   test:
     runs-on: [self-hosted, macOS, X64, mac-mini]  # Mac Mini runner (GitHub macOS queue is the bottleneck)
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           # clean=false: skip Post-Run git cleanup (hangs on self-hosted macOS runners)
           clean: false
@@ -59,7 +59,7 @@ jobs:
   ios-build:
     runs-on: [self-hosted, macOS, X64, mac-mini]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           clean: false
       - name: Select Xcode
@@ -67,22 +67,36 @@ jobs:
           if [ -d /Applications/Xcode_16.4.app ]; then XCODE=/Applications/Xcode_16.4.app; else XCODE="$(ls -d /Applications/Xcode*.app | sort -V | tail -1)"; fi
           sudo -n xcode-select -s "$XCODE" 2>/dev/null || true
           echo "DEVELOPER_DIR=$XCODE/Contents/Developer" >> "$GITHUB_ENV"
-      - name: Swift version
-        run: swift --version
-      - name: Build (iOS)
+      - name: Check iOS SDK availability
+        id: ios-sdk
         run: |
-          swift build --sdk "$(xcrun --sdk iphoneos --show-sdk-path)" --target arm64-apple-ios17.0
+          if xcrun --sdk iphoneos --show-sdk-path >/dev/null 2>&1; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "iOS SDK not available on this runner — skipping iOS build"
+          fi
+      - name: Build (iOS)
+        if: steps.ios-sdk.outputs.available == 'true'
+        run: |
+          swift build --sdk "$(xcrun --sdk iphoneos --show-sdk-path)" -Xswiftc -target -Xswiftc arm64-apple-ios17.0
 
   swift-62-build:
     runs-on: [self-hosted, macOS, X64, mac-mini]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           clean: false
-      - name: Select Xcode 26 (Swift 6.2+)
+      - name: Select Xcode (prefer 26+ for Swift 6.2)
         run: |
-          XCODE="$(ls -d /Applications/Xcode*.app | sort -V | tail -1)"
-          echo "DEVELOPER_DIR=$XCODE/Contents/Developer" >> "$GITHUB_ENV"
+          XCODE26=$(ls -d /Applications/Xcode-26*.app 2>/dev/null | sort -V | tail -1)
+          if [ -n "$XCODE26" ]; then
+            echo "DEVELOPER_DIR=$XCODE26/Contents/Developer" >> "$GITHUB_ENV"
+          else
+            XCODE="$(ls -d /Applications/Xcode*.app | sort -V | tail -1)"
+            echo "DEVELOPER_DIR=$XCODE/Contents/Developer" >> "$GITHUB_ENV"
+            echo "Xcode 26 not found — using $XCODE (Swift 6.2 branches may not compile)"
+          fi
       - name: Swift version
         run: swift --version
       - name: Build (Swift 6.2+)

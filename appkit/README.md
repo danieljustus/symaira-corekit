@@ -1,5 +1,9 @@
 # symaira-appkit
 
+[![CI](https://github.com/danieljustus/symaira-appkit/actions/workflows/ci.yml/badge.svg)](https://github.com/danieljustus/symaira-appkit/actions/workflows/ci.yml)
+[![License](https://img.shields.io/badge/license-Apache%202.0-blue)](LICENSE)
+[![Swift 6](https://img.shields.io/badge/swift-6.0-orange)](https://swift.org)
+
 ![Symaira AppKit social preview](docs/assets/social-preview.png)
 
 Shared Swift foundations for the macOS clients of the [Symaira](https://symaira.com) ecosystem — the GUI counterpart to [`symaira-corekit`](https://github.com/danieljustus/symaira-corekit).
