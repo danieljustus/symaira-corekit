@@ -5,12 +5,38 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.6.1] - 2026-07-30
+
+### Fixed
+- iOS compatibility: guard macOS-only types with `#if os(macOS)` in `CLIRunner`,
+  `UpdateApplier`, `CosignCLIVerifier`, `CosignConfig`, `SymingestReOCRClient`,
+  `SymingestRulesClient` — enables iOS cross-compilation of the package
+- `UpdateChecker`: use `cachesDirectory` on iOS for disk cache path
+- `detectInstallMethod`: check original path patterns before symlink resolution
+  to correctly classify `/usr/local/bin/` as direct download
+- PEM redaction regex: use `\s` instead of `\\s` in character class for correct
+  multi-line PEM block matching
 
 ### Changed
+- Remove `.iOS(.v17)` from package platforms — repository uses macOS-only APIs
+  in most targets
+- Remove `ios-build` CI job (no longer applicable)
 - Tag convention documented: no `v` prefix since 0.3.0. Earlier tags
   (`v0.1.0`–`v0.2.3`) use the `v` prefix and are retained for
   historical reference.
+
+### Security
+- Add `permissions: read-all` to CI workflow (least privilege)
+- Enable private vulnerability reporting
+- Configure CodeQL default setup (Swift analysis)
+
+### Added
+- `CONTRIBUTING.md` with PR/code guidelines and tag convention
+- Issue templates: bug report, feature request, config.yml
+- Pull request template with checklist
+- `SECURITY.md` for supported versions and reporting policy
+- `dependabot.yml` for GitHub Actions dependency updates
+- `CHANGELOG.md`: Unreleased section documenting tag convention
 
 ## [0.6.0] - 2026-07-29
 
@@ -126,6 +152,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `SymairaToolKit`: `SymairaToolRegistry` (single source of truth for all tools), `BinaryLocator`, `ToolDetector` with `version --json` schema handshake
 - `SymairaKeychain`: Keychain wrapper, service-namespaced `dev.symaira.<app>`
 
+[0.6.1]: https://github.com/danieljustus/symaira-appkit/compare/0.6.0...0.6.1
 [0.6.0]: https://github.com/danieljustus/symaira-appkit/compare/0.5.0...0.6.0
 [0.2.3]: https://github.com/danieljustus/symaira-appkit/compare/v0.2.2...v0.2.3
 [0.2.2]: https://github.com/danieljustus/symaira-appkit/compare/v0.2.1...v0.2.2
