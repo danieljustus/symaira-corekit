@@ -822,7 +822,11 @@ public struct UpdateApplier: Sendable {
         if absPath.hasPrefix("/usr/bin/") { return .packageManager }
         if absPath.hasPrefix("/usr/local/bin/") { return .directDownload }
 
+#if !os(iOS) && !os(tvOS) && !os(watchOS)
         let home = FileManager.default.homeDirectoryForCurrentUser.path
+#else
+        let home = NSHomeDirectory()
+#endif
 
         // GOPATH/bin.
         if let gopath = ProcessInfo.processInfo.environment["GOPATH"] {

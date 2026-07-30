@@ -63,9 +63,13 @@ public struct UpdateChecker: Sendable {
         self.repo = repo
         self.client = client
         self.cacheTTL = cacheTTL
-        self.cacheDirectory = cacheDirectory
-            ?? FileManager.default.homeDirectoryForCurrentUser
-                .appendingPathComponent(".cache/symaira-appkit", isDirectory: true)
+#if os(iOS) || os(tvOS) || os(watchOS)
+        let defaultCache: URL = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first!
+#else
+        let defaultCache: URL = FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent(".cache/symaira-appkit", isDirectory: true)
+#endif
+        self.cacheDirectory = cacheDirectory ?? defaultCache
     }
 
     /// Check for a newer stable release. `force` bypasses the disk cache.
