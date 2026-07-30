@@ -74,10 +74,10 @@ func ExtractTarGz(data []byte, destDir, expectedBinaryName string) (string, erro
 			return "", fmt.Errorf("read tar header: %w", err)
 		}
 
-		if err := validateArchiveEntryName(header.Name); err != nil {
+		name := filepath.Clean(filepath.ToSlash(header.Name))
+		if err := validateArchiveEntryName(name); err != nil {
 			return "", err
 		}
-		name := filepath.Clean(filepath.ToSlash(header.Name))
 
 		switch header.Typeflag {
 		case tar.TypeDir:
@@ -148,10 +148,10 @@ func ExtractZip(data []byte, destDir, expectedBinaryName string) (string, error)
 	var totalSize int64
 
 	for _, f := range zr.File {
-		if err := validateArchiveEntryName(f.Name); err != nil {
+		name := filepath.Clean(filepath.ToSlash(f.Name))
+		if err := validateArchiveEntryName(name); err != nil {
 			return "", err
 		}
-		name := filepath.Clean(filepath.ToSlash(f.Name))
 
 		if f.FileInfo().IsDir() {
 			if mkdirErr := root.MkdirAll(name, 0o750); mkdirErr != nil {
