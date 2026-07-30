@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security Issue
+    url: https://github.com/danieljustus/symaira-corekit/security/advisories/new
+    about: Report a security vulnerability privately
+  - name: Discussion
+    url: https://github.com/danieljustus/symaira-corekit/discussions
+    about: Ask questions or discuss ideas

@@ -1,0 +1,31 @@
+name: Feature Request
+description: Suggest an enhancement or new capability
+labels: ["feature"]
+body:
+  - type: markdown
+    attributes:
+      value: Thanks for your suggestion!
+  - type: textarea
+    id: goal
+    attributes:
+      label: Goal
+      description: What should this feature achieve?
+    validations:
+      required: true
+  - type: textarea
+    id: motivation
+    attributes:
+      label: Motivation
+      description: Why is this needed? What use case does it serve?
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Proposed Solution
+      description: Describe the implementation approach, if known
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives
+      description: What alternatives have you considered?
