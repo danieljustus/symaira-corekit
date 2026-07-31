@@ -196,6 +196,15 @@ func (a *Applier) Apply(ctx context.Context, release *updatecheck.Release, targe
 		if extErr != nil {
 			return fmt.Errorf("updateapply: extract binary %q from archive: %w", a.ExtractBinary, extErr)
 		}
+
+		// Defense in depth: the extract package validates archive entry names,
+		// but the returned path is used in file operations below (os.Chmod,
+		// os.Rename). Reject any path with a parent-directory reference before
+		// it reaches those sinks, so a traversal can never escape the
+		// extraction directory.
+		if strings.Contains(extracted, "..") {
+			return fmt.Errorf("updateapply: extracted binary path %q escapes extraction directory %q", extracted, extractedDir)
+		}
 		installTarget = extracted
 	}
 
