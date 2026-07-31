@@ -146,18 +146,22 @@ final class BinaryLocatorTests: XCTestCase {
         XCTAssertTrue(located?.verified ?? false, "Signed system binary should be verified")
     }
 
-    /// An unsigned binary in a non-root-owned directory is not returned
+    /// An unsigned binary in a group-writable directory is not returned
     /// when allowUnverified is false.
     func testUnverifiedHitRejected() throws {
-        let bin = try makeExecutable(named: "symfake", in: tempDir)
-        // tempDir is user-owned → directory check fails.
+        let insecureDir = tempDir.appendingPathComponent("insecure-group")
+        try FileManager.default.createDirectory(at: insecureDir, withIntermediateDirectories: true)
+        chmod(insecureDir.path, 0o775) // group-writable
+        defer { try? FileManager.default.removeItem(at: insecureDir) }
+        let bin = try makeExecutable(named: "symfake", in: insecureDir)
+        // insecureDir is group-writable → directory check fails.
         let locator = BinaryLocator(
             bundle: nil,
-            searchPATH: tempDir.path,
+            searchPATH: insecureDir.path,
             extraDirectories: []
         )
         let located = locator.locate("symfake") // allowUnverified defaults to false
-        XCTAssertNil(located, "Unsigned binary in insecure directory should be rejected by default")
+        XCTAssertNil(located, "Unsigned binary in group-writable directory should be rejected by default")
         // Sanity: the binary does exist.
         XCTAssertTrue(FileManager.default.isExecutableFile(atPath: bin.path))
     }
@@ -185,9 +189,18 @@ final class BinaryLocatorTests: XCTestCase {
         XCTAssertTrue(BinaryLocator.isDirectorySecure("/usr/bin"))
     }
 
-    func testIsDirectorySecureRejectsUserTempDir() {
-        // FileManager.temporaryDirectory is user-owned.
-        XCTAssertFalse(BinaryLocator.isDirectorySecure(tempDir.path))
+    func testIsDirectorySecureAcceptsUserTempDir() {
+        // FileManager.temporaryDirectory is user-owned and not
+        // group/world-writable — accepted with the current-user check.
+        XCTAssertTrue(BinaryLocator.isDirectorySecure(tempDir.path))
+    }
+
+    func testIsDirectorySecureRejectsWorldWritableDir() throws {
+        let dir = tempDir.appendingPathComponent("world-writable")
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        chmod(dir.path, 0o777)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        XCTAssertFalse(BinaryLocator.isDirectorySecure(dir.path))
     }
 
     // MARK: - Signature verification helper

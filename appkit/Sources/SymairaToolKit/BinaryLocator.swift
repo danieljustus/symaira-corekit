@@ -142,13 +142,15 @@ public struct BinaryLocator: Sendable {
 
     // MARK: - Directory security
 
-    /// Returns `true` when the directory at `path` is root-owned and is
-    /// neither group- nor world-writable. Used to reject binaries sitting
-    /// in user-controlled directories that could be swapped out.
+    /// Returns `true` when the directory at `path` is owned by root or
+    /// the current user and is neither group- nor world-writable. Used
+    /// to reject binaries sitting in directories that could be swapped
+    /// out by other users.
     static func isDirectorySecure(_ path: String) -> Bool {
         var statBuf = stat()
         guard stat(path, &statBuf) == 0 else { return false }
-        guard statBuf.st_uid == 0 else { return false }
+        let owner = statBuf.st_uid
+        guard owner == 0 || owner == getuid() else { return false }
         let mode = statBuf.st_mode
         guard (mode & S_IWGRP) == 0 else { return false }
         guard (mode & S_IWOTH) == 0 else { return false }
