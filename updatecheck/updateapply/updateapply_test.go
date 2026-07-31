@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"testing"
 
 	"github.com/danieljustus/symaira-corekit/updatecheck"
@@ -206,6 +207,97 @@ func TestApplyRejectsNilRelease(t *testing.T) {
 	err := a.Apply(context.Background(), nil, filepath.Join(t.TempDir(), "mytool"))
 	if err == nil {
 		t.Fatal("expected error for nil release, got nil")
+	}
+}
+
+func TestApplyExtractRejectsTraversalArchive(t *testing.T) {
+	// A zip entry named ../evil must never be installed anywhere: the
+	// extract package rejects it before any file is written.
+	assetBody := testBuildZip(map[string]string{"../evil": "evil-binary"})
+	checksums := fmt.Sprintf("%s  mytool_linux_amd64\n", sha256Hex(assetBody))
+
+	server, assetURL, checksumsURL := newTestServer(t, assetBody, checksums)
+	defer server.Close()
+
+	release := &updatecheck.Release{
+		Assets: []updatecheck.Asset{
+			{Name: "mytool_linux_amd64", BrowserDownloadURL: assetURL},
+			{Name: "checksums.txt", BrowserDownloadURL: checksumsURL},
+		},
+	}
+
+	dir := t.TempDir()
+	target := filepath.Join(dir, "mytool")
+	original := []byte("old-binary")
+	if err := os.WriteFile(target, original, 0o755); err != nil { //nolint:gosec
+		t.Fatalf("seed target: %v", err)
+	}
+
+	a := &Applier{
+		HTTPClient:    http.DefaultClient,
+		GOOS:          "linux",
+		GOARCH:        "amd64",
+		ExtractBinary: "mytool",
+	}
+	err := a.Apply(context.Background(), release, target)
+	if err == nil {
+		t.Fatal("expected error for traversal archive, got nil")
+	}
+
+	got, readErr := os.ReadFile(target) //nolint:gosec
+	if readErr != nil {
+		t.Fatalf("read target: %v", readErr)
+	}
+	if string(got) != string(original) {
+		t.Fatalf("target was modified despite traversal archive: got %q, want %q", got, original)
+	}
+}
+
+func TestApplyExtractRejectsTraversalReturnPath(t *testing.T) {
+	// Defense in depth: an extracted path containing ".." as a substring
+	// (which the extract package's segment-level validation allows, e.g.
+	// a version directory named tool..v1.0.0) must be rejected before it
+	// reaches the file operations in Apply.
+	assetBody := testBuildZip(map[string]string{"tool..v1.0.0/mytool": "binary"})
+	checksums := fmt.Sprintf("%s  mytool_linux_amd64\n", sha256Hex(assetBody))
+
+	server, assetURL, checksumsURL := newTestServer(t, assetBody, checksums)
+	defer server.Close()
+
+	release := &updatecheck.Release{
+		Assets: []updatecheck.Asset{
+			{Name: "mytool_linux_amd64", BrowserDownloadURL: assetURL},
+			{Name: "checksums.txt", BrowserDownloadURL: checksumsURL},
+		},
+	}
+
+	dir := t.TempDir()
+	target := filepath.Join(dir, "mytool")
+	original := []byte("old-binary")
+	if err := os.WriteFile(target, original, 0o755); err != nil { //nolint:gosec
+		t.Fatalf("seed target: %v", err)
+	}
+
+	a := &Applier{
+		HTTPClient:    http.DefaultClient,
+		GOOS:          "linux",
+		GOARCH:        "amd64",
+		ExtractBinary: "mytool",
+	}
+	err := a.Apply(context.Background(), release, target)
+	if err == nil {
+		t.Fatal("expected error for traversal-containing extracted path, got nil")
+	}
+	if !strings.Contains(err.Error(), "escapes extraction directory") {
+		t.Fatalf("expected containment error, got: %v", err)
+	}
+
+	got, readErr := os.ReadFile(target) //nolint:gosec
+	if readErr != nil {
+		t.Fatalf("read target: %v", readErr)
+	}
+	if string(got) != string(original) {
+		t.Fatalf("target was modified despite unsafe extracted path: got %q, want %q", got, original)
 	}
 }
 
