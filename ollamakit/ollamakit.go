@@ -296,6 +296,10 @@ type GenerateOptions struct {
 	// System sets a system prompt for this request, overriding any system
 	// message baked into the model.
 	System string `json:"system,omitempty"`
+	// Images is an optional list of base64-encoded images to send to a
+	// vision-capable model. When nil or empty, the "images" key is omitted
+	// from the request body so existing text-only callers are unaffected.
+	Images []string `json:"images,omitempty"`
 }
 
 // GenerateResponse is one chunk from a streaming /api/generate response.
@@ -334,6 +338,9 @@ func (c *Client) Generate(ctx context.Context, model, prompt string, opts *Gener
 		}
 		if opts.System != "" {
 			body["system"] = opts.System
+		}
+		if len(opts.Images) > 0 {
+			body["images"] = opts.Images
 		}
 	}
 
