@@ -490,7 +490,7 @@ public struct SymairaPrimaryButtonStyle: ButtonStyle {
 
     public func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.body.weight(.semibold))
+            .font(SymairaTypography.bodyEmphasized)
             .foregroundStyle(Color.black.opacity(isEnabled ? 0.88 : 0.55))
             .padding(.horizontal, SymairaSpacing.large)
             .frame(minHeight: SymairaMetrics.minimumControlHeight)
@@ -530,7 +530,7 @@ public struct SymairaSecondaryButtonStyle: ButtonStyle {
     public func makeBody(configuration: Configuration) -> some View {
         let shape = RoundedRectangle(cornerRadius: SymairaRadius.control, style: .continuous)
         configuration.label
-            .font(.body.weight(.medium))
+            .font(SymairaTypography.bodyMedium)
             .foregroundStyle(SymairaTheme.foregroundPrimary(for: colorScheme))
             .padding(.horizontal, SymairaSpacing.large)
             .frame(minHeight: SymairaMetrics.minimumControlHeight)

@@ -61,7 +61,7 @@ public struct SymairaBadge: View {
                 Text(label)
             }
         }
-        .font(.caption.weight(.semibold))
+        .font(SymairaTypography.label)
         .padding(.horizontal, SymairaSpacing.small)
         .padding(.vertical, SymairaSpacing.xSmall)
         .foregroundStyle(toneColor)
@@ -102,11 +102,11 @@ public struct SymairaNotice: View {
             VStack(alignment: .leading, spacing: SymairaSpacing.xSmall) {
                 if let title {
                     Text(title)
-                        .font(.headline)
+                        .font(SymairaTypography.subheading)
                         .foregroundStyle(SymairaTheme.foregroundPrimary(for: colorScheme))
                 }
                 Text(message)
-                    .font(.subheadline)
+                    .font(SymairaTypography.callout)
                     .foregroundStyle(SymairaTheme.foregroundSecondary(for: colorScheme))
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -156,15 +156,15 @@ public struct SymairaEmptyState<Actions: View>: View {
     public var body: some View {
         VStack(spacing: SymairaSpacing.medium) {
             Image(systemName: systemImage)
-                .font(.system(size: 36, weight: .medium))
+                .font(.system(size: SymairaMetrics.emptyStateSymbolSize, weight: .medium))
                 .symbolRenderingMode(.hierarchical)
                 .foregroundStyle(SymairaTheme.goldPrimary)
                 .accessibilityHidden(true)
             Text(title)
-                .font(.title3.weight(.semibold))
+                .font(SymairaTypography.heading)
                 .foregroundStyle(SymairaTheme.foregroundPrimary(for: colorScheme))
             Text(message)
-                .font(.body)
+                .font(SymairaTypography.body)
                 .foregroundStyle(SymairaTheme.foregroundSecondary(for: colorScheme))
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: 440)
@@ -200,7 +200,7 @@ public struct SymairaLoadingState: View {
                 .tint(SymairaTheme.goldPrimary)
                 .controlSize(.regular)
             Text(message)
-                .font(.subheadline)
+                .font(SymairaTypography.callout)
                 .foregroundStyle(SymairaTheme.foregroundSecondary(for: colorScheme))
         }
         .padding(SymairaSpacing.xLarge)

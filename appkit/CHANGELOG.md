@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- `SymairaTypography`: canonical type scale (`display`, `title`, `heading`,
+  `subheading`, `body`, `bodyEmphasized`, `bodyMedium`, `callout`, `caption`,
+  `label`, `micro`, `mono`, `monoSmall`). Every entry is built from a Dynamic
+  Type text style, so client text scales with the system setting.
+- `SymairaTextRole` and `View.symairaText(_:respectsForeground:)`: apply font,
+  tracking, and foreground colour together, so type and contrast cannot drift
+  apart per app.
+- `SymairaTextFieldStyle` plus `.symaira` / `.symaira(isFocused:)` shorthands —
+  warm surface, glass border, gold focus ring, Increase Contrast aware.
+- `SymairaFormSection`, `SymairaFormRow`, `SymairaFormDivider`: the settings and
+  detail scaffold the client apps have been rebuilding individually.
+- `SymairaStatusDot` and `SymairaStatusLabel`: tone-coloured status that always
+  carries a text or accessibility label, never colour alone.
+- `SymairaMetrics.emptyStateSymbolSize` token for the empty-state illustration.
+
+### Changed
+- Feedback and control components now draw their fonts from `SymairaTypography`
+  instead of inline `Font` literals.
+- `SymairaNotice` message and `SymairaLoadingState` text move from `.subheadline`
+  to the scale's `callout` role — a small size increase, applied deliberately so
+  secondary text is one size across the library.
+
 ## [0.6.1] - 2026-07-30
 
 ### Fixed

@@ -14,7 +14,7 @@ Every Symaira app stays fully standalone: this package is consumed as a **pinned
 
 | Product | Purpose |
 | :--- | :--- |
-| `SymairaTheme` | Cross-platform design foundation: adaptive Symaira tokens, Apple materials and Liquid Glass, backgrounds, surfaces, controls, feedback states, and accessibility-aware fallbacks. Includes legacy `Color.symaira*` aliases. |
+| `SymairaTheme` | Cross-platform design foundation: adaptive Symaira tokens, a Dynamic-Type-backed type scale (`SymairaTypography`, `.symairaText(_:)`), Apple materials and Liquid Glass, backgrounds, surfaces, controls, form scaffolding (`SymairaFormSection`, `SymairaFormRow`, `.symaira` text fields), feedback and status states, and accessibility-aware fallbacks. Includes legacy `Color.symaira*` aliases. |
 | `SymairaCLIRunner` | Subprocess execution for Symaira CLIs: mandatory timeout, stderr capture, snake_case JSON decoding, unified `CLIRunnerError`. |
 | `SymairaToolKit` | `SymairaToolRegistry` (single source of truth for all tools), `BinaryLocator` (bundle → exe dir → PATH → Homebrew prefixes → user override), `ToolDetector` with the `version --json` schema handshake. |
 | `SymairaKeychain` | Keychain wrapper, service-namespaced `dev.symaira.<app>`. |

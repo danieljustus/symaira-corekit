@@ -101,6 +101,10 @@ public enum SymairaMetrics {
 
     public static let readableContentWidth: CGFloat = 760
     public static let glassGroupSpacing: CGFloat = 12
+
+    /// Symbol size for the illustration above an empty state. Fixed on purpose —
+    /// it is a graphic, not text, and must not scale with Dynamic Type.
+    public static let emptyStateSymbolSize: CGFloat = 36
 }
 
 extension Color {
