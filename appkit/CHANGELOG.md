@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-08-01
+
 ### Added
 - `SymairaTypography`: canonical type scale (`display`, `title`, `heading`,
   `subheading`, `body`, `bodyEmphasized`, `bodyMedium`, `callout`, `caption`,
@@ -22,6 +24,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `SymairaStatusDot` and `SymairaStatusLabel`: tone-coloured status that always
   carries a text or accessibility label, never colour alone.
 - `SymairaMetrics.emptyStateSymbolSize` token for the empty-state illustration.
+- `SymairaOnboardingStep`, `SymairaOnboardingFlow`, and `SymairaOnboardingScaffold`:
+  a product-independent multi-step onboarding scaffold. Step identity is
+  protocol-based (`Hashable`/`Identifiable` plus an explicit `order`) so an
+  enum, an `Int` index, or a bespoke struct can all conform; the flow is a
+  pure, testable state machine (advance/retreat/skip/finish) and the SwiftUI
+  scaffold owns chrome, keyboard navigation, and VoiceOver
+  announcements/focus, leaving step content to the client.
 
 ### Changed
 - Feedback and control components now draw their fonts from `SymairaTypography`
@@ -177,6 +186,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `SymairaToolKit`: `SymairaToolRegistry` (single source of truth for all tools), `BinaryLocator`, `ToolDetector` with `version --json` schema handshake
 - `SymairaKeychain`: Keychain wrapper, service-namespaced `dev.symaira.<app>`
 
+[0.7.0]: https://github.com/danieljustus/symaira-appkit/compare/0.6.1...0.7.0
 [0.6.1]: https://github.com/danieljustus/symaira-appkit/compare/0.6.0...0.6.1
 [0.6.0]: https://github.com/danieljustus/symaira-appkit/compare/0.5.0...0.6.0
 [0.2.3]: https://github.com/danieljustus/symaira-appkit/compare/v0.2.2...v0.2.3

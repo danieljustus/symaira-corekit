@@ -66,7 +66,7 @@ that appkit does not accept.
 `import SymairaUI` appears only inside `symaira-terminal` (`App/`, `AppTests/`,
 `Packages/SymairaKit/Tests/`). No other repository consumes it.
 
-The `SymairaFormSection` / `SymairaFormRow` scaffold added in 0.6.2 already covers the
+The `SymairaFormSection` / `SymairaFormRow` scaffold added in 0.7.0 already covers the
 one genuinely shared need this assessment set out to test — settings surfaces — without
 moving a single view out of `symaira-terminal`.
 
