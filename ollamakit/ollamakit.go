@@ -256,6 +256,11 @@ func isNetworkError(err error) bool {
 type embedRequest struct {
 	Model string   `json:"model"`
 	Input []string `json:"input"`
+	// Dimensions requests Matryoshka-truncated embeddings at this width
+	// (e.g. 768 instead of a model's native 1024). Ollama honors this
+	// top-level field but ignores the equivalent options.num_dim. Zero
+	// omits the field so native dimensionality is returned unchanged.
+	Dimensions int `json:"dimensions,omitempty"`
 }
 
 // embedResponse is the Ollama /api/embed response body.
@@ -266,6 +271,18 @@ type embedResponse struct {
 // Embed returns embeddings for the given input strings. If model is empty the
 // client's configured default model is used.
 func (c *Client) Embed(ctx context.Context, model string, inputs []string) ([][]float32, error) {
+	return c.embed(ctx, model, inputs, 0)
+}
+
+// EmbedWithDim returns embeddings truncated to dim dimensions using Ollama's
+// dimensions parameter, for Matryoshka-capable models (e.g. qwen3-embedding
+// at 768 instead of its native 1024). A dim of 0 behaves exactly like Embed
+// and omits the parameter.
+func (c *Client) EmbedWithDim(ctx context.Context, model string, inputs []string, dim int) ([][]float32, error) {
+	return c.embed(ctx, model, inputs, dim)
+}
+
+func (c *Client) embed(ctx context.Context, model string, inputs []string, dim int) ([][]float32, error) {
 	if len(inputs) == 0 {
 		return nil, errors.New("ollamakit: embed inputs must not be empty")
 	}
@@ -274,7 +291,7 @@ func (c *Client) Embed(ctx context.Context, model string, inputs []string) ([][]
 		return nil, errors.New("ollamakit: model is required")
 	}
 
-	req := embedRequest{Model: model, Input: inputs}
+	req := embedRequest{Model: model, Input: inputs, Dimensions: dim}
 	var resp embedResponse
 	if err := c.post(ctx, "/api/embed", req, &resp); err != nil {
 		return nil, err

@@ -119,6 +119,51 @@ func TestEmbed(t *testing.T) {
 	}
 }
 
+// TestEmbedWithDimSendsDimensions verifies that EmbedWithDim forwards the
+// dimensions parameter Ollama uses for Matryoshka-truncated embeddings, and
+// that a zero dim omits the field entirely so Embed's behavior stays
+// unaffected (backward-compatible for callers that never pin a dimension).
+func TestEmbedWithDimSendsDimensions(t *testing.T) {
+	for _, tt := range []struct {
+		name    string
+		dim     int
+		wantHas bool
+	}{
+		{name: "zero_omits", dim: 0, wantHas: false},
+		{name: "positive_sends", dim: 768, wantHas: true},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			var gotBody map[string]any
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				body, _ := io.ReadAll(r.Body)
+				if err := json.Unmarshal(body, &gotBody); err != nil {
+					t.Fatalf("decode request: %v", err)
+				}
+				w.Header().Set("Content-Type", "application/json")
+				json.NewEncoder(w).Encode(embedResponse{Embeddings: [][]float32{{1, 2, 3}}})
+			}))
+			defer server.Close()
+
+			c := New(Config{BaseURL: server.URL, Model: "qwen3-embedding:0.6b"})
+			_, err := c.EmbedWithDim(context.Background(), "", []string{"hello"}, tt.dim)
+			if err != nil {
+				t.Fatalf("EmbedWithDim error: %v", err)
+			}
+
+			_, hasDim := gotBody["dimensions"]
+			if hasDim != tt.wantHas {
+				t.Errorf("dimensions key presence = %v, want %v (body: %v)", hasDim, tt.wantHas, gotBody)
+			}
+			if tt.wantHas {
+				got, ok := gotBody["dimensions"].(float64)
+				if !ok || int(got) != tt.dim {
+					t.Errorf("dimensions = %v, want %d", gotBody["dimensions"], tt.dim)
+				}
+			}
+		})
+	}
+}
+
 func TestEmbedRequiresModel(t *testing.T) {
 	c := New(Config{BaseURL: "http://unused"})
 	if _, err := c.Embed(context.Background(), "", []string{"x"}); err == nil {
