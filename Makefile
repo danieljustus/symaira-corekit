@@ -1,7 +1,10 @@
-.PHONY: build test lint fmt-check clean
+.PHONY: build test lint fmt-check clean consumer-drift
 
 build:
 	CGO_ENABLED=0 go build ./...
+
+consumer-drift:
+	./scripts/consumer-drift.sh
 
 test:
 	CGO_ENABLED=0 go test -race ./...
