@@ -1,5 +1,7 @@
 # symaira-corekit
 
+![Symaira CoreKit social preview](docs/assets/social-preview.png)
+
 Shared Go library for the Symaira public-core tools (`symvault`, `symmemory`, `symseek`, `symfetch`, `symscope`).
 
 Bundles domain-free infrastructure that is otherwise duplicated across tools: MCP server scaffold, TOML config loading, exit codes, logging, path safety, SQLite setup, and update checking.
