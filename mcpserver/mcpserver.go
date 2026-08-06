@@ -78,6 +78,32 @@ type ToolAnnotations struct {
 	DestructiveHint bool `json:"destructiveHint,omitempty"`
 }
 
+// ContentBlock is one MCP tool-result content item. It intentionally accepts
+// arbitrary JSON fields so consumers can return text, image, audio,
+// resource-link, or embedded-resource blocks without the corekit needing to
+// model every MCP content variant.
+type ContentBlock map[string]any
+
+// ToolResult is the optional typed result a tool handler can return. Returning
+// ToolResult preserves content blocks and structured content on the wire;
+// returning any other value keeps the legacy single-text-block behaviour.
+type ToolResult struct {
+	Content           []ContentBlock `json:"content"`
+	StructuredContent any            `json:"structuredContent,omitempty"`
+	Meta              map[string]any `json:"_meta,omitempty"`
+}
+
+// requestMetaKey is private so callers can only access request metadata via
+// RequestMeta, preventing collisions with consumer context values.
+type requestMetaKey struct{}
+
+// RequestMeta returns the optional _meta object supplied with tools/call. The
+// second result is false when the request did not include metadata.
+func RequestMeta(ctx context.Context) (map[string]any, bool) {
+	meta, ok := ctx.Value(requestMetaKey{}).(map[string]any)
+	return meta, ok
+}
+
 // Tool defines a MCP tool that can be called by clients.
 type Tool struct {
 	Name        string
@@ -100,6 +126,25 @@ type jsonRPCRequest struct {
 	ID      any             `json:"id,omitempty"`
 	Method  string          `json:"method"`
 	Params  json.RawMessage `json:"params,omitempty"`
+	HasID   bool            `json:"-"`
+}
+
+// UnmarshalJSON records whether the request included an id. JSON-RPC
+// notifications omit the id member; that is distinct from a request that
+// explicitly sends a null id.
+func (r *jsonRPCRequest) UnmarshalJSON(data []byte) error {
+	type requestAlias jsonRPCRequest
+	var parsed requestAlias
+	if err := json.Unmarshal(data, &parsed); err != nil {
+		return err
+	}
+	var fields map[string]json.RawMessage
+	if err := json.Unmarshal(data, &fields); err != nil {
+		return err
+	}
+	*r = jsonRPCRequest(parsed)
+	_, r.HasID = fields["id"]
+	return nil
 }
 
 type jsonRPCResponse struct {
@@ -323,10 +368,18 @@ func (s *Server) handleRequest(ctx context.Context, w responseWriter, req *jsonR
 		}
 	}()
 
+	// JSON-RPC notifications have no id and never receive a response,
+	// including when the method is unknown. This check must happen before
+	// dispatch so notification methods can grow without producing errors.
+	if !req.HasID && req.ID == nil {
+		return
+	}
+
 	switch req.Method {
 	case "initialize":
 		s.handleInitialize(w, req)
-	case "notifications/initialized":
+	case "ping":
+		sendResponse(w, req.ID, map[string]any{})
 	case "tools/list":
 		s.handleToolsList(w, req)
 	case "tools/call":
@@ -383,6 +436,7 @@ func (s *Server) handleToolsCall(ctx context.Context, w responseWriter, req *jso
 	var params struct {
 		Name      string          `json:"name"`
 		Arguments json.RawMessage `json:"arguments"`
+		Meta      map[string]any  `json:"_meta,omitempty"`
 	}
 	if err := json.Unmarshal(req.Params, &params); err != nil {
 		sendError(w, req.ID, CodeInvalidParams, "Invalid params: "+err.Error())
@@ -400,9 +454,21 @@ func (s *Server) handleToolsCall(ctx context.Context, w responseWriter, req *jso
 		return
 	}
 
+	if params.Meta != nil {
+		ctx = context.WithValue(ctx, requestMetaKey{}, params.Meta)
+	}
 	result, err := tool.Handler(ctx, params.Arguments)
 	if err != nil {
 		sendToolError(w, req.ID, err.Error())
+		return
+	}
+
+	if typed, ok := result.(ToolResult); ok {
+		sendToolResponse(w, req.ID, typed)
+		return
+	}
+	if typed, ok := result.(*ToolResult); ok && typed != nil {
+		sendToolResponse(w, req.ID, *typed)
 		return
 	}
 
@@ -416,6 +482,28 @@ func (s *Server) handleToolsCall(ctx context.Context, w responseWriter, req *jso
 
 func sendResponse(w responseWriter, id any, result any) {
 	writeResponse(w, jsonRPCResponse{JSONRPC: "2.0", ID: id, Result: result})
+}
+
+func sendToolResponse(w responseWriter, id any, result ToolResult) {
+	content := result.Content
+	if content == nil {
+		content = []ContentBlock{}
+	}
+	toolResult := map[string]any{
+		"content": content,
+		"isError": false,
+	}
+	if result.StructuredContent != nil {
+		toolResult["structuredContent"] = result.StructuredContent
+	}
+	if result.Meta != nil {
+		toolResult["_meta"] = result.Meta
+	}
+	writeResponse(w, jsonRPCResponse{
+		JSONRPC: "2.0",
+		ID:      id,
+		Result:  toolResult,
+	})
 }
 
 func sendToolResponseRaw(w responseWriter, id any, raw json.RawMessage) {
