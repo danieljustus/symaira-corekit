@@ -181,14 +181,51 @@ func removeMatching(root *html.Node, selector string) {
 
 // matchesSelector implements the subset of CSS selectors browse needs: tag
 // names, .class, #id, [attribute], [attribute=value] and combinations.
+// Parts are separated by whitespace outside quotes, so quoted attribute
+// values may contain spaces.
 func matchesSelector(node *html.Node, selector string) bool {
-	parts := strings.Fields(selector)
+	parts := splitSelector(selector)
+	if len(parts) == 0 {
+		return false
+	}
 	for _, part := range parts {
 		if !matchesSimpleSelector(node, part) {
 			return false
 		}
 	}
 	return true
+}
+
+// splitSelector splits a selector on whitespace that is outside quoted
+// sections, preserving quoted attribute values containing spaces as a
+// single part.
+func splitSelector(selector string) []string {
+	var parts []string
+	var current strings.Builder
+	var quote rune
+	for _, r := range selector {
+		switch {
+		case quote != 0:
+			current.WriteRune(r)
+			if r == quote {
+				quote = 0
+			}
+		case r == '"' || r == '\'':
+			quote = r
+			current.WriteRune(r)
+		case r == ' ' || r == '	' || r == '\n' || r == '\r' || r == '\f':
+			if current.Len() > 0 {
+				parts = append(parts, current.String())
+				current.Reset()
+			}
+		default:
+			current.WriteRune(r)
+		}
+	}
+	if current.Len() > 0 {
+		parts = append(parts, current.String())
+	}
+	return parts
 }
 
 func matchesSimpleSelector(node *html.Node, part string) bool {
@@ -220,26 +257,39 @@ func matchesAttributeSelector(node *html.Node, selector string) bool {
 	exact := false
 	if idx := strings.Index(inner, "="); idx >= 0 {
 		key = inner[:idx]
+		// Quotes are stripped only as value delimiters; the content is
+		// compared literally and never unescaped.
 		want = strings.Trim(inner[idx+1:], `"'`)
 		exact = true
 	}
-	value := attributeOf(node, key)
-	if value == "" {
-		return false
-	}
 	if !exact {
-		return true
+		// CSS presence semantics: [attr] matches when the attribute is
+		// present, even when its value is empty.
+		return attributePresent(node, key)
 	}
-	return value == want
+	// An exact match requires the attribute to be present; [attr=""] must
+	// not match a missing attribute.
+	value, present := attributeValue(node, key)
+	return present && value == want
+}
+
+func attributePresent(node *html.Node, key string) bool {
+	_, present := attributeValue(node, key)
+	return present
+}
+
+func attributeValue(node *html.Node, key string) (string, bool) {
+	for _, attribute := range node.Attr {
+		if attribute.Key == key {
+			return attribute.Val, true
+		}
+	}
+	return "", false
 }
 
 func attributeOf(node *html.Node, key string) string {
-	for _, attribute := range node.Attr {
-		if attribute.Key == key {
-			return attribute.Val
-		}
-	}
-	return ""
+	value, _ := attributeValue(node, key)
+	return value
 }
 
 // schemaTypeFromHTML extracts a JSON-LD @type from the first ld+json island,
