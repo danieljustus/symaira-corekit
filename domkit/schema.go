@@ -50,7 +50,7 @@ type Options struct {
 // (url, final_url, title, lang, fetched_at, tokens_est, schema_type) and the
 // frontmatter keys are identical to symfetch; the content fields (markdown,
 // outline, raw) are the browse-specific body carriers (see
-// testdata/fetch-schema.json and docs/output-schema.md). ContentBoundaries
+// testdata/fetch-schema.json). ContentBoundaries
 // carries the unforgeable boundary markers as an own JSON field when the
 // --content-boundaries flag is active.
 type Document struct {
