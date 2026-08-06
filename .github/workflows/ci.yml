@@ -103,7 +103,7 @@ jobs:
 
       - name: Install apidiff
         if: steps.hatch.outputs.skip != 'true'
-        run: go install golang.org/x/exp/cmd/apidiff@latest
+        run: go install golang.org/x/exp/cmd/apidiff@v0.0.0-20260727155853-b88d891fe743
 
       - name: Run apidiff against origin/main
         if: steps.hatch.outputs.skip != 'true'
