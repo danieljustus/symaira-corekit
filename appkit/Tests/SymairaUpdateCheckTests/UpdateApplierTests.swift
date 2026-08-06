@@ -884,6 +884,53 @@ final class UpdateApplierTests: XCTestCase {
         }
     }
 
+    // MARK: - Subprocess timeouts (AGENTS.md loose-coupling rule)
+
+    func testSubprocessRunnerNormalExit() throws {
+        let result = try SubprocessRunner.run(
+            executable: URL(fileURLWithPath: "/bin/echo"),
+            arguments: ["hello"],
+            timeout: 10
+        )
+
+        XCTAssertFalse(result.timedOut, "fast child must not be flagged as timed out")
+        XCTAssertEqual(result.exitCode, 0)
+        XCTAssertEqual(
+            String(decoding: result.stdout, as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines),
+            "hello",
+            "stdout must be captured via the concurrent drain"
+        )
+    }
+
+    func testSubprocessRunnerTerminatesHangingChildOnTimeout() throws {
+        let start = Date()
+        let result = try SubprocessRunner.run(
+            executable: URL(fileURLWithPath: "/bin/sleep"),
+            arguments: ["60"],
+            timeout: 1
+        )
+        let elapsed = Date().timeIntervalSince(start)
+
+        XCTAssertTrue(result.timedOut, "hanging child must be flagged as timed out")
+        XCTAssertLessThan(elapsed, 30, "bounded wait must return long before the child exits on its own")
+        XCTAssertNotEqual(result.exitCode, 0, "terminated child must not report a clean exit")
+    }
+
+    func testSubprocessRunnerTimeoutSurfacesTypedError() throws {
+        do {
+            _ = try SubprocessRunner.runChecked(
+                executable: URL(fileURLWithPath: "/bin/sleep"),
+                arguments: ["60"],
+                timeout: 1
+            )
+            XCTFail("expected subprocessTimeout error")
+        } catch UpdateApplierError.subprocessTimeout(let command) {
+            XCTAssertTrue(command.contains("sleep"), "timeout error should name the command, got: \(command)")
+        } catch {
+            XCTFail("unexpected error: \(error)")
+        }
+    }
+
     // MARK: - Cosign config nil (disabled) does not verify
 
     func testApplyBundleWithoutCosignConfigSkipsVerification() async throws {

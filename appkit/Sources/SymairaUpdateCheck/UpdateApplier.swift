@@ -230,16 +230,12 @@ public struct CosignCLIVerifier: CosignVerifier, Sendable {
 
     public func verifySignature(content: Data, signature: Data, certificate: Data) async throws {
         // Check if cosign CLI is available.
-        let which = Process()
-        which.executableURL = URL(fileURLWithPath: "/usr/bin/which")
-        which.arguments = ["cosign"]
+        let whichResult = try SubprocessRunner.runChecked(
+            executable: URL(fileURLWithPath: "/usr/bin/which"),
+            arguments: ["cosign"]
+        )
 
-        let whichPipe = Pipe()
-        which.standardOutput = whichPipe
-        try? which.run()
-        which.waitUntilExit()
-
-        guard which.terminationStatus == 0 else {
+        guard whichResult.exitCode == 0 else {
             throw UpdateApplierError.cosignVerificationFailed(
                 "cosign CLI not found — install cosign from https://docs.sigstore.dev to verify release signatures"
             )
@@ -260,27 +256,22 @@ public struct CosignCLIVerifier: CosignVerifier, Sendable {
         try signature.write(to: URL(fileURLWithPath: sigPath))
         try certificate.write(to: URL(fileURLWithPath: certPath))
 
-        // Run cosign verify-blob.
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
-        process.arguments = [
-            "cosign", "verify-blob",
-            "--certificate", certPath,
-            "--signature", sigPath,
-            "--certificate-identity-regexp", identityRegexp,
-            "--certificate-oidc-issuer", CosignCLIVerifier.oidcIssuer,
-            contentPath,
-        ]
+        // Run cosign verify-blob (bounded — a hung network/GC stall cannot
+        // block the update flow indefinitely).
+        let processResult = try SubprocessRunner.runChecked(
+            executable: URL(fileURLWithPath: "/usr/bin/env"),
+            arguments: [
+                "cosign", "verify-blob",
+                "--certificate", certPath,
+                "--signature", sigPath,
+                "--certificate-identity-regexp", identityRegexp,
+                "--certificate-oidc-issuer", CosignCLIVerifier.oidcIssuer,
+                contentPath,
+            ]
+        )
 
-        let stderrPipe = Pipe()
-        process.standardError = stderrPipe
-
-        try process.run()
-        process.waitUntilExit()
-
-        guard process.terminationStatus == 0 else {
-            let stderrData = try stderrPipe.fileHandleForReading.readToEnd() ?? Data()
-            let stderrStr = String(decoding: stderrData, as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines)
+        guard processResult.exitCode == 0 else {
+            let stderrStr = String(decoding: processResult.stderr, as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines)
             throw UpdateApplierError.cosignVerificationFailed(
                 "cosign verify-blob failed: \(stderrStr)"
             )
@@ -318,6 +309,10 @@ public enum UpdateApplierError: Error, Sendable, Equatable {
     case appBundleCopyFailed(String)
     /// Cosign signature verification failed.
     case cosignVerificationFailed(String)
+    /// A subprocess spawned during the update timed out and was terminated
+    /// (AGENTS.md loose-coupling rule: subprocess execution must always
+    /// have a timeout).
+    case subprocessTimeout(String)
 }
 
 // MARK: - UpdateApplier
@@ -582,8 +577,8 @@ public struct UpdateApplier: Sendable {
         }
 
         // Remove quarantine attribute if present.
-        _ = try? Process.run(
-            URL(fileURLWithPath: "/usr/bin/xattr"),
+        _ = try? SubprocessRunner.runChecked(
+            executable: URL(fileURLWithPath: "/usr/bin/xattr"),
             arguments: ["-d", "com.apple.quarantine", destURL.path]
         )
 
@@ -608,15 +603,14 @@ public struct UpdateApplier: Sendable {
         try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
 
         // Use `ditto` for ZIP extraction (more reliable than unzip for .app bundles).
-        let dittoProcess = Process()
-        dittoProcess.executableURL = URL(fileURLWithPath: "/usr/bin/ditto")
-        dittoProcess.arguments = ["-xk", zipURL.path, tempDir.path]
-        try dittoProcess.run()
-        dittoProcess.waitUntilExit()
+        let dittoResult = try SubprocessRunner.runChecked(
+            executable: URL(fileURLWithPath: "/usr/bin/ditto"),
+            arguments: ["-xk", zipURL.path, tempDir.path]
+        )
 
-        guard dittoProcess.terminationStatus == 0 else {
+        guard dittoResult.exitCode == 0 else {
             throw UpdateApplierError.appBundleCopyFailed(
-                "ditto extraction failed with exit code \(dittoProcess.terminationStatus)"
+                "ditto extraction failed with exit code \(dittoResult.exitCode)"
             )
         }
 
@@ -643,8 +637,8 @@ public struct UpdateApplier: Sendable {
         }
 
         // Remove quarantine attribute.
-        _ = try? Process.run(
-            URL(fileURLWithPath: "/usr/bin/xattr"),
+        _ = try? SubprocessRunner.runChecked(
+            executable: URL(fileURLWithPath: "/usr/bin/xattr"),
             arguments: ["-d", "com.apple.quarantine", destURL.path]
         )
 
@@ -663,24 +657,21 @@ public struct UpdateApplier: Sendable {
 
     /// Mount a DMG using `hdiutil attach`.
     private func mountDMG(at dmgURL: URL) throws -> DMGMountResult {
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/hdiutil")
-        process.arguments = ["attach", "-nobrowse", "-readonly", "-plist", dmgURL.path]
+        // stdout is drained concurrently while the process runs, so the
+        // plist output is complete even when it exceeds the 64 KiB pipe
+        // buffer, and a hung attach cannot block the update indefinitely.
+        let result = try SubprocessRunner.runChecked(
+            executable: URL(fileURLWithPath: "/usr/bin/hdiutil"),
+            arguments: ["attach", "-nobrowse", "-readonly", "-plist", dmgURL.path]
+        )
 
-        let pipe = Pipe()
-        process.standardOutput = pipe
-
-        try process.run()
-        process.waitUntilExit()
-
-        guard process.terminationStatus == 0 else {
+        guard result.exitCode == 0 else {
             throw UpdateApplierError.dmgMountFailed(
-                "hdiutil attach failed with exit code \(process.terminationStatus)"
+                "hdiutil attach failed with exit code \(result.exitCode)"
             )
         }
 
-        let data = try pipe.fileHandleForReading.readToEnd() ?? Data()
-        let plist = try PropertyListSerialization.propertyList(from: data, options: [], format: nil)
+        let plist = try PropertyListSerialization.propertyList(from: result.stdout, options: [], format: nil)
         guard let dict = plist as? [String: Any],
               let entities = dict["system-entities"] as? [[String: Any]] else {
             throw UpdateApplierError.dmgMountFailed("Failed to parse hdiutil plist output")
@@ -703,11 +694,10 @@ public struct UpdateApplier: Sendable {
 
     /// Unmount a DMG using `hdiutil detach`.
     private func unmountDMG(at mountPoint: URL) throws {
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/hdiutil")
-        process.arguments = ["detach", mountPoint.path]
-        try process.run()
-        process.waitUntilExit()
+        _ = try SubprocessRunner.runChecked(
+            executable: URL(fileURLWithPath: "/usr/bin/hdiutil"),
+            arguments: ["detach", mountPoint.path]
+        )
     }
 
     /// Recursively search for a .app bundle in a directory.
