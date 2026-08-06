@@ -87,3 +87,46 @@ jobs:
           MEM_GB=$(($(sysctl -n hw.memsize) / 1073741824))
           if [ "$MEM_GB" -le 8 ]; then JOBS=2; elif [ "$MEM_GB" -le 16 ]; then JOBS=4; else JOBS=6; fi
           swift build -v -j "$JOBS"
+
+  # Regression test for #44: ba4bbb2 removed the iOS platform declaration from
+  # Package.swift and the break was invisible because the CI only built for
+  # macOS. Builds the package against the iOS Simulator SDK in parallel with
+  # the macOS jobs. Build-only: `swift build --sdk` needs no code signing.
+  ios-build:
+    runs-on: [self-hosted, macOS, ARM64, macbook-appkit]  # Xcode 27 MacBook runner
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # clean=false: skip Post-Run git cleanup (hangs on self-hosted macOS runners)
+          clean: false
+      - name: Select Xcode 27
+        # CLT lacks XCTest; DEVELOPER_DIR points swift at the full Xcode toolchain
+        # without needing sudo (macbook runner has no passwordless sudo).
+        run: |
+          if [ -d /Applications/Xcode-beta.app/Contents/Developer ]; then
+            XCODE=/Applications/Xcode-beta.app
+          else
+            XCODE="$(printf '%s\n' /Applications/Xcode*.app | sort -V | tail -1)"
+          fi
+          test -d "$XCODE/Contents/Developer"
+          echo "DEVELOPER_DIR=$XCODE/Contents/Developer" >> "$GITHUB_ENV"
+          DEVELOPER_DIR="$XCODE/Contents/Developer" xcodebuild -version | grep -F 'Xcode 27.0'
+      - name: Swift version
+        run: swift --version
+      - name: iOS platform declared
+        # swift build --triple <ios-simulator> still succeeds when Package.swift
+        # lacks platforms: [.iOS(...)] (SPM falls back to the SDK default
+        # deployment target), so assert the resolved manifest explicitly to keep
+        # this job red if the declaration is removed again (#44 regression).
+        run: |
+          PLATFORMS="$(swift package dump-package)"
+          if ! grep -q '"platformName"[[:space:]]*:[[:space:]]*"ios"' <<<"$PLATFORMS"; then
+            echo "::error::Package.swift does not declare iOS support; add platforms: [.iOS(.v17)] back." >&2
+            exit 1
+          fi
+      - name: Build (iOS Simulator)
+        # Scale parallelism by RAM: Mini (8GB) needs -j2, MacBook (24GB) can do more
+        run: |
+          MEM_GB=$(($(sysctl -n hw.memsize) / 1073741824))
+          if [ "$MEM_GB" -le 8 ]; then JOBS=2; elif [ "$MEM_GB" -le 16 ]; then JOBS=4; else JOBS=6; fi
+          swift build --sdk "$(xcrun --sdk iphonesimulator --show-sdk-path)" --triple arm64-apple-ios17.0-simulator -j "$JOBS"
