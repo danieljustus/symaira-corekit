@@ -10,6 +10,14 @@ Shared Swift foundations for the macOS clients of the [Symaira](https://symaira.
 
 Every Symaira app stays fully standalone: this package is consumed as a **pinned SPM dependency** (exact version), never as a required runtime service.
 
+## Why symaira-appkit
+
+- **Zero third-party dependencies** — Foundation, SwiftUI and Security only; nothing extra to audit per app.
+- **One pinned dependency per app** — every client builds against the exact version it was released with; breaking changes are explicit, not accidental.
+- **Shared foundation, standalone apps** — theme, CLI runner, tool detection, keychain, update check, daemon supervision and ingest contracts in one place, with a version handshake so apps and cores never silently disagree.
+
+> **Status:** pre-1.0. Breaking API changes bump the minor version — review the [CHANGELOG](CHANGELOG.md) before bumping your pin.
+
 ## Modules
 
 | Product | Purpose |

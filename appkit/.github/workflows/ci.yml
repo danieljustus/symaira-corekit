@@ -55,8 +55,9 @@ jobs:
           MEM_GB=$(($(sysctl -n hw.memsize) / 1073741824))
           if [ "$MEM_GB" -le 8 ]; then JOBS=2; elif [ "$MEM_GB" -le 16 ]; then JOBS=4; else JOBS=6; fi
           swift build -v -j "$JOBS"
-      # PR gate is build-only; the XCTest suite runs on main pushes and the
-      # weekly schedule (macOS GitHub runners queue badly — local runs are faster).
+      # Runs the full XCTest suite on every push, pull request and the weekly
+      # schedule; the schedule catches upstream/toolchain drift (self-hosted
+      # runner — faster than queueing on macOS GitHub runners).
       - name: Test
         run: |
           MEM_GB=$(($(sysctl -n hw.memsize) / 1073741824))
