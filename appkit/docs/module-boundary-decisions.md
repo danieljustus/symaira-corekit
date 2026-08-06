@@ -9,6 +9,59 @@ point in time; a new consumer is a reason to reopen it.
 
 ---
 
+## 2026-08-06 — `SymairaMCP` is built in-house, not a dependency on `swift-sdk`
+
+**Question.** Three GUI consumers (`symaira-operate`, `symaira-tune`, `symaira-meet`)
+each implement their own MCP server stack from scratch, differently shaped
+(`sym-operate`: one 559-line `MCPServer.swift`; `sym-tune`: a 5-file split;
+`sym-meet`: a 7-file split). All three speak the same protocol to the same
+clients. The MCP-ecosystem adoption scan
+(`docs/adopt/2026-08-06T10-32-59Z--modelcontextprotocol-swift-sdk.md`) asked:
+should appkit ship a shared `SymairaMCP` module, and should it depend on
+`modelcontextprotocol/swift-sdk` or build in-house?
+
+**Verdict: yes to a shared module, no to the dependency — build in-house.**
+
+### Why in-house (build-vs-depend)
+
+`AGENTS.md` restricts this repo's dependencies to `Foundation, SwiftUI, Security`
+only. `modelcontextprotocol/swift-sdk` is a third-party package; adding it would
+violate the boundary and hand the module's API surface to an external release
+cadence. The reference SDK's architecture — `Server` + `StdioTransport` +
+`withMethodHandler(_:)` typed per-method closure registration — is a design
+pattern, not a dependency, and is reproduced from scratch on Foundation + Swift
+Concurrency. No `Package.resolved` entry is added.
+
+### Why the module belongs here
+
+Three apps meet the `≥2 apps need it` threshold today. Each consumer currently
+reimplements JSON-RPC dispatch, stdio framing, the `initialize` handshake and the
+`tools` capability with independent bugs and drift; `SymairaToolKit` only holds
+client-side launch metadata and cannot cover the server side.
+
+### Scope
+
+`tools` capability (`tools/list`, `tools/call`), `initialize`/`notifications/initialized`,
+`ping`, JSON-RPC 2.0 error mapping, newline-delimited stdio transport (injectable
+handles for in-process testing). `resources`/`prompts`/`sampling`/`elicitation`/
+`completions` are out of scope for the initial consolidation; the generic
+dispatcher makes each of them just another handler registration later.
+
+### Migration
+
+Consumer migrations (`symaira-operate`, `symaira-tune`, `symaira-meet` deleting
+their hand-rolled servers and pinning `SymairaMCP` exact-version) are tracked per
+consumer as follow-ups, not in this repo.
+
+### Revisit when
+
+- A consumer needs a capability the dispatcher cannot express (`resources`/
+  `prompts`/`sampling`/`elicitation`/`completions`), or
+- the protocol surface grows enough that maintaining a hand-rolled core costs
+  more than the zero-dependency guarantee saves.
+
+---
+
 ## 2026-07-31 — `SymairaUI` stays in `symaira-terminal`
 
 **Question.** `symaira-terminal` maintains a local `SymairaUI` module. appkit ships no
