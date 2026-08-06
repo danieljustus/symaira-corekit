@@ -29,3 +29,6 @@ Thumbs.db
 # Agent/developer workspace files
 AGENTS.md
 .omo/
+
+# Linked worktrees used by development workflows
+.worktrees/
