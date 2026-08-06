@@ -884,6 +884,82 @@ final class UpdateApplierTests: XCTestCase {
         }
     }
 
+    // MARK: - Cosign error: bounded user-facing description, full diagnostic stderr (#47)
+
+    func testCosignVerifyFailureDescriptionIsBoundedAndDiagnosticKeepsFullStderr() {
+        let firstLine = "cosign: error: signature verification failed: exit status 1"
+        let tailMarker = "TAIL-SECRET-JUNK-SHOULD-NOT-APPEAR"
+        let hugeStderr = firstLine + "\n" + String(repeating: "junk", count: 200_000) + tailMarker
+
+        let error = UpdateApplierError.cosignVerificationFailedDiagnostic(hugeStderr)
+
+        // User-facing description: bounded, first line only.
+        let description = error.localizedDescription
+        XCTAssertLessThan(
+            description.utf8.count,
+            300,
+            "user-facing description must stay bounded, got \(description.utf8.count) bytes"
+        )
+        XCTAssertTrue(
+            description.contains("cosign: error: signature verification failed"),
+            "first line must be preserved in the user-facing description"
+        )
+        XCTAssertFalse(
+            description.contains(tailMarker),
+            "stderr tail must not leak into the user-facing description"
+        )
+
+        // Full diagnostic data is still retrievable from the diagnostic field.
+        XCTAssertEqual(error.cosignDiagnosticStderr, hugeStderr)
+        guard case .cosignVerificationFailedDiagnostic(let diagnostic) = error else {
+            return XCTFail("expected cosignVerificationFailedDiagnostic case")
+        }
+        XCTAssertEqual(diagnostic, hugeStderr, "diagnostic associated value must carry the full stderr")
+    }
+
+    func testCosignVerificationFailedCaseShapeUnchangedAndBounded() {
+        // Existing consumers pattern-match `.cosignVerificationFailed(String)`;
+        // the case shape and its bounded message must keep working (#47).
+        let error = UpdateApplierError.cosignVerificationFailed(
+            "cosign CLI not found — install cosign from https://docs.sigstore.dev to verify release signatures"
+        )
+        guard case .cosignVerificationFailed(let message) = error else {
+            return XCTFail("expected cosignVerificationFailed case")
+        }
+        XCTAssertFalse(message.isEmpty)
+        XCTAssertEqual(error.localizedDescription, message)
+        XCTAssertNil(error.cosignDiagnosticStderr, "no diagnostic stderr attached to the plain case")
+    }
+
+    func testCosignErrorBoundedSampleRedactsAndTruncates() {
+        // PEM blocks are redacted before first-line extraction. The marker
+        // is assembled from parts so no literal PEM header appears verbatim
+        // in the source (this is a synthetic test payload, not a real key).
+        let pemBody = "MIIBVwIBADANBgkqhkiG9w0BAQEFAASC"
+        let pem = "-----BEGIN PRIVATE " + "KEY-----\n" + pemBody + "\n" + "-----END PRIVATE " + "KEY-----\n"
+        XCTAssertEqual(UpdateApplierError.boundedUserFacingSample(pem), "[REDACTED]")
+
+        // Key-prefixed secrets on the first line are redacted.
+        XCTAssertEqual(
+            UpdateApplierError.boundedUserFacingSample("token=abcdefghijklmnopqrstuvwxyz123456"),
+            "[REDACTED]"
+        )
+
+        // Oversized output is truncated to maxBytes (plus ellipsis). Use a
+        // non-base64 payload so the redaction rules do not swallow it first.
+        let long = String(repeating: "a-b", count: 4_000)
+        let bounded = UpdateApplierError.boundedUserFacingSample(long)
+        XCTAssertLessThanOrEqual(bounded.utf8.count, 204, "bounded sample must stay within maxBytes plus ellipsis")
+        XCTAssertEqual(bounded.count, 201, "bounded sample should be maxBytes characters plus an ellipsis")
+        XCTAssertTrue(bounded.hasSuffix("…"), "truncated sample should end with an ellipsis")
+
+        // Only the first line survives.
+        let multiLine = "first line\nsecond line with secret=abcdef1234567890"
+        let firstOnly = UpdateApplierError.boundedUserFacingSample(multiLine)
+        XCTAssertTrue(firstOnly.hasPrefix("first line"))
+        XCTAssertFalse(firstOnly.contains("second line"))
+    }
+
     // MARK: - Subprocess timeouts (AGENTS.md loose-coupling rule)
 
     func testSubprocessRunnerNormalExit() throws {
