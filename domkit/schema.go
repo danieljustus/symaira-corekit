@@ -77,48 +77,64 @@ type DocumentMeta struct {
 	Truncated  bool `json:"truncated"`
 }
 
-// Render builds the read document from raw page material.
+// Render builds the read document from raw page material. The page is
+// parsed exactly once; the parsed tree is shared by language detection,
+// schema extraction, outline and markdown rendering. The exported
+// string-based helpers (Lang, Markdown, Outline) parse independently for
+// direct callers.
 func Render(pageHTML, pageTitle, pageURL string, options Options) (Document, error) {
 	if options.MaxChars <= 0 {
 		options.MaxChars = DefaultMaxChars
 	}
-	source := pageHTML
-	selected, err := selectSource(source, options.Selector, options.Filter)
+	document, err := html.Parse(strings.NewReader(pageHTML))
 	if err != nil {
-		return Document{}, err
+		return Document{}, fmt.Errorf("parse page: %w", err)
 	}
-	source = selected
+	source := pageHTML
+	if options.Selector != "" || options.Filter != "" {
+		selected, err := selectNode(document, options.Selector, options.Filter)
+		if err != nil {
+			return Document{}, err
+		}
+		document = selected
+		var builder strings.Builder
+		if err := html.Render(&builder, selected); err != nil {
+			return Document{}, fmt.Errorf("render selected subtree: %w", err)
+		}
+		source = builder.String()
+	}
 
-	document := Document{
+	result := Document{
 		URL:       pageURL,
 		Title:     strings.TrimSpace(pageTitle),
-		Lang:      Lang(source),
+		Lang:      langFromNode(document),
 		FetchedAt: FetchedAtNow(),
 		CharCount: utf8RuneCount(source),
 	}
-	document.TokensEst = document.CharCount / 4
-	document.SchemaType = schemaTypeFromHTML(source)
+	result.TokensEst = result.CharCount / 4
+	result.SchemaType = schemaTypeFromNode(document)
 
 	switch {
 	case options.Raw:
 		raw, truncated := Truncate(source, options.MaxChars)
-		document.Raw = raw
-		document.Truncated = truncated
-		document.Meta = DocumentMeta{StatusCode: 200, Truncated: truncated}
+		result.Raw = raw
+		result.Truncated = truncated
+		result.Meta = DocumentMeta{StatusCode: 200, Truncated: truncated}
 	case options.Outline:
-		document.Outline = Outline(source)
-		document.Meta = DocumentMeta{StatusCode: 200}
+		result.Outline = outlineFromNode(document)
+		result.Meta = DocumentMeta{StatusCode: 200}
 	default:
-		markdown, truncated := Truncate(Markdown(source), options.MaxChars)
-		document.Markdown = markdown
-		document.Truncated = truncated
-		document.Meta = DocumentMeta{StatusCode: 200, Truncated: truncated}
+		markdown, truncated := Truncate(markdownFromNode(document), options.MaxChars)
+		result.Markdown = markdown
+		result.Truncated = truncated
+		result.Meta = DocumentMeta{StatusCode: 200, Truncated: truncated}
 	}
-	return document, nil
+	return result, nil
 }
 
-// selectSource narrows the HTML to the requested subtree and removes filtered
-// subtrees.
+// selectSource narrows an HTML string to the requested subtree and removes
+// filtered subtrees. It is the string-level helper for callers that do not
+// keep a parsed tree; Render itself parses once and uses selectNode.
 func selectSource(source, selector, filter string) (string, error) {
 	if selector == "" && filter == "" {
 		return source, nil
@@ -127,23 +143,29 @@ func selectSource(source, selector, filter string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("parse page: %w", err)
 	}
+	selected, err := selectNode(document, selector, filter)
+	if err != nil {
+		return "", err
+	}
+	var builder strings.Builder
+	if err := html.Render(&builder, selected); err != nil {
+		return "", fmt.Errorf("render selected subtree: %w", err)
+	}
+	return builder.String(), nil
+}
+
+// selectNode narrows a parsed tree to the requested subtree or removes
+// filtered subtrees, returning the node the render pipeline should use.
+func selectNode(document *html.Node, selector, filter string) (*html.Node, error) {
 	if selector != "" {
 		subtree := findSubtree(document, selector)
 		if subtree == nil {
-			return "", fmt.Errorf("selector %q did not match an element", selector)
+			return nil, fmt.Errorf("selector %q did not match an element", selector)
 		}
-		var builder strings.Builder
-		if err := html.Render(&builder, subtree); err != nil {
-			return "", fmt.Errorf("render selected subtree: %w", err)
-		}
-		return builder.String(), nil
+		return subtree, nil
 	}
 	removeMatching(document, filter)
-	var builder strings.Builder
-	if err := html.Render(&builder, document); err != nil {
-		return "", fmt.Errorf("render filtered document: %w", err)
-	}
-	return builder.String(), nil
+	return document, nil
 }
 
 func findSubtree(root *html.Node, selector string) *html.Node {
@@ -181,14 +203,51 @@ func removeMatching(root *html.Node, selector string) {
 
 // matchesSelector implements the subset of CSS selectors browse needs: tag
 // names, .class, #id, [attribute], [attribute=value] and combinations.
+// Parts are separated by whitespace outside quotes, so quoted attribute
+// values may contain spaces.
 func matchesSelector(node *html.Node, selector string) bool {
-	parts := strings.Fields(selector)
+	parts := splitSelector(selector)
+	if len(parts) == 0 {
+		return false
+	}
 	for _, part := range parts {
 		if !matchesSimpleSelector(node, part) {
 			return false
 		}
 	}
 	return true
+}
+
+// splitSelector splits a selector on whitespace that is outside quoted
+// sections, preserving quoted attribute values containing spaces as a
+// single part.
+func splitSelector(selector string) []string {
+	var parts []string
+	var current strings.Builder
+	var quote rune
+	for _, r := range selector {
+		switch {
+		case quote != 0:
+			current.WriteRune(r)
+			if r == quote {
+				quote = 0
+			}
+		case r == '"' || r == '\'':
+			quote = r
+			current.WriteRune(r)
+		case r == ' ' || r == '	' || r == '\n' || r == '\r' || r == '\f':
+			if current.Len() > 0 {
+				parts = append(parts, current.String())
+				current.Reset()
+			}
+		default:
+			current.WriteRune(r)
+		}
+	}
+	if current.Len() > 0 {
+		parts = append(parts, current.String())
+	}
+	return parts
 }
 
 func matchesSimpleSelector(node *html.Node, part string) bool {
@@ -220,26 +279,39 @@ func matchesAttributeSelector(node *html.Node, selector string) bool {
 	exact := false
 	if idx := strings.Index(inner, "="); idx >= 0 {
 		key = inner[:idx]
+		// Quotes are stripped only as value delimiters; the content is
+		// compared literally and never unescaped.
 		want = strings.Trim(inner[idx+1:], `"'`)
 		exact = true
 	}
-	value := attributeOf(node, key)
-	if value == "" {
-		return false
-	}
 	if !exact {
-		return true
+		// CSS presence semantics: [attr] matches when the attribute is
+		// present, even when its value is empty.
+		return attributePresent(node, key)
 	}
-	return value == want
+	// An exact match requires the attribute to be present; [attr=""] must
+	// not match a missing attribute.
+	value, present := attributeValue(node, key)
+	return present && value == want
+}
+
+func attributePresent(node *html.Node, key string) bool {
+	_, present := attributeValue(node, key)
+	return present
+}
+
+func attributeValue(node *html.Node, key string) (string, bool) {
+	for _, attribute := range node.Attr {
+		if attribute.Key == key {
+			return attribute.Val, true
+		}
+	}
+	return "", false
 }
 
 func attributeOf(node *html.Node, key string) string {
-	for _, attribute := range node.Attr {
-		if attribute.Key == key {
-			return attribute.Val
-		}
-	}
-	return ""
+	value, _ := attributeValue(node, key)
+	return value
 }
 
 // schemaTypeFromHTML extracts a JSON-LD @type from the first ld+json island,
@@ -249,6 +321,11 @@ func schemaTypeFromHTML(source string) string {
 	if err != nil {
 		return ""
 	}
+	return schemaTypeFromNode(document)
+}
+
+// schemaTypeFromNode is schemaTypeFromHTML for an already-parsed tree.
+func schemaTypeFromNode(document *html.Node) string {
 	var raw []byte
 	var walk func(*html.Node)
 	walk = func(node *html.Node) {
