@@ -1,12 +1,42 @@
 # symaira-corekit
 
+![CI](https://github.com/danieljustus/symaira-corekit/actions/workflows/ci.yml/badge.svg)
+![License](https://img.shields.io/github/license/danieljustus/symaira-corekit)
+![Latest release](https://img.shields.io/github/v/release/danieljustus/symaira-corekit)
+
 ![Symaira CoreKit social preview](docs/assets/social-preview.png)
 
 Shared Go library for the Symaira public-core tools (`symvault`, `symmemory`, `symseek`, `symfetch`, `symscope`).
 
 Bundles domain-free infrastructure that is otherwise duplicated across tools: MCP server scaffold, TOML config loading, exit codes, logging, path safety, SQLite setup, and update checking.
 
+```sh
+go get github.com/danieljustus/symaira-corekit@latest
+```
+
 Although `corekit` is a Go library, its conventions also guide the non-Go free tools (`symoperate`, `symtune`, `symterminal`, `symeraseme`). See [`docs/cross-language-conventions.md`](docs/cross-language-conventions.md) for the shared contracts that apply across languages.
+
+## Why CoreKit?
+
+- **Standalone-first:** every package works without any other Symaira tool installed — optional integrations are runtime contracts, never build-time imports.
+- **CGO-free:** 100% pure Go on linux/darwin/windows (amd64+arm64); no platform toolchain required.
+- **Cross-language conventions:** exit codes, XDG paths, env-var naming, and MCP stdio framing are shared contracts that also guide the Swift and Python free tools.
+- **Strict SemVer:** API stability is guaranteed within major versions; consumers pin the module in `go.mod`.
+- **Domain-free:** no Vault crypto, Memory PII rules, Seek ranking, Fetch fingerprinting, Scope scanning, or cloud/SaaS primitives.
+
+## Install
+
+```sh
+go get github.com/danieljustus/symaira-corekit@latest
+```
+
+Import any package individually; each one is independently usable:
+
+```go
+import "github.com/danieljustus/symaira-corekit/logkit"
+```
+
+Consumers pin the module version in `go.mod` — see [Versioning](#versioning).
 
 ## Standalone-First Contract
 
@@ -40,6 +70,8 @@ and other product- or cloud-specific behavior.
 | `updatecheck/installmethod` | v0.6.0 | Install-method detection: Homebrew, `go install`, package-manager, direct-download, build-from-source |
 | `vectorkit/turboquant` | v0.2.0 | CGO-free TurboQuant scalar vector quantization: deterministic rotation, packed encode/decode, inner-product/cosine scoring, sidecar metadata, benchmarks |
 | `versionkit` | v0.3.0 | Standardized handshake payload (`{tool, version, schema_version}`) for CLI tools |
+
+Install the module with `go get github.com/danieljustus/symaira-corekit@latest` — see [Install](#install).
 
 ## Usage
 
