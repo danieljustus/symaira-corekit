@@ -6,3 +6,6 @@ DerivedData/
 .omo/
 .worktrees/
 *.profraw
+
+# gh-adopt reports (local analysis, not tracked)
+docs/adopt/
