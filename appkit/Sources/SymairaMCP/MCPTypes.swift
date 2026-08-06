@@ -325,22 +325,31 @@ public final class MCPJSONSchemaProperty: Equatable, Codable, Sendable {
     public let items: MCPJSONSchemaProperty?
     /// Allowed values, encoded as JSON Schema's `enum` keyword.
     public let enumValues: [MCPJSONValue]?
+    /// JSON Schema `minimum` bound for numeric properties (e.g. brightness 0.0).
+    public let minimum: Double?
+    /// JSON Schema `maximum` bound for numeric properties (e.g. brightness 1.0).
+    public let maximum: Double?
 
     public init(
         type: String,
         description: String? = nil,
         items: MCPJSONSchemaProperty? = nil,
-        enumValues: [MCPJSONValue]? = nil
+        enumValues: [MCPJSONValue]? = nil,
+        minimum: Double? = nil,
+        maximum: Double? = nil
     ) {
         self.type = type
         self.description = description
         self.items = items
         self.enumValues = enumValues
+        self.minimum = minimum
+        self.maximum = maximum
     }
 
     private enum CodingKeys: String, CodingKey {
         case type, description, items
         case enumValues = "enum"
+        case minimum, maximum
     }
 
     public static func == (lhs: MCPJSONSchemaProperty, rhs: MCPJSONSchemaProperty) -> Bool {
@@ -348,6 +357,8 @@ public final class MCPJSONSchemaProperty: Equatable, Codable, Sendable {
             && lhs.description == rhs.description
             && lhs.items == rhs.items
             && lhs.enumValues == rhs.enumValues
+            && lhs.minimum == rhs.minimum
+            && lhs.maximum == rhs.maximum
     }
 }
 

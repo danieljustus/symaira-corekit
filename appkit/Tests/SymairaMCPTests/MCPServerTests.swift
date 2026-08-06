@@ -255,4 +255,73 @@ final class MCPServerTests: XCTestCase {
         harness.server.stop()
         try await harness.serverTask.value
     }
+
+    // MARK: - Schema bounds
+
+    func testSchemaPropertyEncodesMinMaxBounds() throws {
+        let property = MCPJSONSchemaProperty(
+            type: "number",
+            description: "Brightness 0.0–1.0",
+            minimum: 0.0,
+            maximum: 1.0
+        )
+        let data = try JSONEncoder().encode(property)
+        let object = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        XCTAssertEqual(object["type"] as? String, "number")
+        XCTAssertEqual(object["minimum"] as? Double, 0.0)
+        XCTAssertEqual(object["maximum"] as? Double, 1.0)
+    }
+
+    func testSchemaPropertyRoundTripsMinMaxBounds() throws {
+        let property = MCPJSONSchemaProperty(
+            type: "integer",
+            description: "Charge limit percent",
+            minimum: 50.0,
+            maximum: 100.0
+        )
+        let data = try JSONEncoder().encode(property)
+        let decoded = try JSONDecoder().decode(MCPJSONSchemaProperty.self, from: data)
+        XCTAssertEqual(decoded, property)
+        XCTAssertEqual(decoded.minimum, 50.0)
+        XCTAssertEqual(decoded.maximum, 100.0)
+    }
+
+    func testSchemaPropertyOmitsAbsentBounds() throws {
+        let property = MCPJSONSchemaProperty(type: "string")
+        let data = try JSONEncoder().encode(property)
+        let object = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        XCTAssertNil(object["minimum"])
+        XCTAssertNil(object["maximum"])
+    }
+
+    func testToolListCarriesMinMaxBoundsOverTheWire() async throws {
+        let harness = makeHarness { server in
+            server.withMethodHandler("tools/list") { (_: MCPNoParams) async throws -> MCPListToolsResult in
+                MCPListToolsResult(tools: [
+                    MCPTool(
+                        name: "set_brightness",
+                        description: "Set built-in display brightness",
+                        inputSchema: MCPJSONSchema(
+                            properties: [
+                                "value": MCPJSONSchemaProperty(
+                                    type: "number",
+                                    minimum: 0.0,
+                                    maximum: 1.0
+                                )
+                            ],
+                            required: ["value"]
+                        )
+                    )
+                ])
+            }
+        }
+        defer { try? harness.clientWrite.close() }
+
+        try send(#"{"jsonrpc":"2.0","id":1,"method":"tools/list"}"#, to: harness.clientWrite)
+        let envelope = try decodeEnvelope(try await nextLine(harness.reader))
+        let listResult = try XCTUnwrap(try decodeResult(envelope, as: MCPListToolsResult.self))
+        let value = try XCTUnwrap(listResult.tools.first?.inputSchema.properties["value"])
+        XCTAssertEqual(value.minimum, 0.0)
+        XCTAssertEqual(value.maximum, 1.0)
+    }
 }

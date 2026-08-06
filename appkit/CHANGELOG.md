@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.1] - 2026-08-06
+
+### Added
+- `MCPJSONSchemaProperty` now carries JSON Schema `minimum`/`maximum` numeric bounds, so consumers can advertise safe ranges (e.g. brightness 0.0–1.0, charge limit 50–100) in their `tools/list` schemas (consumer follow-up of #55).
+
 ## [0.8.0] - 2026-08-06
 
 ### Added
