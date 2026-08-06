@@ -216,6 +216,68 @@ func TestNotificationsInitializedNoop(t *testing.T) {
 	}
 }
 
+func TestUnknownNotificationNoopInFramedAndLineModes(t *testing.T) {
+	tests := []struct {
+		name string
+		data string
+	}{
+		{
+			name: "framed",
+			data: string(frameRequest(t, "notifications/progress", nil, nil)),
+		},
+		{
+			name: "line",
+			data: `{"jsonrpc":"2.0","method":"notifications/cancelled"}` + "\n",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var buf bytes.Buffer
+			if err := New("test", "1.0").ServeIO(context.Background(), strings.NewReader(tt.data), &buf); err != nil {
+				t.Fatalf("ServeIO: %v", err)
+			}
+			if buf.Len() != 0 {
+				t.Fatalf("notification produced a response: %s", buf.String())
+			}
+		})
+	}
+}
+
+func TestPingReturnsEmptyResult(t *testing.T) {
+	tests := []struct {
+		name string
+		data string
+		read func(*testing.T, *bytes.Buffer) jsonRPCResponse
+	}{
+		{
+			name: "framed",
+			data: string(frameRequest(t, "ping", nil, 1)),
+			read: readResponse,
+		},
+		{
+			name: "line",
+			data: `{"jsonrpc":"2.0","id":1,"method":"ping"}` + "\n",
+			read: readLineResponse,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var buf bytes.Buffer
+			if err := New("test", "1.0").ServeIO(context.Background(), strings.NewReader(tt.data), &buf); err != nil {
+				t.Fatalf("ServeIO: %v", err)
+			}
+			resp := tt.read(t, &buf)
+			if resp.Error != nil {
+				t.Fatalf("unexpected error: %v", resp.Error)
+			}
+			result, ok := resp.Result.(map[string]any)
+			if !ok || len(result) != 0 {
+				t.Fatalf("result = %#v, want empty object", resp.Result)
+			}
+		})
+	}
+}
+
 func TestToolsList(t *testing.T) {
 	srv := New("test", "1.0")
 	srv.RegisterTool(&Tool{
@@ -498,6 +560,51 @@ func TestNilHandlerTool(t *testing.T) {
 	errObj := resp.Error.(map[string]any)
 	if errObj["code"] != float64(CodeInternalError) {
 		t.Errorf("error code = %v, want %v", errObj["code"], CodeInternalError)
+	}
+}
+
+func TestToolsCallTypedResultAndRequestMeta(t *testing.T) {
+	srv := New("test", "1.0")
+	var gotMeta map[string]any
+	srv.RegisterTool(&Tool{
+		Name:        "rich",
+		Description: "Return rich content",
+		Handler: func(ctx context.Context, input json.RawMessage) (any, error) {
+			var ok bool
+			gotMeta, ok = RequestMeta(ctx)
+			if !ok {
+				return nil, fmt.Errorf("request metadata missing")
+			}
+			return ToolResult{
+				Content: []ContentBlock{
+					{"type": "text", "text": "hello"},
+					{"type": "image", "data": "aGVsbG8=", "mimeType": "image/png"},
+				},
+				StructuredContent: map[string]any{"count": 2},
+			}, nil
+		},
+	})
+
+	req := `{"jsonrpc":"2.0","id":13,"method":"tools/call","params":{"name":"rich","arguments":{},"_meta":{"trace":"abc"}}}` + "\n"
+	buf := runServer(t, srv, req)
+	resp := readLineResponse(t, buf)
+	if resp.Error != nil {
+		t.Fatalf("unexpected JSON-RPC error: %v", resp.Error)
+	}
+	result := resp.Result.(map[string]any)
+	content := result["content"].([]any)
+	if len(content) != 2 {
+		t.Fatalf("content length = %d, want 2", len(content))
+	}
+	if content[1].(map[string]any)["type"] != "image" {
+		t.Errorf("second content block = %#v", content[1])
+	}
+	structured := result["structuredContent"].(map[string]any)
+	if structured["count"] != float64(2) {
+		t.Errorf("structuredContent = %#v", structured)
+	}
+	if gotMeta["trace"] != "abc" {
+		t.Errorf("RequestMeta = %#v", gotMeta)
 	}
 }
 
