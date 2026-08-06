@@ -287,17 +287,13 @@ func matchesAttributeSelector(node *html.Node, selector string) bool {
 	if !exact {
 		// CSS presence semantics: [attr] matches when the attribute is
 		// present, even when its value is empty.
-		return attributePresent(node, key)
+		_, present := attributeValue(node, key)
+		return present
 	}
 	// An exact match requires the attribute to be present; [attr=""] must
 	// not match a missing attribute.
 	value, present := attributeValue(node, key)
 	return present && value == want
-}
-
-func attributePresent(node *html.Node, key string) bool {
-	_, present := attributeValue(node, key)
-	return present
 }
 
 func attributeValue(node *html.Node, key string) (string, bool) {

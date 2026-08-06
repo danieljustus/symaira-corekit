@@ -45,7 +45,6 @@ func TestRenderMatchesStringPipeline(t *testing.T) {
 		{MaxChars: 60},
 	}
 	for _, options := range combos {
-		options := options
 		t.Run(renderComboName(options), func(t *testing.T) {
 			document, err := Render(richParsePage, "Parse once", "https://example.test/", options)
 			if err != nil {
