@@ -14,6 +14,9 @@ private func sha256Hex(_ data: Data) -> String {
 /// An HTTP client stub that maps URL path components to responses.
 private final class StubUpdateHTTPClient: UpdateHTTPClient, @unchecked Sendable {
     var responses: [String: (Data, Int)] = [:]
+    /// Per-path Content-Length overrides used to simulate truncated
+    /// downloads (the client normally reports the true body size).
+    var contentLengthOverrides: [String: Int64] = [:]
 
     func data(for request: URLRequest) async throws -> (Data, URLResponse) {
         guard let url = request.url else {
@@ -29,11 +32,12 @@ private final class StubUpdateHTTPClient: UpdateHTTPClient, @unchecked Sendable 
             )!
             return (Data(), response)
         }
+        let contentLength = contentLengthOverrides[path] ?? Int64(body.count)
         let response = HTTPURLResponse(
             url: url,
             statusCode: status,
             httpVersion: nil,
-            headerFields: ["Content-Length": "\(body.count)"]
+            headerFields: ["Content-Length": "\(contentLength)"]
         )!
         return (body, response)
     }
@@ -1040,5 +1044,499 @@ final class UpdateApplierTests: XCTestCase {
 
         let downloaded = try Data(contentsOf: result)
         XCTAssertEqual(downloaded, assetBody)
+    }
+
+    // MARK: - applyBundle error branches (#49)
+
+    func testApplyBundleChecksumEntryMissingForAsset() async throws {
+        let assetBody = Data("fake-binary-content".utf8)
+        let expectedSum = sha256Hex(assetBody)
+        // checksums.txt lists a different asset — the selected asset has no entry.
+        let checksumsText = "\(expectedSum)  some_other_asset\n"
+        let client = StubUpdateHTTPClient()
+        client.setResponse(path: "/checksums.txt", body: Data(checksumsText.utf8))
+        client.setResponse(path: "/asset", body: assetBody)
+
+        let release = ReleaseInfo(
+            tagName: "v1.2.0",
+            htmlURL: "https://github.com/example/releases/tag/v1.2.0",
+            assets: [
+                Asset(name: "mytool_darwin_arm64", browserDownloadURL: "https://example.com/asset", size: Int64(assetBody.count)),
+                Asset(name: "checksums.txt", browserDownloadURL: "https://example.com/checksums.txt", size: 0),
+            ]
+        )
+
+        let applier = UpdateApplier(os: "darwin", arch: "arm64", client: client)
+
+        do {
+            _ = try await applier.applyBundle(release: release)
+            XCTFail("expected checksumMismatch (missing entry) error")
+        } catch UpdateApplierError.checksumMismatch(let assetName, let got, _) {
+            XCTAssertEqual(assetName, "mytool_darwin_arm64")
+            XCTAssertTrue(got.contains("no entry"), "got should describe the missing entry, was: \(got)")
+        } catch {
+            XCTFail("unexpected error: \(error)")
+        }
+    }
+
+    func testApplyBundleChecksumMismatchThrowsError() async throws {
+        let assetBody = Data("real-binary-content".utf8)
+        let wrongChecksum = "deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef"
+
+        let client = StubUpdateHTTPClient()
+        client.setResponse(path: "/checksums.txt", body: Data("\(wrongChecksum)  mytool_darwin_arm64\n".utf8))
+        client.setResponse(path: "/asset", body: assetBody)
+
+        let release = ReleaseInfo(
+            tagName: "v1.2.0",
+            htmlURL: "https://github.com/example/releases/tag/v1.2.0",
+            assets: [
+                Asset(name: "mytool_darwin_arm64", browserDownloadURL: "https://example.com/asset", size: Int64(assetBody.count)),
+                Asset(name: "checksums.txt", browserDownloadURL: "https://example.com/checksums.txt", size: 0),
+            ]
+        )
+
+        let applier = UpdateApplier(os: "darwin", arch: "arm64", client: client)
+
+        do {
+            _ = try await applier.applyBundle(release: release)
+            XCTFail("expected checksumMismatch error")
+        } catch UpdateApplierError.checksumMismatch(let assetName, let got, let expected) {
+            XCTAssertEqual(assetName, "mytool_darwin_arm64")
+            XCTAssertEqual(got, sha256Hex(assetBody), "got should be the downloaded body's real checksum")
+            XCTAssertEqual(expected, wrongChecksum)
+        } catch {
+            XCTFail("unexpected error: \(error)")
+        }
+    }
+
+    func testApplyBundleAllowsDirectDownloadWhenCheckEnabled() async throws {
+        let assetBody = Data("binary".utf8)
+        let expectedSum = sha256Hex(assetBody)
+
+        let client = StubUpdateHTTPClient()
+        let checksumsText = "\(expectedSum)  mytool_darwin_arm64\n"
+        client.setResponse(path: "/checksums.txt", body: Data(checksumsText.utf8))
+        client.setResponse(path: "/asset", body: assetBody)
+
+        let release = ReleaseInfo(
+            tagName: "v1.2.0",
+            htmlURL: "https://github.com/example/releases/tag/v1.2.0",
+            assets: [
+                Asset(name: "mytool_darwin_arm64", browserDownloadURL: "https://example.com/asset", size: Int64(assetBody.count)),
+                Asset(name: "checksums.txt", browserDownloadURL: "https://example.com/checksums.txt", size: 0),
+            ]
+        )
+
+        // /usr/local/bin is classified directDownload without touching the filesystem.
+        let applier = UpdateApplier(
+            os: "darwin",
+            arch: "arm64",
+            client: client,
+            checkInstallMethod: true,
+            binaryName: "symvault"
+        )
+
+        let result = try await applier.applyBundle(release: release, targetPath: "/usr/local/bin/symvault")
+        defer { try? FileManager.default.removeItem(at: result) }
+
+        XCTAssertEqual(try Data(contentsOf: result), assetBody, "supported install method must proceed to download")
+    }
+
+    // MARK: - Download failure branches (#49)
+
+    func testIncompleteDownloadThrowsDownloadFailed() async throws {
+        let client = StubUpdateHTTPClient()
+        let checksumsText = "deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef  mytool_darwin_arm64\n"
+        client.setResponse(path: "/checksums.txt", body: Data(checksumsText.utf8))
+        client.setResponse(path: "/asset", body: Data("short-body".utf8))
+        // Server advertises more bytes than it sends.
+        client.contentLengthOverrides["/asset"] = 1_000_000
+
+        let release = ReleaseInfo(
+            tagName: "v1.2.0",
+            htmlURL: "https://github.com/example/releases/tag/v1.2.0",
+            assets: [
+                Asset(name: "mytool_darwin_arm64", browserDownloadURL: "https://example.com/asset", size: 0),
+                Asset(name: "checksums.txt", browserDownloadURL: "https://example.com/checksums.txt", size: 0),
+            ]
+        )
+
+        let applier = UpdateApplier(os: "darwin", arch: "arm64", client: client)
+
+        do {
+            _ = try await applier.apply(release: release)
+            XCTFail("expected downloadFailed error for truncated body")
+        } catch UpdateApplierError.downloadFailed(let message) {
+            XCTAssertTrue(message.contains("Incomplete download"), "unexpected message: \(message)")
+        } catch {
+            XCTFail("unexpected error: \(error)")
+        }
+    }
+
+    func testAssetExceedsMaxBodySizeThrowsDownloadFailed() async throws {
+        let client = StubUpdateHTTPClient()
+        let checksumsText = "deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef  mytool_darwin_arm64\n"
+        client.setResponse(path: "/checksums.txt", body: Data(checksumsText.utf8))
+        // Just over the 1 GiB cap — the download must be rejected before hashing.
+        client.setResponse(path: "/asset", body: Data(repeating: 0x61, count: (1 << 30) + 1))
+
+        let release = ReleaseInfo(
+            tagName: "v1.2.0",
+            htmlURL: "https://github.com/example/releases/tag/v1.2.0",
+            assets: [
+                Asset(name: "mytool_darwin_arm64", browserDownloadURL: "https://example.com/asset", size: 0),
+                Asset(name: "checksums.txt", browserDownloadURL: "https://example.com/checksums.txt", size: 0),
+            ]
+        )
+
+        let applier = UpdateApplier(os: "darwin", arch: "arm64", client: client)
+
+        do {
+            _ = try await applier.apply(release: release)
+            XCTFail("expected downloadFailed error for oversized asset")
+        } catch UpdateApplierError.downloadFailed(let message) {
+            XCTAssertTrue(message.contains("maximum allowed size"), "unexpected message: \(message)")
+        } catch {
+            XCTFail("unexpected error: \(error)")
+        }
+    }
+
+    // MARK: - Install method writability heuristics (#49)
+
+    func testDetectInstallMethodWritabilityHeuristics() throws {
+        let tempRoot = FileManager.default.temporaryDirectory
+            .appendingPathComponent("updateapply-writability-\(UUID().uuidString)")
+        defer { try? FileManager.default.removeItem(at: tempRoot) }
+        try FileManager.default.createDirectory(at: tempRoot, withIntermediateDirectories: true)
+
+        // Read-only directory → no self-update.
+        let readOnly = tempRoot.appendingPathComponent("readonly")
+        try FileManager.default.createDirectory(at: readOnly, withIntermediateDirectories: true)
+        try FileManager.default.setAttributes([.posixPermissions: 0o444], ofItemAtPath: readOnly.path)
+        XCTAssertEqual(
+            UpdateApplier.detectInstallMethod(at: readOnly.appendingPathComponent("tool").path),
+            .buildFromSource,
+            "read-only directory must be classified buildFromSource"
+        )
+
+        // Group/other-writable without owner write → user can still update.
+        let groupWritable = tempRoot.appendingPathComponent("groupwritable")
+        try FileManager.default.createDirectory(at: groupWritable, withIntermediateDirectories: true)
+        try FileManager.default.setAttributes([.posixPermissions: 0o577], ofItemAtPath: groupWritable.path)
+        XCTAssertEqual(
+            UpdateApplier.detectInstallMethod(at: groupWritable.appendingPathComponent("tool").path),
+            .directDownload,
+            "group/other-writable directory must be classified directDownload"
+        )
+
+        // Owner-writable → direct download.
+        let ownerWritable = tempRoot.appendingPathComponent("ownerwritable")
+        try FileManager.default.createDirectory(at: ownerWritable, withIntermediateDirectories: true)
+        try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: ownerWritable.path)
+        XCTAssertEqual(
+            UpdateApplier.detectInstallMethod(at: ownerWritable.appendingPathComponent("tool").path),
+            .directDownload,
+            "owner-writable directory must be classified directDownload"
+        )
+
+        // Nonexistent directory → undeterminable.
+        XCTAssertEqual(
+            UpdateApplier.detectInstallMethod(at: tempRoot.appendingPathComponent("missing/bin/tool").path),
+            .unknown
+        )
+    }
+
+    // MARK: - Guidance for every install method (#49)
+
+    func testGuidanceForAllInstallMethods() {
+        XCTAssertTrue(UpdateApplier.guidance(for: .directDownload, binaryName: "t").contains("GitHub"))
+        XCTAssertTrue(UpdateApplier.guidance(for: .homebrew, binaryName: "t").contains("brew upgrade"))
+        XCTAssertTrue(UpdateApplier.guidance(for: .goInstall, binaryName: "t").contains("go install"))
+        XCTAssertTrue(UpdateApplier.guidance(for: .packageManager, binaryName: "t").contains("package manager"))
+        XCTAssertTrue(UpdateApplier.guidance(for: .buildFromSource, binaryName: "t").contains("swift build"))
+        XCTAssertTrue(UpdateApplier.guidance(for: .unknown, binaryName: "t").contains("Unable to determine"))
+    }
+
+    // MARK: - errorDescription for every error case (#49)
+
+    func testErrorDescriptionForAllCases() {
+        let cases: [(UpdateApplierError, String)] = [
+            (.downloadFailed("boom"), "boom"),
+            (.checksumMismatch(assetName: "a", got: "g", expected: "e"), "Checksum mismatch for a: got g, expected e."),
+            (.noMatchingAsset(os: "os", arch: "arch"), "No release asset matches os/arch."),
+            (.destinationNotWritable("d"), "d"),
+            (.missingChecksumsAsset, "The release has no checksums.txt asset."),
+            (.unparseableChecksums, "The checksums.txt file contained no parseable entries."),
+            (.httpStatus(503), "HTTP error 503."),
+            (.unsupportedInstallMethod(.homebrew, guidance: "g"), "g"),
+            (.applicationsNotWritable, "/Applications is not writable."),
+            (.dmgMountFailed("m"), "m"),
+            (.appBundleNotFound, "No .app bundle was found inside the archive."),
+            (.appBundleCopyFailed("c"), "c"),
+            (.cosignVerificationFailed("v"), "v"),
+            (.subprocessTimeout("cmd"), "Subprocess timed out: cmd."),
+        ]
+        for (error, expected) in cases {
+            XCTAssertEqual(error.localizedDescription, expected, "unexpected description for \(error)")
+        }
+    }
+
+    // MARK: - CosignConfig delegation (#49)
+
+    func testCosignConfigDelegatesFetchAndVerifyToVerifier() async throws {
+        let verifier = StubPassingCosignVerifier()
+        let cfg = CosignConfig(repo: "danieljustus/symaira-vault", binaryName: "symvault", verifier: verifier)
+
+        let sig = try await cfg.fetchSignature(tag: "v1.0.0")
+        XCTAssertEqual(sig, Data("stub-signature".utf8), "fetchSignature must delegate to the verifier")
+
+        let cert = try await cfg.fetchCertificate(tag: "v1.0.0")
+        XCTAssertEqual(cert, Data("stub-certificate".utf8), "fetchCertificate must delegate to the verifier")
+
+        // verifySignature delegation must not throw with a passing verifier.
+        try await cfg.verifySignature(content: Data("c".utf8), signature: Data("s".utf8), certificate: Data("c".utf8))
+    }
+
+    // MARK: - CosignCLIVerifier artifact fetching (#49)
+
+    func testCosignCLIVerifierFetchSignatureSuccess() async throws {
+        let client = StubUpdateHTTPClient()
+        client.setResponse(path: "/danieljustus/symaira-vault/releases/download/v1.2.0/symvault_1.2.0_checksums.txt.sig", body: Data("sig-bytes".utf8))
+        client.setResponse(path: "/danieljustus/symaira-vault/releases/download/v1.2.0/symvault_1.2.0_checksums.txt.pem", body: Data("cert-bytes".utf8))
+
+        let verifier = CosignCLIVerifier(
+            repo: "danieljustus/symaira-vault",
+            binaryName: "symvault",
+            httpClient: client
+        )
+
+        let sig = try await verifier.fetchSignature(tag: "v1.2.0")
+        XCTAssertEqual(sig, Data("sig-bytes".utf8))
+        let cert = try await verifier.fetchCertificate(tag: "v1.2.0")
+        XCTAssertEqual(cert, Data("cert-bytes".utf8))
+    }
+
+    func testCosignCLIVerifierFetchArtifactHTTPError() async throws {
+        let client = StubUpdateHTTPClient() // no response registered → stub returns 404
+        let verifier = CosignCLIVerifier(repo: "danieljustus/symaira-vault", binaryName: "symvault", httpClient: client)
+
+        do {
+            _ = try await verifier.fetchSignature(tag: "v1.2.0")
+            XCTFail("expected cosignVerificationFailed for HTTP 404")
+        } catch UpdateApplierError.cosignVerificationFailed(let message) {
+            XCTAssertTrue(message.contains("HTTP 404"), "unexpected message: \(message)")
+        } catch {
+            XCTFail("unexpected error: \(error)")
+        }
+    }
+
+    func testCosignCLIVerifierFetchArtifactEmptyVersionThrows() async throws {
+        let verifier = CosignCLIVerifier(repo: "danieljustus/symaira-vault", binaryName: "symvault")
+
+        do {
+            _ = try await verifier.fetchSignature(tag: "v") // strips to an empty version
+            XCTFail("expected cosignVerificationFailed for empty version")
+        } catch UpdateApplierError.cosignVerificationFailed(let message) {
+            XCTAssertTrue(message.contains("Version must not be empty"), "unexpected message: \(message)")
+        } catch {
+            XCTFail("unexpected error: \(error)")
+        }
+    }
+
+    func testCosignCLIVerifierFetchArtifactRejectsNonHTTPS() async throws {
+        let verifier = CosignCLIVerifier(
+            repo: "danieljustus/symaira-vault",
+            binaryName: "symvault",
+            downloadBaseURL: "http://insecure.example.com"
+        )
+
+        do {
+            _ = try await verifier.fetchSignature(tag: "v1.2.0")
+            XCTFail("expected cosignVerificationFailed for non-HTTPS URL")
+        } catch UpdateApplierError.cosignVerificationFailed(let message) {
+            XCTAssertTrue(message.contains("must use HTTPS"), "unexpected message: \(message)")
+        } catch {
+            XCTFail("unexpected error: \(error)")
+        }
+    }
+
+    // MARK: - CosignCLIVerifier verifySignature branches (#49)
+
+    func testCosignCLIVerifierMissingCLIThrowsBoundedError() async throws {
+        // Restrict PATH so `/usr/bin/which cosign` fails, deterministically
+        // exercising the missing-CLI branch whether or not cosign is
+        // installed on this machine. Subprocesses inherit the process
+        // environment; the original PATH is restored afterwards.
+        let originalPATH = ProcessInfo.processInfo.environment["PATH"] ?? ""
+        setenv("PATH", "/usr/bin:/bin", 1)
+        defer { setenv("PATH", originalPATH, 1) }
+
+        let verifier = CosignCLIVerifier(repo: "danieljustus/symaira-vault", binaryName: "symvault")
+
+        do {
+            try await verifier.verifySignature(
+                content: Data("content".utf8),
+                signature: Data("signature".utf8),
+                certificate: Data("certificate".utf8)
+            )
+            XCTFail("expected verification to fail when cosign is missing")
+        } catch UpdateApplierError.cosignVerificationFailed(let message) {
+            XCTAssertTrue(message.contains("cosign CLI not found"), "unexpected message: \(message)")
+        } catch {
+            XCTFail("unexpected error: \(error)")
+        }
+    }
+
+    func testCosignCLIVerifierVerifyFailureThrowsDiagnosticCase() async throws {
+        let which = try SubprocessRunner.runChecked(
+            executable: URL(fileURLWithPath: "/usr/bin/which"),
+            arguments: ["cosign"]
+        )
+        try XCTSkipIf(which.exitCode != 0, "cosign CLI not installed — diagnostic branch requires a real cosign binary")
+
+        let verifier = CosignCLIVerifier(repo: "danieljustus/symaira-vault", binaryName: "symvault")
+
+        do {
+            try await verifier.verifySignature(
+                content: Data("not-a-checksum".utf8),
+                signature: Data("not-a-signature".utf8),
+                certificate: Data("not-a-certificate".utf8)
+            )
+            XCTFail("expected cosign verify-blob to fail on garbage input")
+        } catch UpdateApplierError.cosignVerificationFailedDiagnostic(let stderr) {
+            XCTAssertFalse(stderr.isEmpty, "diagnostic stderr must carry the cosign failure output")
+
+            let error = UpdateApplierError.cosignVerificationFailedDiagnostic(stderr)
+            XCTAssertEqual(
+                error.cosignDiagnosticStderr, stderr,
+                "diagnostic accessor must return the full stderr"
+            )
+            XCTAssertLessThan(error.localizedDescription.utf8.count, 300, "user-facing description must stay bounded")
+            XCTAssertTrue(
+                error.localizedDescription.contains("cosign verify-blob failed"),
+                "unexpected description: \(error.localizedDescription)"
+            )
+        } catch {
+            XCTFail("unexpected error: \(error)")
+        }
+    }
+
+    // MARK: - DMG/ZIP install failure paths (#49)
+    //
+    // These exercise the failure-mapping around the real /usr/bin/ditto and
+    // /usr/bin/hdiutil subprocesses without touching /Applications: every
+    // test stops before any copy into /Applications happens. They skip when
+    // /Applications is not writable (non-admin environment).
+
+    func testInstallDMGHdiutilAttachFailureThrowsDmgMountFailed() throws {
+        try XCTSkipIf(
+            !FileManager.default.isWritableFile(atPath: "/Applications"),
+            "requires a writable /Applications (admin user)"
+        )
+
+        let garbage = FileManager.default.temporaryDirectory
+            .appendingPathComponent("updateapply-bad-\(UUID().uuidString).dmg")
+        try Data("definitely-not-a-disk-image".utf8).write(to: garbage)
+        defer { try? FileManager.default.removeItem(at: garbage) }
+
+        let applier = UpdateApplier()
+        do {
+            _ = try applier.installDMG(at: garbage, assetName: "MyApp_darwin_arm64.dmg")
+            XCTFail("expected dmgMountFailed for an unreadable disk image")
+        } catch UpdateApplierError.dmgMountFailed(let message) {
+            XCTAssertTrue(message.contains("hdiutil attach failed"), "unexpected message: \(message)")
+        } catch {
+            XCTFail("unexpected error: \(error)")
+        }
+    }
+
+    func testApplyBundleDMGAssetDispatchesToInstallDMG() async throws {
+        try XCTSkipIf(
+            !FileManager.default.isWritableFile(atPath: "/Applications"),
+            "requires a writable /Applications (admin user)"
+        )
+
+        let dmgBody = Data("definitely-not-a-disk-image".utf8)
+        let expectedSum = sha256Hex(dmgBody)
+
+        let client = StubUpdateHTTPClient()
+        client.setResponse(path: "/checksums.txt", body: Data("\(expectedSum)  MyApp_darwin_arm64.dmg\n".utf8))
+        client.setResponse(path: "/dmg", body: dmgBody)
+
+        let release = ReleaseInfo(
+            tagName: "v1.2.0",
+            htmlURL: "https://github.com/example/releases/tag/v1.2.0",
+            assets: [
+                Asset(name: "MyApp_darwin_arm64.dmg", browserDownloadURL: "https://example.com/dmg", size: Int64(dmgBody.count)),
+                Asset(name: "checksums.txt", browserDownloadURL: "https://example.com/checksums.txt", size: 0),
+            ]
+        )
+
+        let applier = UpdateApplier(os: "darwin", arch: "arm64", client: client)
+
+        do {
+            _ = try await applier.applyBundle(release: release)
+            XCTFail("expected dmgMountFailed for an unreadable DMG asset")
+        } catch UpdateApplierError.dmgMountFailed {
+            // expected — the DMG dispatch reached installDMG and hdiutil failed
+        } catch {
+            XCTFail("unexpected error: \(error)")
+        }
+    }
+
+    func testInstallZipDittoFailureThrowsAppBundleCopyFailed() throws {
+        try XCTSkipIf(
+            !FileManager.default.isWritableFile(atPath: "/Applications"),
+            "requires a writable /Applications (admin user)"
+        )
+
+        let garbage = FileManager.default.temporaryDirectory
+            .appendingPathComponent("updateapply-bad-\(UUID().uuidString).zip")
+        try Data("definitely-not-a-zip-archive".utf8).write(to: garbage)
+        defer { try? FileManager.default.removeItem(at: garbage) }
+
+        let applier = UpdateApplier()
+        do {
+            _ = try applier.installZip(at: garbage, assetName: "MyApp_darwin_arm64.zip")
+            XCTFail("expected appBundleCopyFailed when ditto cannot extract")
+        } catch UpdateApplierError.appBundleCopyFailed(let message) {
+            XCTAssertTrue(message.contains("ditto extraction failed"), "unexpected message: \(message)")
+        } catch {
+            XCTFail("unexpected error: \(error)")
+        }
+    }
+
+    func testInstallZipAppBundleNotFoundWhenArchiveHasNoApp() throws {
+        try XCTSkipIf(
+            !FileManager.default.isWritableFile(atPath: "/Applications"),
+            "requires a writable /Applications (admin user)"
+        )
+
+        let tempRoot = FileManager.default.temporaryDirectory
+            .appendingPathComponent("updateapply-zip-\(UUID().uuidString)")
+        defer { try? FileManager.default.removeItem(at: tempRoot) }
+
+        // Build a real ZIP (via ditto) that contains no .app bundle.
+        let src = tempRoot.appendingPathComponent("src")
+        try FileManager.default.createDirectory(at: src, withIntermediateDirectories: true)
+        try Data("readme".utf8).write(to: src.appendingPathComponent("readme.txt"))
+
+        let zipURL = tempRoot.appendingPathComponent("archive.zip")
+        let zipResult = try SubprocessRunner.runChecked(
+            executable: URL(fileURLWithPath: "/usr/bin/ditto"),
+            arguments: ["-c", "-k", src.path, zipURL.path]
+        )
+        XCTAssertEqual(zipResult.exitCode, 0, "test setup: ditto must create the fixture archive")
+
+        let applier = UpdateApplier()
+        do {
+            _ = try applier.installZip(at: zipURL, assetName: "MyApp_darwin_arm64.zip")
+            XCTFail("expected appBundleNotFound for an archive without an .app")
+        } catch UpdateApplierError.appBundleNotFound {
+            // expected
+        } catch {
+            XCTFail("unexpected error: \(error)")
+        }
     }
 }
