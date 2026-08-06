@@ -39,6 +39,11 @@ func Markdown(source string) string {
 	if err != nil {
 		return ""
 	}
+	return markdownFromNode(document)
+}
+
+// markdownFromNode renders an already-parsed tree as Markdown.
+func markdownFromNode(document *html.Node) string {
 	var builder strings.Builder
 	renderNode(document, &builder, 0, false)
 	return strings.TrimSpace(builder.String())
@@ -50,6 +55,11 @@ func Outline(source string) []Heading {
 	if err != nil {
 		return nil
 	}
+	return outlineFromNode(document)
+}
+
+// outlineFromNode collects the heading structure of an already-parsed tree.
+func outlineFromNode(document *html.Node) []Heading {
 	var headings []Heading
 	collectHeadings(document, &headings)
 	return headings
@@ -61,6 +71,11 @@ func Lang(source string) string {
 	if err != nil {
 		return ""
 	}
+	return langFromNode(document)
+}
+
+// langFromNode reads the document language from an already-parsed tree.
+func langFromNode(document *html.Node) string {
 	var lang string
 	var walk func(*html.Node)
 	walk = func(node *html.Node) {
