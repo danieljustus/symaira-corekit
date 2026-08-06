@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-08-06
+
+### Added
+- `SymairaMCP` module: shared typed JSON-RPC/MCP stdio server
+  (`MCPServer.withMethodHandler(_:)`, `MCPStdioTransport`, and the MCP wire
+  types `MCPTool`, `MCPCallToolResult`, `MCPInitializeResult`, …), zero
+  third-party dependencies — so client apps can stop hand-rolling their own
+  MCP servers (follow-up of #55).
+
+### Fixed
+- `UpdateApplier`: cosign subprocess errors now bound stderr in the
+  user-facing error message instead of dumping unbounded output.
+- Restored the iOS platform declaration for package consumers.
+
+### Changed
+- `UpdateApplier` subprocess calls now run with explicit timeouts
+  (loose-coupling rule).
+
 ## [0.7.0] - 2026-08-01
 
 ### Added
