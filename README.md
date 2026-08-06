@@ -58,7 +58,8 @@ and other product- or cloud-specific behavior.
 | `envutil` | v0.1.0 | Safe environment variable access with alias support |
 | `fsutil` | v0.1.0 | Atomic file writes, path traversal validation, temp-file safety |
 | `configkit` | v0.1.0 | TOML config loader with XDG paths, project overrides, and env vars |
-| `embedkit` | v0.8.1 | Shared embedding provenance type (`Result`) and quantization-aware `SameSpace` embedding-space identity guard |
+| `domkit` | v0.9.0 | Shared semantic DOM pipeline for schema, selector, image, truncation, and markdown extraction |
+| `embedkit` | v0.9.0 | Embedding provenance, provider abstraction, result caching, dimension pinning, and quantization-aware `SameSpace` identity checks |
 | `evidencekit` | v0.4.0 | Grounded extraction contract (`SourceRef`, `Span`, `Extraction`, `AlignmentStatus`), JSONL sidecar encode/decode, exact/normalized text-span alignment, and grounded-only validation |
 | `mcpserver` | v0.1.0 | Generic JSON-RPC 2.0 stdio server for MCP tool registration |
 | `ollamakit` | v0.4.1 | CGO-free shared Ollama HTTP client: embeddings, streamed generation/chat, model discovery, and typed errors |

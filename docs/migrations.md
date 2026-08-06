@@ -9,6 +9,23 @@ Strict SemVer within a major version means these are additive/non-breaking
 by contract; "check" below means "new capability you may want to adopt or a
 behavior change worth confirming," not "your build will fail."
 
+## v0.8.0 → v0.9.0
+
+- `embedkit` gained provider abstractions, a deterministic hash fallback,
+  configurable result caching, and dimension pinning. Consumers adopting
+  these features should persist the provider/model, dimension, and
+  quantization metadata together so `SameSpace` continues to reject
+  incompatible vectors.
+- New `domkit` package provides a shared semantic DOM pipeline for schema,
+  selector, image, truncation, and markdown extraction. Consumers that had
+  local extraction helpers can migrate incrementally; the exported
+  string-based helpers remain available for direct callers.
+- `ollamakit` continues to support streamed generation/chat and model
+  discovery while exposing the embedding dimension option used by
+  `embedkit` providers. Existing calls with a zero dimension are unchanged.
+
+[Release notes](https://github.com/danieljustus/symaira-corekit/releases/tag/v0.9.0)
+
 ## v0.7.0 → v0.8.0
 
 - `mcpserver`: `ToolAnnotations` for MCP tool-behaviour hints; fixed
