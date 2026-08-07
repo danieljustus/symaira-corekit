@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `SymairaToolRegistry` now registers `symbrain` and `symrelate`. `symrelate`
+  exposes a plain `mcp` subcommand and is registered with `mcpArgs: ["mcp"]`;
+  `symbrain`'s server requires a runtime `--profile` argument, so its entry
+  declares `supportsMCP: false` rather than advertising an invocation that
+  always fails (#62).
+
+### Fixed
+- `MCPStdioTransport` rejects oversized newline-less lines: the injectable
+  `maxLineSize` (default 50 MB) bounds line buffering, so a malformed or
+  malicious message cannot cause unbounded allocation (#63).
+
 ## [0.8.1] - 2026-08-06
 
 ### Added
@@ -209,6 +221,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `SymairaToolKit`: `SymairaToolRegistry` (single source of truth for all tools), `BinaryLocator`, `ToolDetector` with `version --json` schema handshake
 - `SymairaKeychain`: Keychain wrapper, service-namespaced `dev.symaira.<app>`
 
+[0.8.1]: https://github.com/danieljustus/symaira-appkit/compare/0.8.0...0.8.1
+[0.8.0]: https://github.com/danieljustus/symaira-appkit/compare/0.7.0...0.8.0
 [0.7.0]: https://github.com/danieljustus/symaira-appkit/compare/0.6.1...0.7.0
 [0.6.1]: https://github.com/danieljustus/symaira-appkit/compare/0.6.0...0.6.1
 [0.6.0]: https://github.com/danieljustus/symaira-appkit/compare/0.5.0...0.6.0
