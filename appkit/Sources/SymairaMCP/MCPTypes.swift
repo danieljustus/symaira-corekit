@@ -267,13 +267,20 @@ public struct MCPNoParams: Sendable, Equatable, Decodable {
 /// message.
 ///
 /// `MCPServer` maps it to a JSON-RPC `-32603 Internal error` response whose
-/// `message` carries the error text. Any other error thrown by a handler is
-/// mapped the same way, with a description of the error as the message.
+/// `message` carries the error text and whose optional `data` (when set) is
+/// encoded into the JSON-RPC `error.data` field, so callers can classify
+/// failures without parsing human-readable text. Any other error thrown by a
+/// handler is mapped the same way, with a description of the error as the
+/// message and no `data`.
 public struct MCPError: Error, Sendable, Equatable {
     public let message: String
+    /// Machine-readable classification payload, encoded into the JSON-RPC
+    /// `error.data` field. `nil` omits `data` from the wire response.
+    public let data: MCPJSONValue?
 
-    public init(_ message: String) {
+    public init(_ message: String, data: MCPJSONValue? = nil) {
         self.message = message
+        self.data = data
     }
 }
 

@@ -258,7 +258,7 @@ public final class MCPServer: @unchecked Sendable {
             }
         } catch let error as MCPError {
             if let responseID {
-                await sendError(id: responseID, code: .internalError, message: error.message)
+                await sendError(id: responseID, code: .internalError, message: error.message, data: error.data)
             }
         } catch {
             if let responseID {
@@ -279,10 +279,10 @@ public final class MCPServer: @unchecked Sendable {
         await write(data)
     }
 
-    private func sendError(id: MCPJSONRPCID, code: MCPJSONRPCErrorCode, message: String) async {
+    private func sendError(id: MCPJSONRPCID, code: MCPJSONRPCErrorCode, message: String, data: MCPJSONValue? = nil) async {
         let response = MCPJSONRPCErrorResponse(
             id: id,
-            error: MCPJSONRPCErrorObject(code: code.rawValue, message: message)
+            error: MCPJSONRPCErrorObject(code: code.rawValue, message: message, data: data)
         )
         guard let data = try? JSONEncoder().encode(response) else { return }
         await write(data)

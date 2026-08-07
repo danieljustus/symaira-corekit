@@ -227,6 +227,22 @@ final class MCPServerTests: XCTestCase {
         XCTAssertEqual(envelope.error?.message, "deliberate failure")
     }
 
+    func testHandlerErrorCarriesDataOverTheWire() async throws {
+        let harness = makeHarness { server in
+            server.withMethodHandler("tools/fail") { (_: MCPNoParams) async throws -> MCPJSONValue in
+                throw MCPError("operation failed", data: .object(["code": .string("operation_failed")]))
+            }
+        }
+        defer { try? harness.clientWrite.close() }
+
+        try send(#"{"jsonrpc":"2.0","id":8,"method":"tools/fail"}"#, to: harness.clientWrite)
+        let envelope = try decodeEnvelope(try await nextLine(harness.reader))
+        XCTAssertEqual(envelope.id, .number(8))
+        XCTAssertEqual(envelope.error?.code, -32603)
+        XCTAssertEqual(envelope.error?.message, "operation failed")
+        XCTAssertEqual(envelope.error?.data, .object(["code": .string("operation_failed")]))
+    }
+
     func testUndecodableParamsReturnsInvalidParamsError() async throws {
         let harness = makeHarness { server in
             server.withMethodHandler("tools/call") { (_: MCPCallToolParams) async throws -> MCPCallToolResult in
