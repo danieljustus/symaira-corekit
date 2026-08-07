@@ -31,11 +31,14 @@ public struct SymairaTool: Equatable, Sendable, Identifiable {
 
 /// Registry of all known Symaira CLI tools.
 ///
-/// MCP subcommands verified against each repo's cobra commands (2026-07):
+/// MCP subcommands verified against each repo's cobra commands (2026-08):
 /// vault `serve --stdio`, memory/seek/skills/vibecoder `serve`,
-/// fetch/scope/fritz/print/ingest/meet `mcp` (symingest since v0.6.0).
-/// `symguard` does not expose an MCP server yet; `symeraseme` is a
-/// Python CLI without one.
+/// fetch/scope/fritz/print/ingest/meet `mcp` (symingest since v0.6.0),
+/// relate `mcp`. `symguard` does not expose an MCP server yet;
+/// `symeraseme` is a Python CLI without one; `symbrain`'s `serve` requires
+/// a runtime `--profile` argument the static registry cannot express, so it
+/// is listed as not MCP-capable until the API can model caller-supplied
+/// arguments (see the entry's comment below).
 public enum SymairaToolRegistry {
     public static let all: [SymairaTool] = [
         SymairaTool(
@@ -150,6 +153,26 @@ public enum SymairaToolRegistry {
             displayName: "Symaira Meet",
             binaryName: "symmeet",
             homebrewFormula: "danieljustus/tap/symmeet",
+            mcpArgs: ["mcp"]
+        ),
+        // symbrain's MCP server (`serve`) requires a caller-supplied
+        // `--profile <name>` argument; the static registry cannot express a
+        // required runtime parameter, so the entry honestly declares no MCP
+        // support rather than advertising an invocation that always fails.
+        // Consumers must supply the profile themselves at launch time.
+        SymairaTool(
+            id: "symbrain",
+            displayName: "Symaira Brain",
+            binaryName: "symbrain",
+            homebrewFormula: "danieljustus/tap/symbrain",
+            supportsMCP: false,
+            mcpArgs: []
+        ),
+        SymairaTool(
+            id: "symrelate",
+            displayName: "Symaira Relate",
+            binaryName: "symrelate",
+            homebrewFormula: "danieljustus/tap/symrelate",
             mcpArgs: ["mcp"]
         ),
     ]

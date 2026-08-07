@@ -12,11 +12,25 @@ final class RegistryTests: XCTestCase {
             "symvault", "symmemory", "symseek", "symfetch", "symscope",
             "symfritz", "symprint", "symskills", "symvibe", "symguard",
             "symingest", "symeraseme", "symtune", "symoperate", "symdesk",
-            "symmeet",
+            "symmeet", "symbrain", "symrelate",
         ]
         for id in expected {
             XCTAssertNotNil(SymairaToolRegistry.tool(id: id), "missing tool: \(id)")
         }
+    }
+
+    func testBrainAndRelateRegistryEntries() {
+        // symrelate exposes a plain `mcp` subcommand (symaira-relate,
+        // internal/cli/mcp_cmd.go, no required flags).
+        let relate = SymairaToolRegistry.tool(id: "symrelate")
+        XCTAssertEqual(relate?.supportsMCP, true)
+        XCTAssertEqual(relate?.mcpArgs, ["mcp"])
+        // symbrain's server requires a runtime `--profile` argument
+        // (symaira-brain, cmd/symbrain/cmd_serve.go); the static registry
+        // cannot express it, so the entry must not advertise MCP support.
+        let brain = SymairaToolRegistry.tool(id: "symbrain")
+        XCTAssertEqual(brain?.supportsMCP, false)
+        XCTAssertEqual(brain?.mcpArgs, [])
     }
 
     func testRegistryIDsAreUniqueAndSymPrefixed() {
