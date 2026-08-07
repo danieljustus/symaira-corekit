@@ -14,6 +14,7 @@ import (
 	"testing"
 
 	"github.com/danieljustus/symaira-corekit/updatecheck"
+	"github.com/danieljustus/symaira-corekit/updatecheck/cosign"
 )
 
 func sha256Hex(data []byte) string {
@@ -608,5 +609,101 @@ func TestDownloadToTempFailsOnBodyReadError(t *testing.T) {
 	err := a.Apply(context.Background(), release, target)
 	if err == nil {
 		t.Fatal("expected error when the asset body read fails, got nil")
+	}
+}
+
+func TestApplyVerifiesCosignOverExactChecksumsBytes(t *testing.T) {
+	// Multi-entry checksums.txt with non-canonical separators: the second
+	// line uses a single space and the third a tab. A map rebuild (the old
+	// behaviour) normalizes every separator to two spaces and randomizes
+	// entry order, so it can never reproduce these exact bytes — cosign
+	// would verify a document nobody signed. Byte-exact verification must
+	// hand cosign the original downloaded bytes instead.
+	assetBody := []byte("fake-binary-content")
+	checksumsBody := strings.Join([]string{
+		sha256Hex(assetBody) + "  mytool_linux_amd64",
+		strings.Repeat("a", 64) + " mytool_darwin_arm64",
+		strings.Repeat("b", 64) + "	mytool_windows_amd64",
+	}, "\n") + "\n"
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("/asset", func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write(assetBody)
+	})
+	mux.HandleFunc("/checksums.txt", func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte(checksumsBody))
+	})
+	mux.HandleFunc("/v1.2.0/mytool_1.2.0_checksums.txt.sig", func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte("fake-signature"))
+	})
+	mux.HandleFunc("/v1.2.0/mytool_1.2.0_checksums.txt.pem", func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte("fake-certificate"))
+	})
+	server := httptest.NewTLSServer(mux)
+	defer server.Close()
+	serverClient := server.Client()
+
+	release := &updatecheck.Release{
+		TagName: "v1.2.0",
+		Assets: []updatecheck.Asset{
+			{Name: "mytool_linux_amd64", BrowserDownloadURL: server.URL + "/asset"},
+			{Name: "checksums.txt", BrowserDownloadURL: server.URL + "/checksums.txt"},
+		},
+	}
+
+	dir := t.TempDir()
+	target := filepath.Join(dir, "mytool")
+	if err := os.WriteFile(target, []byte("old-binary"), 0o755); err != nil { //nolint:gosec
+		t.Fatalf("seed target: %v", err)
+	}
+
+	// Stub the cosign CLI with a fake binary that captures the content
+	// file VerifySignature writes (its last argument) and exits 0,
+	// instead of actually verifying anything.
+	captureFile := filepath.Join(dir, "captured-checksums")
+	fakeCosignDir := t.TempDir()
+	fakeCosign := filepath.Join(fakeCosignDir, "cosign")
+	script := "#!/bin/sh\nfor last; do :; done\ncp \"$last\" \"$COSIGN_CONTENT_CAPTURE\"\n"
+	if err := os.WriteFile(fakeCosign, []byte(script), 0o755); err != nil { //nolint:gosec
+		t.Fatalf("write fake cosign binary: %v", err)
+	}
+	t.Setenv("PATH", fakeCosignDir+string(os.PathListSeparator)+os.Getenv("PATH"))
+	t.Setenv("COSIGN_CONTENT_CAPTURE", captureFile)
+
+	a := &Applier{
+		HTTPClient: serverClient,
+		GOOS:       "linux",
+		GOARCH:     "amd64",
+		BinaryName: "mytool",
+		CosignConfig: &cosign.Config{
+			Repo:       "testowner/testrepo",
+			BinaryName: "mytool",
+			// Signature and certificate are served by the test server
+			// above; the fake cosign ignores them.
+			DownloadBaseURL: server.URL,
+			HTTPClient:      serverClient,
+		},
+	}
+	if err := a.Apply(context.Background(), release, target); err != nil {
+		t.Fatalf("Apply() error = %v", err)
+	}
+
+	// The exact downloaded bytes — original order and whitespace — must be
+	// what was written for cosign to verify, not a map-rebuilt document.
+	got, err := os.ReadFile(captureFile) //nolint:gosec
+	if err != nil {
+		t.Fatalf("read captured cosign content: %v", err)
+	}
+	if string(got) != checksumsBody {
+		t.Fatalf("cosign content file has %d bytes, want the exact %d downloaded bytes (order and whitespace preserved)", len(got), len(checksumsBody))
+	}
+
+	// The install itself must have completed.
+	installed, err := os.ReadFile(target) //nolint:gosec
+	if err != nil {
+		t.Fatalf("read target: %v", err)
+	}
+	if string(installed) != string(assetBody) {
+		t.Fatalf("target content = %q, want %q", installed, assetBody)
 	}
 }

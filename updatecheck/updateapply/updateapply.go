@@ -138,7 +138,7 @@ func (a *Applier) Apply(ctx context.Context, release *updatecheck.Release, targe
 		return err
 	}
 
-	checksums, err := a.fetchChecksums(ctx, release.Assets)
+	checksums, checksumsBytes, err := a.fetchChecksums(ctx, release.Assets)
 	if err != nil {
 		return fmt.Errorf("updateapply: fetch checksums: %w", err)
 	}
@@ -153,12 +153,11 @@ func (a *Applier) Apply(ctx context.Context, release *updatecheck.Release, targe
 		if certErr != nil {
 			return fmt.Errorf("updateapply: fetch cosign certificate: %w", certErr)
 		}
-		// Build the checksums content from the parsed map for verification.
-		var checksumsData strings.Builder
-		for name, sum := range checksums {
-			checksumsData.WriteString(fmt.Sprintf("%s  %s\n", sum, name))
-		}
-		if vErr := cfg.VerifySignature([]byte(checksumsData.String()), sig, cert); vErr != nil {
+		// Verify the signature over the exact downloaded checksums bytes.
+		// Rebuilding the file from the parsed map would reorder entries and
+		// normalize whitespace, so the bytes handed to cosign would almost
+		// never match what goreleaser actually signed.
+		if vErr := cfg.VerifySignature(checksumsBytes, sig, cert); vErr != nil {
 			return fmt.Errorf("updateapply: cosign verification failed: %w", vErr)
 		}
 	}
@@ -284,8 +283,11 @@ func selectAsset(assets []updatecheck.Asset, goos, goarch string) (updatecheck.A
 }
 
 // fetchChecksums downloads the release's checksums.txt asset and parses its
-// "<sha256>  <filename>" lines (the format goreleaser emits).
-func (a *Applier) fetchChecksums(ctx context.Context, assets []updatecheck.Asset) (map[string]string, error) {
+// "<sha256>  <filename>" lines (the format goreleaser emits). It returns the
+// parsed map plus the exact raw bytes downloaded, so callers can verify a
+// cosign signature over the file exactly as published — re-encoding from the
+// map would reorder entries and normalize whitespace.
+func (a *Applier) fetchChecksums(ctx context.Context, assets []updatecheck.Asset) (map[string]string, []byte, error) {
 	var checksumAsset *updatecheck.Asset
 	for i := range assets {
 		if strings.Contains(strings.ToLower(assets[i].Name), "checksums") {
@@ -294,18 +296,18 @@ func (a *Applier) fetchChecksums(ctx context.Context, assets []updatecheck.Asset
 		}
 	}
 	if checksumAsset == nil {
-		return nil, errors.New("release has no checksums.txt asset")
+		return nil, nil, errors.New("release has no checksums.txt asset")
 	}
 
 	body, _, err := a.download(ctx, *checksumAsset)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	defer func() { _ = body.Close() }()
 
 	data, err := io.ReadAll(io.LimitReader(body, maxAssetBody))
 	if err != nil {
-		return nil, fmt.Errorf("read checksums.txt: %w", err)
+		return nil, nil, fmt.Errorf("read checksums.txt: %w", err)
 	}
 
 	sums := make(map[string]string)
@@ -321,9 +323,9 @@ func (a *Applier) fetchChecksums(ctx context.Context, assets []updatecheck.Asset
 		sums[fields[1]] = fields[0]
 	}
 	if len(sums) == 0 {
-		return nil, errors.New("checksums.txt contained no parseable entries")
+		return nil, nil, errors.New("checksums.txt contained no parseable entries")
 	}
-	return sums, nil
+	return sums, data, nil
 }
 
 func (a *Applier) download(ctx context.Context, asset updatecheck.Asset) (io.ReadCloser, int64, error) {
