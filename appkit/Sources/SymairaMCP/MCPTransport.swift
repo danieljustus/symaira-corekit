@@ -36,8 +36,14 @@ public protocol MCPTransport: Sendable {
 /// process — notably `FileHandle.bytes.lines`, whose shared IO actor queue
 /// deadlocks when two readers use it concurrently.
 public final class MCPStdioTransport: MCPTransport, @unchecked Sendable {
+    /// Default maximum size of a single buffered line (message), in bytes.
+    /// Mirrors the 50 MB guard the transport's predecessor in
+    /// symaira-operate (`MCPStreamBuffer`) enforced while scanning.
+    public static let defaultMaxLineSize = 50 * 1024 * 1024
+
     private let input: FileHandle
     private let output: FileHandle
+    private let maxLineSize: Int
     private let lock = NSLock()
 
     private var continuation: AsyncStream<String>.Continuation?
@@ -45,9 +51,16 @@ public final class MCPStdioTransport: MCPTransport, @unchecked Sendable {
     private var stopped = false
 
     /// Creates a transport reading from `input` and writing to `output`.
-    public init(input: FileHandle, output: FileHandle) {
+    ///
+    /// - Parameter maxLineSize: maximum number of bytes buffered for a
+    ///   single line. Incoming data that would grow a newline-less line
+    ///   beyond this limit is rejected — reading stops and the incoming
+    ///   stream finishes — so an oversized or malicious message cannot
+    ///   cause unbounded allocation.
+    public init(input: FileHandle, output: FileHandle, maxLineSize: Int = MCPStdioTransport.defaultMaxLineSize) {
         self.input = input
         self.output = output
+        self.maxLineSize = maxLineSize
     }
 
     /// Creates a transport on the process's standard input and output.
@@ -123,6 +136,16 @@ public final class MCPStdioTransport: MCPTransport, @unchecked Sendable {
             lineBuffer.append(data)
             while let line = extractLine(flushRemainder: false) {
                 lines.append(line)
+            }
+            // Oversized-line guard: a line without a newline that exceeds
+            // maxLineSize is rejected instead of buffered in full. Reading
+            // stops and the stream finishes, so a malicious or malformed
+            // sender cannot drive unbounded memory growth.
+            if !lineBuffer.contains(0x0A), lineBuffer.count > maxLineSize {
+                lineBuffer.removeAll(keepingCapacity: false)
+                input.readabilityHandler = nil
+                self.continuation = nil
+                flushFinal = true
             }
         }
         lock.unlock()
