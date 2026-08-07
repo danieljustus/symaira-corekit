@@ -62,9 +62,12 @@ func DefaultPath(appName string) string {
 // Loader provides cached config loading for type T.
 // It implements sync.Once caching: Load reads from disk on the first call
 // and returns the cached value on subsequent calls. Use Reload for hot reload.
+// All cache state (once, cached, cachedErr) is guarded by mu, so Load,
+// Reload and ResetCache are safe to call concurrently.
 type Loader[T any] struct {
 	opts      Options
 	defaults  func() *T
+	mu        sync.RWMutex
 	once      sync.Once
 	cached    *T
 	cachedErr error
@@ -80,7 +83,10 @@ func NewLoader[T any](opts Options, defaults func() *T) *Loader[T] {
 
 // Load returns the config, loading and caching on first call.
 // Subsequent calls return the cached value without re-reading from disk.
+// Safe for concurrent use.
 func (l *Loader[T]) Load() (*T, error) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
 	l.once.Do(func() {
 		l.cached, l.cachedErr = l.loadOnce()
 	})
@@ -89,13 +95,18 @@ func (l *Loader[T]) Load() (*T, error) {
 
 // Reload reads a fresh config from disk (global + project + env vars),
 // bypassing the cache. Intended for long-running servers that need hot reload.
+// Safe for concurrent use.
 func (l *Loader[T]) Reload() (*T, error) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
 	return l.loadOnce()
 }
 
 // ResetCache clears the cached config so the next Load reads from disk.
-// Intended for tests only.
+// Intended for tests only. Safe for concurrent use.
 func (l *Loader[T]) ResetCache() {
+	l.mu.Lock()
+	defer l.mu.Unlock()
 	l.cached = nil
 	l.cachedErr = nil
 	l.once = sync.Once{}
