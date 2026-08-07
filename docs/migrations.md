@@ -26,6 +26,23 @@ behavior change worth confirming," not "your build will fail."
 
 [Release notes](https://github.com/danieljustus/symaira-corekit/releases/tag/v0.9.0)
 
+## v0.9.0 → v0.9.1
+
+- `configkit`: fixed a data race in the `Loader` cache when `Reload` /
+  `ResetCache` run concurrently with reads. Consumers that periodically
+  reload configuration should update; behavior is otherwise unchanged.
+- `updateapply`: the cosign signature is now verified over the exact
+  checksum bytes that are installed (previously the signature could be
+  checked against a differently-ordered byte slice). Consumers with
+  `CosignConfig` enabled should re-verify their own signatures against
+  the exact bytes.
+- `mcpserver`: JSON-RPC notifications are honored (no responses emitted,
+  `ping` supported) and typed tool results with request metadata are
+  preserved. Consumers relying on prior (malformed) notification
+  handling can drop workarounds.
+
+[Release notes](https://github.com/danieljustus/symaira-corekit/releases/tag/v0.9.1)
+
 ## v0.7.0 → v0.8.0
 
 - `mcpserver`: `ToolAnnotations` for MCP tool-behaviour hints; fixed
