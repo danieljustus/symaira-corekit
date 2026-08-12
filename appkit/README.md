@@ -29,6 +29,7 @@ Every Symaira app stays fully standalone: this package is consumed as a **pinned
 | `SymairaUpdateCheck` | GitHub latest-release checker with disk cache and stable-semver comparison (port of `corekit/updatecheck`). |
 | `SymairaDaemonKit` | `DaemonSupervisor` for launching and supervising long-running Symaira core daemon processes. |
 | `SymairaIngestContract` | JSON contract clients for `symingest` rules/mail config and ReOCR requests. |
+| `SymairaMCP` | Shared MCP server plumbing: `MCPServer`, stdio `MCPTransport` with message-size guard, and JSON-RPC `MCPTypes` with machine-readable `MCPError` payloads. |
 
 ## Usage
 

@@ -117,6 +117,27 @@ public enum CLIRunnerError: Error, LocalizedError, Sendable {
             )
         }
 
+        // Provider‑prefixed tokens whose structural separators (underscores,
+        // dots, dashes) defeat the length‑based patterns in this function:
+        // GitHub PATs, Slack tokens, Stripe live keys, AWS access key IDs and JWTs.
+        let providerPatterns = [
+            #"gh[pousr]_[A-Za-z0-9]{20,}"#,                         // GitHub PAT / OAuth / user-to-server / server-to-server / refresh
+            #"github_pat_[A-Za-z0-9_]{20,}"#,                       // fine‑grained GitHub PAT
+            #"xox[baprs]-[A-Za-z0-9-]{10,}"#,                       // Slack
+            #"sk_live_[A-Za-z0-9]{10,}"#,                           // Stripe live secret key
+            #"(?:AKIA|ASIA)[0-9A-Z]{16}"#,                          // AWS access key id
+            #"eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]*"#,  // JWT (header.payload.signature)
+        ]
+        for pattern in providerPatterns {
+            if let regex = try? NSRegularExpression(pattern: pattern, options: []) {
+                redacted = regex.stringByReplacingMatches(
+                    in: redacted,
+                    range: NSRange(redacted.startIndex..., in: redacted),
+                    withTemplate: "[REDACTED]"
+                )
+            }
+        }
+
         // Long hex strings (32+ hex chars).
         let hexPattern = #"\b[0-9a-fA-F]{32,}\b"#
         if let regex = try? NSRegularExpression(pattern: hexPattern, options: []) {

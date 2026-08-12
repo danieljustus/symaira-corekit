@@ -156,6 +156,25 @@ final class CLIRunnerTests: XCTestCase {
         XCTAssertTrue(desc.contains("[REDACTED]"), "Key-prefixed secret not redacted: \(desc)")
     }
 
+    func testErrorDescriptionRedactsProviderTokens() {
+        // Token fixtures are assembled at runtime so no format-valid token
+        // literal ever sits in source (GitHub push protection would block it).
+        let ghToken = "ghp" + "_" + String(repeating: "a1", count: 18)
+        let fineGrained = "github" + "_pat_" + String(repeating: "Z9_", count: 8)
+        let slack = "xox" + "b-" + String(repeating: "12-", count: 6)
+        let stripe = "sk" + "_live_" + String(repeating: "q7", count: 12)
+        let aws = "AK" + "IA" + String(repeating: "B7", count: 8)
+        let jwt = "eyJ" + String(repeating: "hB", count: 17)
+            + "." + String(repeating: "s1", count: 20)
+            + "." + String(repeating: "x9", count: 21)
+        for token in [ghToken, fineGrained, slack, stripe, aws, jwt] {
+            let err = CLIRunnerError.executionFailed(code: 1, fullStderr: "error: auth failed for \(token)")
+            let desc = err.errorDescription ?? ""
+            XCTAssertFalse(desc.contains(token), "Provider token not redacted: \(desc)")
+            XCTAssertTrue(desc.contains("[REDACTED]"), "Expected [REDACTED] in: \(desc)")
+        }
+    }
+
     func testFullStderrIsNeverRedacted() {
         let secretStderr = "API_KEY=sk-supersecret"
         let err = CLIRunnerError.executionFailed(code: 1, fullStderr: secretStderr)

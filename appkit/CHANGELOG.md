@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Security
+- `CLIRunnerError.redactedForUser` now also redacts provider-prefixed token
+  shapes whose separators defeat the length-based patterns: GitHub tokens
+  (`ghp_`/`gho_`/`ghu_`/`ghs_`/`ghr_` and fine-grained `github_pat_`), Slack
+  `xox*` tokens, Stripe `sk_live_` keys, AWS access key IDs (`AKIA`/`ASIA`),
+  and dotted three-segment JWTs. Previously these could leak into user-facing
+  error descriptions when a CLI printed them to stderr.
+
+### Fixed
+- README: the Modules table now lists `SymairaMCP`.
+- Issue templates: removed the contact link pointing to the repo's disabled
+  Discussions tab.
+
 ## [0.9.2] - 2026-08-12
 
 ### Fixed
