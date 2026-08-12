@@ -41,20 +41,61 @@ public struct SymairaKeychain: Sendable {
 
     @discardableResult
     public func save(_ value: String, key: String) throws -> Bool {
+        try save(value, key: key, requireUserPresence: false)
+    }
+
+    /// Saves a value to the keychain, optionally requiring user presence before
+    /// the stored item can be read.
+    ///
+    /// When `requireUserPresence` is `true`, the item is protected by an access
+    /// control created with `SecAccessControlCreateWithFlags` using
+    /// `kSecAccessControlDevicePasscode`. Such items prompt for authentication
+    /// (e.g. the device passcode) before their data can be read — intended for
+    /// high-value secrets. In that case the query carries a `kSecAttrAccessControl`
+    /// object instead of `kSecAttrAccessible`.
+    ///
+    /// The default (`requireUserPresence: false`) keeps the historical behavior:
+    /// items are stored with `kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly`.
+    ///
+    /// - Parameters:
+    ///   - value: The string value to store.
+    ///   - key: The account name under which the value is stored.
+    ///   - requireUserPresence: When `true`, the stored item carries an access
+    ///     control requiring the device passcode before the secret can be read.
+    /// - Returns: `true` when the item was saved successfully.
+    /// - Throws: `SymairaKeychainError.saveFailed` if the keychain rejects the
+    ///   write or the access control cannot be created.
+    @discardableResult
+    public func save(_ value: String, key: String, requireUserPresence: Bool) throws -> Bool {
         let data = Data(value.utf8)
 
         // Remove any existing item first to avoid errSecDuplicateItem.
         delete(key: key)
 
-        let query: [String: Any] = [
+        var query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
             kSecAttrAccount as String: key,
             kSecValueData as String: data,
-            kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly,
             kSecUseDataProtectionKeychain as String: true,
             kSecAttrSynchronizable as String: false,
         ]
+
+        if requireUserPresence {
+            var accessError: Unmanaged<CFError>?
+            guard let accessControl = SecAccessControlCreateWithFlags(
+                nil,
+                kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly,
+                .devicePasscode,
+                &accessError
+            ) else {
+                let status = accessError.map { OSStatus(CFErrorGetCode($0.takeRetainedValue())) } ?? errSecParam
+                throw SymairaKeychainError.saveFailed(status)
+            }
+            query[kSecAttrAccessControl as String] = accessControl
+        } else {
+            query[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
+        }
 
         let status = SecItemAdd(query as CFDictionary, nil)
         guard status == errSecSuccess else {
