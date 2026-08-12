@@ -23,6 +23,11 @@ private final class InMemorySkippedVersionStore: SkippedVersionStore, @unchecked
     func setSkippedTag(_ tag: String?) { self.tag = tag }
 }
 
+private final class InMemoryAutoUpdatePreferenceStore: AutoUpdatePreferenceStore, @unchecked Sendable {
+    var autoCheckEnabled = false
+    var autoInstallEnabled = false
+}
+
 final class AppUpdateCheckerTests: XCTestCase {
     private var cacheDir: URL!
 
@@ -40,7 +45,8 @@ final class AppUpdateCheckerTests: XCTestCase {
         latestTag: String,
         status: Int = 200,
         currentVersion: String = "v1.0.0",
-        store: SkippedVersionStore = InMemorySkippedVersionStore()
+        store: SkippedVersionStore = InMemorySkippedVersionStore(),
+        autoPrefs: AutoUpdatePreferenceStore? = nil
     ) -> AppUpdateChecker {
         let body = #"{"tag_name":"\#(latestTag)","html_url":"https://github.com/danieljustus/x/releases/tag/\#(latestTag)"}"#
         let updateChecker = UpdateChecker(
@@ -49,7 +55,7 @@ final class AppUpdateCheckerTests: XCTestCase {
             client: StubHTTPClient(body: body, status: status),
             cacheDirectory: cacheDir
         )
-        return AppUpdateChecker(checker: updateChecker, store: store, currentVersion: { currentVersion })
+        return AppUpdateChecker(checker: updateChecker, store: store, currentVersion: { currentVersion }, autoPrefs: autoPrefs)
     }
 
     @MainActor
@@ -140,5 +146,53 @@ final class AppUpdateCheckerTests: XCTestCase {
 
         store.setSkippedTag(nil)
         XCTAssertNil(store.skippedTag())
+    }
+
+    // MARK: - Launch hook (checkOnLaunchIfEnabled)
+
+    @MainActor
+    func testCheckOnLaunchWithoutPrefsDoesNotFetch() async {
+        let checker = makeChecker(latestTag: "v1.1.0")
+        XCTAssertEqual(checker.status, .unknown)
+        await checker.checkOnLaunchIfEnabled()
+        XCTAssertEqual(checker.status, .unknown)
+    }
+
+    @MainActor
+    func testCheckOnLaunchWithAutoCheckDisabledDoesNotFetch() async {
+        let prefs = InMemoryAutoUpdatePreferenceStore()
+        prefs.autoCheckEnabled = false
+        let checker = makeChecker(latestTag: "v1.1.0", autoPrefs: prefs)
+        XCTAssertEqual(checker.status, .unknown)
+        await checker.checkOnLaunchIfEnabled()
+        XCTAssertEqual(checker.status, .unknown)
+    }
+
+    @MainActor
+    func testCheckOnLaunchWithAutoCheckEnabledFetches() async {
+        let prefs = InMemoryAutoUpdatePreferenceStore()
+        prefs.autoCheckEnabled = true
+        let checker = makeChecker(latestTag: "v1.1.0", autoPrefs: prefs)
+        await checker.checkOnLaunchIfEnabled()
+        guard case .available(let release) = checker.status else {
+            return XCTFail("expected .available after launch check, got \(checker.status)")
+        }
+        XCTAssertEqual(release.tagName, "v1.1.0")
+    }
+
+    @MainActor
+    func testCheckOnLaunchUsesNonForcedFetch() async {
+        // A skipped tag matching the latest release is honored only when
+        // the check runs with force == false (force bypasses the skip gate).
+        let prefs = InMemoryAutoUpdatePreferenceStore()
+        prefs.autoCheckEnabled = true
+        let store = InMemorySkippedVersionStore()
+        store.setSkippedTag("v1.1.0")
+        let checker = makeChecker(latestTag: "v1.1.0", store: store, autoPrefs: prefs)
+        await checker.checkOnLaunchIfEnabled()
+        guard case .skipped(let release) = checker.status else {
+            return XCTFail("expected .skipped (force=false), got \(checker.status)")
+        }
+        XCTAssertEqual(release.tagName, "v1.1.0")
     }
 }
