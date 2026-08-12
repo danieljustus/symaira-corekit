@@ -53,6 +53,42 @@ final class FeedbackComponentsTests: XCTestCase {
         }
     }
 
+    /// A message long enough to wrap must not blow up the layout of a
+    /// surrounding `NavigationSplitView`. Laying the message out with
+    /// `.fixedSize(horizontal: false, vertical: true)` next to a `Spacer` gave
+    /// the split view an unbounded height, which pushed every column off-screen
+    /// and left the window blank (#68).
+    func testNoticeWithWrappingMessageKeepsSplitViewWithinItsHost() {
+        let longMessage = String(repeating: "Failed to load the profile index. ", count: 8)
+        let size = CGSize(width: 720, height: 480)
+        let hosting = ThemeRenderHost.render(
+            NavigationSplitView {
+                List { Text("Sidebar") }
+            } detail: {
+                VStack(alignment: .leading) {
+                    SymairaNotice(title: "Error", message: longMessage, tone: .critical)
+                    Spacer()
+                }
+                .padding()
+            },
+            size: size
+        )
+
+        let splitViews = Self.descendants(of: hosting).compactMap { $0 as? NSSplitView }
+        XCTAssertFalse(splitViews.isEmpty, "expected NavigationSplitView to host an NSSplitView")
+        for splitView in splitViews {
+            XCTAssertLessThanOrEqual(
+                splitView.frame.height,
+                size.height,
+                "a wrapping notice message must not stretch the split view beyond its host"
+            )
+        }
+    }
+
+    private static func descendants(of view: NSView) -> [NSView] {
+        view.subviews + view.subviews.flatMap(descendants(of:))
+    }
+
     // MARK: - Empty state
 
     func testEmptyStateEvaluatesBodyWithAndWithoutActions() {

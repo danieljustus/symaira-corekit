@@ -34,7 +34,7 @@ Every Symaira app stays fully standalone: this package is consumed as a **pinned
 
 ```swift
 // Package.swift of a client app — always pin exactly:
-.package(url: "https://github.com/danieljustus/symaira-appkit.git", exact: "0.9.0")
+.package(url: "https://github.com/danieljustus/symaira-appkit.git", exact: "0.9.2")
 ```
 
 Review the [CHANGELOG](CHANGELOG.md) before bumping your pin — every release documents its additions, fixes, and breaking changes.

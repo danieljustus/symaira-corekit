@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.2] - 2026-08-12
+
+### Fixed
+- `SymairaNotice` no longer blanks the window when its `message` wraps. The
+  message was laid out with `.fixedSize(horizontal: false, vertical: true)`
+  next to a `Spacer(minLength: 0)`; inside a `NavigationSplitView` detail
+  column on macOS 26 that combination has no solution, and the resulting
+  split view grew to several thousand points tall, pushing every column —
+  sidebar included — off-screen. The message now takes its width from the
+  container (`.frame(maxWidth: .infinity, alignment: .leading)`) and the
+  `Spacer` is gone. Error text wraps by nature, so every client that surfaces
+  errors through `SymairaNotice` was exposed (#68).
+
 ## [0.9.1] - 2026-08-07
 
 ### Added

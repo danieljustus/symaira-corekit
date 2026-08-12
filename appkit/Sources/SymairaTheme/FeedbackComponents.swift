@@ -99,19 +99,24 @@ public struct SymairaNotice: View {
                 .imageScale(.large)
                 .accessibilityHidden(true)
 
+            // The message must take its width from the container rather than
+            // from `.fixedSize(horizontal: false, vertical: true)` next to a
+            // `Spacer`: that combination has no solution inside a
+            // NavigationSplitView detail column on macOS 26, and a message long
+            // enough to wrap leaves the whole window blank (#68).
             VStack(alignment: .leading, spacing: SymairaSpacing.xSmall) {
                 if let title {
                     Text(title)
                         .font(SymairaTypography.subheading)
                         .foregroundStyle(SymairaTheme.foregroundPrimary(for: colorScheme))
+                        .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 Text(message)
                     .font(SymairaTypography.callout)
                     .foregroundStyle(SymairaTheme.foregroundSecondary(for: colorScheme))
-                    .fixedSize(horizontal: false, vertical: true)
+                    .multilineTextAlignment(.leading)
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
-
-            Spacer(minLength: 0)
 
             if let onDismiss {
                 Button(action: onDismiss) {
