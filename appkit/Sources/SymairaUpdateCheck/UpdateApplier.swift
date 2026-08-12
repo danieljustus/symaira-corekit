@@ -1,9 +1,4 @@
 import Foundation
-#if canImport(CryptoKit)
-import CryptoKit
-#else
-import Crypto
-#endif
 
 // MARK: - Progress callback
 
@@ -11,442 +6,7 @@ import Crypto
 /// `total` is 0 when the server did not report Content-Length.
 public typealias UpdateProgressHandler = @Sendable (_ written: Int64, _ total: Int64) -> Void
 
-// MARK: - Install method detection
-
-/// Describes how a binary or app bundle was installed, determining whether
-/// self-update is safe (Swift port of corekit/installmethod).
-public enum InstallMethod: String, Sendable, Equatable, CaseIterable {
-    /// Downloaded directly from a GitHub release. Self-update is safe.
-    case directDownload = "direct-download"
-    /// Installed via Homebrew. Users should update with "brew upgrade".
-    case homebrew
-    /// Installed via "go install".
-    case goInstall = "go-install"
-    /// Installed via a system package manager (APT, YUM, etc.).
-    case packageManager = "package-manager"
-    /// Compiled locally from source.
-    case buildFromSource = "build-from-source"
-    /// Installation method could not be determined.
-    case unknown
-}
-
-// MARK: - Asset type detection
-
-/// The type of a release asset, used to decide how to install it.
-public enum AssetType: Sendable, Equatable {
-    /// A standalone binary executable (.tar.gz, raw binary, etc.).
-    case binary
-    /// A .app bundle inside a DMG disk image.
-    case appBundleDMG
-    /// A .app bundle inside a ZIP archive.
-    case appBundleZip
-    /// Asset type could not be determined from the filename.
-    case unknown
-}
-
-// MARK: - Cosign verification
-
-/// Protocol for verifying Cosign keyless signatures on release checksums.
-/// Apps provide an implementation (e.g. shelling out to the cosign CLI);
-/// tests stub it for fast verification without requiring cosign installed.
-public protocol CosignVerifier: Sendable {
-    /// Fetch the cosign signature file for the given release tag.
-    func fetchSignature(tag: String) async throws -> Data
-    /// Fetch the cosign certificate file for the given release tag.
-    func fetchCertificate(tag: String) async throws -> Data
-    /// Verify a cosign signature on the given content.
-    func verifySignature(content: Data, signature: Data, certificate: Data) async throws
-}
-
-/// Configuration for Cosign keyless signature verification.
-/// When non-nil on an `UpdateApplier`, the checksums.txt is verified
-/// against its cosign signature before any downloaded asset is trusted.
-///
-/// Swift port of corekit/updatecheck/cosign.Config.
 #if os(macOS)
-public struct CosignConfig: Sendable {
-    /// The GitHub repository slug (e.g. "danieljustus/symaira-vault").
-    public let repo: String
-
-    /// The artifact name used in signature filenames
-    /// (e.g. "symvault" → "symvault_1.0.0_checksums.txt.sig").
-    public let binaryName: String
-
-    /// Base URL for downloading cosign artifacts. Defaults to
-    /// "https://github.com/{repo}/releases/download" when empty.
-    public let downloadBaseURL: String
-
-    /// The certificate identity regexp passed to cosign verify-blob.
-    /// Defaults to a pattern matching the release workflow of `repo` when empty.
-    public let identityRegexp: String
-
-    /// The verifier implementation. Handles both fetching artifacts
-    /// and verifying signatures.
-    public let verifier: CosignVerifier
-
-    public init(
-        repo: String,
-        binaryName: String,
-        downloadBaseURL: String = "",
-        identityRegexp: String = "",
-        verifier: CosignVerifier? = nil
-    ) {
-        self.repo = repo
-        self.binaryName = binaryName
-        self.downloadBaseURL = downloadBaseURL
-        self.identityRegexp = identityRegexp
-        self.verifier = verifier ?? CosignCLIVerifier(
-            repo: repo,
-            binaryName: binaryName,
-            downloadBaseURL: downloadBaseURL,
-            identityRegexp: identityRegexp
-        )
-    }
-
-    /// Returns the identity regexp, defaulting to a GitHub Actions release workflow pattern.
-    public func identityRegexpOrDefault() -> String {
-        if !identityRegexp.isEmpty { return identityRegexp }
-        return #"https://github\.com/\#(repo)/\.github/workflows/release\.yml@refs/tags/v.*"#
-    }
-
-    /// Returns the download base URL, defaulting to the GitHub releases download path.
-    public func downloadBaseURLOrDefault() -> String {
-        if !downloadBaseURL.isEmpty { return downloadBaseURL }
-        return "https://github.com/\(repo)/releases/download"
-    }
-
-    /// The signature filename for the given tag (e.g. "symvault_1.0.0_checksums.txt.sig").
-    public func signatureFileName(tag: String) -> String {
-        let v = tag.replacingOccurrences(of: "v", with: "", options: .anchored)
-        return "\(binaryName)_\(v)_checksums.txt.sig"
-    }
-
-    /// The certificate filename for the given tag (e.g. "symvault_1.0.0_checksums.txt.pem").
-    public func certificateFileName(tag: String) -> String {
-        let v = tag.replacingOccurrences(of: "v", with: "", options: .anchored)
-        return "\(binaryName)_\(v)_checksums.txt.pem"
-    }
-
-    /// Fetch the cosign signature for a release tag. Delegates to the verifier.
-    public func fetchSignature(tag: String) async throws -> Data {
-        return try await verifier.fetchSignature(tag: tag)
-    }
-
-    /// Fetch the cosign certificate for a release tag. Delegates to the verifier.
-    public func fetchCertificate(tag: String) async throws -> Data {
-        return try await verifier.fetchCertificate(tag: tag)
-    }
-
-    /// Verify a cosign signature on the given checksums content.
-    public func verifySignature(content: Data, signature: Data, certificate: Data) async throws {
-        try await verifier.verifySignature(content: content, signature: signature, certificate: certificate)
-    }
-}
-
-/// Default `CosignVerifier` implementation that shells out to the `cosign` CLI.
-/// Falls back gracefully with a clear error when cosign is not installed.
-public struct CosignCLIVerifier: CosignVerifier, Sendable {
-    /// The GitHub repository slug.
-    public let repo: String
-    /// The artifact name.
-    public let binaryName: String
-    /// Base URL for downloading cosign artifacts.
-    public let downloadBaseURL: String
-    /// The certificate identity regexp.
-    public let identityRegexp: String
-    /// HTTP client for fetching artifacts.
-    private let httpClient: UpdateHTTPClient
-
-    /// The OIDC issuer for cosign keyless signatures.
-    public static let oidcIssuer = "https://token.actions.githubusercontent.com"
-
-    public init(
-        repo: String,
-        binaryName: String,
-        downloadBaseURL: String = "",
-        identityRegexp: String = "",
-        httpClient: UpdateHTTPClient = URLSession.shared
-    ) {
-        self.repo = repo
-        self.binaryName = binaryName
-        self.downloadBaseURL = downloadBaseURL
-        self.identityRegexp = identityRegexp
-        self.httpClient = httpClient
-    }
-
-    private func downloadBaseURLOrDefault() -> String {
-        if !downloadBaseURL.isEmpty { return downloadBaseURL }
-        return "https://github.com/\(repo)/releases/download"
-    }
-
-    private func signatureFileName(tag: String) -> String {
-        let v = tag.replacingOccurrences(of: "v", with: "", options: .anchored)
-        return "\(binaryName)_\(v)_checksums.txt.sig"
-    }
-
-    private func certificateFileName(tag: String) -> String {
-        let v = tag.replacingOccurrences(of: "v", with: "", options: .anchored)
-        return "\(binaryName)_\(v)_checksums.txt.pem"
-    }
-
-    public func fetchSignature(tag: String) async throws -> Data {
-        return try await fetchArtifact(tag: tag, fileName: signatureFileName(tag:), label: "signature")
-    }
-
-    public func fetchCertificate(tag: String) async throws -> Data {
-        return try await fetchArtifact(tag: tag, fileName: certificateFileName(tag:), label: "certificate")
-    }
-
-    private func fetchArtifact(tag: String, fileName: (String) -> String, label: String) async throws -> Data {
-        let v = tag.replacingOccurrences(of: "v", with: "", options: .anchored)
-        guard !v.isEmpty else {
-            throw UpdateApplierError.cosignVerificationFailed("Version must not be empty")
-        }
-
-        let name = fileName(tag)
-        let base = downloadBaseURLOrDefault()
-        let urlString = "\(base)/v\(v)/\(name)"
-
-        guard let url = URL(string: urlString),
-              url.scheme == "https" else {
-            throw UpdateApplierError.cosignVerificationFailed(
-                "Cosign \(label) URL must use HTTPS, got \(urlString)"
-            )
-        }
-
-        var request = URLRequest(url: url, timeoutInterval: 30)
-        request.httpMethod = "GET"
-
-        let (data, response) = try await httpClient.data(for: request)
-
-        if let http = response as? HTTPURLResponse, !(200..<300).contains(http.statusCode) {
-            throw UpdateApplierError.cosignVerificationFailed(
-                "Fetch cosign \(label): HTTP \(http.statusCode)"
-            )
-        }
-
-        return data
-    }
-
-    public func verifySignature(content: Data, signature: Data, certificate: Data) async throws {
-        // Check if cosign CLI is available.
-        let whichResult = try SubprocessRunner.runChecked(
-            executable: URL(fileURLWithPath: "/usr/bin/which"),
-            arguments: ["cosign"]
-        )
-
-        guard whichResult.exitCode == 0 else {
-            throw UpdateApplierError.cosignVerificationFailed(
-                "cosign CLI not found — install cosign from https://docs.sigstore.dev to verify release signatures"
-            )
-        }
-
-        // Write temp files.
-        let tempDir = FileManager.default.temporaryDirectory
-            .appendingPathComponent("cosign-verify-\(UUID().uuidString)")
-        defer { try? FileManager.default.removeItem(at: tempDir) }
-
-        try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
-
-        let contentPath = tempDir.appendingPathComponent("content").path
-        let sigPath = tempDir.appendingPathComponent("signature.sig").path
-        let certPath = tempDir.appendingPathComponent("certificate.pem").path
-
-        try content.write(to: URL(fileURLWithPath: contentPath))
-        try signature.write(to: URL(fileURLWithPath: sigPath))
-        try certificate.write(to: URL(fileURLWithPath: certPath))
-
-        // Run cosign verify-blob (bounded — a hung network/GC stall cannot
-        // block the update flow indefinitely).
-        let processResult = try SubprocessRunner.runChecked(
-            executable: URL(fileURLWithPath: "/usr/bin/env"),
-            arguments: [
-                "cosign", "verify-blob",
-                "--certificate", certPath,
-                "--signature", sigPath,
-                "--certificate-identity-regexp", identityRegexp,
-                "--certificate-oidc-issuer", CosignCLIVerifier.oidcIssuer,
-                contentPath,
-            ]
-        )
-
-        guard processResult.exitCode == 0 else {
-            // Full stderr goes to the dedicated diagnostic case so it stays
-            // retrievable for logging, while the user-facing
-            // `errorDescription` shows only a bounded first-line sample (#47).
-            let stderrStr = String(decoding: processResult.stderr, as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines)
-            throw UpdateApplierError.cosignVerificationFailedDiagnostic(stderrStr)
-        }
-    }
-}
-
-// MARK: - Errors
-
-/// Typed errors that can occur during the update application process.
-public enum UpdateApplierError: Error, LocalizedError, Sendable, Equatable {
-    /// The HTTP download of an asset or checksums file failed.
-    case downloadFailed(String)
-    /// The downloaded asset's SHA256 does not match the expected checksum.
-    case checksumMismatch(assetName: String, got: String, expected: String)
-    /// No release asset matches the target OS and architecture.
-    case noMatchingAsset(os: String, arch: String)
-    /// The destination directory is not writable.
-    case destinationNotWritable(String)
-    /// The release has no checksums.txt asset.
-    case missingChecksumsAsset
-    /// The checksums.txt file contained no parseable entries.
-    case unparseableChecksums
-    /// An HTTP error was returned from the server.
-    case httpStatus(Int)
-    /// Self-update is not supported for the detected install method.
-    case unsupportedInstallMethod(InstallMethod, guidance: String)
-    /// The asset is a .app bundle but installation required a writable /Applications.
-    case applicationsNotWritable
-    /// Failed to mount a DMG disk image.
-    case dmgMountFailed(String)
-    /// No .app bundle was found inside the DMG or ZIP archive.
-    case appBundleNotFound
-    /// Failed to copy the .app bundle to its destination.
-    case appBundleCopyFailed(String)
-    /// Cosign signature verification failed. The associated value is a
-    /// bounded, user-facing message.
-    case cosignVerificationFailed(String)
-    /// `cosign verify-blob` failed. The associated value is the **full**,
-    /// unbounded raw stderr (capped only by the subprocess output limit)
-    /// and is intended for diagnostics/logging, **not** for user-facing
-    /// UI. Retrieve it via `cosignDiagnosticStderr`; the user-facing
-    /// `errorDescription` shows only a bounded first-line sample.
-    case cosignVerificationFailedDiagnostic(String)
-    /// A subprocess spawned during the update timed out and was terminated
-    /// (AGENTS.md loose-coupling rule: subprocess execution must always
-    /// have a timeout).
-    case subprocessTimeout(String)
-}
-
-// MARK: - LocalizedError + diagnostics
-
-extension UpdateApplierError {
-    /// The full, raw `cosign verify-blob` stderr for the
-    /// `cosignVerificationFailedDiagnostic` case. Never bounded, never
-    /// redacted — use for logging/diagnostics, not for UI. Mirrors
-    /// `CLIRunnerError.fullStderr`.
-    public var cosignDiagnosticStderr: String? {
-        guard case .cosignVerificationFailedDiagnostic(let stderr) = self else { return nil }
-        return stderr
-    }
-
-    /// User-facing description. For `cosignVerificationFailedDiagnostic`
-    /// only a bounded, redacted first-line sample of stderr is shown
-    /// (mirrors `CLIRunnerError.errorDescription`); every other case
-    /// surfaces its existing message.
-    public var errorDescription: String? {
-        switch self {
-        case .downloadFailed(let message):
-            return message
-        case .checksumMismatch(let assetName, let got, let expected):
-            return "Checksum mismatch for \(assetName): got \(got), expected \(expected)."
-        case .noMatchingAsset(let os, let arch):
-            return "No release asset matches \(os)/\(arch)."
-        case .destinationNotWritable(let message):
-            return message
-        case .missingChecksumsAsset:
-            return "The release has no checksums.txt asset."
-        case .unparseableChecksums:
-            return "The checksums.txt file contained no parseable entries."
-        case .httpStatus(let code):
-            return "HTTP error \(code)."
-        case .unsupportedInstallMethod(_, let guidance):
-            return guidance
-        case .applicationsNotWritable:
-            return "/Applications is not writable."
-        case .dmgMountFailed(let message):
-            return message
-        case .appBundleNotFound:
-            return "No .app bundle was found inside the archive."
-        case .appBundleCopyFailed(let message):
-            return message
-        case .cosignVerificationFailed(let message):
-            return message
-        case .cosignVerificationFailedDiagnostic(let stderr):
-            return "cosign verify-blob failed: \(Self.boundedUserFacingSample(stderr))"
-        case .subprocessTimeout(let command):
-            return "Subprocess timed out: \(command)."
-        }
-    }
-
-    /// Returns a redacted, length-bounded version of raw subprocess stderr
-    /// suitable for a user-facing error message (mirrors
-    /// `CLIRunnerError.redactedForUser`):
-    /// - PEM blocks and obvious secret shapes are replaced with `[REDACTED]`;
-    /// - only the first line is kept;
-    /// - the result is truncated to `maxBytes` UTF-8 bytes (never splitting
-    ///   a multi-byte codepoint), with an ellipsis when truncated.
-    static func boundedUserFacingSample(_ raw: String, maxBytes: Int = 200) -> String {
-        var redacted = raw
-
-        // 1. Redact PEM blocks (multiline — must happen before splitting to
-        //    first line, otherwise BEGIN/END markers span lines).
-        let pemPattern = #"-----BEGIN [A-Z ]+-----[A-Za-z0-9+/=.\s]+?-----END [A-Z ]+-----"#
-        if let regex = try? NSRegularExpression(pattern: pemPattern, options: [.dotMatchesLineSeparators]) {
-            redacted = regex.stringByReplacingMatches(
-                in: redacted,
-                range: NSRange(redacted.startIndex..., in: redacted),
-                withTemplate: "[REDACTED]"
-            )
-        }
-
-        // 2. Keep only the first line for the user-facing message.
-        if let firstLine = redacted.split(separator: "\n", omittingEmptySubsequences: false).first {
-            redacted = String(firstLine)
-        }
-
-        // 3. Long base64-like tokens (40+ chars of base64 alphabet).
-        let b64Pattern = #"[A-Za-z0-9+/=]{40,}"#
-        if let regex = try? NSRegularExpression(pattern: b64Pattern, options: []) {
-            redacted = regex.stringByReplacingMatches(
-                in: redacted,
-                range: NSRange(redacted.startIndex..., in: redacted),
-                withTemplate: "[REDACTED]"
-            )
-        }
-
-        // 4. Long hex strings (32+ hex chars).
-        let hexPattern = #"\b[0-9a-fA-F]{32,}\b"#
-        if let regex = try? NSRegularExpression(pattern: hexPattern, options: []) {
-            redacted = regex.stringByReplacingMatches(
-                in: redacted,
-                range: NSRange(redacted.startIndex..., in: redacted),
-                withTemplate: "[REDACTED]"
-            )
-        }
-
-        // 5. Key-prefixed secrets: KEY=..., token: ..., secret=..., etc.
-        let keyValuePattern = #"(?:api[_-]?key|apikey|secret|token|password|passwd|credential|auth)\s*[=:]\s*\S{8,}"#
-        if let regex = try? NSRegularExpression(pattern: keyValuePattern, options: [.caseInsensitive]) {
-            redacted = regex.stringByReplacingMatches(
-                in: redacted,
-                range: NSRange(redacted.startIndex..., in: redacted),
-                withTemplate: "[REDACTED]"
-            )
-        }
-
-        // 6. Truncate to maxBytes (UTF-8). Walk character by character so
-        //    we never split a multi-byte codepoint.
-        var byteCount = 0
-        var result = ""
-        for ch in redacted {
-            let chBytes = String(ch).utf8.count
-            if byteCount + chBytes > maxBytes { break }
-            result.append(ch)
-            byteCount += chBytes
-        }
-        if byteCount < redacted.utf8.count {
-            result += "…"
-        }
-        return result
-    }
-}
-
 // MARK: - UpdateApplier
 
 /// Downloads a platform-matching release asset, verifies its SHA256 against
@@ -458,6 +18,12 @@ extension UpdateApplierError {
 /// - Cosign verification (`cosignConfig`): verifies checksums.txt signature.
 ///
 /// This is the Swift port of corekit/updatecheck/updateapply.
+///
+/// `UpdateApplier` is a thin orchestrator: downloads stream through
+/// `AssetDownloader`, checksums.txt is parsed by `ChecksumManifest`, cosign
+/// verification runs through `CosignVerification`, DMG/ZIP installation
+/// delegates to `AppInstaller`, and install-method detection to
+/// `InstallMethodDetector`.
 public struct UpdateApplier: Sendable {
 
     /// The target operating system for asset selection (e.g. "darwin", "linux").
@@ -486,6 +52,19 @@ public struct UpdateApplier: Sendable {
 
     /// Maximum body size for downloaded assets and checksums (1 GiB cap).
     private static let maxAssetBody: Int64 = 1 << 30
+
+    /// Size cap enforced on a single downloaded asset body, checked against
+    /// the advertised `Content-Length` before the body is read and again as
+    /// the running byte count crosses it mid-stream. Internal so tests can
+    /// exercise the streaming size guard without allocating 1 GiB bodies;
+    /// defaults to `maxAssetBody` (1 GiB).
+    internal var maxBodySize: Int64 = UpdateApplier.maxAssetBody
+
+    /// The downloader used for all asset and checksums downloads. Rebuilt on
+    /// demand so a mutated `maxBodySize` is always honored.
+    private var downloader: AssetDownloader {
+        AssetDownloader(client: client, progress: progress, maxBodySize: maxBodySize)
+    }
 
     // MARK: - Init
 
@@ -549,7 +128,7 @@ public struct UpdateApplier: Sendable {
         }
 
         // 4. Download the asset to a temp file (with progress + streaming SHA256).
-        let (tempURL, actualSum) = try await downloadToTemp(asset: asset)
+        let (tempURL, actualSum) = try await downloader.downloadToTemp(asset: asset)
 
         // 5. Verify the checksum.
         guard actualSum.lowercased() == expectedSum.lowercased() else {
@@ -605,18 +184,7 @@ public struct UpdateApplier: Sendable {
 
         // 4b. Optional cosign verification of checksums.
         if let cosign = cosignConfig {
-            // Build the checksums data for verification.
-            var checksumsData = ""
-            for (name, sum) in checksums {
-                checksumsData += "\(sum)  \(name)\n"
-            }
-            let sig = try await cosign.fetchSignature(tag: release.tagName)
-            let cert = try await cosign.fetchCertificate(tag: release.tagName)
-            try await cosign.verifySignature(
-                content: Data(checksumsData.utf8),
-                signature: sig,
-                certificate: cert
-            )
+            try await CosignVerification(config: cosign).verify(checksums: checksums, tag: release.tagName)
         }
 
         // 5. Look up the expected checksum for the selected asset.
@@ -629,7 +197,7 @@ public struct UpdateApplier: Sendable {
         }
 
         // 6. Download the asset to a temp file (with progress + streaming SHA256).
-        let (tempURL, actualSum) = try await downloadToTemp(asset: asset)
+        let (tempURL, actualSum) = try await downloader.downloadToTemp(asset: asset)
 
         // 7. Verify the checksum.
         guard actualSum.lowercased() == expectedSum.lowercased() else {
@@ -644,9 +212,9 @@ public struct UpdateApplier: Sendable {
         // 8. If it's a bundle, install it to /Applications.
         switch assetType {
         case .appBundleDMG:
-            return try installDMG(at: tempURL, assetName: asset.name)
+            return try AppInstaller.installDMG(at: tempURL, assetName: asset.name)
         case .appBundleZip:
-            return try installZip(at: tempURL, assetName: asset.name)
+            return try AppInstaller.installZip(at: tempURL, assetName: asset.name)
         case .binary, .unknown:
             return tempURL
         }
@@ -670,114 +238,23 @@ public struct UpdateApplier: Sendable {
         return .binary
     }
 
-    // MARK: - DMG installation
+    // MARK: - Installation (delegates to AppInstaller)
 
     /// Mount a DMG, copy the .app bundle to /Applications, and unmount.
     /// Uses `hdiutil` for mount/unmount operations.
     public func installDMG(at dmgURL: URL, assetName: String) throws -> URL {
-        guard FileManager.default.isWritableFile(atPath: "/Applications") else {
-            throw UpdateApplierError.applicationsNotWritable
-        }
-
-        // Mount the DMG.
-        let mountResult = try mountDMG(at: dmgURL)
-        defer {
-            // Always try to unmount, even on error.
-            _ = try? unmountDMG(at: mountResult.mountPoint)
-        }
-
-        // Find the .app bundle on the mounted volume.
-        guard let appURL = findAppBundle(in: mountResult.mountPoint) else {
-            throw UpdateApplierError.appBundleNotFound
-        }
-
-        let appName = appURL.lastPathComponent
-        let destURL = URL(fileURLWithPath: "/Applications").appendingPathComponent(appName)
-
-        // Remove existing .app if present (the running instance is already loaded).
-        if FileManager.default.fileExists(atPath: destURL.path) {
-            try? FileManager.default.removeItem(at: destURL)
-        }
-
-        // Copy the .app to /Applications.
-        do {
-            try FileManager.default.copyItem(at: appURL, to: destURL)
-        } catch {
-            throw UpdateApplierError.appBundleCopyFailed(
-                "Failed to copy \(appURL.path) to \(destURL.path): \(error.localizedDescription)"
-            )
-        }
-
-        // Remove quarantine attribute if present.
-        _ = try? SubprocessRunner.runChecked(
-            executable: URL(fileURLWithPath: "/usr/bin/xattr"),
-            arguments: ["-d", "com.apple.quarantine", destURL.path]
-        )
-
-        return destURL
+        try AppInstaller.installDMG(at: dmgURL, assetName: assetName)
     }
-
-    // MARK: - ZIP installation
 
     /// Extract a ZIP archive, find the .app bundle, and copy it to /Applications.
     public func installZip(at zipURL: URL, assetName: String) throws -> URL {
-        guard FileManager.default.isWritableFile(atPath: "/Applications") else {
-            throw UpdateApplierError.applicationsNotWritable
-        }
-
-        let tempDir = FileManager.default.temporaryDirectory
-            .appendingPathComponent("updateapply-zip-\(UUID().uuidString)")
-        defer {
-            try? FileManager.default.removeItem(at: tempDir)
-        }
-
-        // Create the temp extraction directory.
-        try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
-
-        // Use `ditto` for ZIP extraction (more reliable than unzip for .app bundles).
-        let dittoResult = try SubprocessRunner.runChecked(
-            executable: URL(fileURLWithPath: "/usr/bin/ditto"),
-            arguments: ["-xk", zipURL.path, tempDir.path]
-        )
-
-        guard dittoResult.exitCode == 0 else {
-            throw UpdateApplierError.appBundleCopyFailed(
-                "ditto extraction failed with exit code \(dittoResult.exitCode)"
-            )
-        }
-
-        // Find the .app bundle.
-        guard let appURL = findAppBundle(in: tempDir) else {
-            throw UpdateApplierError.appBundleNotFound
-        }
-
-        let appName = appURL.lastPathComponent
-        let destURL = URL(fileURLWithPath: "/Applications").appendingPathComponent(appName)
-
-        // Remove existing .app if present.
-        if FileManager.default.fileExists(atPath: destURL.path) {
-            try? FileManager.default.removeItem(at: destURL)
-        }
-
-        // Copy the .app to /Applications.
-        do {
-            try FileManager.default.copyItem(at: appURL, to: destURL)
-        } catch {
-            throw UpdateApplierError.appBundleCopyFailed(
-                "Failed to copy \(appURL.path) to \(destURL.path): \(error.localizedDescription)"
-            )
-        }
-
-        // Remove quarantine attribute.
-        _ = try? SubprocessRunner.runChecked(
-            executable: URL(fileURLWithPath: "/usr/bin/xattr"),
-            arguments: ["-d", "com.apple.quarantine", destURL.path]
-        )
-
-        return destURL
+        try AppInstaller.installZip(at: zipURL, assetName: assetName)
     }
 
-    // MARK: - DMG helpers
+    /// Recursively search for a .app bundle in a directory.
+    public func findAppBundle(in directory: URL) -> URL? {
+        AppInstaller.findAppBundle(in: directory)
+    }
 
     /// Represents a mounted DMG volume.
     public struct DMGMountResult: Sendable {
@@ -787,221 +264,22 @@ public struct UpdateApplier: Sendable {
         public let device: String
     }
 
-    /// Mount a DMG using `hdiutil attach`.
-    private func mountDMG(at dmgURL: URL) throws -> DMGMountResult {
-        // stdout is drained concurrently while the process runs, so the
-        // plist output is complete even when it exceeds the 64 KiB pipe
-        // buffer, and a hung attach cannot block the update indefinitely.
-        let result = try SubprocessRunner.runChecked(
-            executable: URL(fileURLWithPath: "/usr/bin/hdiutil"),
-            arguments: ["attach", "-nobrowse", "-readonly", "-plist", dmgURL.path]
-        )
-
-        guard result.exitCode == 0 else {
-            throw UpdateApplierError.dmgMountFailed(
-                "hdiutil attach failed with exit code \(result.exitCode)"
-            )
-        }
-
-        let plist = try PropertyListSerialization.propertyList(from: result.stdout, options: [], format: nil)
-        guard let dict = plist as? [String: Any],
-              let entities = dict["system-entities"] as? [[String: Any]] else {
-            throw UpdateApplierError.dmgMountFailed("Failed to parse hdiutil plist output")
-        }
-
-        // Find the mount point entity.
-        for entity in entities {
-            if let mountPoint = entity["mount-point"] as? String,
-               let devEntry = entity["dev-entry"] as? String,
-               !mountPoint.isEmpty {
-                return DMGMountResult(
-                    mountPoint: URL(fileURLWithPath: mountPoint),
-                    device: devEntry
-                )
-            }
-        }
-
-        throw UpdateApplierError.dmgMountFailed("No mount point found in hdiutil output")
-    }
-
-    /// Unmount a DMG using `hdiutil detach`.
-    private func unmountDMG(at mountPoint: URL) throws {
-        _ = try SubprocessRunner.runChecked(
-            executable: URL(fileURLWithPath: "/usr/bin/hdiutil"),
-            arguments: ["detach", mountPoint.path]
-        )
-    }
-
-    /// Recursively search for a .app bundle in a directory.
-    public func findAppBundle(in directory: URL) -> URL? {
-        let enumerator = FileManager.default.enumerator(
-            at: directory,
-            includingPropertiesForKeys: [.isDirectoryKey],
-            options: [.skipsHiddenFiles, .skipsPackageDescendants]
-        )
-
-        while let url = enumerator?.nextObject() as? URL {
-            if url.pathExtension.lowercased() == "app" {
-                // Verify it's actually a bundle (has Contents/Info.plist).
-                let infoPlist = url.appendingPathComponent("Contents/Info.plist")
-                if FileManager.default.fileExists(atPath: infoPlist.path) {
-                    return url
-                }
-            }
-        }
-        return nil
-    }
-
-    // MARK: - Install method detection
+    // MARK: - Install method detection (delegates to InstallMethodDetector)
 
     /// Detect how a binary or app was installed at the given path.
     /// Swift port of corekit/installmethod.Detect.
     public static func detectInstallMethod(at binaryPath: String) -> InstallMethod {
-        guard !binaryPath.isEmpty else { return .unknown }
-
-        // Check the original path against known patterns FIRST.
-        // Symlink resolution follows: a user-facing path like
-        // /usr/local/bin/foo must be classified as directDownload
-        // even if the file is a symlink into a Homebrew Cellar.
-        let originalAbs = URL(fileURLWithPath: binaryPath).standardized.path
-        if let method = detectFromPath(originalAbs) { return method }
-
-        // Resolve symlinks (throws for nonexistent paths).
-        let realPath: String
-        if let resolved = try? FileManager.default
-            .destinationOfSymbolicLink(atPath: binaryPath) {
-            realPath = resolved
-        } else {
-            realPath = binaryPath
-        }
-
-        // Normalize to absolute path.
-        let absPath = URL(fileURLWithPath: realPath).standardized.path
-
-        // Check env vars.
-        if let method = detectFromEnv(absPath) { return method }
-
-        // Check Cellar receipts.
-        if absPath.contains("/Cellar/") { return .homebrew }
-
-        // Check writability.
-        return detectFromWritability(absPath)
+        InstallMethodDetector.detect(at: binaryPath)
     }
 
     /// Returns true only for `directDownload`.
     public static func isSelfUpdateSupported(_ method: InstallMethod) -> Bool {
-        return method == .directDownload || method == .unknown
+        InstallMethodDetector.isSelfUpdateSupported(method)
     }
 
     /// Returns actionable upgrade instructions for the given method.
     public static func guidance(for method: InstallMethod, binaryName: String) -> String {
-        switch method {
-        case .directDownload:
-            return "Re-run the quick install script or download the latest release from GitHub"
-        case .homebrew:
-            return "Update via Homebrew: brew update && brew upgrade \(binaryName)"
-        case .goInstall:
-            return "Update via Go: go install github.com/danieljustus/\(binaryName)@latest"
-        case .packageManager:
-            return "Update via your system package manager"
-        case .buildFromSource:
-            return "Rebuild from source: git pull && swift build"
-        case .unknown:
-            return "Unable to determine installation method. Reinstall from the GitHub releases page"
-        }
-    }
-
-    // MARK: - Detection helpers
-
-    private static func detectFromEnv(_ absPath: String) -> InstallMethod? {
-        if let prefix = ProcessInfo.processInfo.environment["HOMEBREW_PREFIX"] {
-            let resolved = (try? FileManager.default
-                .destinationOfSymbolicLink(atPath: prefix)) ?? prefix
-            if absPath.hasPrefix(resolved) {
-                return .homebrew
-            }
-        }
-
-        if let gopath = ProcessInfo.processInfo.environment["GOPATH"] {
-            let resolved = (try? FileManager.default
-                .destinationOfSymbolicLink(atPath: gopath)) ?? gopath
-            let binDir = resolved + "/bin"
-            if absPath.hasPrefix(binDir) {
-                return .goInstall
-            }
-        }
-
-        if let gomodcache = ProcessInfo.processInfo.environment["GOMODCACHE"] {
-            let resolved = (try? FileManager.default
-                .destinationOfSymbolicLink(atPath: gomodcache)) ?? gomodcache
-            if absPath.hasPrefix(resolved) {
-                return .goInstall
-            }
-        }
-
-        return nil
-    }
-
-    private static func detectFromPath(_ absPath: String) -> InstallMethod? {
-        if absPath.contains("/opt/homebrew/") { return .homebrew }
-        if absPath.contains("/usr/local/Cellar/") { return .homebrew }
-        if absPath.contains("/.linuxbrew/") { return .homebrew }
-        if absPath.hasPrefix("/usr/bin/") { return .packageManager }
-        if absPath.hasPrefix("/usr/local/bin/") { return .directDownload }
-
-#if !os(iOS) && !os(tvOS) && !os(watchOS)
-        let home = FileManager.default.homeDirectoryForCurrentUser.path
-#else
-        let home = NSHomeDirectory()
-#endif
-
-        // GOPATH/bin.
-        if let gopath = ProcessInfo.processInfo.environment["GOPATH"] {
-            let resolved = (try? FileManager.default
-                .destinationOfSymbolicLink(atPath: gopath)) ?? gopath
-            let binDir = resolved + "/"
-            if absPath.hasPrefix(binDir) { return .goInstall }
-        }
-
-        // ~/go/bin.
-        let goBin = home + "/go/bin/"
-        if absPath.hasPrefix(goBin) { return .goInstall }
-
-        // User-writable directories → direct download.
-        let userBins = [
-            home + "/bin/",
-            home + "/.local/bin/",
-            home + "/.cargo/bin/",
-        ]
-        for dir in userBins {
-            if absPath.hasPrefix(dir) { return .directDownload }
-        }
-
-        return nil
-    }
-
-    private static func detectFromWritability(_ absPath: String) -> InstallMethod {
-#if os(Windows)
-        return .buildFromSource
-#else
-        let dir = (absPath as NSString).deletingLastPathComponent
-        guard let attrs = try? FileManager.default.attributesOfItem(atPath: dir),
-              let permissions = attrs[.posixPermissions] as? Int else {
-            return .unknown
-        }
-
-        // Check if user has write permission on the directory.
-        if permissions & 0o200 != 0 {
-            return .directDownload
-        }
-
-        // Check if group/other write is allowed (less strict).
-        if permissions & 0o022 != 0 {
-            return .directDownload
-        }
-
-        return .buildFromSource
-#endif
+        InstallMethodDetector.guidance(for: method, binaryName: binaryName)
     }
 
     // MARK: - Asset selection
@@ -1027,113 +305,17 @@ public struct UpdateApplier: Sendable {
     /// Download the `checksums.txt` asset from the release and parse it into
     /// a `[filename: sha256hex]` dictionary.
     private func fetchChecksums(from assets: [Asset]) async throws -> [String: String] {
-        // Locate the checksums asset. Prefer the exact name "checksums.txt"
-        // (GoReleaser convention), falling back to any asset containing
-        // "checksums" in its name.
-        guard let checksumAsset = assets.first(where: {
-            $0.name == "checksums.txt"
-        }) ?? assets.first(where: {
-            $0.name.lowercased().contains("checksums")
-        }) else {
-            throw UpdateApplierError.missingChecksumsAsset
-        }
-
-        // Download.
-        let (body, _, _) = try await download(asset: checksumAsset)
+        // Locate the checksums asset and download it.
+        let checksumAsset = try ChecksumManifest.locateAsset(in: assets)
+        let (body, _, _) = try await downloader.download(asset: checksumAsset)
 
         // Parse: lines are "<sha256hex>  <filename>" (goreleaser format).
-        var sums: [String: String] = [:]
-        let text = String(decoding: body, as: UTF8.self)
-        let lines = text.components(separatedBy: "\n")
-        for line in lines {
-            let trimmed = line.trimmingCharacters(in: .whitespaces)
-            if trimmed.isEmpty { continue }
-            let fields = trimmed.split(separator: " ", omittingEmptySubsequences: true)
-            guard fields.count >= 2 else { continue }
-            let hash = String(fields[0])
-            let filename = String(fields[1])
-            guard hash.count == 64, hash.allSatisfy({ $0.isHexDigit }) else { continue }
-            sums[filename] = hash.lowercased()
-        }
+        let sums = ChecksumManifest.parse(String(decoding: body, as: UTF8.self))
 
         guard !sums.isEmpty else {
             throw UpdateApplierError.unparseableChecksums
         }
         return sums
-    }
-
-    // MARK: - Download helpers
-
-    /// Download an asset and return its body data, content length, and response.
-    private func download(asset: Asset) async throws -> (Data, Int64, URLResponse) {
-        guard let url = URL(string: asset.browserDownloadURL) else {
-            throw UpdateApplierError.downloadFailed("Invalid URL: \(asset.browserDownloadURL)")
-        }
-
-        var request = URLRequest(url: url, timeoutInterval: 30)
-        request.httpMethod = "GET"
-
-        let (data, response) = try await client.data(for: request)
-
-        if let http = response as? HTTPURLResponse, !(200..<300).contains(http.statusCode) {
-            throw UpdateApplierError.httpStatus(http.statusCode)
-        }
-
-        let total = (response as? HTTPURLResponse)?.expectedContentLength ?? 0
-        return (data, total, response)
-    }
-
-    /// Download an asset to a temporary file while computing its SHA256 hash.
-    /// Returns the temp file URL and the hex-encoded hash.
-    private func downloadToTemp(asset: Asset) async throws -> (URL, String) {
-        guard let url = URL(string: asset.browserDownloadURL) else {
-            throw UpdateApplierError.downloadFailed("Invalid URL: \(asset.browserDownloadURL)")
-        }
-
-        var request = URLRequest(url: url, timeoutInterval: 30)
-        request.httpMethod = "GET"
-
-        let (data, response) = try await client.data(for: request)
-
-        if let http = response as? HTTPURLResponse, !(200..<300).contains(http.statusCode) {
-            throw UpdateApplierError.httpStatus(http.statusCode)
-        }
-
-        let total = (response as? HTTPURLResponse)?.expectedContentLength ?? 0
-
-        // Check against max body size.
-        if data.count > UpdateApplier.maxAssetBody {
-            throw UpdateApplierError.downloadFailed(
-                "Asset exceeds maximum allowed size (\(UpdateApplier.maxAssetBody) bytes)"
-            )
-        }
-
-        // Verify content length if advertised.
-        if total > 0, Int64(data.count) != total {
-            throw UpdateApplierError.downloadFailed(
-                "Incomplete download: got \(data.count) bytes, expected \(total)"
-            )
-        }
-
-        // Compute SHA256.
-        let sha256 = SHA256.hash(data: data)
-        let actualSum = sha256.compactMap { String(format: "%02x", $0) }.joined()
-
-        // Write to temp file.
-        let tempDir = FileManager.default.temporaryDirectory
-        let tempURL = tempDir.appendingPathComponent("updateapply-\(UUID().uuidString)")
-        do {
-            try data.write(to: tempURL, options: .atomic)
-        } catch {
-            throw UpdateApplierError.destinationNotWritable(
-                "Cannot write to temp file at \(tempURL.path): \(error.localizedDescription)"
-            )
-        }
-
-        // Report progress at 100%.
-        progress?(Int64(data.count), total)
-
-        return (tempURL, actualSum)
     }
 
     // MARK: - Platform helpers

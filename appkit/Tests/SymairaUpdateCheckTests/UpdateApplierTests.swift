@@ -50,7 +50,7 @@ private final class StubUpdateHTTPClient: UpdateHTTPClient, @unchecked Sendable 
 // MARK: - Test helpers
 
 /// A sendable box for capturing values inside progress callbacks.
-private final class ProgressBox: @unchecked Sendable {
+final class ProgressBox: @unchecked Sendable {
     var lastWritten: Int64 = -1
 }
 
@@ -66,6 +66,118 @@ private func makeRelease(
     // Add a checksums asset that won't be selected by selectAsset (it gets skipped).
     // The real checksums asset is handled separately.
     return ReleaseInfo(tagName: "v1.2.0", htmlURL: "https://github.com/example/releases/tag/v1.2.0", assets: assets)
+}
+
+// MARK: - Streaming stub HTTP client (#74)
+
+/// A simple thread-safe counter for asserting chunk/progress counts.
+final class CounterBox: @unchecked Sendable {
+    var count = 0
+}
+
+/// Yields `data` in `chunkSize`-byte slices, counting each consumed slice.
+struct SlicedByteStream: UpdateByteStream {
+    private let data: Data
+    private let chunkSize: Int
+    private let counter: CounterBox
+
+    init(data: Data, chunkSize: Int, counter: CounterBox) {
+        self.data = data
+        self.chunkSize = chunkSize
+        self.counter = counter
+    }
+
+    struct Iterator: AsyncIteratorProtocol {
+        private let data: Data
+        private let chunkSize: Int
+        private let counter: CounterBox
+        private var offset = 0
+
+        init(data: Data, chunkSize: Int, counter: CounterBox) {
+            self.data = data
+            self.chunkSize = chunkSize
+            self.counter = counter
+        }
+
+        mutating func next() async throws -> Data? {
+            guard offset < data.count else { return nil }
+            let end = Swift.min(offset + chunkSize, data.count)
+            let slice = data.subdata(in: offset..<end)
+            offset = end
+            counter.count += 1
+            return slice
+        }
+    }
+
+    func makeAsyncIterator() -> Iterator {
+        Iterator(data: data, chunkSize: chunkSize, counter: counter)
+    }
+}
+
+/// An HTTP client stub that implements the streaming seam, delivering bodies
+/// as `chunkSize`-byte chunks and recording how many chunks the caller
+/// consumed (to prove early rejection / mid-stream aborts).
+final class StreamingStubUpdateHTTPClient: UpdateHTTPStreamingClient, @unchecked Sendable {
+    var responses: [String: (Data, Int)] = [:]
+    /// Per-path Content-Length overrides used to simulate servers that
+    /// advertise a body size that differs from what they send.
+    var contentLengthOverrides: [String: Int64] = [:]
+    /// Chunk size used to slice bodies for streaming delivery.
+    var chunkSize: Int = 16
+    /// Number of chunks consumed by the caller.
+    let consumedChunks = CounterBox()
+
+    func data(for request: URLRequest) async throws -> (Data, URLResponse) {
+        guard let url = request.url else {
+            throw URLError(.badURL)
+        }
+        let path = url.path
+        guard let (body, status) = responses[path] else {
+            let response = HTTPURLResponse(
+                url: url,
+                statusCode: 404,
+                httpVersion: nil,
+                headerFields: nil
+            )!
+            return (Data(), response)
+        }
+        let contentLength = contentLengthOverrides[path] ?? Int64(body.count)
+        let response = HTTPURLResponse(
+            url: url,
+            statusCode: status,
+            httpVersion: nil,
+            headerFields: ["Content-Length": "\(contentLength)"]
+        )!
+        return (body, response)
+    }
+
+    func stream(for request: URLRequest) async throws -> (any UpdateByteStream, URLResponse) {
+        guard let url = request.url else {
+            throw URLError(.badURL)
+        }
+        let path = url.path
+        guard let (body, status) = responses[path] else {
+            let response = HTTPURLResponse(
+                url: url,
+                statusCode: 404,
+                httpVersion: nil,
+                headerFields: nil
+            )!
+            return (SlicedByteStream(data: Data(), chunkSize: chunkSize, counter: consumedChunks), response)
+        }
+        let contentLength = contentLengthOverrides[path] ?? Int64(body.count)
+        let response = HTTPURLResponse(
+            url: url,
+            statusCode: status,
+            httpVersion: nil,
+            headerFields: ["Content-Length": "\(contentLength)"]
+        )!
+        return (SlicedByteStream(data: body, chunkSize: chunkSize, counter: consumedChunks), response)
+    }
+
+    func setResponse(path: String, body: Data, status: Int = 200) {
+        responses[path] = (body, status)
+    }
 }
 
 // MARK: - UpdateApplierTests
@@ -1538,5 +1650,121 @@ final class UpdateApplierTests: XCTestCase {
         } catch {
             XCTFail("unexpected error: \(error)")
         }
+    }
+
+    // MARK: - Streaming download (#74)
+
+    func testStreamingDownloadWritesFullBodyWithIncrementalProgress() async throws {
+        let assetBody = Data((0..<100).map { UInt8($0 & 0xFF) })
+        let expectedSum = sha256Hex(assetBody)
+
+        let client = StreamingStubUpdateHTTPClient()
+        client.setResponse(path: "/checksums.txt", body: Data("\(expectedSum)  mytool_darwin_arm64\n".utf8))
+        client.setResponse(path: "/asset", body: assetBody)
+        client.chunkSize = 16
+
+        let release = ReleaseInfo(
+            tagName: "v1.2.0",
+            htmlURL: "https://github.com/example/releases/tag/v1.2.0",
+            assets: [
+                Asset(name: "mytool_darwin_arm64", browserDownloadURL: "https://example.com/asset", size: Int64(assetBody.count)),
+                Asset(name: "checksums.txt", browserDownloadURL: "https://example.com/checksums.txt", size: 0),
+            ]
+        )
+
+        let progressBox = ProgressBox()
+        let progressCalls = CounterBox()
+        let applier = UpdateApplier(
+            os: "darwin",
+            arch: "arm64",
+            client: client,
+            progress: { written, total in
+                progressBox.lastWritten = written
+                progressCalls.count += 1
+            }
+        )
+
+        let result = try await applier.apply(release: release)
+        defer { try? FileManager.default.removeItem(at: result) }
+
+        let downloaded = try Data(contentsOf: result)
+        XCTAssertEqual(downloaded, assetBody, "streamed file must match the asset body")
+        XCTAssertGreaterThan(progressCalls.count, 1, "progress must be reported per chunk, not once at 100%")
+        XCTAssertEqual(progressBox.lastWritten, Int64(assetBody.count), "final progress must report the full body size")
+    }
+
+    func testStreamingDownloadRejectsOversizedContentLengthBeforeReadingBody() async throws {
+        let checksumsText = "deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef  mytool_darwin_arm64\n"
+        let client = StreamingStubUpdateHTTPClient()
+        client.setResponse(path: "/checksums.txt", body: Data(checksumsText.utf8))
+        client.setResponse(path: "/asset", body: Data("small-body".utf8))
+        // The server advertises a body far above the injected cap.
+        client.contentLengthOverrides["/asset"] = 10_000
+
+        let release = ReleaseInfo(
+            tagName: "v1.2.0",
+            htmlURL: "https://github.com/example/releases/tag/v1.2.0",
+            assets: [
+                Asset(name: "mytool_darwin_arm64", browserDownloadURL: "https://example.com/asset", size: 0),
+                Asset(name: "checksums.txt", browserDownloadURL: "https://example.com/checksums.txt", size: 0),
+            ]
+        )
+
+        var applier = UpdateApplier(os: "darwin", arch: "arm64", client: client)
+        applier.maxBodySize = 1_000
+
+        do {
+            _ = try await applier.apply(release: release)
+            XCTFail("expected downloadFailed for an oversized advertised Content-Length")
+        } catch UpdateApplierError.downloadFailed(let message) {
+            XCTAssertTrue(message.contains("maximum allowed size"), "unexpected message: \(message)")
+        } catch {
+            XCTFail("unexpected error: \(error)")
+        }
+
+        XCTAssertEqual(client.consumedChunks.count, 0, "no body chunk may be read before the early rejection")
+    }
+
+    func testStreamingDownloadAbortsMidStreamWhenCapCrossed() async throws {
+        let checksumsText = "deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef  mytool_darwin_arm64\n"
+        let client = StreamingStubUpdateHTTPClient()
+        client.setResponse(path: "/checksums.txt", body: Data(checksumsText.utf8))
+        // Two chunks of 600 bytes each: the cap (1000) is crossed only when
+        // the second chunk arrives. The server advertises a length under the
+        // cap (Content-Length lies) so the mid-stream guard must fire — the
+        // early header rejection must not preempt it.
+        client.setResponse(path: "/asset", body: Data(repeating: 0x61, count: 600) + Data(repeating: 0x62, count: 600))
+        client.contentLengthOverrides["/asset"] = 800
+        client.chunkSize = 600
+
+        let release = ReleaseInfo(
+            tagName: "v1.2.0",
+            htmlURL: "https://github.com/example/releases/tag/v1.2.0",
+            assets: [
+                Asset(name: "mytool_darwin_arm64", browserDownloadURL: "https://example.com/asset", size: 0),
+                Asset(name: "checksums.txt", browserDownloadURL: "https://example.com/checksums.txt", size: 0),
+            ]
+        )
+
+        let progressCalls = CounterBox()
+        var applier = UpdateApplier(
+            os: "darwin",
+            arch: "arm64",
+            client: client,
+            progress: { _, _ in progressCalls.count += 1 }
+        )
+        applier.maxBodySize = 1_000
+
+        do {
+            _ = try await applier.apply(release: release)
+            XCTFail("expected downloadFailed when the stream crosses the cap")
+        } catch UpdateApplierError.downloadFailed(let message) {
+            XCTAssertTrue(message.contains("maximum allowed size"), "unexpected message: \(message)")
+        } catch {
+            XCTFail("unexpected error: \(error)")
+        }
+
+        XCTAssertEqual(client.consumedChunks.count, 2, "abort must fire the moment the cap is crossed")
+        XCTAssertEqual(progressCalls.count, 1, "progress must stop after the chunk that crossed the cap")
     }
 }
