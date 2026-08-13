@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.10.0]
+
+### Added
+- `SymairaKeychain.save(_:key:requireUserPresence:)` — opt-in user-presence
+  access control via `SecAccessControlCreateWithFlags` /
+  `kSecAccessControlDevicePasscode`. Existing `save(_:key:)` is unchanged and
+  fully backward compatible (#82).
+
+### Changed
+- Asset downloads now stream to a temp file instead of buffering up to 1 GiB
+  in memory; SHA256 is computed incrementally and the progress callback fires
+  per chunk. `UpdateApplier` was split into focused internal helpers
+  (`AssetDownloader`, `ChecksumManifest`, `Cosign`, `AppInstaller`,
+  `InstallMethod`, `UpdateApplierError`) — no public API change (#83).
+
 ### Security
 - `CLIRunnerError.redactedForUser` now also redacts provider-prefixed token
   shapes whose separators defeat the length-based patterns: GitHub tokens
@@ -259,6 +274,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `SymairaKeychain`: Keychain wrapper, service-namespaced `dev.symaira.<app>`
 
 [0.9.0]: https://github.com/danieljustus/symaira-appkit/compare/0.8.1...0.9.0
+[0.9.1]: https://github.com/danieljustus/symaira-appkit/compare/0.9.0...0.9.1
+[0.9.2]: https://github.com/danieljustus/symaira-appkit/compare/0.9.1...0.9.2
+[0.10.0]: https://github.com/danieljustus/symaira-appkit/compare/0.9.2...0.10.0
+[Unreleased]: https://github.com/danieljustus/symaira-appkit/compare/0.9.2...HEAD
 [0.8.1]: https://github.com/danieljustus/symaira-appkit/compare/0.8.0...0.8.1
 [0.8.0]: https://github.com/danieljustus/symaira-appkit/compare/0.7.0...0.8.0
 [0.7.0]: https://github.com/danieljustus/symaira-appkit/compare/0.6.1...0.7.0
