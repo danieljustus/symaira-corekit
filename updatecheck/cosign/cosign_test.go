@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"regexp"
 	"strings"
 	"testing"
 )
@@ -295,7 +296,7 @@ func TestVerifySignature_CorrectArgs(t *testing.T) {
 	cfg := Config{
 		BinaryName:     "mytool",
 		Repo:           "testowner/testrepo",
-		IdentityRegexp: `https://github\\.com/testowner/testrepo/\\.github/workflows/release\\.yml@refs/tags/v.*`,
+		IdentityRegexp: `^https://github\.com/testowner/testrepo/\.github/workflows/release\.yml@refs/tags/v.*$`,
 	}
 	err := cfg.VerifySignature(
 		[]byte("content"),
@@ -349,6 +350,91 @@ func TestIdentityRegexpOrDefault(t *testing.T) {
 	got := cfg.IdentityRegexpOrDefault()
 	if !strings.Contains(got, "danieljustus/symaira-vault") {
 		t.Fatalf("IdentityRegexpOrDefault() = %q, should contain repo slug", got)
+	}
+}
+
+// TestIdentityRegexpOrDefaultMatchesRealIdentity is the assertion that matters:
+// the default pattern must actually match the certificate identity Sigstore
+// reports for a release built by the repo's release workflow. Asserting only
+// that the pattern contains the repo slug would still pass with escaping that
+// can never match anything.
+func TestIdentityRegexpOrDefaultMatchesRealIdentity(t *testing.T) {
+	cfg := Config{
+		Repo:       "danieljustus/symaira-vault",
+		BinaryName: "symvault",
+	}
+
+	re, err := regexp.Compile(cfg.IdentityRegexpOrDefault())
+	if err != nil {
+		t.Fatalf("IdentityRegexpOrDefault() did not compile: %v", err)
+	}
+
+	tests := []struct {
+		name     string
+		identity string
+		want     bool
+	}{
+		{
+			name:     "release tag of the configured repo",
+			identity: "https://github.com/danieljustus/symaira-vault/.github/workflows/release.yml@refs/tags/v1.0.0",
+			want:     true,
+		},
+		{
+			name:     "prerelease tag of the configured repo",
+			identity: "https://github.com/danieljustus/symaira-vault/.github/workflows/release.yml@refs/tags/v0.9.1",
+			want:     true,
+		},
+		{
+			name:     "different repo must not match",
+			identity: "https://github.com/attacker/evil/.github/workflows/release.yml@refs/tags/v1.0.0",
+			want:     false,
+		},
+		{
+			name:     "different workflow of the same repo must not match",
+			identity: "https://github.com/danieljustus/symaira-vault/.github/workflows/ci.yml@refs/tags/v1.0.0",
+			want:     false,
+		},
+		{
+			name:     "branch ref instead of a tag must not match",
+			identity: "https://github.com/danieljustus/symaira-vault/.github/workflows/release.yml@refs/heads/main",
+			want:     false,
+		},
+		{
+			name:     "valid identity embedded in a longer string must not match",
+			identity: "https://evil.example/?u=https://github.com/danieljustus/symaira-vault/.github/workflows/release.yml@refs/tags/v1.0.0",
+			want:     false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := re.MatchString(tt.identity); got != tt.want {
+				t.Fatalf("MatchString(%q) = %v, want %v (pattern %q)",
+					tt.identity, got, tt.want, cfg.IdentityRegexpOrDefault())
+			}
+		})
+	}
+}
+
+// TestIdentityRegexpOrDefaultEscapesRepoSlug ensures a repo slug carrying
+// regexp metacharacters cannot widen the pattern beyond the intended repo.
+func TestIdentityRegexpOrDefaultEscapesRepoSlug(t *testing.T) {
+	cfg := Config{
+		Repo:       "owner/re.po",
+		BinaryName: "tool",
+	}
+
+	re, err := regexp.Compile(cfg.IdentityRegexpOrDefault())
+	if err != nil {
+		t.Fatalf("IdentityRegexpOrDefault() did not compile: %v", err)
+	}
+
+	if !re.MatchString("https://github.com/owner/re.po/.github/workflows/release.yml@refs/tags/v1.0.0") {
+		t.Fatal("pattern must match the literal repo slug it was built from")
+	}
+	// The unescaped '.' would make this match too.
+	if re.MatchString("https://github.com/owner/reXpo/.github/workflows/release.yml@refs/tags/v1.0.0") {
+		t.Fatal("'.' in the repo slug was not escaped — the pattern matches a foreign repo")
 	}
 }
 

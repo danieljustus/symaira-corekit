@@ -13,6 +13,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strings"
 )
 
@@ -48,15 +49,22 @@ type Config struct {
 	HTTPClient *http.Client
 }
 
-// IdentityRegexp returns the certificate identity regexp. When empty in the
-// config, it builds a default pattern from the repo slug.
+// IdentityRegexpOrDefault returns the certificate identity regexp. When empty
+// in the config, it builds a default pattern from the repo slug that matches
+// the Sigstore identity of a release built by the repo's release workflow:
+//
+//	https://github.com/<owner>/<repo>/.github/workflows/release.yml@refs/tags/v<version>
+//
+// The pattern is anchored so it cannot match merely as a substring of a longer,
+// attacker-influenced identity, and the repo slug is escaped so a slug
+// containing regexp metacharacters cannot widen it to a foreign repo.
 func (c Config) IdentityRegexpOrDefault() string {
 	if c.IdentityRegexp != "" {
 		return c.IdentityRegexp
 	}
 	return fmt.Sprintf(
-		`https://github\\.com/%s/\\.github/workflows/release\\.yml@refs/tags/v.*`,
-		strings.ReplaceAll(c.Repo, "/", "/"),
+		`^https://github\.com/%s/\.github/workflows/release\.yml@refs/tags/v.*$`,
+		regexp.QuoteMeta(c.Repo),
 	)
 }
 
