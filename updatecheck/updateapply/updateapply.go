@@ -77,10 +77,13 @@ type Applier struct {
 	ExtractBinary string
 }
 
-// NewApplier creates an Applier using the running binary's OS/arch.
+// NewApplier creates an Applier using the running binary's OS/arch and the
+// hardened download client (TLS 1.3 minimum, bounded timeout, redirects
+// refused off GitHub hosts). Callers that need different transport behaviour
+// can replace HTTPClient after construction.
 func NewApplier() *Applier {
 	return &Applier{
-		HTTPClient: http.DefaultClient,
+		HTTPClient: updatecheck.NewSecureClientWithTimeout(updatecheck.DefaultDownloadTimeout),
 		GOOS:       runtime.GOOS,
 		GOARCH:     runtime.GOARCH,
 	}
@@ -331,7 +334,7 @@ func (a *Applier) fetchChecksums(ctx context.Context, assets []updatecheck.Asset
 func (a *Applier) download(ctx context.Context, asset updatecheck.Asset) (io.ReadCloser, int64, error) {
 	client := a.HTTPClient
 	if client == nil {
-		client = http.DefaultClient
+		client = updatecheck.NewSecureClientWithTimeout(updatecheck.DefaultDownloadTimeout)
 	}
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, asset.BrowserDownloadURL, nil)

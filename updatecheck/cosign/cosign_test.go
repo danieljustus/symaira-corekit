@@ -2,8 +2,11 @@ package cosign
 
 import (
 	"context"
+	"crypto/tls"
 	"io"
 	"net/http"
+	"net/http/httptest"
+	"net/url"
 	"os"
 	"os/exec"
 	"regexp"
@@ -461,4 +464,106 @@ type stubRoundTripper func(req *http.Request) (*http.Response, error)
 
 func (f stubRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
 	return f(req)
+}
+
+// TestClientDefaultIsHardened asserts the cosign artefact fetch no longer
+// falls back to http.DefaultClient. The signature and certificate are what
+// authorise replacing the running binary, so the transport that fetches them
+// must carry the same guarantees as the rest of the update path.
+func TestClientDefaultIsHardened(t *testing.T) {
+	c := Config{Repo: "owner/repo", BinaryName: "tool"}.client()
+
+	if c == http.DefaultClient {
+		t.Fatal("default client must not be http.DefaultClient")
+	}
+	if c.Timeout <= 0 {
+		t.Error("default client must set a timeout")
+	}
+	if c.CheckRedirect == nil {
+		t.Fatal("default client must set CheckRedirect")
+	}
+	if err := c.CheckRedirect(
+		&http.Request{URL: mustParseURL(t, "https://evil.example/sig")},
+		[]*http.Request{{URL: mustParseURL(t, "https://github.com/owner/repo/releases/download/v1/x.sig")}},
+	); err == nil {
+		t.Error("default client must refuse redirects to non-GitHub hosts")
+	}
+
+	tr, ok := c.Transport.(*http.Transport)
+	if !ok {
+		t.Fatalf("Transport = %T, want *http.Transport", c.Transport)
+	}
+	if tr.TLSClientConfig == nil || tr.TLSClientConfig.MinVersion != tls.VersionTLS13 {
+		t.Error("default client must enforce a TLS 1.3 minimum")
+	}
+}
+
+// TestClientExplicitOverrideWins keeps the documented escape hatch working for
+// consumers on a custom host.
+func TestClientExplicitOverrideWins(t *testing.T) {
+	custom := &http.Client{}
+	if got := (Config{HTTPClient: custom}).client(); got != custom {
+		t.Error("an explicitly configured HTTPClient must be used unchanged")
+	}
+}
+
+// TestFetchArtifactRejectsOversizedBody covers the read limit on the signature
+// and certificate fetch, which previously read an unbounded body.
+func TestFetchArtifactRejectsOversizedBody(t *testing.T) {
+	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		buf := make([]byte, 64*1024)
+		for written := 0; written <= maxArtifactBody; written += len(buf) {
+			if _, err := w.Write(buf); err != nil {
+				return
+			}
+		}
+	}))
+	t.Cleanup(server.Close)
+
+	cfg := Config{
+		Repo:            "owner/repo",
+		BinaryName:      "tool",
+		DownloadBaseURL: server.URL,
+		HTTPClient:      server.Client(),
+	}
+
+	if _, err := cfg.FetchSignature(context.Background(), "v1.0.0"); err == nil {
+		t.Fatal("expected an oversized signature body to be rejected")
+	} else if !strings.Contains(err.Error(), "maximum size") {
+		t.Errorf("error = %v, want a maximum-size rejection", err)
+	}
+}
+
+// TestFetchArtifactAcceptsNormalBody guards against the size cap rejecting a
+// real signature.
+func TestFetchArtifactAcceptsNormalBody(t *testing.T) {
+	want := []byte("MEUCIQDsignature-bytes")
+	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write(want)
+	}))
+	t.Cleanup(server.Close)
+
+	cfg := Config{
+		Repo:            "owner/repo",
+		BinaryName:      "tool",
+		DownloadBaseURL: server.URL,
+		HTTPClient:      server.Client(),
+	}
+
+	got, err := cfg.FetchSignature(context.Background(), "v1.0.0")
+	if err != nil {
+		t.Fatalf("FetchSignature() error = %v", err)
+	}
+	if string(got) != string(want) {
+		t.Errorf("FetchSignature() = %q, want %q", got, want)
+	}
+}
+
+func mustParseURL(t *testing.T, raw string) *url.URL {
+	t.Helper()
+	u, err := url.Parse(raw)
+	if err != nil {
+		t.Fatalf("parse %q: %v", raw, err)
+	}
+	return u
 }
