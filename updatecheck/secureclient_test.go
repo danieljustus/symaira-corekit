@@ -77,3 +77,55 @@ func TestSecureClientRedirectCap(t *testing.T) {
 		t.Fatal("expected the 10-redirect cap to stop redirects")
 	}
 }
+
+// TestNewSecureClientExported asserts the exported constructor carries the
+// same hardening as the internal one, since sibling packages now depend on it
+// for the asset, checksum and signature downloads.
+func TestNewSecureClientExported(t *testing.T) {
+	c := NewSecureClient()
+
+	if c.Timeout != DefaultAPITimeout {
+		t.Errorf("Timeout = %v, want %v", c.Timeout, DefaultAPITimeout)
+	}
+	tr, ok := c.Transport.(*http.Transport)
+	if !ok {
+		t.Fatalf("Transport = %T, want *http.Transport", c.Transport)
+	}
+	if tr.TLSClientConfig == nil || tr.TLSClientConfig.MinVersion != tls.VersionTLS13 {
+		t.Error("exported client must enforce a TLS 1.3 minimum")
+	}
+	if c.CheckRedirect == nil {
+		t.Fatal("exported client must set CheckRedirect")
+	}
+	if err := c.CheckRedirect(
+		&http.Request{URL: mustParseURL(t, "https://evil.example/x")},
+		[]*http.Request{{URL: mustParseURL(t, "https://api.github.com/x")}},
+	); err == nil {
+		t.Error("exported client must refuse redirects to non-GitHub hosts")
+	}
+}
+
+// TestNewSecureClientWithTimeout covers the download-oriented variant: same
+// hardening, caller-chosen timeout. A metadata timeout would abort any real
+// asset download, so the two must be separable.
+func TestNewSecureClientWithTimeout(t *testing.T) {
+	c := NewSecureClientWithTimeout(DefaultDownloadTimeout)
+
+	if c.Timeout != DefaultDownloadTimeout {
+		t.Errorf("Timeout = %v, want %v", c.Timeout, DefaultDownloadTimeout)
+	}
+	if DefaultDownloadTimeout <= DefaultAPITimeout {
+		t.Errorf("DefaultDownloadTimeout (%v) must exceed DefaultAPITimeout (%v); a download reads a whole binary body",
+			DefaultDownloadTimeout, DefaultAPITimeout)
+	}
+	tr, ok := c.Transport.(*http.Transport)
+	if !ok {
+		t.Fatalf("Transport = %T, want *http.Transport", c.Transport)
+	}
+	if tr.TLSClientConfig == nil || tr.TLSClientConfig.MinVersion != tls.VersionTLS13 {
+		t.Error("timeout variant must enforce a TLS 1.3 minimum")
+	}
+	if c.CheckRedirect == nil {
+		t.Fatal("timeout variant must set CheckRedirect")
+	}
+}

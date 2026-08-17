@@ -24,6 +24,15 @@ const (
 	// release JSON payload is a few KB; the limit guards against a compromised,
 	// MITM'd, or redirected endpoint streaming an unbounded body.
 	maxResponseBody = 1 << 20 // 1 MiB
+
+	// DefaultAPITimeout bounds a release-metadata request. The payload is a
+	// few KB, so a short timeout is appropriate.
+	DefaultAPITimeout = 3 * time.Second
+
+	// DefaultDownloadTimeout bounds a release asset download. http.Client's
+	// Timeout covers the response body, so this has to accommodate a
+	// multi-megabyte binary over a slow link — not the API timeout.
+	DefaultDownloadTimeout = 15 * time.Minute
 )
 
 // Release represents a GitHub release.
@@ -286,9 +295,29 @@ func compareStableVersions(left, right stableVersion) int {
 	return 1
 }
 
-func newSecureClient() *http.Client {
+// NewSecureClient returns the hardened HTTP client used for GitHub release
+// requests: TLS 1.3 minimum, a short request timeout suited to the release
+// metadata API, and a redirect policy that refuses to leave GitHub hosts.
+//
+// Use NewSecureClientWithTimeout for asset downloads, which need a far longer
+// timeout than a metadata call.
+func NewSecureClient() *http.Client {
+	return NewSecureClientWithTimeout(DefaultAPITimeout)
+}
+
+// NewSecureClientWithTimeout returns a client with the same hardening as
+// NewSecureClient but a caller-chosen overall timeout. http.Client.Timeout
+// covers reading the response body too, so a download needs a much larger
+// value than a metadata request — see DefaultDownloadTimeout.
+//
+// A non-positive timeout means no timeout.
+//
+// The redirect policy refuses any redirect that leaves a GitHub host. The
+// initial request URL is not restricted, so a consumer pointing at a different
+// host still works; only being bounced off GitHub mid-request is refused.
+func NewSecureClientWithTimeout(timeout time.Duration) *http.Client {
 	return &http.Client{
-		Timeout: 3 * time.Second,
+		Timeout: timeout,
 		Transport: &http.Transport{
 			TLSClientConfig: &tls.Config{
 				MinVersion: tls.VersionTLS13,
@@ -307,6 +336,10 @@ func newSecureClient() *http.Client {
 			return nil
 		},
 	}
+}
+
+func newSecureClient() *http.Client {
+	return NewSecureClient()
 }
 
 // isGitHubHost reports whether host belongs to github.com (api or download hosts).

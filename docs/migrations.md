@@ -9,6 +9,26 @@ Strict SemVer within a major version means these are additive/non-breaking
 by contract; "check" below means "new capability you may want to adopt or a
 behavior change worth confirming," not "your build will fail."
 
+## v0.9.1 → v0.9.2
+
+- `updatecheck` exports the hardened HTTP client that was previously internal:
+  `NewSecureClient()` (TLS 1.3 minimum, `DefaultAPITimeout`, redirects refused
+  off GitHub hosts) and `NewSecureClientWithTimeout(d)` for downloads, plus the
+  `DefaultAPITimeout` / `DefaultDownloadTimeout` constants. This is additive.
+- `updateapply` and `updatecheck/cosign` now default to that hardened client
+  instead of `http.DefaultClient`, so asset, checksum, signature and
+  certificate downloads get a request timeout, a TLS floor and a redirect
+  policy. Consumers that relied on the previous unbounded default — for
+  example an internal mirror behind a redirect to a non-GitHub host — must set
+  `Applier.HTTPClient` / `cosign.Config.HTTPClient` explicitly.
+- `updatecheck/cosign`: the default certificate identity regexp was
+  double-escaped and could never match a real Sigstore identity, so cosign
+  verification always failed for consumers that did not set `IdentityRegexp`
+  themselves. It now matches, is anchored, and escapes the repo slug.
+  Consumers that worked around this with a hand-written `IdentityRegexp` can
+  drop the override; verify once before removing it.
+- `updatecheck/cosign`: signature and certificate responses are size-capped.
+
 ## v0.8.0 → v0.9.0
 
 - `embedkit` gained provider abstractions, a deterministic hash fallback,

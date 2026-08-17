@@ -13,7 +13,10 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strings"
+
+	"github.com/danieljustus/symaira-corekit/updatecheck"
 )
 
 // execCommand is overridden in tests to allow verification without the cosign
@@ -43,20 +46,33 @@ type Config struct {
 	// workflow of Config.Repo when empty.
 	IdentityRegexp string
 
-	// HTTPClient is used for fetching cosign artefacts. Defaults to
-	// http.DefaultClient when nil.
+	// HTTPClient is used for fetching cosign artefacts. When nil, a hardened
+	// client is used: TLS 1.3 minimum, a bounded timeout, and redirects
+	// refused off GitHub hosts.
 	HTTPClient *http.Client
 }
 
-// IdentityRegexp returns the certificate identity regexp. When empty in the
-// config, it builds a default pattern from the repo slug.
+// maxArtifactBody caps how many bytes are read for a cosign signature or
+// certificate. Both are a few KB; the limit guards against a compromised or
+// redirected endpoint streaming an unbounded body.
+const maxArtifactBody = 1 << 20 // 1 MiB
+
+// IdentityRegexpOrDefault returns the certificate identity regexp. When empty
+// in the config, it builds a default pattern from the repo slug that matches
+// the Sigstore identity of a release built by the repo's release workflow:
+//
+//	https://github.com/<owner>/<repo>/.github/workflows/release.yml@refs/tags/v<version>
+//
+// The pattern is anchored so it cannot match merely as a substring of a longer,
+// attacker-influenced identity, and the repo slug is escaped so a slug
+// containing regexp metacharacters cannot widen it to a foreign repo.
 func (c Config) IdentityRegexpOrDefault() string {
 	if c.IdentityRegexp != "" {
 		return c.IdentityRegexp
 	}
 	return fmt.Sprintf(
-		`https://github\\.com/%s/\\.github/workflows/release\\.yml@refs/tags/v.*`,
-		strings.ReplaceAll(c.Repo, "/", "/"),
+		`^https://github\.com/%s/\.github/workflows/release\.yml@refs/tags/v.*$`,
+		regexp.QuoteMeta(c.Repo),
 	)
 }
 
@@ -73,7 +89,7 @@ func (c Config) client() *http.Client {
 	if c.HTTPClient != nil {
 		return c.HTTPClient
 	}
-	return http.DefaultClient
+	return updatecheck.NewSecureClient()
 }
 
 // signatureFileName returns the cosign signature filename for the checksums
@@ -126,9 +142,12 @@ func (c Config) fetchArtifact(ctx context.Context, version string, artifactName 
 		return nil, fmt.Errorf("fetch cosign %s: HTTP %d", artifactLabel, resp.StatusCode)
 	}
 
-	data, err := io.ReadAll(resp.Body)
+	data, err := io.ReadAll(io.LimitReader(resp.Body, maxArtifactBody+1))
 	if err != nil {
 		return nil, fmt.Errorf("read cosign %s response: %w", artifactLabel, err)
+	}
+	if len(data) > maxArtifactBody {
+		return nil, fmt.Errorf("cosign %s exceeds maximum size of %d bytes", artifactLabel, maxArtifactBody)
 	}
 
 	return data, nil
