@@ -210,7 +210,7 @@ func (a *Applier) Apply(ctx context.Context, release *updatecheck.Release, targe
 			return fmt.Errorf("updateapply: read downloaded archive: %w", err)
 		}
 
-		extracted, extErr := extractFromArchive(archiveData, extractedDir, a.ExtractBinary)
+		extracted, extErr := extractFromArchive(archiveData, asset.Name, extractedDir, a.ExtractBinary)
 		if extErr != nil {
 			return fmt.Errorf("updateapply: extract binary %q from archive: %w", a.ExtractBinary, extErr)
 		}
@@ -239,28 +239,55 @@ func InstallMethod(binaryPath string) (installmethod.InstallMethod, error) {
 	return installmethod.Detect(binaryPath)
 }
 
-// extractFromArchive dispatches to ExtractTarGz or ExtractZip based on the
-// archive filename.
-func extractFromArchive(archiveData []byte, destDir, binaryName string) (string, error) {
-	// Try tar.gz first (most common for macOS/Linux).
-	path, err := extract.ExtractTarGz(archiveData, destDir, binaryName)
-	if err == nil {
+// extractFromArchive dispatches to ExtractTarGz or ExtractZip based on
+// assetName's extension. goreleaser names its archives *.tar.gz / *.tgz /
+// *.zip, so the format is known before a single byte is parsed.
+//
+// An unrecognised extension falls back to trying both formats, so consumers
+// with a custom naming scheme keep working.
+func extractFromArchive(archiveData []byte, assetName, destDir, binaryName string) (string, error) {
+	switch {
+	case hasAnySuffix(assetName, ".zip"):
+		return extract.ExtractZip(archiveData, destDir, binaryName)
+	case hasAnySuffix(assetName, ".tar.gz", ".tgz"):
+		return extract.ExtractTarGz(archiveData, destDir, binaryName)
+	default:
+		return extractByProbing(archiveData, destDir, binaryName)
+	}
+}
+
+// extractByProbing handles archives whose name does not reveal the format. It
+// tries tar.gz first (the common case for macOS/Linux releases) and falls back
+// to zip. ErrBinaryNotFound from the first attempt is preserved: it means the
+// archive parsed fine and simply did not contain the expected binary, which is
+// a more useful error than a zip parse failure.
+func extractByProbing(archiveData []byte, destDir, binaryName string) (string, error) {
+	path, tarErr := extract.ExtractTarGz(archiveData, destDir, binaryName)
+	if tarErr == nil {
 		return path, nil
 	}
-	if !errors.Is(err, extract.ErrBinaryNotFound) && !strings.Contains(err.Error(), "gzip") {
-		return "", err
+	if errors.Is(tarErr, extract.ErrPathTraversal) {
+		return "", tarErr
 	}
 
-	// Fall back to zip (Windows/packaged releases).
 	path, zipErr := extract.ExtractZip(archiveData, destDir, binaryName)
 	if zipErr != nil {
-		// Return the original tar.gz error if zip also fails — it was the first attempt.
-		if errors.Is(err, extract.ErrBinaryNotFound) {
-			return "", err
+		if errors.Is(tarErr, extract.ErrBinaryNotFound) {
+			return "", tarErr
 		}
 		return "", zipErr
 	}
 	return path, nil
+}
+
+func hasAnySuffix(name string, suffixes ...string) bool {
+	lower := strings.ToLower(name)
+	for _, suffix := range suffixes {
+		if strings.HasSuffix(lower, suffix) {
+			return true
+		}
+	}
+	return false
 }
 
 // Reexec replaces the current process image with targetPath via
