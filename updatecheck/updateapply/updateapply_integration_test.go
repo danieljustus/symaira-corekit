@@ -115,7 +115,9 @@ func TestApplySkipsInstallMethodCheckWhenDisabled(t *testing.T) {
 	}
 }
 
-func TestExtractFromArchiveTriesTarGzFirst(t *testing.T) {
+// TestExtractFromArchiveProbesTarGzFirst covers the fallback path used when
+// the asset name does not reveal the archive format.
+func TestExtractFromArchiveProbesTarGzFirst(t *testing.T) {
 	dir := t.TempDir()
 	binaryName := "mytool"
 
@@ -124,7 +126,7 @@ func TestExtractFromArchiveTriesTarGzFirst(t *testing.T) {
 		"mytool_1.0.0_darwin_arm64/mytool": "extracted-binary",
 	}, true)
 
-	path, err := extractFromArchive(archiveData, dir, binaryName)
+	path, err := extractFromArchive(archiveData, "release-bundle", dir, binaryName)
 	if err != nil {
 		t.Fatalf("extractFromArchive() error = %v", err)
 	}
@@ -140,7 +142,9 @@ func TestExtractFromArchiveTriesTarGzFirst(t *testing.T) {
 	}
 }
 
-func TestExtractFromArchiveFallsBackToZip(t *testing.T) {
+// TestExtractFromArchiveProbesZipSecond covers the zip half of the same
+// fallback path.
+func TestExtractFromArchiveProbesZipSecond(t *testing.T) {
 	dir := t.TempDir()
 	binaryName := "mytool.exe"
 
@@ -149,7 +153,7 @@ func TestExtractFromArchiveFallsBackToZip(t *testing.T) {
 		"mytool_1.0.0_windows_amd64/mytool.exe": "win-binary",
 	})
 
-	path, err := extractFromArchive(archiveData, dir, binaryName)
+	path, err := extractFromArchive(archiveData, "release-bundle", dir, binaryName)
 	if err != nil {
 		t.Fatalf("extractFromArchive() error = %v", err)
 	}
@@ -163,8 +167,88 @@ func TestExtractFromArchiveFallsBackToZip(t *testing.T) {
 }
 
 func TestExtractFromArchiveReturnsErrorWhenNothingWorks(t *testing.T) {
-	_, err := extractFromArchive([]byte("garbage-data"), t.TempDir(), "mytool")
+	_, err := extractFromArchive([]byte("garbage-data"), "release-bundle", t.TempDir(), "mytool")
 	if err == nil {
 		t.Fatal("expected error for garbage archive data")
+	}
+}
+
+// TestExtractFromArchiveDispatchesByAssetName pins the format decision to the
+// asset's extension. The previous implementation always attempted tar.gz and
+// only reached the zip branch when the resulting error text happened to
+// contain "gzip" — an implementation detail of compress/gzip, not a contract.
+func TestExtractFromArchiveDispatchesByAssetName(t *testing.T) {
+	tarGz := testBuildTarGz(map[string]string{
+		"mytool_1.0.0_linux_amd64/":       "",
+		"mytool_1.0.0_linux_amd64/mytool": "tar-binary",
+	}, true)
+	zipData := testBuildZip(map[string]string{
+		"mytool_1.0.0_windows_amd64/":           "",
+		"mytool_1.0.0_windows_amd64/mytool.exe": "zip-binary",
+	})
+
+	tests := []struct {
+		name       string
+		assetName  string
+		data       []byte
+		binaryName string
+		want       string
+	}{
+		{"tar.gz suffix", "mytool_1.0.0_linux_amd64.tar.gz", tarGz, "mytool", "tar-binary"},
+		{"tgz suffix", "mytool_1.0.0_linux_amd64.tgz", tarGz, "mytool", "tar-binary"},
+		{"zip suffix", "mytool_1.0.0_windows_amd64.zip", zipData, "mytool.exe", "zip-binary"},
+		{"uppercase suffix", "MYTOOL_1.0.0_WINDOWS_AMD64.ZIP", zipData, "mytool.exe", "zip-binary"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			path, err := extractFromArchive(tt.data, tt.assetName, t.TempDir(), tt.binaryName)
+			if err != nil {
+				t.Fatalf("extractFromArchive(%q) error = %v", tt.assetName, err)
+			}
+			data, err := os.ReadFile(path)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if string(data) != tt.want {
+				t.Errorf("content = %q, want %q", data, tt.want)
+			}
+		})
+	}
+}
+
+// TestExtractZipAssetNeverConsultsGzipError is the regression guard: a .zip
+// asset must extract without the tar.gz attempt running at all, so no change
+// to compress/gzip's error wording can break Windows releases.
+func TestExtractZipAssetNeverConsultsGzipError(t *testing.T) {
+	zipData := testBuildZip(map[string]string{
+		"mytool_1.0.0_windows_amd64/":           "",
+		"mytool_1.0.0_windows_amd64/mytool.exe": "win-binary",
+	})
+
+	path, err := extractFromArchive(zipData, "mytool_1.0.0_windows_amd64.zip", t.TempDir(), "mytool.exe")
+	if err != nil {
+		t.Fatalf("extractFromArchive() error = %v", err)
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(data) != "win-binary" {
+		t.Errorf("content = %q, want %q", data, "win-binary")
+	}
+}
+
+// TestExtractFromArchiveNamedFormatMismatch documents that a named format is
+// trusted: a .zip name carrying tar.gz bytes fails as a zip error rather than
+// silently falling through to the other parser.
+func TestExtractFromArchiveNamedFormatMismatch(t *testing.T) {
+	tarGz := testBuildTarGz(map[string]string{
+		"mytool_1.0.0_linux_amd64/":       "",
+		"mytool_1.0.0_linux_amd64/mytool": "tar-binary",
+	}, true)
+
+	if _, err := extractFromArchive(tarGz, "mytool_1.0.0_linux_amd64.zip", t.TempDir(), "mytool"); err == nil {
+		t.Fatal("expected tar.gz bytes named .zip to fail as a zip archive")
 	}
 }
