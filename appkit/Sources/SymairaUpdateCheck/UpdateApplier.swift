@@ -116,7 +116,7 @@ public struct UpdateApplier: Sendable {
         let asset = try selectAsset(from: release.assets)
 
         // 2. Download and parse checksums.txt.
-        let checksums = try await fetchChecksums(from: release.assets)
+        let (_, checksums) = try await fetchChecksums(from: release.assets)
 
         // 3. Look up the expected checksum for the selected asset.
         guard let expectedSum = checksums[asset.name] else {
@@ -180,11 +180,11 @@ public struct UpdateApplier: Sendable {
         let assetType = detectAssetType(name: asset.name)
 
         // 4. Download and parse checksums.txt.
-        let checksums = try await fetchChecksums(from: release.assets)
+        let (rawChecksums, checksums) = try await fetchChecksums(from: release.assets)
 
         // 4b. Optional cosign verification of checksums.
         if let cosign = cosignConfig {
-            try await CosignVerification(config: cosign).verify(checksums: checksums, tag: release.tagName)
+            try await CosignVerification(config: cosign).verify(rawChecksums: rawChecksums, tag: release.tagName)
         }
 
         // 5. Look up the expected checksum for the selected asset.
@@ -304,7 +304,8 @@ public struct UpdateApplier: Sendable {
 
     /// Download the `checksums.txt` asset from the release and parse it into
     /// a `[filename: sha256hex]` dictionary.
-    private func fetchChecksums(from assets: [Asset]) async throws -> [String: String] {
+    /// Returns both the raw bytes (for cosign verification) and the parsed map.
+    private func fetchChecksums(from assets: [Asset]) async throws -> (Data, [String: String]) {
         // Locate the checksums asset and download it.
         let checksumAsset = try ChecksumManifest.locateAsset(in: assets)
         let (body, _, _) = try await downloader.download(asset: checksumAsset)
@@ -315,7 +316,7 @@ public struct UpdateApplier: Sendable {
         guard !sums.isEmpty else {
             throw UpdateApplierError.unparseableChecksums
         }
-        return sums
+        return (body, sums)
     }
 
     // MARK: - Platform helpers

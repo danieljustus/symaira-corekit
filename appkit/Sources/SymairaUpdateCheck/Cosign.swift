@@ -130,6 +130,13 @@ public struct CosignCLIVerifier: CosignVerifier, Sendable {
         self.httpClient = httpClient
     }
 
+    /// Returns the identity regexp, defaulting to a GitHub Actions release
+    /// workflow pattern — mirrors `CosignConfig.identityRegexpOrDefault()`.
+    func identityRegexpOrDefault() -> String {
+        if !identityRegexp.isEmpty { return identityRegexp }
+        return #"(?i)https://github\.com/\#(repo)/\.github/workflows/release\.yml@refs/tags/v.*"#
+    }
+
     private func downloadBaseURLOrDefault() -> String {
         if !downloadBaseURL.isEmpty { return downloadBaseURL }
         return "https://github.com/\(repo)/releases/download"
@@ -185,15 +192,27 @@ public struct CosignCLIVerifier: CosignVerifier, Sendable {
     }
 
     public func verifySignature(content: Data, signature: Data, certificate: Data) async throws {
-        // Check if cosign CLI is available.
-        let whichResult = try SubprocessRunner.runChecked(
-            executable: URL(fileURLWithPath: "/usr/bin/which"),
-            arguments: ["cosign"]
-        )
-
-        guard whichResult.exitCode == 0 else {
+        // Resolve the identity regexp, falling back to the GitHub Actions
+        // release workflow pattern when the caller left it empty.
+        let resolvedRegexp = identityRegexpOrDefault()
+        guard !resolvedRegexp.isEmpty else {
             throw UpdateApplierError.cosignVerificationFailed(
-                "cosign CLI not found — install cosign from https://docs.sigstore.dev to verify release signatures"
+                "cosign certificate identity regexp must not be empty — configure CosignConfig.identityRegexp"
+            )
+        }
+
+        // Resolve cosign from the process PATH. GUI-launched apps should
+        // augment their environment (e.g. via CLIRunner.augmentedEnvironment)
+        // before reaching this point so Homebrew-installed cosign is reachable.
+        let envPath = ProcessInfo.processInfo.environment["PATH"] ?? ""
+        let searchDirs = envPath.split(separator: ":").map(String.init)
+        guard let cosignURL = searchDirs.lazy
+            .map({ URL(fileURLWithPath: $0).appendingPathComponent("cosign") })
+            .first(where: { FileManager.default.isExecutableFile(atPath: $0.path) })
+        else {
+            let searched = searchDirs.isEmpty ? "empty PATH" : searchDirs.joined(separator: ":")
+            throw UpdateApplierError.cosignVerificationFailed(
+                "cosign CLI not found — searched \(searched); install from https://docs.sigstore.dev"
             )
         }
 
@@ -215,12 +234,11 @@ public struct CosignCLIVerifier: CosignVerifier, Sendable {
         // Run cosign verify-blob (bounded — a hung network/GC stall cannot
         // block the update flow indefinitely).
         let processResult = try SubprocessRunner.runChecked(
-            executable: URL(fileURLWithPath: "/usr/bin/env"),
+            executable: cosignURL,
             arguments: [
-                "cosign", "verify-blob",
                 "--certificate", certPath,
                 "--signature", sigPath,
-                "--certificate-identity-regexp", identityRegexp,
+                "--certificate-identity-regexp", resolvedRegexp,
                 "--certificate-oidc-issuer", CosignCLIVerifier.oidcIssuer,
                 contentPath,
             ]
@@ -244,16 +262,15 @@ public struct CosignCLIVerifier: CosignVerifier, Sendable {
 struct CosignVerification: Sendable {
     let config: CosignConfig
 
-    func verify(checksums: [String: String], tag: String) async throws {
-        // Build the checksums data for verification.
-        var checksumsData = ""
-        for (name, sum) in checksums {
-            checksumsData += "\(sum)  \(name)\n"
-        }
+    /// Verify the cosign signature against the raw checksums bytes.
+    /// The signature was created over the exact file content, so we must
+    /// verify against those exact bytes — not a re-serialized dictionary
+    /// whose key order may differ.
+    func verify(rawChecksums: Data, tag: String) async throws {
         let sig = try await config.fetchSignature(tag: tag)
         let cert = try await config.fetchCertificate(tag: tag)
         try await config.verifySignature(
-            content: Data(checksumsData.utf8),
+            content: rawChecksums,
             signature: sig,
             certificate: cert
         )

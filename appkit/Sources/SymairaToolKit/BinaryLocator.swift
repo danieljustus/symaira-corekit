@@ -104,12 +104,14 @@ public struct BinaryLocator: Sendable {
 
         // 4. PATH entries — directory must be secure (root-owned,
         //    not group/world-writable) unless allowUnverified is set.
+        //    Signature must also pass unless allowUnverified is set.
         for dir in searchPATH.split(separator: ":") where !dir.isEmpty {
             let dirStr = String(dir)
             guard allowUnverified || Self.isDirectorySecure(dirStr) else { continue }
             let candidate = URL(fileURLWithPath: dirStr).appendingPathComponent(binaryName)
             if fm.isExecutableFile(atPath: candidate.path) {
                 let verified = Self.verifySignature(at: candidate)
+                if !allowUnverified && !verified { continue }
                 return Located(url: candidate, source: .path, verified: verified)
             }
         }
@@ -120,6 +122,7 @@ public struct BinaryLocator: Sendable {
             let candidate = URL(fileURLWithPath: dir).appendingPathComponent(binaryName)
             if fm.isExecutableFile(atPath: candidate.path) {
                 let verified = Self.verifySignature(at: candidate)
+                if !allowUnverified && !verified { continue }
                 return Located(url: candidate, source: .extraDirectory, verified: verified)
             }
         }
