@@ -85,9 +85,11 @@ public final class DaemonSupervisor: @unchecked Sendable {
         environment: [String: String]? = nil
     ) -> AsyncStream<DaemonLogLine> {
         stopInternal()
-        
+
+        lock.lock()
         generation += 1
         let myGen = generation
+        lock.unlock()
         
         updateState(.starting)
         appendLogLine("[daemon] Starting \(executable.lastPathComponent) \(arguments.joined(separator: " "))…", isError: false)
@@ -226,14 +228,20 @@ public final class DaemonSupervisor: @unchecked Sendable {
         // Schedule fallback escalation — guards against stale generation.
         DispatchQueue.global(qos: .userInitiated).asyncAfter(deadline: .now() + 2.0) { [weak self] in
             guard let self = self else { return }
-            guard self.generation == currentGen else { return }
+            self.lock.lock()
+            let currentGeneration = self.generation
+            self.lock.unlock()
+            guard currentGeneration == currentGen else { return }
             guard processToKill.isRunning else { return }
             self.appendLogLine("[daemon] Escalating stop: sending SIGINT to PID \(pid)...", isError: true)
             processToKill.interrupt()
-            
+
             DispatchQueue.global(qos: .userInitiated).asyncAfter(deadline: .now() + 1.5) { [weak self] in
                 guard let self = self else { return }
-                guard self.generation == currentGen else { return }
+                self.lock.lock()
+                let latestGeneration = self.generation
+                self.lock.unlock()
+                guard latestGeneration == currentGen else { return }
                 guard processToKill.isRunning else { return }
                 self.appendLogLine("[daemon] Force killing process: sending SIGKILL to PID \(pid)...", isError: true)
                 Darwin.kill(pid, SIGKILL)

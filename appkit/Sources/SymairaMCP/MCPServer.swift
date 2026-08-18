@@ -80,15 +80,19 @@ public final class MCPServer: @unchecked Sendable {
         self.protocolVersion = protocolVersion
         self.capabilities = capabilities
 
-        // Built-in methods.
+        // Built-in methods — capture values as locals to avoid retaining self.
+        let serverName = name
+        let serverVersion = version
+        let serverProtocolVersion = protocolVersion
         withMethodHandler("ping") { (_: MCPNoParams) async throws -> MCPJSONValue in
             .object([:])
         }
-        withMethodHandler("initialize") { (_: MCPInitializeParams) async throws -> MCPInitializeResult in
-            MCPInitializeResult(
-                protocolVersion: self.protocolVersion,
-                capabilities: self.effectiveCapabilities,
-                serverInfo: MCPServerInfo(name: self.name, version: self.version)
+        withMethodHandler("initialize") { [weak self] (_: MCPInitializeParams) async throws -> MCPInitializeResult in
+            let caps = self?.effectiveCapabilities ?? [:]
+            return MCPInitializeResult(
+                protocolVersion: serverProtocolVersion,
+                capabilities: caps,
+                serverInfo: MCPServerInfo(name: serverName, version: serverVersion)
             )
         }
     }
@@ -288,8 +292,15 @@ public final class MCPServer: @unchecked Sendable {
         await write(data)
     }
 
+    /// Reads `transport` under the lock (synchronous safe).
+    private func lockedTransport() -> (any MCPTransport)? {
+        lock.lock()
+        defer { lock.unlock() }
+        return transport
+    }
+
     private func write(_ data: Data) async {
-        guard let transport = self.transport, let line = String(data: data, encoding: .utf8) else { return }
+        guard let transport = lockedTransport(), let line = String(data: data, encoding: .utf8) else { return }
         do {
             try await transport.send(line)
         } catch {

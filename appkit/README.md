@@ -25,8 +25,8 @@ Every Symaira app stays fully standalone: this package is consumed as a **pinned
 | `SymairaTheme` | Cross-platform design foundation: adaptive Symaira tokens, a Dynamic-Type-backed type scale (`SymairaTypography`, `.symairaText(_:)`), Apple materials and Liquid Glass, backgrounds, surfaces, controls, form scaffolding (`SymairaFormSection`, `SymairaFormRow`, `.symaira` text fields), feedback and status states, and accessibility-aware fallbacks. Includes legacy `Color.symaira*` aliases. |
 | `SymairaCLIRunner` | Subprocess execution for Symaira CLIs: mandatory timeout, stderr capture, snake_case JSON decoding, unified `CLIRunnerError`. |
 | `SymairaToolKit` | `SymairaToolRegistry` (single source of truth for all tools), `BinaryLocator` (bundle → exe dir → PATH → Homebrew prefixes → user override), `ToolDetector` with the `version --json` schema handshake. |
-| `SymairaKeychain` | Keychain wrapper, service-namespaced `dev.symaira.<app>`. |
-| `SymairaUpdateCheck` | GitHub latest-release checker with disk cache and stable-semver comparison (port of `corekit/updatecheck`). |
+| `SymairaKeychain` | Keychain wrapper with data-protection storage (`kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly`), iCloud-sync disabled, service-namespaced `dev.symaira.<app>`, and automatic legacy-item migration. |
+| `SymairaUpdateCheck` | GitHub latest-release checker with disk cache, stable-semver comparison, cosign keyless signature verification, install-method detection (rejects Homebrew-managed binaries), and streaming asset downloads with progress callbacks. |
 | `SymairaDaemonKit` | `DaemonSupervisor` for launching and supervising long-running Symaira core daemon processes. |
 | `SymairaIngestContract` | JSON contract clients for `symingest` rules/mail config and ReOCR requests. |
 | `SymairaMCP` | Shared MCP server plumbing: `MCPServer`, stdio `MCPTransport` with message-size guard, and JSON-RPC `MCPTypes` with machine-readable `MCPError` payloads. |
@@ -52,6 +52,21 @@ if let seek = await detector.detect(SymairaToolRegistry.tool(id: "symseek")!) {
         arguments: ["search", "query", "--json"]
     )
 }
+```
+
+### Update flow
+
+```swift
+import SymairaUpdateCheck
+
+let applier = UpdateApplier(
+    checkInstallMethod: true,
+    cosignConfig: CosignConfig(
+        identityRegExp: "https://github.com/danieljustus/",
+        issuer: "https://token.actions.githubusercontent.com"
+    )
+)
+let result = try await applier.applyBundle(release: release, targetPath: installURL)
 ```
 
 ### Shared UI foundation
