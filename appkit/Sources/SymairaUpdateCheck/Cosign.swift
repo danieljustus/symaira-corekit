@@ -232,8 +232,10 @@ public struct CosignCLIVerifier: CosignVerifier, Sendable {
         try certificate.write(to: URL(fileURLWithPath: certPath))
 
         // Run cosign verify-blob (bounded — a hung network/GC stall cannot
-        // block the update flow indefinitely).
-        let processResult = try SubprocessRunner.runChecked(
+        // block the update flow indefinitely).  Use the async subprocess
+        // variant so the cooperative pool is not parked for the duration
+        // of the cosign process (#94).
+        let processResult = try await SubprocessRunner.runCheckedAsync(
             executable: cosignURL,
             arguments: [
                 "--certificate", certPath,

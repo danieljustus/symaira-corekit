@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- `SubprocessRunner` gained `runAsync`/`runCheckedAsync` variants that
+  hop onto a background `DispatchQueue` via `withCheckedThrowingContinuation`,
+  preventing async call sites (`CosignCLIVerifier.verifySignature`,
+  `AppInstaller`) from parking cooperative-pool threads for the subprocess
+  lifetime.  `AppInstaller.installDMG`/`installZip` and the corresponding
+  `UpdateApplier` public wrappers are now `async` (#94).
+
 ## [0.10.0] - 2026-08-13
 
 ### Added

@@ -25,16 +25,16 @@ enum AppInstaller {
 
     /// Mount a DMG, copy the .app bundle to /Applications, and unmount.
     /// Uses `hdiutil` for mount/unmount operations.
-    static func installDMG(at dmgURL: URL, assetName: String) throws -> URL {
+    static func installDMG(at dmgURL: URL, assetName: String) async throws -> URL {
         guard FileManager.default.isWritableFile(atPath: "/Applications") else {
             throw UpdateApplierError.applicationsNotWritable
         }
 
         // Mount the DMG.
-        let mountResult = try mountDMG(at: dmgURL)
+        let mountResult = try await mountDMG(at: dmgURL)
         defer {
             // Always try to unmount, even on error.
-            _ = try? unmountDMG(at: mountResult.mountPoint)
+            Task { try? await unmountDMG(at: mountResult.mountPoint) }
         }
 
         // Find the .app bundle on the mounted volume.
@@ -60,7 +60,7 @@ enum AppInstaller {
         }
 
         // Remove quarantine attribute if present.
-        _ = try? SubprocessRunner.runChecked(
+        _ = try? await SubprocessRunner.runCheckedAsync(
             executable: URL(fileURLWithPath: "/usr/bin/xattr"),
             arguments: ["-d", "com.apple.quarantine", destURL.path]
         )
@@ -71,7 +71,7 @@ enum AppInstaller {
     // MARK: - ZIP installation
 
     /// Extract a ZIP archive, find the .app bundle, and copy it to /Applications.
-    static func installZip(at zipURL: URL, assetName: String) throws -> URL {
+    static func installZip(at zipURL: URL, assetName: String) async throws -> URL {
         guard FileManager.default.isWritableFile(atPath: "/Applications") else {
             throw UpdateApplierError.applicationsNotWritable
         }
@@ -86,7 +86,7 @@ enum AppInstaller {
         try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
 
         // Use `ditto` for ZIP extraction (more reliable than unzip for .app bundles).
-        let dittoResult = try SubprocessRunner.runChecked(
+        let dittoResult = try await SubprocessRunner.runCheckedAsync(
             executable: URL(fileURLWithPath: "/usr/bin/ditto"),
             arguments: ["-xk", zipURL.path, tempDir.path]
         )
@@ -120,7 +120,7 @@ enum AppInstaller {
         }
 
         // Remove quarantine attribute.
-        _ = try? SubprocessRunner.runChecked(
+        _ = try? await SubprocessRunner.runCheckedAsync(
             executable: URL(fileURLWithPath: "/usr/bin/xattr"),
             arguments: ["-d", "com.apple.quarantine", destURL.path]
         )
@@ -131,11 +131,13 @@ enum AppInstaller {
     // MARK: - DMG helpers
 
     /// Mount a DMG using `hdiutil attach`.
-    private static func mountDMG(at dmgURL: URL) throws -> UpdateApplier.DMGMountResult {
+    private static func mountDMG(at dmgURL: URL) async throws -> UpdateApplier.DMGMountResult {
         // stdout is drained concurrently while the process runs, so the
         // plist output is complete even when it exceeds the 64 KiB pipe
         // buffer, and a hung attach cannot block the update indefinitely.
-        let result = try SubprocessRunner.runChecked(
+        // Use the async subprocess variant so the cooperative pool is not
+        // parked for the duration (#94).
+        let result = try await SubprocessRunner.runCheckedAsync(
             executable: URL(fileURLWithPath: "/usr/bin/hdiutil"),
             arguments: ["attach", "-nobrowse", "-readonly", "-plist", dmgURL.path]
         )
@@ -168,8 +170,8 @@ enum AppInstaller {
     }
 
     /// Unmount a DMG using `hdiutil detach`.
-    private static func unmountDMG(at mountPoint: URL) throws {
-        _ = try SubprocessRunner.runChecked(
+    private static func unmountDMG(at mountPoint: URL) async throws {
+        _ = try await SubprocessRunner.runCheckedAsync(
             executable: URL(fileURLWithPath: "/usr/bin/hdiutil"),
             arguments: ["detach", mountPoint.path]
         )

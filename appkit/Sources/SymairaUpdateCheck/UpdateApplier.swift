@@ -212,9 +212,9 @@ public struct UpdateApplier: Sendable {
         // 8. If it's a bundle, install it to /Applications.
         switch assetType {
         case .appBundleDMG:
-            return try AppInstaller.installDMG(at: tempURL, assetName: asset.name)
+            return try await AppInstaller.installDMG(at: tempURL, assetName: asset.name)
         case .appBundleZip:
-            return try AppInstaller.installZip(at: tempURL, assetName: asset.name)
+            return try await AppInstaller.installZip(at: tempURL, assetName: asset.name)
         case .binary, .unknown:
             return tempURL
         }
@@ -242,13 +242,13 @@ public struct UpdateApplier: Sendable {
 
     /// Mount a DMG, copy the .app bundle to /Applications, and unmount.
     /// Uses `hdiutil` for mount/unmount operations.
-    public func installDMG(at dmgURL: URL, assetName: String) throws -> URL {
-        try AppInstaller.installDMG(at: dmgURL, assetName: assetName)
+    public func installDMG(at dmgURL: URL, assetName: String) async throws -> URL {
+        try await AppInstaller.installDMG(at: dmgURL, assetName: assetName)
     }
 
     /// Extract a ZIP archive, find the .app bundle, and copy it to /Applications.
-    public func installZip(at zipURL: URL, assetName: String) throws -> URL {
-        try AppInstaller.installZip(at: zipURL, assetName: assetName)
+    public func installZip(at zipURL: URL, assetName: String) async throws -> URL {
+        try await AppInstaller.installZip(at: zipURL, assetName: assetName)
     }
 
     /// Recursively search for a .app bundle in a directory.

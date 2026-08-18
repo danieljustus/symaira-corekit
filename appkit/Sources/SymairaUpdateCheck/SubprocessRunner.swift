@@ -121,6 +121,68 @@ enum SubprocessRunner {
         return result
     }
 
+    // MARK: - Async variants
+    //
+    // The synchronous `run`/`runChecked` methods park the calling thread
+    // on a `DispatchSemaphore`.  When called from an `async` context
+    // (e.g. `CosignCLIVerifier.verifySignature`, `AppInstaller`) this
+    // blocks a cooperative-pool thread for the subprocess lifetime,
+    // starving unrelated async work in GUI client apps.
+    //
+    // The async variants hop onto a dedicated background queue via
+    // `withCheckedThrowingContinuation` so the cooperative pool stays
+    // available.  Timeout, SIGTERM→SIGKILL escalation, pipe draining
+    // and output caps are inherited from the synchronous path.
+
+    /// Async variant of `run` that does not block the cooperative pool.
+    static func runAsync(
+        executable: URL,
+        arguments: [String] = [],
+        timeout: TimeInterval = defaultTimeout,
+        maxOutputBytes: Int = defaultMaxOutputBytes
+    ) async throws -> SubprocessResult {
+        try await withCheckedThrowingContinuation { continuation in
+            DispatchQueue.global(qos: .userInitiated).async {
+                do {
+                    let result = try SubprocessRunner.run(
+                        executable: executable,
+                        arguments: arguments,
+                        timeout: timeout,
+                        maxOutputBytes: maxOutputBytes
+                    )
+                    continuation.resume(returning: result)
+                } catch {
+                    continuation.resume(throwing: error)
+                }
+            }
+        }
+    }
+
+    /// Async variant of `runChecked` that does not block the cooperative pool.
+    /// Throws `UpdateApplierError.subprocessTimeout` on timeout.
+    static func runCheckedAsync(
+        executable: URL,
+        arguments: [String] = [],
+        timeout: TimeInterval = defaultTimeout,
+        maxOutputBytes: Int = defaultMaxOutputBytes
+    ) async throws -> SubprocessResult {
+        try await withCheckedThrowingContinuation { continuation in
+            DispatchQueue.global(qos: .userInitiated).async {
+                do {
+                    let result = try SubprocessRunner.runChecked(
+                        executable: executable,
+                        arguments: arguments,
+                        timeout: timeout,
+                        maxOutputBytes: maxOutputBytes
+                    )
+                    continuation.resume(returning: result)
+                } catch {
+                    continuation.resume(throwing: error)
+                }
+            }
+        }
+    }
+
     // MARK: - Plumbing
 
     /// Block until the process exits, terminating it when `timeout`

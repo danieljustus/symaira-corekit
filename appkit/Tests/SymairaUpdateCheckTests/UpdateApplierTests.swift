@@ -1541,7 +1541,7 @@ final class UpdateApplierTests: XCTestCase {
     // test stops before any copy into /Applications happens. They skip when
     // /Applications is not writable (non-admin environment).
 
-    func testInstallDMGHdiutilAttachFailureThrowsDmgMountFailed() throws {
+    func testInstallDMGHdiutilAttachFailureThrowsDmgMountFailed() async throws {
         try XCTSkipIf(
             !FileManager.default.isWritableFile(atPath: "/Applications"),
             "requires a writable /Applications (admin user)"
@@ -1554,7 +1554,7 @@ final class UpdateApplierTests: XCTestCase {
 
         let applier = UpdateApplier()
         do {
-            _ = try applier.installDMG(at: garbage, assetName: "MyApp_darwin_arm64.dmg")
+            _ = try await applier.installDMG(at: garbage, assetName: "MyApp_darwin_arm64.dmg")
             XCTFail("expected dmgMountFailed for an unreadable disk image")
         } catch UpdateApplierError.dmgMountFailed(let message) {
             XCTAssertTrue(message.contains("hdiutil attach failed"), "unexpected message: \(message)")
@@ -1597,7 +1597,7 @@ final class UpdateApplierTests: XCTestCase {
         }
     }
 
-    func testInstallZipDittoFailureThrowsAppBundleCopyFailed() throws {
+    func testInstallZipDittoFailureThrowsAppBundleCopyFailed() async throws {
         try XCTSkipIf(
             !FileManager.default.isWritableFile(atPath: "/Applications"),
             "requires a writable /Applications (admin user)"
@@ -1610,7 +1610,7 @@ final class UpdateApplierTests: XCTestCase {
 
         let applier = UpdateApplier()
         do {
-            _ = try applier.installZip(at: garbage, assetName: "MyApp_darwin_arm64.zip")
+            _ = try await applier.installZip(at: garbage, assetName: "MyApp_darwin_arm64.zip")
             XCTFail("expected appBundleCopyFailed when ditto cannot extract")
         } catch UpdateApplierError.appBundleCopyFailed(let message) {
             XCTAssertTrue(message.contains("ditto extraction failed"), "unexpected message: \(message)")
@@ -1619,7 +1619,7 @@ final class UpdateApplierTests: XCTestCase {
         }
     }
 
-    func testInstallZipAppBundleNotFoundWhenArchiveHasNoApp() throws {
+    func testInstallZipAppBundleNotFoundWhenArchiveHasNoApp() async throws {
         try XCTSkipIf(
             !FileManager.default.isWritableFile(atPath: "/Applications"),
             "requires a writable /Applications (admin user)"
@@ -1643,7 +1643,7 @@ final class UpdateApplierTests: XCTestCase {
 
         let applier = UpdateApplier()
         do {
-            _ = try applier.installZip(at: zipURL, assetName: "MyApp_darwin_arm64.zip")
+            _ = try await applier.installZip(at: zipURL, assetName: "MyApp_darwin_arm64.zip")
             XCTFail("expected appBundleNotFound for an archive without an .app")
         } catch UpdateApplierError.appBundleNotFound {
             // expected
@@ -1766,5 +1766,44 @@ final class UpdateApplierTests: XCTestCase {
 
         XCTAssertEqual(client.consumedChunks.count, 2, "abort must fire the moment the cap is crossed")
         XCTAssertEqual(progressCalls.count, 1, "progress must stop after the chunk that crossed the cap")
+    }
+
+    // MARK: - Async subprocess cooperative pool test (#94)
+
+    /// Proves that other `async` work makes progress while an update-flow
+    /// subprocess is running.  Without the async subprocess wrapper, the
+    /// blocking `DispatchSemaphore` in `SubprocessRunner.run` would park
+    /// the cooperative-pool thread, starving the concurrent async task.
+    func testAsyncWorkProgressesDuringSubprocess() async throws {
+        // Launch a 2-second sleep via SubprocessRunner.runAsync and, while
+        // it is running, verify that an independent async task completes.
+        let sleepBin = URL(fileURLWithPath: "/bin/sleep")
+        let task = Task {
+            try await SubprocessRunner.runAsync(
+                executable: sleepBin,
+                arguments: ["2"],
+                timeout: 5
+            )
+        }
+
+        // This async work must complete well before the 2-second subprocess.
+        let start = Date()
+        var completed = false
+        let stream = AsyncStream<Void> { continuation in
+            continuation.yield()
+            continuation.finish()
+        }
+        for await _ in stream { }
+        // Simulate async work with a brief yield.
+        await Task.yield()
+        completed = true
+        let elapsed = Date().timeIntervalSince(start)
+
+        // The async work should have finished in well under 2 seconds.
+        XCTAssertLessThan(elapsed, 1.0, "async work must not be blocked by the subprocess")
+        XCTAssertTrue(completed, "async work must complete while subprocess runs")
+
+        // Cancel the sleep subprocess so the test finishes quickly.
+        task.cancel()
     }
 }

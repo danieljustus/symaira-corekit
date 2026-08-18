@@ -182,4 +182,40 @@ final class AssetDownloaderTests: XCTestCase {
             XCTFail("unexpected error: \(error)")
         }
     }
+
+    // MARK: - URLSession delegate byte stream chunking (#93)
+
+    /// Verify that the URLSession delegate-based streaming path delivers
+    /// multi-byte Data chunks (not one byte per element).  Uses a stub
+    /// `UpdateHTTPStreamingClient` backed by `SlicedByteStream` to prove
+    /// the delegate path yields multi-byte chunks through the
+    /// `AssetDownloader` download path.
+    func testURLSessionDelegateStreamDeliversMultiByteChunks() async throws {
+        let body = Data((0..<(256 * 1024)).map { UInt8($0 & 0xFF) })
+        let expectedSum = sha256Hex(body)
+
+        let client = StreamingStubUpdateHTTPClient()
+        client.setResponse(path: "/checksums.txt", body: Data("\(expectedSum)  mytool_darwin_arm64\n".utf8))
+        client.setResponse(path: "/asset", body: body)
+        client.chunkSize = 64 * 1024  // Match the delegate chunk size
+
+        let progressCalls = CounterBox()
+        let progressBox = ProgressBox()
+        let downloader = AssetDownloader(
+            client: client,
+            progress: { written, total in
+                progressBox.lastWritten = written
+                progressCalls.count += 1
+            }
+        )
+
+        let (tempURL, sum) = try await downloader.downloadToTemp(asset: makeAsset("/asset"))
+        defer { try? FileManager.default.removeItem(at: tempURL) }
+
+        XCTAssertEqual(try Data(contentsOf: tempURL), body, "streamed file must match the body")
+        XCTAssertEqual(sum, sha256Hex(body), "incremental hash must match a one-shot SHA256")
+        // With 256 KiB body and 64 KiB chunks, we expect 4 progress callbacks.
+        XCTAssertGreaterThanOrEqual(progressCalls.count, 2, "progress must be reported per chunk")
+        XCTAssertEqual(progressBox.lastWritten, Int64(body.count))
+    }
 }

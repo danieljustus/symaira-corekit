@@ -30,10 +30,11 @@ extension URLSession: UpdateHTTPStreamingClient {
     }
 }
 
-/// Wraps `URLSession.AsyncBytes` (a byte-wise async sequence) as an
-/// `UpdateByteStream`, batching bytes into 64 KiB `Data` chunks so the
-/// downloader writes, hashes, and reports progress per chunk instead of
-/// per byte.
+/// Wraps `URLSession.AsyncBytes` as an `UpdateByteStream`, batching
+/// individual byte reads into 64 KiB `Data` chunks.  Each `next()` call
+/// accumulates up to 65 536 bytes from `AsyncBytes.Iterator.next()` into
+/// a single `Data` value, so the downstream hash/progress/write path
+/// processes one chunk instead of one byte at a time.
 private struct URLSessionByteStream: UpdateByteStream {
     private let inner: URLSession.AsyncBytes
 
