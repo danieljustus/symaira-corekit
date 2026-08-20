@@ -60,6 +60,7 @@ jobs:
           swift test -v -j "$JOBS"
 
   swift-62-build:
+    if: github.event_name != 'pull_request'  # PR test already builds with the same Swift 6.2/Xcode 27 toolchain
     runs-on: [self-hosted, macOS, ARM64, macbook-appkit]  # Xcode 27 MacBook runner
     steps:
       - uses: actions/checkout@v7
@@ -88,6 +89,7 @@ jobs:
   # macOS. Builds the package against the iOS Simulator SDK in parallel with
   # the macOS jobs. Build-only: `swift build --sdk` needs no code signing.
   ios-build:
+    if: github.event_name != 'pull_request'  # full iOS compatibility build runs on main and the weekly safety net
     runs-on: [self-hosted, macOS, ARM64, macbook-appkit]  # Xcode 27 MacBook runner
     steps:
       - uses: actions/checkout@v7
