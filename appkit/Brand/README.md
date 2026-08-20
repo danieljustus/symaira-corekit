@@ -14,9 +14,6 @@ render time instead of baking a glass simulation into the artwork.
 Each standalone product repository vendors its matching export as
 `assets/branding/product-logo.png`. The vendored copy is the build and release
 input, so no product depends on a neighbouring `symaira-appkit` checkout.
-Symaira Pro editions reuse the corresponding public product logo; `Pro` is a
-wordmark or badge qualifier, not a second app-icon identity.
-
 Use the canonical files for large product identity surfaces, About screens,
 installer artwork, store artwork, and future app-icon catalogs. Do not shrink
 the complete lockup into small toolbar or status icons; those surfaces keep

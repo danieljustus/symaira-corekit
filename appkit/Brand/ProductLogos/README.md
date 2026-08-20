@@ -8,8 +8,6 @@ lockups for the Symaira design family.
 - Place the artwork over native platform material when a Liquid Glass app
   icon is required; do not rasterise the glass effect into this source.
 - Use Roboto Flex for any newly rendered product name.
-- Pro editions reuse the public core logo and add `Pro` outside the icon when
-  an edition label is needed.
 - `SymDesk` is the intentional naming exception; all other user-facing app
   names follow `Symaira <Product>`.
 
