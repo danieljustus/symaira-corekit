@@ -1,9 +1,11 @@
 # ADR 0001: authkit — geteilte Session-/Auth-Schicht & Biometrie-Broker
 
-> **Status**: Zurückgestellt — Design akzeptiert, Umsetzung gated auf einen echten Zweit-Consumer (siehe „Reality-Check"). Phase 2 zusätzlich an ADR-0002 *Unified Identity* (vault-pro) gekoppelt.
+> **Status**: Zurückgestellt — Design akzeptiert, Umsetzung gated auf einen echten Zweit-Consumer (siehe „Reality-Check").
+>
+> **Nachtrag 2026-08-20:** Die frühere Kopplung von Phase 2 an ADR-0002 *Unified Identity* (vault-pro) entfällt — es gibt keine Pro-Variante und kein `symaira-vault-pro` mehr. Phase 2 hängt allein am Zweit-Consumer-Kriterium.
 > **Date**: 2026-06-18
 > **Scope**: corekit (`authkit`), Erst-Consumer `symmemory`; optionaler Broker-Agent als Phase 2
-> **Verwandt**: vault-pro `docs/adr/unified-account.md` (Unified Billing & Identity), vault `internal/session`, `../ECOSYSTEM.md`
+> **Verwandt**: vault `internal/session`, `../ECOSYSTEM.md`
 
 ## Context
 
@@ -89,7 +91,7 @@ Single-Unlock-für-alles ist ein realer Downgrade (jeder lokale Prozess / jeder 
 
 - **Phase 0 (jetzt, ohne Code):** Nutzer-Use-Case über vault-Config lösen — `sessionTimeout: 8h` (gestuft: Dev-Vaults länger, Produktions-Vaults kürzer). Deckt „einmal entsperren → 8 h" für das einzige Tool mit Friktion ab.
 - **Phase 1 (zurückgestellt, *nicht* mehr „jetzt"):** `authkit` aus vault extrahieren → corekit — **erst wenn ein echter Zweit-Consumer existiert** (memory-pro E2E o. Ä.). Ohne zweiten Consumer ist es voreilige Infra. Memory ist entgegen der ursprünglichen Annahme **kein** sinnvoller Erst-Consumer (kein Decrypt-on-Read).
-- **Phase 2 (zurückgestellt):** Broker-Agent nur bauen, wenn Phase 1 ausgelöst hat **und** der Cross-Tool-Schmerz real ist, **oder** ADR-0002 (Unified Identity, vault-pro) grünes Licht gibt. Der Agent ist technisch fast deckungsgleich mit dem Kern dieser Entscheidung — dort verdient sich seine Angriffsfläche, nicht als isoliertes Dev-Komfort-Feature.
+- **Phase 2 (zurückgestellt):** Broker-Agent nur bauen, wenn Phase 1 ausgelöst hat **und** der Cross-Tool-Schmerz real ist, **oder** ~~ADR-0002 (Unified Identity, vault-pro) grünes Licht gibt~~ *(entfallen, s. Nachtrag oben)*. Der Agent ist technisch fast deckungsgleich mit dem Kern dieser Entscheidung — dort verdient sich seine Angriffsfläche, nicht als isoliertes Dev-Komfort-Feature.
 
 ## Extraction Notes (die eigentliche Phase-1-Arbeit)
 
