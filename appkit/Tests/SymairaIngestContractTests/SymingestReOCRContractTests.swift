@@ -98,7 +98,12 @@ final class SymingestReOCRContractTests: XCTestCase {
         try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: binary.path)
 
         let locator = BinaryLocator(searchPATH: "", extraDirectories: [dir.path])
-        let client = SymingestReOCRClient(vaultPath: vaultPath, configPath: configPath, locator: locator)
+        let client = SymingestReOCRClient(
+            vaultPath: vaultPath,
+            configPath: configPath,
+            locator: locator,
+            allowUnverifiedBinary: true
+        )
         return (client, dir)
     }
 

@@ -347,22 +347,25 @@ public struct SymingestRulesClient: ClassificationRulesClient, Sendable {
     private let runner: CLIRunner
     private let vaultPath: String?
     private let configPath: String?
+    private let allowUnverifiedBinary: Bool
 
     public init(
         vaultPath: String? = nil,
         configPath: String? = nil,
         locator: BinaryLocator = BinaryLocator(),
-        runner: CLIRunner = CLIRunner()
+        runner: CLIRunner = CLIRunner(),
+        allowUnverifiedBinary: Bool = false
     ) {
         self.vaultPath = vaultPath
         self.configPath = configPath
         self.locator = locator
         self.runner = runner
+        self.allowUnverifiedBinary = allowUnverifiedBinary
     }
 
     private func locate() throws -> URL {
         let tool = try SymairaToolRegistry.ingestTool
-        guard let located = locator.locate(tool.binaryName) else {
+        guard let located = locator.locate(tool.binaryName, allowUnverified: allowUnverifiedBinary) else {
             throw SymingestRulesError.missingBinary
         }
         return located.url

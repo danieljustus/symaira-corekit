@@ -336,7 +336,12 @@ final class SymingestRulesContractTests: XCTestCase {
         try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: binary.path)
 
         let locator = BinaryLocator(searchPATH: "", extraDirectories: [dir.path])
-        let client = SymingestRulesClient(vaultPath: vaultPath, configPath: configPath, locator: locator)
+        let client = SymingestRulesClient(
+            vaultPath: vaultPath,
+            configPath: configPath,
+            locator: locator,
+            allowUnverifiedBinary: true
+        )
         return (client, dir)
     }
 
