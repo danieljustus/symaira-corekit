@@ -46,8 +46,8 @@ cross-tool behavior belongs behind runtime detection and fallback in the
 consumer, not as imports from sibling tool repositories.
 
 Corekit must stay free of Vault crypto, Memory PII policy, Seek ranking, Fetch
-fingerprinting, Scope port scanning, Pro billing, Firebase, Stripe, GCP SDKs,
-and other product- or cloud-specific behavior.
+fingerprinting, Scope port scanning, billing, and other product- or
+cloud-specific behavior.
 
 ## Packages
 
