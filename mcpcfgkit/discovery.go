@@ -8,13 +8,6 @@ import (
 	"strings"
 )
 
-// Source is one AI-client config location to probe.
-type Source struct {
-	Client string // claude-desktop, cursor, windsurf, ...
-	Path   string // absolute path to the config file
-	Key    string // top-level key holding the servers map (default "mcpServers")
-}
-
 // Server is one configured MCP server entry. Consumers enrich this with
 // tool-specific fields (credential warnings, secret-backed flags, …).
 type Server struct {
@@ -26,6 +19,11 @@ type Server struct {
 	URL        string            `json:"url,omitempty"`
 	ConfigPath string            `json:"config_path,omitempty"`
 	Env        map[string]string `json:"env,omitempty"`
+
+	// EnvKeys/EnvValues hold the environment variables split into keys and
+	// values so callers can redact values while keeping key visibility.
+	EnvKeys   []string `json:"-"`
+	EnvValues []string `json:"-"`
 }
 
 // FS abstracts filesystem access so tests can inject fixtures without
@@ -40,21 +38,6 @@ type OSFS struct{}
 
 func (OSFS) ReadFile(path string) ([]byte, error)  { return os.ReadFile(path) }
 func (OSFS) Glob(pattern string) ([]string, error) { return filepath.Glob(pattern) }
-
-// DefaultSources returns the well-known client config locations for the
-// current user. Missing files are tolerated by Discover (skipped silently).
-func DefaultSources() []Source {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		home = "~"
-	}
-	return []Source{
-		{Client: "claude-desktop", Path: filepath.Join(home, "Library", "Application Support", "Claude", "claude_desktop_config.json")},
-		{Client: "cursor", Path: filepath.Join(home, ".cursor", "mcp.json")},
-		{Client: "windsurf", Path: filepath.Join(home, ".codeium", "windsurf", "mcp_config.json")},
-		{Client: "vscode", Path: filepath.Join(home, ".vscode", "mcp.json")},
-	}
-}
 
 // Discover scans the given sources and returns the configured servers plus
 // non-fatal notes (unreadable files, missing keys, parse errors).
@@ -72,29 +55,31 @@ func discoverWith(fsys FS, sources []Source) ([]Server, []string) {
 			if err != nil {
 				continue // missing file — tolerated
 			}
-			entries, key, err := parseConfigAutoDetect(data, s.Key)
+			entries, err := parseConfigFile(data, normalizeKey(s.Key))
 			if err != nil {
 				notes = append(notes, fmt.Sprintf("%s: %s: %v", s.Client, s.Path, err))
 				continue
 			}
 			for name, entry := range entries {
-				servers = append(servers, Server{
-					Name:       name,
-					Client:     s.Client,
-					Transport:  entry.TransportValue(),
-					Command:    entry.Command,
-					Args:       entry.Args,
-					URL:        entry.URL,
-					ConfigPath: s.Path,
-					Env:        entry.Env,
-				})
-			}
-			if key != s.Key {
-				notes = append(notes, fmt.Sprintf("%s: %s uses key %q (expected %q)", s.Client, s.Path, key, s.Key))
+				servers = append(servers, serverFromEntry(name, string(s.Client), s.Path, entry))
 			}
 		}
 	}
 	return servers, notes
+}
+
+// serverFromEntry builds the public Server from a parsed Entry.
+func serverFromEntry(name, client, configPath string, e Entry) Server {
+	return Server{
+		Name:       name,
+		Client:     client,
+		Transport:  e.TransportValue(),
+		Command:    e.Command,
+		Args:       e.Args,
+		URL:        e.URL,
+		ConfigPath: configPath,
+		Env:        e.Env,
+	}
 }
 
 // Entry is one raw server entry inside the config map.
@@ -105,20 +90,56 @@ type Entry struct {
 	Type      string            `json:"type,omitempty"`
 	Transport string            `json:"transport,omitempty"`
 	Env       map[string]string `json:"env,omitempty"`
+
+	// Environment is OpenCode's alternative env key ("environment").
+	Environment map[string]string `json:"environment,omitempty"`
 }
 
-// Transport resolves the effective transport from URL/type/transport fields.
+// TransportValue resolves the effective transport from URL/type/transport
+// fields. OpenCode's "local"/"remote" types map to stdio/http.
 func (e Entry) TransportValue() string {
+	t := strings.ToLower(e.Type)
+	switch t {
+	case "local":
+		return string(TransportStdio)
+	case "remote":
+		return string(TransportHTTP)
+	}
 	if e.URL != "" {
 		if e.Type != "" {
 			return e.Type
 		}
-		return "http"
+		return string(TransportHTTP)
 	}
 	if e.Transport != "" {
 		return e.Transport
 	}
-	return "stdio"
+	return string(TransportStdio)
+}
+
+// CommandOrURL returns the launch command for stdio servers or the URL for
+// remote ones — the single field guard's Server collapses both into Command.
+func (e Entry) CommandOrURL() string {
+	if e.Command != "" {
+		return e.Command
+	}
+	return e.URL
+}
+
+// MergedEnv returns env merged with environment ("environment" wins on
+// conflicts), mirroring OpenCode's dual-key layout.
+func (e Entry) MergedEnv() map[string]string {
+	if len(e.Env) == 0 && len(e.Environment) == 0 {
+		return nil
+	}
+	out := make(map[string]string, len(e.Env)+len(e.Environment))
+	for k, v := range e.Environment {
+		out[k] = v
+	}
+	for k, v := range e.Env {
+		out[k] = v
+	}
+	return out
 }
 
 func expandGlob(fsys FS, src Source) []Source {
@@ -138,40 +159,45 @@ func expandGlob(fsys FS, src Source) []Source {
 	return out
 }
 
-// parseConfigAutoDetect parses JSONC/JSON/YAML, returning the server map and
-// the key that was actually found.
-func parseConfigAutoDetect(data []byte, preferredKey string) (map[string]Entry, string, error) {
-	// Try JSONC/JSON first (most client configs are JSON with comments).
+// parseConfigFile parses JSONC/JSON/YAML data into entries using the first
+// matching key candidate.
+func parseConfigFile(data []byte, candidates []string) (map[string]Entry, error) {
 	trimmed := strings.TrimSpace(string(data))
 	if strings.HasPrefix(trimmed, "{") {
-		entries, key, err := parseJSONConfig(data, preferredKey)
+		entries, _, err := parseJSONConfig(data, candidates)
 		if err == nil {
-			return entries, key, nil
+			return entries, nil
 		}
-		// Fall through to YAML only if the JSON parse clearly failed on syntax,
-		// not because the key is missing.
-		if !strings.Contains(err.Error(), "key not found") {
-			return nil, "", err
+		if !isKeyNotFound(err) {
+			return nil, err
 		}
 	}
-	return parseYAMLConfig(data, preferredKey)
+	entries, _, err := parseYAMLConfig(data, candidates)
+	return entries, err
 }
 
-func parseJSONConfig(data []byte, preferredKey string) (map[string]Entry, string, error) {
+func parseJSONConfig(data []byte, candidates []string) (map[string]Entry, string, error) {
 	stripped := JSONCStrip(string(data))
 	var doc map[string]json.RawMessage
 	if err := json.Unmarshal([]byte(stripped), &doc); err != nil {
 		return nil, "", fmt.Errorf("parse JSON: %w", err)
 	}
-	key, found := lookupJSONKey(doc, []string{preferredKey, "mcpServers", "mcp_servers"})
+	key, found := lookupJSONKey(doc, candidates)
 	if !found {
-		return nil, "", fmt.Errorf("key not found: %q", preferredKey)
+		return nil, "", fmt.Errorf("key not found: %q", candidates[0])
 	}
+	// The mcp key (OpenCode) uses type-based entries; both shapes unmarshal
+	// into Entry since the field names overlap.
 	var entries map[string]Entry
 	if err := json.Unmarshal(doc[key], &entries); err != nil {
 		return nil, "", fmt.Errorf("parse %q: %w", key, err)
 	}
 	return entries, key, nil
+}
+
+// isKeyNotFound reports whether err is a "key not found" parse failure.
+func isKeyNotFound(err error) bool {
+	return err != nil && strings.Contains(err.Error(), "key not found")
 }
 
 func lookupJSONKey(doc map[string]json.RawMessage, candidates []string) (string, bool) {
@@ -183,14 +209,14 @@ func lookupJSONKey(doc map[string]json.RawMessage, candidates []string) (string,
 	return "", false
 }
 
-func parseYAMLConfig(data []byte, preferredKey string) (map[string]Entry, string, error) {
+func parseYAMLConfig(data []byte, candidates []string) (map[string]Entry, string, error) {
 	var doc map[string]any
 	if err := yamlUnmarshal(data, &doc); err != nil {
 		return nil, "", fmt.Errorf("parse YAML: %w", err)
 	}
-	key, found := lookupYAMLKey(doc, []string{preferredKey, "mcpServers", "mcp_servers"})
+	key, found := lookupYAMLKey(doc, candidates)
 	if !found {
-		return nil, "", fmt.Errorf("key not found: %q", preferredKey)
+		return nil, "", fmt.Errorf("key not found: %q", candidates[0])
 	}
 	raw, ok := doc[key].(map[string]any)
 	if !ok {
