@@ -74,6 +74,13 @@ func DefaultSources() []ScanSource {
 	return defaultSourcesFor(runtime.GOOS, homeDir())
 }
 
+// DefaultSourcesForPlatform is the injectable variant of [DefaultSources] so
+// consumers can test platform-specific path resolution (darwin vs linux XDG)
+// deterministically on any host.
+func DefaultSourcesForPlatform(goos, home string) []ScanSource {
+	return defaultSourcesFor(goos, home)
+}
+
 func defaultSourcesFor(goos, home string) []ScanSource {
 	sources := []ScanSource{
 		{Client: ClientHermes, Path: filepath.Join(home, ".config", "hermes", "config.json"), Key: "mcpServers"},
