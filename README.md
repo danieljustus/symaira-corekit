@@ -6,7 +6,7 @@
 
 ![Symaira CoreKit social preview](docs/assets/social-preview.png)
 
-Shared Go library for the Symaira public-core tools (`symvault`, `symmemory`, `symseek`, `symfetch`, `symscope`).
+Shared Go library for the Symaira Go tools (`symbrain`, `symdesk`, `symbrowse`, `symvault`, `symfritz`, `symvibe`).
 
 Bundles domain-free infrastructure that is otherwise duplicated across tools: MCP server scaffold, TOML config loading, exit codes, logging, path safety, SQLite setup, and update checking.
 
@@ -14,7 +14,7 @@ Bundles domain-free infrastructure that is otherwise duplicated across tools: MC
 go get github.com/danieljustus/symaira-corekit@latest
 ```
 
-Although `corekit` is a Go library, its conventions also guide the non-Go free tools (`symoperate`, `symtune`, `symterminal`, `symeraseme`). See [`docs/cross-language-conventions.md`](docs/cross-language-conventions.md) for the shared contracts that apply across languages.
+Although `corekit` is a Go library, its conventions also guide the non-Go tools (`symcockpit`, `symterminal`, `symeraseme`). See [`docs/cross-language-conventions.md`](docs/cross-language-conventions.md) for the shared contracts that apply across languages.
 
 ## Why CoreKit?
 
