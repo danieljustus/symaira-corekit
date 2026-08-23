@@ -1,5 +1,11 @@
 # Module boundary decisions
 
+> **Status 2026-08-23:** Die hier genannten Consumer-Repos `symaira-operate`,
+> `symaira-tune` und `symaira-meet` existieren nicht mehr eigenständig — sie
+> sind in `symaira-cockpit` bzw. `symaira-desktop` aufgegangen. Die
+> Modulgrenzen-Entscheidungen selbst gelten unverändert; das Dokument bleibt
+> als datierter Entscheidungsstand stehen.
+
 `AGENTS.md` states the rule: *a module belongs here only if ≥2 apps need it.* Applying
 that rule takes an assessment, and an assessment that is not written down gets
 repeated. This file records each one — including the ones that ended in "no".

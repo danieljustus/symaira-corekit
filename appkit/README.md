@@ -28,7 +28,7 @@ Every Symaira app stays fully standalone: this package is consumed as a **pinned
 | `SymairaKeychain` | Keychain wrapper with data-protection storage (`kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly`), iCloud-sync disabled, service-namespaced `dev.symaira.<app>`, and automatic legacy-item migration. |
 | `SymairaUpdateCheck` | GitHub latest-release checker with disk cache, stable-semver comparison, cosign keyless signature verification, install-method detection (rejects Homebrew-managed binaries), and streaming asset downloads with progress callbacks. |
 | `SymairaDaemonKit` | `DaemonSupervisor` for launching and supervising long-running Symaira core daemon processes. |
-| `SymairaIngestContract` | JSON contract clients for `symingest` rules/mail config and ReOCR requests. |
+| `SymairaIngestContract` | JSON contract clients for the ingest rules/mail config and ReOCR requests (the engine ships inside `symdesk`). |
 | `SymairaMCP` | Shared MCP server plumbing: `MCPServer`, stdio `MCPTransport` with message-size guard, and JSON-RPC `MCPTypes` with machine-readable `MCPError` payloads. |
 
 ## Usage
@@ -44,11 +44,11 @@ Review the [CHANGELOG](CHANGELOG.md) before bumping your pin — every release d
 import SymairaToolKit
 
 let detector = ToolDetector()
-if let seek = await detector.detect(SymairaToolRegistry.tool(id: "symseek")!) {
-    try detector.requireSchemaVersion(1, of: seek)
+if let desk = await detector.detect(SymairaToolRegistry.tool(id: "symdesk")!) {
+    try detector.requireSchemaVersion(1, of: desk)
     let results = try await CLIRunner().runDecoding(
         SearchResults.self,
-        executable: seek.location.url,
+        executable: desk.location.url,
         arguments: ["search", "query", "--json"]
     )
 }

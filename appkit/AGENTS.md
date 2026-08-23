@@ -10,7 +10,7 @@ swift test
 ```
 
 - macOS 14+, Swift 6 (strict concurrency). No Xcode project — pure SPM.
-- Local toolchain note: Command Line Tools lack XCTest. Run tests with the Xcode toolchain (same workaround as symaira-operate/tune):
+- Local toolchain note: Command Line Tools lack XCTest. Run tests with the Xcode toolchain (same workaround as symaira-cockpit):
   ```bash
   DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer swift test
   ```
