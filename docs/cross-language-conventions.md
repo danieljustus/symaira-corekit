@@ -9,14 +9,18 @@ captures the shared contracts that keep the ecosystem consistent.
 | Tool | Language | Imports corekit | Notes |
 |------|----------|-----------------|-------|
 | `symvault` | Go | yes | Wraps some corekit packages in `internal/` adapters |
-| `symmemory` | Go | yes | Direct consumer |
-| `symseek` | Go | yes | Direct consumer |
-| `symfetch` | Go | yes | Direct consumer |
-| `symscope` | Go | yes | Direct consumer |
-| `symoperate` | Swift | no | macOS GUI automation |
-| `symtune` | Swift | no | macOS hardware tuning |
+| `symbrain` | Go | yes | Direct consumer (also carries the absorbed memory, skills and guard packages) |
+| `symdesk` | Go | yes | Direct consumer (also carries the absorbed ingest, print, relate, room and seek modules) |
+| `symbrowse` | Go | yes | Direct consumer (also carries the absorbed static fetch engine) |
+| `symfritz` | Go | yes | Direct consumer |
+| `symvibe` | Go | yes | Direct consumer |
+| `symcockpit` | Swift | no | macOS: thermals/power, GUI automation, port and MCP inventory |
 | `symterminal` | Swift | no | macOS terminal emulator |
 | `symeraseme` | Python | no | Data-broker removal |
+
+The row per tool is one **repository**, not one binary: the 2026-08 repo
+consolidation folded fourteen tools into four products, so a single consumer
+here now covers what used to be several rows.
 
 The Swift and Python tools cannot import the Go library directly. They follow
 the conventions documented here so that behavior, diagnostics, and integrations
@@ -72,7 +76,9 @@ Cross-platform tools should prefer XDG-style directories:
 
 Honor `XDG_CONFIG_HOME`, `XDG_CACHE_HOME`, and `XDG_DATA_HOME` when set.
 
-- `symtune` follows this pattern with `~/.config/symtune/config.toml`.
+- The `tune` family follows this pattern with `~/.config/symtune/config.toml`
+  (the per-family config paths and `SYMTUNE_*`/`SYMOPERATE_*`/`SYMSCOPE_*`
+  env prefixes survived the merge into `symcockpit`).
 - `symeraseme` follows it for config and data directories.
 - `symterminal` uses `~/Library/Application Support/Symaira Terminal/` on macOS,
   which is acceptable for a macOS-native app, plus per-workspace
@@ -106,7 +112,7 @@ The canonical MCP server transport for Symaira tools is **stdio with
 Content-Length: <n>\r\n\r\n<json-rpc-body>
 ```
 
-- `symoperate` and `symtune` use this framing.
+- The `operate` and `tune` families of `symcockpit` use this framing.
 - `symterminal` additionally supports a Unix-domain-socket transport and a
   newline-delimited stdio transport for specific integration surfaces.
 - `symeraseme` uses HTTP (`127.0.0.1:8000`) for its MCP server, which is a
@@ -184,7 +190,8 @@ least these fields:
 }
 ```
 
-`symoperate` and `symtune` both implement a `doctor` subcommand.
+Both implement a `doctor` subcommand, reachable as `symcockpit operate doctor`
+and `symcockpit tune doctor`.
 
 ## Candidates for Future Corekit Extraction
 
