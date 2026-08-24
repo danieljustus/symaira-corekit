@@ -47,9 +47,9 @@ jobs:
         with:
           go-version: "1.26.6"
       - name: Install golangci-lint
-        uses: golangci/golangci-lint-action@7119f3d5ddced62a10a044847a6c6bb0f7a5e76a # v7.0.0
+        uses: golangci/golangci-lint-action@1481404843c368bc19ca9406f87d6e0fc97bdcfd # v7.0.0
       - name: Run golangci-lint
-        uses: golangci/golangci-lint-action@7119f3d5ddced62a10a044847a6c6bb0f7a5e76a # v7.0.0
+        uses: golangci/golangci-lint-action@1481404843c368bc19ca9406f87d6e0fc97bdcfd # v7.0.0
   #
   #  --- DEPRECATED (replaced by golangci-lint above) ---
   #  go vet / gofmt
