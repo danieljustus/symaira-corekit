@@ -15,6 +15,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 )
 
 const ProtocolVersion = "2024-11-05"
@@ -48,9 +49,20 @@ const (
 	responseModeLine
 )
 
+// responseWriter wraps an io.Writer with a mutex so concurrent tool handlers
+// can write responses without interleaving bytes on the wire.
 type responseWriter struct {
 	w    io.Writer
 	mode responseMode
+	mu   *sync.Mutex
+}
+
+// newResponseWriter creates a responseWriter wrapping w in the given mode.
+// The mutex is shared across all responseWriters created from the same
+// ServeIO call so that concurrent tool dispatch cannot interleave response
+// bytes on the underlying writer.
+func newResponseWriter(w io.Writer, mode responseMode, mu *sync.Mutex) *responseWriter {
+	return &responseWriter{w: w, mode: mode, mu: mu}
 }
 
 // ToolAnnotations carries optional MCP tool-behaviour hints that are
@@ -204,28 +216,55 @@ func (s *Server) ServeStdio(ctx context.Context) error {
 
 // ServeIO runs the server on the given reader and writer. This method is the
 // primary entry point for testing.
+//
+// Tool-call requests (tools/call) are dispatched concurrently so that a slow
+// handler cannot block the read loop or delay responses to subsequent requests.
+// Non-tool requests (initialize, ping, tools/list) are processed synchronously
+// because they are fast and their order relative to tool calls is significant.
+// The method waits for all in-flight tool handlers to complete before
+// returning, so callers can safely close the writer after ServeIO returns.
 func (s *Server) ServeIO(ctx context.Context, r io.Reader, w io.Writer) error {
 	br := bufio.NewReader(r)
+	var wg sync.WaitGroup
+	var readErr error
+	var wmu sync.Mutex // shared across all responseWriters for this ServeIO call
 	for {
 		if err := ctx.Err(); err != nil {
-			return err
+			break
 		}
 
 		req, mode, err := readRequest(br)
 		if err != nil {
 			if err == io.EOF {
-				return nil
+				break
 			}
 			var pe *jsonParseError
 			if errors.As(err, &pe) {
-				sendError(responseWriter{w: w, mode: pe.mode}, nil, CodeParseError, "Parse error: "+pe.msg)
+				wg.Wait()
+				rww := newResponseWriter(w, pe.mode, &wmu)
+				sendError(rww, nil, CodeParseError, "Parse error: "+pe.msg)
 				continue
 			}
-			return fmt.Errorf("mcpserver: read error: %w", err)
+			readErr = fmt.Errorf("mcpserver: read error: %w", err)
+			break
 		}
 
-		s.handleRequest(ctx, responseWriter{w: w, mode: mode}, req)
+		rw := newResponseWriter(w, mode, &wmu)
+		if req.Method == "tools/call" {
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				s.handleRequest(ctx, rw, req)
+			}()
+		} else {
+			s.handleRequest(ctx, rw, req)
+		}
 	}
+	wg.Wait()
+	if readErr != nil {
+		return readErr
+	}
+	return ctx.Err()
 }
 
 // readRequest reads a single JSON-RPC request from either a Content-Length
@@ -342,7 +381,7 @@ func parseLineRequest(line string) (*jsonRPCRequest, responseMode, error) {
 	return &req, responseModeLine, nil
 }
 
-func writeResponse(rw responseWriter, resp jsonRPCResponse) {
+func writeResponse(rw *responseWriter, resp jsonRPCResponse) {
 	data, err := json.Marshal(resp)
 	if err != nil {
 		slog.Error("mcpserver: failed to marshal JSON-RPC response", "err", err)
@@ -352,7 +391,9 @@ func writeResponse(rw responseWriter, resp jsonRPCResponse) {
 	writeBytes(rw, data)
 }
 
-func writeBytes(rw responseWriter, data []byte) {
+func writeBytes(rw *responseWriter, data []byte) {
+	rw.mu.Lock()
+	defer rw.mu.Unlock()
 	if rw.mode == responseModeLine {
 		fmt.Fprintf(rw.w, "%s\n", data)
 		return
@@ -360,7 +401,7 @@ func writeBytes(rw responseWriter, data []byte) {
 	fmt.Fprintf(rw.w, "Content-Length: %d\r\n\r\n%s", len(data), data)
 }
 
-func (s *Server) handleRequest(ctx context.Context, w responseWriter, req *jsonRPCRequest) {
+func (s *Server) handleRequest(ctx context.Context, w *responseWriter, req *jsonRPCRequest) {
 	defer func() {
 		if r := recover(); r != nil {
 			slog.Error("mcpserver: handler panicked", "method", req.Method, "panic", r)
@@ -389,7 +430,7 @@ func (s *Server) handleRequest(ctx context.Context, w responseWriter, req *jsonR
 	}
 }
 
-func (s *Server) handleInitialize(w responseWriter, req *jsonRPCRequest) {
+func (s *Server) handleInitialize(w *responseWriter, req *jsonRPCRequest) {
 	result := map[string]any{
 		"protocolVersion": ProtocolVersion,
 		"capabilities": map[string]any{
@@ -406,7 +447,7 @@ func (s *Server) handleInitialize(w responseWriter, req *jsonRPCRequest) {
 	sendResponse(w, req.ID, result)
 }
 
-func (s *Server) handleToolsList(w responseWriter, req *jsonRPCRequest) {
+func (s *Server) handleToolsList(w *responseWriter, req *jsonRPCRequest) {
 	tools := make([]map[string]any, 0, len(s.order))
 	for _, name := range s.order {
 		t := s.tools[name]
@@ -432,7 +473,7 @@ func (s *Server) handleToolsList(w responseWriter, req *jsonRPCRequest) {
 	})
 }
 
-func (s *Server) handleToolsCall(ctx context.Context, w responseWriter, req *jsonRPCRequest) {
+func (s *Server) handleToolsCall(ctx context.Context, w *responseWriter, req *jsonRPCRequest) {
 	var params struct {
 		Name      string          `json:"name"`
 		Arguments json.RawMessage `json:"arguments"`
@@ -480,11 +521,11 @@ func (s *Server) handleToolsCall(ctx context.Context, w responseWriter, req *jso
 	sendToolResponseRaw(w, req.ID, data)
 }
 
-func sendResponse(w responseWriter, id any, result any) {
+func sendResponse(w *responseWriter, id any, result any) {
 	writeResponse(w, jsonRPCResponse{JSONRPC: "2.0", ID: id, Result: result})
 }
 
-func sendToolResponse(w responseWriter, id any, result ToolResult) {
+func sendToolResponse(w *responseWriter, id any, result ToolResult) {
 	content := result.Content
 	if content == nil {
 		content = []ContentBlock{}
@@ -506,7 +547,7 @@ func sendToolResponse(w responseWriter, id any, result ToolResult) {
 	})
 }
 
-func sendToolResponseRaw(w responseWriter, id any, raw json.RawMessage) {
+func sendToolResponseRaw(w *responseWriter, id any, raw json.RawMessage) {
 	// raw is the JSON-marshalled handler return value. MCP TextContent.text
 	// must be a JSON string, so we convert any non-string JSON (maps,
 	// slices, scalars) to its string representation. This keeps the
@@ -533,7 +574,7 @@ func sendToolResponseRaw(w responseWriter, id any, raw json.RawMessage) {
 	})
 }
 
-func sendToolError(w responseWriter, id any, text string) {
+func sendToolError(w *responseWriter, id any, text string) {
 	sendResponse(w, id, map[string]any{
 		"content": []map[string]any{
 			{"type": "text", "text": text},
@@ -542,7 +583,7 @@ func sendToolError(w responseWriter, id any, text string) {
 	})
 }
 
-func sendError(w responseWriter, id any, code int, message string) {
+func sendError(w *responseWriter, id any, code int, message string) {
 	writeResponse(w, jsonRPCResponse{
 		JSONRPC: "2.0",
 		ID:      id,

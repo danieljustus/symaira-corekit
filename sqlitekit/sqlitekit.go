@@ -37,7 +37,7 @@ func Open(path string) (*sql.DB, error) {
 	// Establish a connection eagerly so DSN/pragma errors surface here rather
 	// than on the first query.
 	if err := db.Ping(); err != nil {
-		db.Close()
+		db.Close() //nolint:gosec // error intentionally ignored on Ping failure path
 		return nil, fmt.Errorf("failed to open sqlite database: %w", err)
 	}
 
@@ -104,12 +104,12 @@ func Migrate(db *sql.DB, migrationsFS fs.FS) error {
 		}
 
 		if _, err := tx.Exec(string(content)); err != nil {
-			tx.Rollback()
+			tx.Rollback() //nolint:errcheck,gosec // best-effort rollback on migration error
 			return fmt.Errorf("failed to execute migration %s: %w", version, err)
 		}
 
 		if _, err := tx.Exec("INSERT INTO schema_migrations (version) VALUES (?)", version); err != nil {
-			tx.Rollback()
+			tx.Rollback() //nolint:gosec
 			return fmt.Errorf("failed to record migration %s: %w", version, err)
 		}
 

@@ -1,8 +1,14 @@
-// Package render implements symbrowse's own minimal HTML→Markdown path and
-// the fetch-compatible output schema (ARCHITEKTUR.md §6.1). Until the
-// semantic DOM pipeline moves to corekit (B-61) this package is the standalone
-// implementation; field names and frontmatter keys match symfetch exactly
-// (see testdata/fetch-schema.json for the documented source).
+// Package domkit provides HTML parsing, Markdown rendering, and document
+// metadata extraction utilities for Symaira core tools.
+//
+// The Markdown function converts HTML to LLM-optimized Markdown. The Render
+// function builds a full Document with URL, title, language, token-count
+// estimate, schema type, and optional content boundaries. The Outline
+// function extracts the heading structure (h1–h6) from a document.
+//
+// Field names and frontmatter keys match the fetch-compatible output schema
+// used across the Symaira ecosystem (see testdata/fetch-schema.json for the
+// documented source of truth).
 package domkit
 
 import (

@@ -46,14 +46,14 @@ func OpenSink(path string, opts ...SinkOption) (*Sink, error) {
 	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
 		return nil, fmt.Errorf("auditkit: mkdir: %w", err)
 	}
-	f, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o600)
+	f, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o600) //nolint:gosec // path is constructed by caller
 	if err != nil {
 		return nil, fmt.Errorf("auditkit: open %s: %w", path, err)
 	}
 	s.file = f
 	s.writer = bufio.NewWriter(f)
 	if err := s.recoverState(); err != nil {
-		f.Close()
+		f.Close() //nolint:gosec
 		return nil, err
 	}
 	return s, nil
@@ -218,7 +218,7 @@ func computeHead(entries []string) string {
 }
 
 func readLines(path string) ([]string, error) {
-	f, err := os.Open(path)
+	f, err := os.Open(path) //nolint:gosec // path is constructed by caller
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, nil

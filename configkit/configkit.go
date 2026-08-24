@@ -202,7 +202,7 @@ func applyMapToStruct(val reflect.Value, raw map[string]interface{}) error {
 		}
 
 		switch field.Kind() {
-		case reflect.Ptr:
+		case reflect.Ptr: //nolint:govet // reflect.Kind constants not inlined; stdlib limitation
 			if rawVal == nil {
 				return nil
 			}
@@ -240,7 +240,7 @@ func applyEnvToFields(val reflect.Value, prefix string) error {
 		envKey := prefix + "_" + strings.ToUpper(tag)
 
 		switch field.Kind() {
-		case reflect.Ptr:
+		case reflect.Ptr: //nolint:govet // reflect.Kind constants not inlined; stdlib limitation
 			if v := os.Getenv(envKey); v != "" {
 				ptrVal := reflect.New(field.Type().Elem())
 				if err := setFieldValue(ptrVal.Elem(), v); err != nil {

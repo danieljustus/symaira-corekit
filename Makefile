@@ -1,4 +1,4 @@
-.PHONY: build test lint fmt-check clean consumer-drift
+.PHONY: build test lint fmt-check clean consumer-drift golangci-lint
 
 build:
 	CGO_ENABLED=0 go build ./...
@@ -9,7 +9,11 @@ consumer-drift:
 test:
 	CGO_ENABLED=0 go test -race ./...
 
-lint: fmt-check
+golangci-lint:
+	@command -v golangci-lint >/dev/null 2>&1 || { echo "golangci-lint not found; install from https://golangci-lint.run"; exit 1; }
+	golangci-lint run --timeout 5m
+
+lint: golangci-lint fmt-check
 	go vet ./...
 
 fmt-check:
