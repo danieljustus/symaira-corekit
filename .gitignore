@@ -32,3 +32,6 @@ AGENTS.md
 
 # Linked worktrees used by development workflows
 .worktrees/
+
+# Audit working artifacts (see /gh-audit)
+.github/audit/
