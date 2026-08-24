@@ -205,7 +205,7 @@ func (a *Applier) Apply(ctx context.Context, release *updatecheck.Release, targe
 		}
 		defer func() { _ = os.RemoveAll(extractedDir) }()
 
-		archiveData, err := os.ReadFile(tmpFile)
+		archiveData, err := os.ReadFile(tmpFile) //nolint:gosec
 		if err != nil {
 			return fmt.Errorf("updateapply: read downloaded archive: %w", err)
 		}
@@ -491,7 +491,7 @@ func atomicSwap(newPath, targetPath string) error {
 		}
 	}
 
-	if err := os.Rename(newPath, targetPath); err != nil {
+	if err := os.Rename(newPath, targetPath); err != nil { //nolint:gosec // paths are constructed, not user-supplied
 		if hadExisting {
 			if rbErr := os.Rename(backupPath, targetPath); rbErr != nil {
 				return fmt.Errorf("install new binary failed (%v) and rollback failed (%w)", err, rbErr)

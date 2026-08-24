@@ -83,7 +83,7 @@ func WriteCheckpoint(anchorPath, hash string, count int64) error {
 // ReadCheckpoint reads the anchor file. A missing anchor returns (nil, nil)
 // — there is no checkpoint yet, which callers treat as "unverified".
 func ReadCheckpoint(anchorPath string) (*ChainAnchor, error) {
-	data, err := os.ReadFile(anchorPath)
+	data, err := os.ReadFile(anchorPath) //nolint:gosec // path is constructed, not user-supplied
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, nil

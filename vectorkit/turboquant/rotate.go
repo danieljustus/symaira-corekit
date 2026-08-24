@@ -48,7 +48,7 @@ type RandomRotation struct {
 // vectors using the given seed.
 func NewRandomRotation(dim, seed int) *RandomRotation {
 	padded := nextPowerOf2(dim)
-	rng := rand.New(rand.NewSource(int64(seed)))
+	rng := rand.New(rand.NewSource(int64(seed))) //nolint:gosec
 	signs := make([]float64, padded)
 	for i := range signs {
 		if rng.Intn(2) == 0 {

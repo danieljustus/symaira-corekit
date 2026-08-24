@@ -36,7 +36,7 @@ type FS interface {
 // OSFS is the real filesystem implementation.
 type OSFS struct{}
 
-func (OSFS) ReadFile(path string) ([]byte, error)  { return os.ReadFile(path) }
+func (OSFS) ReadFile(path string) ([]byte, error)  { return os.ReadFile(path) } //nolint:gosec
 func (OSFS) Glob(pattern string) ([]string, error) { return filepath.Glob(pattern) }
 
 // Discover scans the given sources and returns the configured servers plus

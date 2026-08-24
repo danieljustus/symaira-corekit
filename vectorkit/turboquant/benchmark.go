@@ -66,7 +66,7 @@ func RunBenchmark(cfg BenchmarkConfig) []BenchmarkResult {
 		cfg.BitWidths = []BitWidth{BitWidth2, BitWidth3, BitWidth4}
 	}
 
-	rng := rand.New(rand.NewSource(cfg.Seed))
+	rng := rand.New(rand.NewSource(cfg.Seed)) //nolint:gosec // deterministic seed for reproducible benchmarks
 
 	// Generate database vectors (normalized embeddings)
 	dbVecs := make([][]float32, cfg.NumVectors)
@@ -236,7 +236,7 @@ func benchmarkBitWidth(cfg BenchmarkConfig, dbVecs, queryVecs [][]float32, exact
 // GenerateSyntheticDataset creates a deterministic synthetic dataset of
 // normalized vectors for benchmarking.
 func GenerateSyntheticDataset(dim, numVectors, numQueries int, seed int64) (dbVecs, queryVecs [][]float32) {
-	rng := rand.New(rand.NewSource(seed))
+	rng := rand.New(rand.NewSource(seed)) //nolint:gosec // deterministic seed for reproducible benchmark output
 
 	dbVecs = make([][]float32, numVectors)
 	for i := range dbVecs {
@@ -257,7 +257,7 @@ func GenerateSyntheticDataset(dim, numVectors, numQueries int, seed int64) (dbVe
 // To use with real embeddings, generate them externally and pass via
 // RunBenchmarkWithFixture.
 func GenerateRealisticFixture(dim, numVectors, numQueries int, seed int64) (dbVecs, queryVecs [][]float32) {
-	rng := rand.New(rand.NewSource(seed))
+	rng := rand.New(rand.NewSource(seed)) //nolint:gosec // deterministic seed for reproducible fixture data
 
 	// Create cluster centroids (e.g., 10 topics)
 	numClusters := 10

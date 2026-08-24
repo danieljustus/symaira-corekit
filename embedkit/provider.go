@@ -51,8 +51,8 @@ func hashVector(s string, dim int) []float32 {
 	vec := make([]float32, dim)
 	for i := 0; i < dim; i++ {
 		h := fnv.New32a()
-		h.Write([]byte(s))
-		h.Write([]byte(strconv.Itoa(i)))
+		h.Write([]byte(s))               //nolint:gosec // best-effort write; error not actionable
+		h.Write([]byte(strconv.Itoa(i))) //nolint:gosec // best-effort write; error not actionable
 		sum := h.Sum32()
 		// Map uint32 to [-1, 1].
 		vec[i] = float32(sum)/float32(1<<31) - 1

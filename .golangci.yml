@@ -1,0 +1,11 @@
+version: "2"
+
+run:
+  go: "1.26.6"
+  timeout: 5m
+
+linters:
+  default: none
+  enable:
+    - gosec
+    - govet

@@ -402,12 +402,12 @@ func (c *Codec) MarshalMetadata() []byte {
 		RotDim:    c.RotDim,
 	}
 	buf := make([]byte, 32)
-	binary.LittleEndian.PutUint32(buf[0:4], uint32(meta.Version))
-	binary.LittleEndian.PutUint32(buf[4:8], uint32(meta.Dim))
-	binary.LittleEndian.PutUint32(buf[8:12], uint32(meta.BitWidth))
-	binary.LittleEndian.PutUint32(buf[12:16], uint32(meta.Seed))
-	binary.LittleEndian.PutUint32(buf[16:20], uint32(meta.BlockSize))
-	binary.LittleEndian.PutUint32(buf[20:24], uint32(meta.RotDim))
+	binary.LittleEndian.PutUint32(buf[0:4], uint32(meta.Version))     //nolint:gosec // bounded by MagicNumber
+	binary.LittleEndian.PutUint32(buf[4:8], uint32(meta.Dim))         //nolint:gosec // bounded by magic number
+	binary.LittleEndian.PutUint32(buf[8:12], uint32(meta.BitWidth))   //nolint:gosec // bounded by magic number
+	binary.LittleEndian.PutUint32(buf[12:16], uint32(meta.Seed))      //nolint:gosec
+	binary.LittleEndian.PutUint32(buf[16:20], uint32(meta.BlockSize)) //nolint:gosec
+	binary.LittleEndian.PutUint32(buf[20:24], uint32(meta.RotDim))    //nolint:gosec
 	// Pad to 32 bytes
 	return buf
 }

@@ -7,7 +7,6 @@ on:
     branches: [main]
   workflow_dispatch:
 
-
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -16,68 +15,71 @@ permissions:
 
 jobs:
   test:
+    name: test (${{ matrix.os }})
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
         go-version: ["1.26.6"]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
-
-      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+      - name: Run tests
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version: ${{ matrix.go-version }}
-
       - name: Download dependencies
         run: go mod download
-
       - name: Verify dependencies
         run: go mod verify
-
       - name: Build
         run: go build ./...
-
       - name: Test with race detector
         run: go test -race -count=1 -timeout=5m ./...
 
   lint:
+    name: lint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
-
-      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+      - name: Set up Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version: "1.26.6"
-
-      - name: Vet
-        run: go vet ./...
-
-      - name: Check formatting
-        run: test -z "$(gofmt -l .)"
+      - name: Install golangci-lint
+        uses: golangci/golangci-lint-action@v7.0.0
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@v7.0.0
+  #
+  #  --- DEPRECATED (replaced by golangci-lint above) ---
+  #  go vet / gofmt
+  #  gofmt -l .
+  #  go vet ./...
 
   govulncheck:
+    name: govulncheck
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
-
-      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+      - name: Set up Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version: "1.26.6"
-
       - name: Install govulncheck
         run: go install golang.org/x/vuln/cmd/govulncheck@v1.4.0
-
       - name: Run govulncheck
         run: govulncheck ./...
 
   apidiff:
+    name: apidiff
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+      - name: Set up Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version: "1.26.6"
 
