@@ -12,10 +12,10 @@ final class RegistryTests: XCTestCase {
             "symvault", "symmemory", "symseek", "symfetch", "symscope",
             "symfritz", "symprint", "symskills", "symvibe", "symguard",
             "symingest", "symeraseme", "symtune", "symoperate", "symdesk",
-            "symmeet", "symbrain", "symrelate",
+            "symmeet", "symbrain", "symrelate", "symbrowse", "symcockpit",
         ]
         for id in expected {
-            XCTAssertNotNil(SymairaToolRegistry.tool(id: id), "missing tool: \(id)")
+            XCTAssertNotNil(SymairaToolRegistry.tool(id: id), "missing tool: \\(id)")
         }
     }
 
@@ -45,11 +45,68 @@ final class RegistryTests: XCTestCase {
     func testMCPToolsDeclareArgs() {
         for tool in SymairaToolRegistry.all {
             if tool.supportsMCP {
-                XCTAssertFalse(tool.mcpArgs.isEmpty, "\(tool.id) supports MCP but has no args")
+                XCTAssertFalse(tool.mcpArgs.isEmpty, "\\(tool.id) supports MCP but has no args")
             } else {
-                XCTAssertTrue(tool.mcpArgs.isEmpty, "\(tool.id) has MCP args but supportsMCP is false")
+                XCTAssertTrue(tool.mcpArgs.isEmpty, "\\(tool.id) has MCP args but supportsMCP is false")
             }
         }
+    }
+
+    // MARK: - Issue #103: Deprecated field for absorbed tools
+
+    func testDeprecatedToolsAreMarked() {
+        // Tools absorbed into other products per the repo consolidation
+        // (documented in docs/repo-konsolidierung.md). The Homebrew formulae
+        // carry `deprecate!` as well, but clients consult this field.
+        let deprecated: [(id: String, absorbedInto: String)] = [
+            ("symmemory",   "absorbed into Symaira Brain (symbrain)"),
+            ("symseek",     "absorbed into Symaira Desktop (symdesk)"),
+            ("symfetch",    "absorbed into Symaira Browse (symbrowse)"),
+            ("symscope",    "absorbed into Symaira Cockpit (symcockpit)"),
+            ("symprint",    "absorbed into Symaira Desktop (symdesk)"),
+            ("symskills",   "absorbed into Symaira Brain (symbrain)"),
+            ("symguard",    "absorbed into Symaira Brain (symbrain)"),
+            ("symingest",   "absorbed into Symaira Desktop (symdesk)"),
+            ("symmeet",     "absorbed into Symaira Desktop (symdesk)"),
+            ("symrelate",   "absorbed into Symaira Desktop (symdesk)"),
+            ("symtune",     "absorbed into Symaira Cockpit (symcockpit)"),
+            ("symoperate",  "absorbed into Symaira Cockpit (symcockpit)"),
+        ]
+        for (id, reason) in deprecated {
+            let tool = SymairaToolRegistry.tool(id: id)
+            XCTAssertNotNil(tool, "deprecated tool missing from registry: \\(id)")
+            XCTAssertTrue(tool?.isDeprecated ?? false, "\\(id) should be deprecated")
+            XCTAssertEqual(tool?.deprecated, reason, "\\(id) deprecated reason mismatch")
+        }
+    }
+
+    func testActiveToolsAreNotDeprecated() {
+        // These tools still have independent repos and active formulae.
+        let active = ["symvault", "symfritz", "symvibe", "symbrain",
+                      "symdesk", "symbrowse", "symcockpit", "symeraseme"]
+        for id in active {
+            let tool = SymairaToolRegistry.tool(id: id)
+            XCTAssertNotNil(tool, "active tool missing from registry: \(id)")
+            XCTAssertFalse(tool?.isDeprecated ?? true, "\(id) should not be deprecated")
+            XCTAssertNil(tool?.deprecated, "\(id) deprecated field should be nil")
+        }
+    }
+
+    func testRegistryActiveFilterExcludesDeprecated() {
+        let active = SymairaToolRegistry.active
+        let activeIDs = Set(active.map(\.id))
+        for id in activeIDs {
+            XCTAssertFalse(SymairaToolRegistry.tool(id: id)?.isDeprecated ?? true,
+                           "active filter should not include deprecated tools")
+        }
+        // Every deprecated tool must be excluded from active.
+        let deprecatedIDs = Set(SymairaToolRegistry.all.filter(\.isDeprecated).map(\.id))
+        for id in deprecatedIDs {
+            XCTAssertFalse(activeIDs.contains(id),
+                           "active filter should exclude \(id)")
+        }
+        // The active count equals total minus deprecated (12 deprecated).
+        XCTAssertEqual(active.count, SymairaToolRegistry.all.count - 12)
     }
 }
 

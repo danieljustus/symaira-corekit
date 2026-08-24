@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `SymairaTool.deprecated` (`String?`) and `SymairaTool.isDeprecated` (`Bool`):
+  12 tools that have been absorbed into symbrain, symdesktop, symbrowse, or
+  symcockpit are now marked `deprecated` in `SymairaToolRegistry`, so client
+  UIs can show migration hints instead of offering a reinstall.
+  `SymairaToolRegistry.active` filters to non-deprecated entries.
+  `SymairaBrowse` and `SymairaCockpit` were also added as active tools (#103).
+
 ### Changed
 - `SubprocessRunner` gained `runAsync`/`runCheckedAsync` variants that
   hop onto a background `DispatchQueue` via `withCheckedThrowingContinuation`,

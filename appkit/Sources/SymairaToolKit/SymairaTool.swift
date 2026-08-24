@@ -12,13 +12,25 @@ public struct SymairaTool: Equatable, Sendable, Identifiable {
     public let supportsMCP: Bool
     public let mcpArgs: [String]
 
+    /// When non-`nil`, this tool has been retired from active distribution
+    /// and absorbed into another Symaira product. The value is a short
+    /// human-readable note naming the replacement (e.g.
+    /// `"absorbed into Symaira Desktop"`).
+    ///
+    /// Consumers use this to display a migration hint instead of offering a
+    /// regular install. The Homebrew formulae and casks for deprecated tools
+    /// carry Homebrew's own `deprecate!` directive, but app clients cannot read
+    /// those, so they consult this field on the registry entry.
+    public let deprecated: String?
+
     public init(
         id: String,
         displayName: String,
         binaryName: String,
         homebrewFormula: String,
         supportsMCP: Bool = true,
-        mcpArgs: [String] = ["mcp"]
+        mcpArgs: [String] = ["mcp"],
+        deprecated: String? = nil
     ) {
         self.id = id
         self.displayName = displayName
@@ -26,19 +38,33 @@ public struct SymairaTool: Equatable, Sendable, Identifiable {
         self.homebrewFormula = homebrewFormula
         self.supportsMCP = supportsMCP
         self.mcpArgs = mcpArgs
+        self.deprecated = deprecated
     }
+
+    public var isDeprecated: Bool { deprecated != nil }
 }
 
 /// Registry of all known Symaira CLI tools.
 ///
+/// The `all` array includes deprecated tools (absorbed into other products)
+/// for backwards compatibility — they still resolve via `tool(id:)` and
+/// retain their Homebrew formulae (which Homebrew marks `deprecate!`).
+/// Consumers that present an install UI should filter on `isDeprecated` /
+/// `active` to show migration hints instead of a regular install.
+///
 /// MCP subcommands verified against each repo's cobra commands (2026-08):
-/// vault `serve --stdio`, memory/seek/skills/vibecoder `serve`,
+/// vault `serve --stdio`, brain/seek/skills/vibecoder `serve`,
 /// fetch/scope/fritz/print/ingest/meet `mcp` (symingest since v0.6.0),
-/// relate `mcp`. `symguard` does not expose an MCP server yet;
+/// browse `mcp`, relate `mcp`. `symguard` does not expose an MCP server yet;
 /// `symeraseme` is a Python CLI without one; `symbrain`'s `serve` requires
 /// a runtime `--profile` argument the static registry cannot express, so it
 /// is listed as not MCP-capable until the API can model caller-supplied
 /// arguments (see the entry's comment below).
+///
+/// Deprecated tools (absorbed into other products — see the `deprecated` field):
+/// symmemory/symseek/symskills/symguard → symbrain; symfetch → symbrowse;
+/// symscope/symtune/symoperate → symcockpit; symprint/symingest/symmeet/
+/// symrelate → symdesk.
 public enum SymairaToolRegistry {
     public static let all: [SymairaTool] = [
         SymairaTool(
@@ -53,20 +79,30 @@ public enum SymairaToolRegistry {
             displayName: "Symaira Memory",
             binaryName: "symmemory",
             homebrewFormula: "danieljustus/tap/symmemory",
-            mcpArgs: ["serve"]
+            mcpArgs: ["serve"],
+            deprecated: "absorbed into Symaira Brain (symbrain)"
         ),
         SymairaTool(
             id: "symseek",
             displayName: "Symaira Seek",
             binaryName: "symseek",
             homebrewFormula: "danieljustus/tap/symseek",
-            mcpArgs: ["serve"]
+            mcpArgs: ["serve"],
+            deprecated: "absorbed into Symaira Desktop (symdesk)"
         ),
         SymairaTool(
             id: "symfetch",
             displayName: "Symaira Fetch",
             binaryName: "symfetch",
             homebrewFormula: "danieljustus/tap/symfetch",
+            mcpArgs: ["mcp"],
+            deprecated: "absorbed into Symaira Browse (symbrowse)"
+        ),
+        SymairaTool(
+            id: "symbrowse",
+            displayName: "Symaira Browse",
+            binaryName: "symbrowse",
+            homebrewFormula: "danieljustus/tap/symbrowse",
             mcpArgs: ["mcp"]
         ),
         SymairaTool(
@@ -74,6 +110,14 @@ public enum SymairaToolRegistry {
             displayName: "Symaira Scope",
             binaryName: "symscope",
             homebrewFormula: "danieljustus/tap/symscope",
+            mcpArgs: ["mcp"],
+            deprecated: "absorbed into Symaira Cockpit (symcockpit)"
+        ),
+        SymairaTool(
+            id: "symcockpit",
+            displayName: "Symaira Cockpit",
+            binaryName: "symcockpit",
+            homebrewFormula: "danieljustus/tap/symcockpit",
             mcpArgs: ["mcp"]
         ),
         SymairaTool(
@@ -88,14 +132,16 @@ public enum SymairaToolRegistry {
             displayName: "Symaira Print",
             binaryName: "symprint",
             homebrewFormula: "danieljustus/tap/symprint",
-            mcpArgs: ["mcp"]
+            mcpArgs: ["mcp"],
+            deprecated: "absorbed into Symaira Desktop (symdesk)"
         ),
         SymairaTool(
             id: "symskills",
             displayName: "Symaira Skills",
             binaryName: "symskills",
             homebrewFormula: "danieljustus/tap/symskills",
-            mcpArgs: ["serve"]
+            mcpArgs: ["serve"],
+            deprecated: "absorbed into Symaira Brain (symbrain)"
         ),
         SymairaTool(
             id: "symvibe",
@@ -110,14 +156,16 @@ public enum SymairaToolRegistry {
             binaryName: "symguard",
             homebrewFormula: "danieljustus/tap/symguard",
             supportsMCP: false,
-            mcpArgs: []
+            mcpArgs: [],
+            deprecated: "absorbed into Symaira Brain (symbrain)"
         ),
         SymairaTool(
             id: "symingest",
             displayName: "Symaira Ingest",
             binaryName: "symingest",
             homebrewFormula: "danieljustus/tap/symingest",
-            mcpArgs: ["mcp"]
+            mcpArgs: ["mcp"],
+            deprecated: "absorbed into Symaira Desktop (symdesk)"
         ),
         SymairaTool(
             id: "symeraseme",
@@ -132,14 +180,16 @@ public enum SymairaToolRegistry {
             displayName: "Symaira Tune",
             binaryName: "symtune",
             homebrewFormula: "danieljustus/tap/symtune",
-            mcpArgs: ["mcp"]
+            mcpArgs: ["mcp"],
+            deprecated: "absorbed into Symaira Cockpit (symcockpit)"
         ),
         SymairaTool(
             id: "symoperate",
             displayName: "Symaira Operate",
             binaryName: "symoperate",
             homebrewFormula: "danieljustus/tap/symoperate",
-            mcpArgs: ["mcp"]
+            mcpArgs: ["mcp"],
+            deprecated: "absorbed into Symaira Cockpit (symcockpit)"
         ),
         SymairaTool(
             id: "symdesk",
@@ -153,7 +203,8 @@ public enum SymairaToolRegistry {
             displayName: "Symaira Meet",
             binaryName: "symmeet",
             homebrewFormula: "danieljustus/tap/symmeet",
-            mcpArgs: ["mcp"]
+            mcpArgs: ["mcp"],
+            deprecated: "absorbed into Symaira Desktop (symdesk)"
         ),
         // symbrain's MCP server (`serve`) requires a caller-supplied
         // `--profile <name>` argument; the static registry cannot express a
@@ -173,11 +224,19 @@ public enum SymairaToolRegistry {
             displayName: "Symaira Relate",
             binaryName: "symrelate",
             homebrewFormula: "danieljustus/tap/symrelate",
-            mcpArgs: ["mcp"]
+            mcpArgs: ["mcp"],
+            deprecated: "absorbed into Symaira Desktop (symdesk)"
         ),
     ]
 
     public static func tool(id: String) -> SymairaTool? {
         all.first { $0.id == id }
+    }
+
+    /// All registry entries that are not deprecated — i.e. tools that still
+    /// have an independent repo and Homebrew formula. Use this when presenting
+    /// an install UI so users see only tools they can actually install.
+    public static var active: [SymairaTool] {
+        all.filter { !$0.isDeprecated }
     }
 }
