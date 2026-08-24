@@ -77,10 +77,13 @@ type Applier struct {
 	ExtractBinary string
 }
 
-// NewApplier creates an Applier using the running binary's OS/arch.
+// NewApplier creates an Applier using the running binary's OS/arch and the
+// hardened download client (TLS 1.3 minimum, bounded timeout, redirects
+// refused off GitHub hosts). Callers that need different transport behaviour
+// can replace HTTPClient after construction.
 func NewApplier() *Applier {
 	return &Applier{
-		HTTPClient: http.DefaultClient,
+		HTTPClient: updatecheck.NewSecureClientWithTimeout(updatecheck.DefaultDownloadTimeout),
 		GOOS:       runtime.GOOS,
 		GOARCH:     runtime.GOARCH,
 	}
@@ -167,7 +170,23 @@ func (a *Applier) Apply(ctx context.Context, release *updatecheck.Release, targe
 		return fmt.Errorf("updateapply: no checksum entry for asset %q", asset.Name)
 	}
 
-	tmpFile, gotSum, err := a.downloadToTemp(ctx, asset)
+	absTarget, err := filepath.Abs(targetPath)
+	if err != nil {
+		return fmt.Errorf("updateapply: resolve target path: %w", err)
+	}
+	// Verify writability before downloading rather than after: there is no
+	// point pulling a multi-megabyte asset only to discover the install
+	// location is read-only.
+	if err := checkWritable(absTarget); err != nil {
+		return fmt.Errorf("updateapply: %w", err)
+	}
+
+	// Stage in the install directory so the final swap is a same-filesystem
+	// rename. rename(2) fails with EXDEV across filesystems, which is the
+	// normal case when TMPDIR is a tmpfs and the binary lives in /usr/local/bin.
+	stagingDir := stagingDirFor(absTarget)
+
+	tmpFile, gotSum, err := a.downloadToTemp(ctx, stagingDir, asset)
 	if err != nil {
 		return fmt.Errorf("updateapply: download asset: %w", err)
 	}
@@ -180,7 +199,7 @@ func (a *Applier) Apply(ctx context.Context, release *updatecheck.Release, targe
 	// Step 3: Optional archive extraction.
 	installTarget := tmpFile
 	if a.ExtractBinary != "" {
-		extractedDir, err := os.MkdirTemp("", "updateapply-extract-*")
+		extractedDir, err := os.MkdirTemp(stagingDir, "updateapply-extract-*")
 		if err != nil {
 			return fmt.Errorf("updateapply: create extract temp dir: %w", err)
 		}
@@ -191,7 +210,7 @@ func (a *Applier) Apply(ctx context.Context, release *updatecheck.Release, targe
 			return fmt.Errorf("updateapply: read downloaded archive: %w", err)
 		}
 
-		extracted, extErr := extractFromArchive(archiveData, extractedDir, a.ExtractBinary)
+		extracted, extErr := extractFromArchive(archiveData, asset.Name, extractedDir, a.ExtractBinary)
 		if extErr != nil {
 			return fmt.Errorf("updateapply: extract binary %q from archive: %w", a.ExtractBinary, extErr)
 		}
@@ -207,14 +226,6 @@ func (a *Applier) Apply(ctx context.Context, release *updatecheck.Release, targe
 		installTarget = extracted
 	}
 
-	absTarget, err := filepath.Abs(targetPath)
-	if err != nil {
-		return fmt.Errorf("updateapply: resolve target path: %w", err)
-	}
-	if err := checkWritable(absTarget); err != nil {
-		return fmt.Errorf("updateapply: %w", err)
-	}
-
 	if err := os.Chmod(installTarget, 0o755); err != nil { //nolint:gosec // installed binary must be executable
 		return fmt.Errorf("updateapply: make downloaded asset executable: %w", err)
 	}
@@ -228,28 +239,55 @@ func InstallMethod(binaryPath string) (installmethod.InstallMethod, error) {
 	return installmethod.Detect(binaryPath)
 }
 
-// extractFromArchive dispatches to ExtractTarGz or ExtractZip based on the
-// archive filename.
-func extractFromArchive(archiveData []byte, destDir, binaryName string) (string, error) {
-	// Try tar.gz first (most common for macOS/Linux).
-	path, err := extract.ExtractTarGz(archiveData, destDir, binaryName)
-	if err == nil {
+// extractFromArchive dispatches to ExtractTarGz or ExtractZip based on
+// assetName's extension. goreleaser names its archives *.tar.gz / *.tgz /
+// *.zip, so the format is known before a single byte is parsed.
+//
+// An unrecognised extension falls back to trying both formats, so consumers
+// with a custom naming scheme keep working.
+func extractFromArchive(archiveData []byte, assetName, destDir, binaryName string) (string, error) {
+	switch {
+	case hasAnySuffix(assetName, ".zip"):
+		return extract.ExtractZip(archiveData, destDir, binaryName)
+	case hasAnySuffix(assetName, ".tar.gz", ".tgz"):
+		return extract.ExtractTarGz(archiveData, destDir, binaryName)
+	default:
+		return extractByProbing(archiveData, destDir, binaryName)
+	}
+}
+
+// extractByProbing handles archives whose name does not reveal the format. It
+// tries tar.gz first (the common case for macOS/Linux releases) and falls back
+// to zip. ErrBinaryNotFound from the first attempt is preserved: it means the
+// archive parsed fine and simply did not contain the expected binary, which is
+// a more useful error than a zip parse failure.
+func extractByProbing(archiveData []byte, destDir, binaryName string) (string, error) {
+	path, tarErr := extract.ExtractTarGz(archiveData, destDir, binaryName)
+	if tarErr == nil {
 		return path, nil
 	}
-	if !errors.Is(err, extract.ErrBinaryNotFound) && !strings.Contains(err.Error(), "gzip") {
-		return "", err
+	if errors.Is(tarErr, extract.ErrPathTraversal) {
+		return "", tarErr
 	}
 
-	// Fall back to zip (Windows/packaged releases).
 	path, zipErr := extract.ExtractZip(archiveData, destDir, binaryName)
 	if zipErr != nil {
-		// Return the original tar.gz error if zip also fails — it was the first attempt.
-		if errors.Is(err, extract.ErrBinaryNotFound) {
-			return "", err
+		if errors.Is(tarErr, extract.ErrBinaryNotFound) {
+			return "", tarErr
 		}
 		return "", zipErr
 	}
 	return path, nil
+}
+
+func hasAnySuffix(name string, suffixes ...string) bool {
+	lower := strings.ToLower(name)
+	for _, suffix := range suffixes {
+		if strings.HasSuffix(lower, suffix) {
+			return true
+		}
+	}
+	return false
 }
 
 // Reexec replaces the current process image with targetPath via
@@ -331,7 +369,7 @@ func (a *Applier) fetchChecksums(ctx context.Context, assets []updatecheck.Asset
 func (a *Applier) download(ctx context.Context, asset updatecheck.Asset) (io.ReadCloser, int64, error) {
 	client := a.HTTPClient
 	if client == nil {
-		client = http.DefaultClient
+		client = updatecheck.NewSecureClientWithTimeout(updatecheck.DefaultDownloadTimeout)
 	}
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, asset.BrowserDownloadURL, nil)
@@ -350,16 +388,34 @@ func (a *Applier) download(ctx context.Context, asset updatecheck.Asset) (io.Rea
 	return resp.Body, resp.ContentLength, nil
 }
 
-// downloadToTemp downloads asset into a temp file next to os.TempDir and
-// returns its path plus the hex sha256 of its content.
-func (a *Applier) downloadToTemp(ctx context.Context, asset updatecheck.Asset) (string, string, error) {
+// stagingDirFor returns the directory the update is staged in. It prefers the
+// target binary's own directory so the final os.Rename is a same-filesystem
+// operation; a rename across filesystems fails with EXDEV. It falls back to
+// the system temp directory only when the install directory cannot be written
+// to, which Apply rejects earlier anyway.
+func stagingDirFor(absTarget string) string {
+	dir := filepath.Dir(absTarget)
+	probe, err := os.CreateTemp(dir, ".updateapply-staging-*")
+	if err != nil {
+		return os.TempDir()
+	}
+	name := probe.Name()
+	_ = probe.Close()
+	_ = os.Remove(name)
+	return dir
+}
+
+// downloadToTemp downloads asset into a temp file inside dir and returns its
+// path plus the hex sha256 of its content. dir is the staging directory —
+// normally the install directory, so the later rename stays on one filesystem.
+func (a *Applier) downloadToTemp(ctx context.Context, dir string, asset updatecheck.Asset) (string, string, error) {
 	body, total, err := a.download(ctx, asset)
 	if err != nil {
 		return "", "", err
 	}
 	defer func() { _ = body.Close() }()
 
-	tmp, err := os.CreateTemp("", "updateapply-*")
+	tmp, err := os.CreateTemp(dir, "updateapply-*")
 	if err != nil {
 		return "", "", fmt.Errorf("create temp file: %w", err)
 	}

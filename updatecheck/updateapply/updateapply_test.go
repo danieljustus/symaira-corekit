@@ -3,10 +3,12 @@ package updateapply
 import (
 	"context"
 	"crypto/sha256"
+	"crypto/tls"
 	"encoding/hex"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -38,20 +40,83 @@ func newTestServer(t *testing.T, assetBody []byte, checksumsBody string) (*httpt
 	return server, assetURL, checksumsURL
 }
 
+// TestNewApplierDefaults asserts the default client's security properties
+// rather than its identity. The download path replaces the running binary, so
+// it must not fall back to a client without a timeout, without a TLS floor,
+// and willing to follow redirects to any host.
 func TestNewApplierDefaults(t *testing.T) {
 	a := NewApplier()
 	if a == nil {
 		t.Fatal("NewApplier() returned nil")
 	}
-	if a.HTTPClient != http.DefaultClient {
-		t.Errorf("HTTPClient = %T, want http.DefaultClient", a.HTTPClient)
+
+	client, ok := a.HTTPClient.(*http.Client)
+	if !ok {
+		t.Fatalf("HTTPClient = %T, want *http.Client", a.HTTPClient)
 	}
+	if client == http.DefaultClient {
+		t.Fatal("HTTPClient must not be http.DefaultClient: no timeout, no TLS floor, follows any redirect")
+	}
+	if client.Timeout <= 0 {
+		t.Error("HTTPClient.Timeout must be set so a stalled download cannot hang forever")
+	}
+	if client.CheckRedirect == nil {
+		t.Fatal("HTTPClient.CheckRedirect must be set so downloads cannot be bounced off GitHub")
+	}
+	if err := client.CheckRedirect(
+		&http.Request{URL: mustParseURL(t, "https://evil.example/payload")},
+		[]*http.Request{{URL: mustParseURL(t, "https://github.com/o/r/releases/download/v1/asset")}},
+	); err == nil {
+		t.Error("redirect to a non-GitHub host must be refused on the download path")
+	}
+	if err := client.CheckRedirect(
+		&http.Request{URL: mustParseURL(t, "https://objects.githubusercontent.com/blob")},
+		[]*http.Request{{URL: mustParseURL(t, "https://github.com/o/r/releases/download/v1/asset")}},
+	); err != nil {
+		t.Errorf("redirect to the GitHub asset CDN must be allowed, got %v", err)
+	}
+
+	tr, ok := client.Transport.(*http.Transport)
+	if !ok {
+		t.Fatalf("Transport = %T, want *http.Transport", client.Transport)
+	}
+	if tr.TLSClientConfig == nil || tr.TLSClientConfig.MinVersion != tls.VersionTLS13 {
+		t.Error("HTTPClient must enforce a TLS 1.3 minimum")
+	}
+
 	if a.GOOS != runtime.GOOS {
 		t.Errorf("GOOS = %q, want %q", a.GOOS, runtime.GOOS)
 	}
 	if a.GOARCH != runtime.GOARCH {
 		t.Errorf("GOARCH = %q, want %q", a.GOARCH, runtime.GOARCH)
 	}
+}
+
+// TestDownloadNilClientUsesSecureDefault covers the nil-HTTPClient fallback in
+// download, which previously reached for http.DefaultClient.
+func TestDownloadNilClientUsesSecureDefault(t *testing.T) {
+	a := &Applier{}
+	_, _, err := a.download(context.Background(), updatecheck.Asset{
+		Name:               "asset",
+		BrowserDownloadURL: "https://127.0.0.1:1/asset",
+	})
+	if err == nil {
+		t.Fatal("expected the request to fail against a closed port")
+	}
+	// The point is that a client was constructed and used at all; a nil
+	// fallback would have panicked or silently used the unhardened default.
+	if !strings.Contains(err.Error(), "request asset") {
+		t.Errorf("error = %v, want a request failure from the fallback client", err)
+	}
+}
+
+func mustParseURL(t *testing.T, raw string) *url.URL {
+	t.Helper()
+	u, err := url.Parse(raw)
+	if err != nil {
+		t.Fatalf("parse %q: %v", raw, err)
+	}
+	return u
 }
 
 func TestApplyInstallsMatchingAsset(t *testing.T) {
@@ -540,31 +605,28 @@ func TestApplyFailsOnMalformedAssetURL(t *testing.T) {
 	}
 }
 
-func TestDownloadToTempFailsWhenTempDirUnwritable(t *testing.T) {
+func TestDownloadToTempFailsWhenStagingDirUnwritable(t *testing.T) {
 	assetBody := []byte("fake-binary-content")
 	checksums := fmt.Sprintf("%s  mytool_linux_amd64\n", sha256Hex(assetBody))
-	server, assetURL, checksumsURL := newTestServer(t, assetBody, checksums)
+	server, assetURL, _ := newTestServer(t, assetBody, checksums)
 	defer server.Close()
 
-	release := &updatecheck.Release{
-		Assets: []updatecheck.Asset{
-			{Name: "mytool_linux_amd64", BrowserDownloadURL: assetURL},
-			{Name: "checksums.txt", BrowserDownloadURL: checksumsURL},
-		},
-	}
-
-	dir := t.TempDir()
-	target := filepath.Join(dir, "mytool")
-
-	// os.CreateTemp("", ...) resolves its directory via os.TempDir(), which
-	// reads $TMPDIR on unix. Pointing it at a nonexistent directory makes
-	// downloadToTemp's os.CreateTemp call fail.
-	t.Setenv("TMPDIR", filepath.Join(dir, "does-not-exist"))
+	// The staging directory is now passed in explicitly (it is the install
+	// directory, so the final rename stays on one filesystem) rather than
+	// resolved from $TMPDIR. Point it at a directory that does not exist so
+	// the os.CreateTemp call inside downloadToTemp fails.
+	stagingDir := filepath.Join(t.TempDir(), "does-not-exist")
 
 	a := &Applier{HTTPClient: http.DefaultClient, GOOS: "linux", GOARCH: "amd64"}
-	err := a.Apply(context.Background(), release, target)
+	_, _, err := a.downloadToTemp(context.Background(), stagingDir, updatecheck.Asset{
+		Name:               "mytool_linux_amd64",
+		BrowserDownloadURL: assetURL,
+	})
 	if err == nil {
-		t.Fatal("expected error when the temp directory is unwritable, got nil")
+		t.Fatal("expected error when the staging directory is unwritable, got nil")
+	}
+	if !strings.Contains(err.Error(), "create temp file") {
+		t.Errorf("error = %v, want a temp-file creation failure", err)
 	}
 }
 
@@ -706,4 +768,144 @@ func TestApplyVerifiesCosignOverExactChecksumsBytes(t *testing.T) {
 	if string(installed) != string(assetBody) {
 		t.Fatalf("target content = %q, want %q", installed, assetBody)
 	}
+}
+
+// TestApplyStagesDownloadBesideTarget proves the download is staged in the
+// install directory rather than $TMPDIR. Staging in $TMPDIR made the final
+// os.Rename a cross-filesystem rename, which fails with EXDEV whenever the
+// temp directory and the install directory live on different filesystems —
+// the normal Linux layout (/tmp on tmpfs, binary in /usr/local/bin).
+//
+// The assertion runs inside the Progress callback, the one moment the staged
+// file is guaranteed to exist.
+func TestApplyStagesDownloadBesideTarget(t *testing.T) {
+	assetBody := []byte(strings.Repeat("fake-binary-content", 4096))
+	sum := sha256Hex(assetBody)
+	checksums := fmt.Sprintf("%s  mytool_linux_amd64\n", sum)
+
+	server, assetURL, checksumsURL := newTestServer(t, assetBody, checksums)
+	defer server.Close()
+
+	tmpDir := t.TempDir()
+	targetDir := t.TempDir()
+	t.Setenv("TMPDIR", tmpDir)
+
+	target := filepath.Join(targetDir, "mytool")
+	if err := os.WriteFile(target, []byte("old-binary"), 0o755); err != nil { //nolint:gosec
+		t.Fatal(err)
+	}
+
+	var sawStagingInTargetDir, sawStagingInTmpDir bool
+	a := &Applier{
+		HTTPClient: http.DefaultClient,
+		GOOS:       "linux",
+		GOARCH:     "amd64",
+		Progress: func(written, total int64) {
+			if globHasStagedFile(t, targetDir) {
+				sawStagingInTargetDir = true
+			}
+			if globHasStagedFile(t, tmpDir) {
+				sawStagingInTmpDir = true
+			}
+		},
+	}
+
+	release := &updatecheck.Release{
+		TagName: "v1.0.0",
+		Assets: []updatecheck.Asset{
+			{Name: "mytool_linux_amd64", BrowserDownloadURL: assetURL},
+			{Name: "checksums.txt", BrowserDownloadURL: checksumsURL},
+		},
+	}
+
+	if err := a.Apply(context.Background(), release, target); err != nil {
+		t.Fatalf("Apply() error = %v", err)
+	}
+
+	if !sawStagingInTargetDir {
+		t.Error("download was not staged in the install directory; the final rename can cross filesystems")
+	}
+	if sawStagingInTmpDir {
+		t.Error("download was staged in $TMPDIR, which may be on a different filesystem than the target")
+	}
+
+	got, err := os.ReadFile(target) //nolint:gosec
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(got) != string(assetBody) {
+		t.Error("target binary was not replaced with the downloaded asset")
+	}
+
+	// No staging debris may survive a successful run.
+	if globHasStagedFile(t, targetDir) {
+		t.Error("staging artefacts left behind in the install directory after a successful update")
+	}
+}
+
+// TestApplyCleansStagingOnChecksumMismatch makes sure the new staging location
+// does not leak files next to the user's binary when the update is rejected.
+func TestApplyCleansStagingOnChecksumMismatch(t *testing.T) {
+	assetBody := []byte("fake-binary-content")
+	checksums := fmt.Sprintf("%s  mytool_linux_amd64\n", sha256Hex([]byte("something-else")))
+
+	server, assetURL, checksumsURL := newTestServer(t, assetBody, checksums)
+	defer server.Close()
+
+	targetDir := t.TempDir()
+	target := filepath.Join(targetDir, "mytool")
+	original := []byte("old-binary")
+	if err := os.WriteFile(target, original, 0o755); err != nil { //nolint:gosec
+		t.Fatal(err)
+	}
+
+	a := &Applier{HTTPClient: http.DefaultClient, GOOS: "linux", GOARCH: "amd64"}
+	release := &updatecheck.Release{
+		TagName: "v1.0.0",
+		Assets: []updatecheck.Asset{
+			{Name: "mytool_linux_amd64", BrowserDownloadURL: assetURL},
+			{Name: "checksums.txt", BrowserDownloadURL: checksumsURL},
+		},
+	}
+
+	if err := a.Apply(context.Background(), release, target); err == nil {
+		t.Fatal("expected a checksum mismatch to be rejected")
+	}
+
+	if globHasStagedFile(t, targetDir) {
+		t.Error("staging artefacts left behind in the install directory after a rejected update")
+	}
+	got, err := os.ReadFile(target) //nolint:gosec
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(got) != string(original) {
+		t.Error("target binary must be untouched when the checksum does not match")
+	}
+}
+
+// TestStagingDirFallsBackWhenTargetDirUnwritable covers the fallback branch.
+func TestStagingDirFallsBackWhenTargetDirUnwritable(t *testing.T) {
+	if os.Geteuid() == 0 {
+		t.Skip("running as root — directory permissions are not enforced")
+	}
+
+	dir := t.TempDir()
+	if err := os.Chmod(dir, 0o500); err != nil { //nolint:gosec
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = os.Chmod(dir, 0o700) }) //nolint:gosec
+
+	if got := stagingDirFor(filepath.Join(dir, "mytool")); got != os.TempDir() {
+		t.Errorf("stagingDirFor() = %q, want the system temp dir for an unwritable install directory", got)
+	}
+}
+
+func globHasStagedFile(t *testing.T, dir string) bool {
+	t.Helper()
+	matches, err := filepath.Glob(filepath.Join(dir, "updateapply-*"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	return len(matches) > 0
 }

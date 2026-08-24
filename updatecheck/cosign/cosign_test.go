@@ -2,10 +2,14 @@ package cosign
 
 import (
 	"context"
+	"crypto/tls"
 	"io"
 	"net/http"
+	"net/http/httptest"
+	"net/url"
 	"os"
 	"os/exec"
+	"regexp"
 	"strings"
 	"testing"
 )
@@ -295,7 +299,7 @@ func TestVerifySignature_CorrectArgs(t *testing.T) {
 	cfg := Config{
 		BinaryName:     "mytool",
 		Repo:           "testowner/testrepo",
-		IdentityRegexp: `https://github\\.com/testowner/testrepo/\\.github/workflows/release\\.yml@refs/tags/v.*`,
+		IdentityRegexp: `^https://github\.com/testowner/testrepo/\.github/workflows/release\.yml@refs/tags/v.*$`,
 	}
 	err := cfg.VerifySignature(
 		[]byte("content"),
@@ -352,6 +356,91 @@ func TestIdentityRegexpOrDefault(t *testing.T) {
 	}
 }
 
+// TestIdentityRegexpOrDefaultMatchesRealIdentity is the assertion that matters:
+// the default pattern must actually match the certificate identity Sigstore
+// reports for a release built by the repo's release workflow. Asserting only
+// that the pattern contains the repo slug would still pass with escaping that
+// can never match anything.
+func TestIdentityRegexpOrDefaultMatchesRealIdentity(t *testing.T) {
+	cfg := Config{
+		Repo:       "danieljustus/symaira-vault",
+		BinaryName: "symvault",
+	}
+
+	re, err := regexp.Compile(cfg.IdentityRegexpOrDefault())
+	if err != nil {
+		t.Fatalf("IdentityRegexpOrDefault() did not compile: %v", err)
+	}
+
+	tests := []struct {
+		name     string
+		identity string
+		want     bool
+	}{
+		{
+			name:     "release tag of the configured repo",
+			identity: "https://github.com/danieljustus/symaira-vault/.github/workflows/release.yml@refs/tags/v1.0.0",
+			want:     true,
+		},
+		{
+			name:     "prerelease tag of the configured repo",
+			identity: "https://github.com/danieljustus/symaira-vault/.github/workflows/release.yml@refs/tags/v0.9.1",
+			want:     true,
+		},
+		{
+			name:     "different repo must not match",
+			identity: "https://github.com/attacker/evil/.github/workflows/release.yml@refs/tags/v1.0.0",
+			want:     false,
+		},
+		{
+			name:     "different workflow of the same repo must not match",
+			identity: "https://github.com/danieljustus/symaira-vault/.github/workflows/ci.yml@refs/tags/v1.0.0",
+			want:     false,
+		},
+		{
+			name:     "branch ref instead of a tag must not match",
+			identity: "https://github.com/danieljustus/symaira-vault/.github/workflows/release.yml@refs/heads/main",
+			want:     false,
+		},
+		{
+			name:     "valid identity embedded in a longer string must not match",
+			identity: "https://evil.example/?u=https://github.com/danieljustus/symaira-vault/.github/workflows/release.yml@refs/tags/v1.0.0",
+			want:     false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := re.MatchString(tt.identity); got != tt.want {
+				t.Fatalf("MatchString(%q) = %v, want %v (pattern %q)",
+					tt.identity, got, tt.want, cfg.IdentityRegexpOrDefault())
+			}
+		})
+	}
+}
+
+// TestIdentityRegexpOrDefaultEscapesRepoSlug ensures a repo slug carrying
+// regexp metacharacters cannot widen the pattern beyond the intended repo.
+func TestIdentityRegexpOrDefaultEscapesRepoSlug(t *testing.T) {
+	cfg := Config{
+		Repo:       "owner/re.po",
+		BinaryName: "tool",
+	}
+
+	re, err := regexp.Compile(cfg.IdentityRegexpOrDefault())
+	if err != nil {
+		t.Fatalf("IdentityRegexpOrDefault() did not compile: %v", err)
+	}
+
+	if !re.MatchString("https://github.com/owner/re.po/.github/workflows/release.yml@refs/tags/v1.0.0") {
+		t.Fatal("pattern must match the literal repo slug it was built from")
+	}
+	// The unescaped '.' would make this match too.
+	if re.MatchString("https://github.com/owner/reXpo/.github/workflows/release.yml@refs/tags/v1.0.0") {
+		t.Fatal("'.' in the repo slug was not escaped — the pattern matches a foreign repo")
+	}
+}
+
 func TestDownloadBaseURLOrDefault(t *testing.T) {
 	cfg := Config{
 		Repo:       "danieljustus/symaira-vault",
@@ -375,4 +464,106 @@ type stubRoundTripper func(req *http.Request) (*http.Response, error)
 
 func (f stubRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
 	return f(req)
+}
+
+// TestClientDefaultIsHardened asserts the cosign artefact fetch no longer
+// falls back to http.DefaultClient. The signature and certificate are what
+// authorise replacing the running binary, so the transport that fetches them
+// must carry the same guarantees as the rest of the update path.
+func TestClientDefaultIsHardened(t *testing.T) {
+	c := Config{Repo: "owner/repo", BinaryName: "tool"}.client()
+
+	if c == http.DefaultClient {
+		t.Fatal("default client must not be http.DefaultClient")
+	}
+	if c.Timeout <= 0 {
+		t.Error("default client must set a timeout")
+	}
+	if c.CheckRedirect == nil {
+		t.Fatal("default client must set CheckRedirect")
+	}
+	if err := c.CheckRedirect(
+		&http.Request{URL: mustParseURL(t, "https://evil.example/sig")},
+		[]*http.Request{{URL: mustParseURL(t, "https://github.com/owner/repo/releases/download/v1/x.sig")}},
+	); err == nil {
+		t.Error("default client must refuse redirects to non-GitHub hosts")
+	}
+
+	tr, ok := c.Transport.(*http.Transport)
+	if !ok {
+		t.Fatalf("Transport = %T, want *http.Transport", c.Transport)
+	}
+	if tr.TLSClientConfig == nil || tr.TLSClientConfig.MinVersion != tls.VersionTLS13 {
+		t.Error("default client must enforce a TLS 1.3 minimum")
+	}
+}
+
+// TestClientExplicitOverrideWins keeps the documented escape hatch working for
+// consumers on a custom host.
+func TestClientExplicitOverrideWins(t *testing.T) {
+	custom := &http.Client{}
+	if got := (Config{HTTPClient: custom}).client(); got != custom {
+		t.Error("an explicitly configured HTTPClient must be used unchanged")
+	}
+}
+
+// TestFetchArtifactRejectsOversizedBody covers the read limit on the signature
+// and certificate fetch, which previously read an unbounded body.
+func TestFetchArtifactRejectsOversizedBody(t *testing.T) {
+	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		buf := make([]byte, 64*1024)
+		for written := 0; written <= maxArtifactBody; written += len(buf) {
+			if _, err := w.Write(buf); err != nil {
+				return
+			}
+		}
+	}))
+	t.Cleanup(server.Close)
+
+	cfg := Config{
+		Repo:            "owner/repo",
+		BinaryName:      "tool",
+		DownloadBaseURL: server.URL,
+		HTTPClient:      server.Client(),
+	}
+
+	if _, err := cfg.FetchSignature(context.Background(), "v1.0.0"); err == nil {
+		t.Fatal("expected an oversized signature body to be rejected")
+	} else if !strings.Contains(err.Error(), "maximum size") {
+		t.Errorf("error = %v, want a maximum-size rejection", err)
+	}
+}
+
+// TestFetchArtifactAcceptsNormalBody guards against the size cap rejecting a
+// real signature.
+func TestFetchArtifactAcceptsNormalBody(t *testing.T) {
+	want := []byte("MEUCIQDsignature-bytes")
+	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write(want)
+	}))
+	t.Cleanup(server.Close)
+
+	cfg := Config{
+		Repo:            "owner/repo",
+		BinaryName:      "tool",
+		DownloadBaseURL: server.URL,
+		HTTPClient:      server.Client(),
+	}
+
+	got, err := cfg.FetchSignature(context.Background(), "v1.0.0")
+	if err != nil {
+		t.Fatalf("FetchSignature() error = %v", err)
+	}
+	if string(got) != string(want) {
+		t.Errorf("FetchSignature() = %q, want %q", got, want)
+	}
+}
+
+func mustParseURL(t *testing.T, raw string) *url.URL {
+	t.Helper()
+	u, err := url.Parse(raw)
+	if err != nil {
+		t.Fatalf("parse %q: %v", raw, err)
+	}
+	return u
 }
