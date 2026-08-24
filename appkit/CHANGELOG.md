@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-08-24
+
 ### Added
 - `SymairaTool.deprecated` (`String?`) and `SymairaTool.isDeprecated` (`Bool`):
   12 tools that have been absorbed into symbrain, symdesktop, symbrowse, or
@@ -293,7 +295,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [0.9.1]: https://github.com/danieljustus/symaira-appkit/compare/0.9.0...0.9.1
 [0.9.2]: https://github.com/danieljustus/symaira-appkit/compare/0.9.1...0.9.2
 [0.10.0]: https://github.com/danieljustus/symaira-appkit/compare/0.9.2...0.10.0
-[Unreleased]: https://github.com/danieljustus/symaira-appkit/compare/0.9.2...HEAD
+[0.11.0]: https://github.com/danieljustus/symaira-appkit/compare/0.10.0...0.11.0
+[Unreleased]: https://github.com/danieljustus/symaira-appkit/compare/0.10.0...HEAD
 [0.8.1]: https://github.com/danieljustus/symaira-appkit/compare/0.8.0...0.8.1
 [0.8.0]: https://github.com/danieljustus/symaira-appkit/compare/0.7.0...0.8.0
 [0.7.0]: https://github.com/danieljustus/symaira-appkit/compare/0.6.1...0.7.0
