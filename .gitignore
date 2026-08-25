@@ -35,3 +35,19 @@ AGENTS.md
 
 # Audit working artifacts (see /gh-audit)
 .github/audit/
+
+# --- Symaira internal working artifacts (never published; see root AGENTS.md) ---
+.github/review/
+.github/prerelease/
+.github/coverage/
+.github/app-test/
+.github/admin/
+.github/branch-protection/
+**/docs/adopt/
+**/docs/teardown/
+**/docs/planned/
+**/docs/intern/
+**/docs/roadmap.md
+PLANUNG.md
+ARCHITEKTUR.md
+.claude/
