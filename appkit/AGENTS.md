@@ -18,7 +18,7 @@ swift test
 
 ## Architecture & Boundaries
 
-- **No tool-specific code.** A module belongs here only if ≥2 apps need it. App-specific views, models, and IPC stay in the app's repo. Record each "should this move here?" assessment — including the ones answered "no" — in [`docs/module-boundary-decisions.md`](docs/module-boundary-decisions.md), so the question is not re-litigated from scratch.
+- **No tool-specific code.** A module belongs here only if ≥2 apps need it. App-specific views, models, and IPC stay in the app's repo. Record each "should this move here?" assessment — including the ones answered "no" — in the project's internal architecture notes, so the question is not re-litigated from scratch.
 - **No Cloud/SaaS code** (no Stripe, Firebase, Pro concepts) — same boundary as corekit.
 - **No third-party dependencies.** Foundation, SwiftUI, Security only.
 - Consumers pin exact versions (`.package(url:…, exact: "x.y.z")`). Local development may use `path:` dependencies, but merged app code must reference a tag.
