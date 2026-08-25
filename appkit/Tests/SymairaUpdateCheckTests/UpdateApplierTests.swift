@@ -1768,42 +1768,147 @@ final class UpdateApplierTests: XCTestCase {
         XCTAssertEqual(progressCalls.count, 1, "progress must stop after the chunk that crossed the cap")
     }
 
+    // MARK: - Async subprocess wrappers
+
+    func testRunAsyncReturnsNonZeroExitWithoutThrowing() async throws {
+        let result = try await SubprocessRunner.runAsync(
+            executable: URL(fileURLWithPath: "/bin/sh"),
+            arguments: ["-c", "printf failure >&2; exit 7"]
+        )
+
+        XCTAssertFalse(result.timedOut)
+        XCTAssertEqual(result.exitCode, 7)
+        XCTAssertEqual(String(decoding: result.stderr, as: UTF8.self), "failure")
+    }
+
+    func testRunAsyncTruncatesOutputAtConfiguredCap() async throws {
+        let result = try await SubprocessRunner.runAsync(
+            executable: URL(fileURLWithPath: "/bin/sh"),
+            arguments: ["-c", "yes x | head -c 200000"],
+            timeout: 5,
+            maxOutputBytes: 1_024
+        )
+
+        XCTAssertFalse(result.timedOut, "output caps terminate the child independently of the timeout")
+        XCTAssertEqual(result.stdout.count, 1_024, "stdout must be bounded exactly at the configured cap")
+        XCTAssertNotEqual(result.exitCode, 0, "the capped child must not report a clean exit")
+    }
+
+    func testRunAsyncMissingExecutableThrowsLaunchFailed() async {
+        let executable = URL(fileURLWithPath: "/definitely/missing/symaira-subprocess")
+
+        do {
+            _ = try await SubprocessRunner.runAsync(
+                executable: executable,
+                arguments: ["--version"]
+            )
+            XCTFail("expected launchFailed")
+        } catch SubprocessRunnerError.launchFailed(let command) {
+            XCTAssertEqual(command, "symaira-subprocess --version")
+        } catch {
+            XCTFail("unexpected error: \(error)")
+        }
+    }
+
+    func testRunAsyncOutputDecodeFailureSurfacesDecodingError() async throws {
+        struct Payload: Decodable {
+            let value: Int
+        }
+
+        let result = try await SubprocessRunner.runAsync(
+            executable: URL(fileURLWithPath: "/bin/sh"),
+            arguments: ["-c", "printf '%s' 'not-json'"]
+        )
+
+        do {
+            _ = try JSONDecoder().decode(Payload.self, from: result.stdout)
+            XCTFail("expected JSON decoding to fail")
+        } catch is DecodingError {
+            // Expected: the async wrapper preserves the invalid payload so
+            // callers can surface the decode failure at their boundary.
+        } catch {
+            XCTFail("unexpected error: \(error)")
+        }
+    }
+
+    func testRunCheckedAsyncTimeoutTerminatesChild() async {
+        let start = Date()
+
+        do {
+            _ = try await SubprocessRunner.runCheckedAsync(
+                executable: URL(fileURLWithPath: "/bin/sleep"),
+                arguments: ["60"],
+                timeout: 0.1
+            )
+            XCTFail("expected subprocessTimeout")
+        } catch UpdateApplierError.subprocessTimeout(let command) {
+            XCTAssertEqual(command, "sleep 60")
+        } catch {
+            XCTFail("unexpected error: \(error)")
+        }
+
+        XCTAssertLessThan(
+            Date().timeIntervalSince(start),
+            2,
+            "a normally terminating child must be reaped promptly after timeout"
+        )
+    }
+
+    func testRunCheckedAsyncEscalatesFromSIGTERMToSIGKILL() async {
+        let start = Date()
+        // This shell deliberately ignores SIGTERM and spins without creating
+        // a descendant that could keep the output pipe open after SIGKILL.
+        let ignoresSIGTERM = "trap '' TERM; while :; do :; done"
+
+        do {
+            _ = try await SubprocessRunner.runCheckedAsync(
+                executable: URL(fileURLWithPath: "/bin/sh"),
+                arguments: ["-c", ignoresSIGTERM],
+                timeout: 0.1
+            )
+            XCTFail("expected subprocessTimeout")
+        } catch UpdateApplierError.subprocessTimeout(let command) {
+            XCTAssertEqual(command, "sh -c \(ignoresSIGTERM)")
+        } catch {
+            XCTFail("unexpected error: \(error)")
+        }
+
+        let elapsed = Date().timeIntervalSince(start)
+        XCTAssertGreaterThanOrEqual(
+            elapsed,
+            2.5,
+            "a SIGTERM-resistant child must receive the implementation's grace period before SIGKILL"
+        )
+        XCTAssertLessThan(elapsed, 8, "SIGKILL escalation must remain bounded")
+    }
+
     // MARK: - Async subprocess cooperative pool test (#94)
 
-    /// Proves that other `async` work makes progress while an update-flow
-    /// subprocess is running.  Without the async subprocess wrapper, the
-    /// blocking `DispatchSemaphore` in `SubprocessRunner.run` would park
-    /// the cooperative-pool thread, starving the concurrent async task.
+    /// Proves that independent async work completes while an update-flow
+    /// subprocess is running. Without the async wrapper, the blocking
+    /// DispatchSemaphore in SubprocessRunner.run can park the cooperative
+    /// pool thread instead of suspending the calling task.
     func testAsyncWorkProgressesDuringSubprocess() async throws {
-        // Launch a 2-second sleep via SubprocessRunner.runAsync and, while
-        // it is running, verify that an independent async task completes.
-        let sleepBin = URL(fileURLWithPath: "/bin/sleep")
-        let task = Task {
+        let start = Date()
+        let subprocess = Task {
             try await SubprocessRunner.runAsync(
-                executable: sleepBin,
+                executable: URL(fileURLWithPath: "/bin/sleep"),
                 arguments: ["2"],
                 timeout: 5
             )
         }
-
-        // This async work must complete well before the 2-second subprocess.
-        let start = Date()
-        var completed = false
-        let stream = AsyncStream<Void> { continuation in
-            continuation.yield()
-            continuation.finish()
+        let independentWork = Task {
+            try await Task.sleep(nanoseconds: 100_000_000)
+            return true
         }
-        for await _ in stream { }
-        // Simulate async work with a brief yield.
-        await Task.yield()
-        completed = true
+
+        let completed = try await independentWork.value
         let elapsed = Date().timeIntervalSince(start)
+        XCTAssertTrue(completed)
+        XCTAssertLessThan(elapsed, 1.0, "async work must not wait for the subprocess")
 
-        // The async work should have finished in well under 2 seconds.
-        XCTAssertLessThan(elapsed, 1.0, "async work must not be blocked by the subprocess")
-        XCTAssertTrue(completed, "async work must complete while subprocess runs")
-
-        // Cancel the sleep subprocess so the test finishes quickly.
-        task.cancel()
+        let result = try await subprocess.value
+        XCTAssertFalse(result.timedOut)
+        XCTAssertEqual(result.exitCode, 0)
     }
 }
