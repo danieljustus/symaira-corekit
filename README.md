@@ -1,12 +1,14 @@
-# symaira-corekit
+# Symaira CoreKit
 
-![CI](https://github.com/danieljustus/symaira-corekit/actions/workflows/ci.yml/badge.svg)
-![License](https://img.shields.io/github/license/danieljustus/symaira-corekit)
-![Latest release](https://img.shields.io/github/v/release/danieljustus/symaira-corekit)
+[![CI](https://github.com/danieljustus/symaira-corekit/actions/workflows/ci.yml/badge.svg)](https://github.com/danieljustus/symaira-corekit/actions/workflows/ci.yml)
+[![Latest release](https://img.shields.io/github/v/release/danieljustus/symaira-corekit)](https://github.com/danieljustus/symaira-corekit/releases)
+[![License](https://img.shields.io/github/license/danieljustus/symaira-corekit)](LICENSE)
 
 ![Symaira CoreKit social preview](docs/assets/social-preview.png)
 
-Shared Go library for the Symaira Go tools (`symbrain`, `symdesk`, `symbrowse`, `symvault`, `symfritz`, `symvibe`).
+> Shared Go library for the Symaira Go tools (`symbrain`, `symdesk`, `symbrowse`, `symvault`, `symfritz`, `symvibe`).
+
+**Status:** pre-1.0 — see [CHANGELOG.md](CHANGELOG.md).
 
 Bundles domain-free infrastructure that is otherwise duplicated across tools: MCP server scaffold, TOML config loading, exit codes, logging, path safety, SQLite setup, and update checking.
 
@@ -16,7 +18,7 @@ go get github.com/danieljustus/symaira-corekit@latest
 
 Although `corekit` is a Go library, its conventions also guide the non-Go tools (`symcockpit`, `symterminal`, `symeraseme`). See [`docs/cross-language-conventions.md`](docs/cross-language-conventions.md) for the shared contracts that apply across languages.
 
-## Why CoreKit?
+## Why CoreKit
 
 - **Standalone-first:** every package works without any other Symaira tool installed — optional integrations are runtime contracts, never build-time imports.
 - **CGO-free:** 100% pure Go on linux/darwin/windows (amd64+arm64); no platform toolchain required.
@@ -53,22 +55,23 @@ cloud-specific behavior.
 
 | Package | Since | Purpose |
 |---------|-------|---------|
-| `exitcodes` | v0.1.0 | Typed exit codes (`ExitOK`, `ExitError`, `ExitUsage`, `ExitAuth`) and `CLIError` type |
-| `logkit` | v0.1.0 | Structured logging (`log/slog`) to stderr, configurable via `SYM<APP>_LOG_LEVEL` |
-| `envutil` | v0.1.0 | Safe environment variable access with alias support |
-| `fsutil` | v0.1.0 | Atomic file writes, path traversal validation, temp-file safety |
+| `auditkit` | v0.11.0 | Tamper-evident SHA-256 hash-chain audit log with anchor checkpoints and size-based rotation |
 | `configkit` | v0.1.0 | TOML config loader with XDG paths, project overrides, and env vars |
 | `domkit` | v0.9.0 | Shared semantic DOM pipeline for schema, selector, image, truncation, and markdown extraction |
-| `embedkit` | v0.9.0 | Embedding provenance, provider abstraction, result caching, dimension pinning, and quantization-aware `SameSpace` identity checks |
+| `envutil` | v0.1.0 | Safe environment variable access with alias support |
 | `evidencekit` | v0.4.0 | Grounded extraction contract (`SourceRef`, `Span`, `Extraction`, `AlignmentStatus`), JSONL sidecar encode/decode, exact/normalized text-span alignment, and grounded-only validation |
+| `exitcodes` | v0.1.0 | Typed exit codes (`ExitOK`, `ExitError`, `ExitUsage`, `ExitAuth`) and `CLIError` type |
+| `fsutil` | v0.1.0 | Atomic file writes, path traversal validation, temp-file safety |
+| `logkit` | v0.1.0 | Structured logging (`log/slog`) to stderr, configurable via `SYM<APP>_LOG_LEVEL` |
+| `mcpcfgkit` | v0.10.0 | MCP server config discovery across AI client applications (JSONC/JSON/YAML) |
 | `mcpserver` | v0.1.0 | Generic JSON-RPC 2.0 stdio server for MCP tool registration |
 | `ollamakit` | v0.4.1 | CGO-free shared Ollama HTTP client: embeddings, streamed generation/chat, model discovery, and typed errors |
 | `sqlitekit` | v0.1.0 | `modernc.org/sqlite` wrapper with WAL mode and embedded migrations |
 | `updatecheck` | v0.1.0 | GitHub release checker (opt-in, max 1×/24h) |
-| `updatecheck/updateapply` | v0.5.0 | Self-update installer: matching-asset download, checksum verification, atomic replacement with rollback, re-exec, and optional Cosign verification, archive extraction, and install-method detection |
 | `updatecheck/cosign` | v0.6.0 | Cosign keyless signature verification for release checksums (Repo/BinaryName/IdentityRegexp parametrisierbar) |
 | `updatecheck/extract` | v0.6.0 | Safe archive extraction (tar.gz/zip) with path-traversal protection |
 | `updatecheck/installmethod` | v0.6.0 | Install-method detection: Homebrew, `go install`, package-manager, direct-download, build-from-source |
+| `updatecheck/updateapply` | v0.5.0 | Self-update installer: matching-asset download, checksum verification, atomic replacement with rollback, re-exec, and optional Cosign verification, archive extraction, and install-method detection |
 | `vectorkit/turboquant` | v0.2.0 | CGO-free TurboQuant scalar vector quantization: deterministic rotation, packed encode/decode, inner-product/cosine scoring, sidecar metadata, benchmarks |
 | `versionkit` | v0.3.0 | Standardized handshake payload (`{tool, version, schema_version}`) for CLI tools |
 
@@ -85,6 +88,12 @@ logger := logkit.NewFromEnv("myapp")
 logger.Info("started", "version", "1.0.0")
 ```
 
+## Documentation
+
+- [`docs/cross-language-conventions.md`](docs/cross-language-conventions.md) — shared contracts that apply across Go, Swift, and Python tools
+- [`docs/migrations.md`](docs/migrations.md) — migration notes and check items per minor release
+- [`docs/adr/0001-authkit-session-and-biometric-broker.md`](docs/adr/0001-authkit-session-and-biometric-broker.md) — Architecture Decision Record: AuthKit session and biometric broker
+
 ## Versioning
 
 Strict SemVer. Each tool pins its corekit version in `go.mod`.
@@ -97,8 +106,12 @@ what changed in each minor release since v0.3.0.
 
 Run `make consumer-drift` (or `scripts/consumer-drift.sh`) from this repo to
 list every sibling Symaira repo checked out alongside it and the corekit
-version each one currently pins — the tool that produced the table above.
+version each one currently pins.
 
-## License
+## Contributing · Security · License
 
-Apache-2.0 — Daniel Justus
+- [CONTRIBUTING.md](CONTRIBUTING.md) — contribution workflow
+- [SECURITY.md](.github/SECURITY.md) — security reporting policy
+- [AGENTS.md](AGENTS.md) — repository rules for contributors and agents
+
+Licensed under the Apache-2.0 license. See [LICENSE](LICENSE).
