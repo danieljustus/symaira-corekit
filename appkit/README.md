@@ -37,6 +37,29 @@ Add the package as an exact-pinned dependency in the client app's `Package.swift
 | `SymairaIngestContract` | JSON contract clients for the ingest rules/mail config and ReOCR requests (the engine ships inside `symdesk`). |
 | `SymairaMCP` | Shared MCP server plumbing: `MCPServer`, stdio `MCPTransport` with message-size guard, and JSON-RPC `MCPTypes` with machine-readable `MCPError` payloads. |
 
+### Platform availability
+
+The package declares `.iOS(.v17)` alongside `.macOS(.v14)`, but availability is
+uneven per product. Where a product is **mixed**, the macOS-only pieces are
+wrapped in `#if os(macOS)`, so referencing them from an iOS target is a
+compile error, not a silently empty API.
+
+| Product | iOS | Notes |
+| :--- | :--- | :--- |
+| `SymairaTheme` | Full | Has explicit `os(iOS)` branches. |
+| `SymairaKeychain` | Full | Security framework APIs behave the same on both platforms. |
+| `SymairaMCP` | Full | No macOS-specific APIs; stdio transport works but is unusual for an iOS app to use. |
+| `SymairaCLIRunner` | **Unavailable** | Entire module is `#if os(macOS)` (subprocess execution does not exist on iOS). Importing it still succeeds; using any symbol from it fails to build. |
+| `SymairaDaemonKit` | **Unavailable** | `DaemonSupervisor` is `#if os(macOS)` for the same reason (wraps `SymairaCLIRunner`). |
+| `SymairaToolKit` | Mixed | `SymairaTool` / `SymairaToolRegistry` (plain data) build on iOS. `BinaryLocator` and `ToolDetector` are `#if os(macOS)` — using them from an iOS target fails to build. |
+| `SymairaIngestContract` | Mixed | The `ReOCRClient` protocol and all contract/DTO types build on iOS. The concrete `SymingestReOCRClient` (which shells out via `SymairaToolKit`) is `#if os(macOS)`. |
+| `SymairaUpdateCheck` | Mixed | Release-check, semver, and asset-verification logic build on iOS; the pieces that shell out to install/replace the running binary (`SubprocessRunner` and the install/apply paths that use it) are `#if os(macOS)`. |
+
+A macOS-only product still **links** cleanly into an iOS target — SwiftPM does
+not fail the dependency graph over this — only *using* one of its symbols
+fails to build. `SymairaTheme`, `SymairaKeychain`, and `SymairaMCP` are safe to
+adopt in an iOS client today.
+
 ## Usage
 
 Review the [CHANGELOG](CHANGELOG.md) before bumping your pin — every release documents its additions, fixes, and breaking changes.

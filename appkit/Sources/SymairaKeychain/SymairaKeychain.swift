@@ -15,6 +15,38 @@ public enum SymairaKeychainError: Error, LocalizedError, Sendable {
     }
 }
 
+/// How strongly a stored item is bound to the device's local authentication state.
+public enum SymairaKeychainAccessControl: Sendable, Equatable {
+    /// No access control; item is readable once the device has been unlocked
+    /// at least once since boot (`kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly`).
+    case none
+
+    /// Requires the device passcode before the item can be read
+    /// (`.devicePasscode`). Survives biometric enrollment changes.
+    case devicePasscode
+
+    /// Requires the currently enrolled biometrics (Touch ID / Face ID) before
+    /// the item can be read (`.biometryCurrentSet`). Unlike `.devicePasscode`,
+    /// this invalidates the item the moment the user adds, removes, or
+    /// re-enrolls a fingerprint or face — appropriate for a credential
+    /// manager that wants a stale enrollment to lock a secret out rather than
+    /// silently keep accepting it.
+    case biometryCurrentSet
+
+    /// The `SecAccessControlCreateFlags` for this policy, or `nil` for `.none`
+    /// (which uses a plain `kSecAttrAccessible` attribute instead).
+    var secAccessControlFlags: SecAccessControlCreateFlags? {
+        switch self {
+        case .none:
+            return nil
+        case .devicePasscode:
+            return .devicePasscode
+        case .biometryCurrentSet:
+            return .biometryCurrentSet
+        }
+    }
+}
+
 /// Keychain wrapper unifying the former memory/vibecoder helpers.
 ///
 /// Items are stored in the **data-protection keychain** with
@@ -67,6 +99,26 @@ public struct SymairaKeychain: Sendable {
     ///   write or the access control cannot be created.
     @discardableResult
     public func save(_ value: String, key: String, requireUserPresence: Bool) throws -> Bool {
+        try save(value, key: key, accessControl: requireUserPresence ? .devicePasscode : .none)
+    }
+
+    /// Saves a value to the keychain under the given access control.
+    ///
+    /// See `SymairaKeychainAccessControl` for what each case requires before
+    /// the item can be read back. `.devicePasscode` and `.biometryCurrentSet`
+    /// both carry a `kSecAttrAccessControl` object instead of a plain
+    /// `kSecAttrAccessible` attribute; adding such an item never prompts the
+    /// user (only a subsequent `read(key:)` does).
+    ///
+    /// - Parameters:
+    ///   - value: The string value to store.
+    ///   - key: The account name under which the value is stored.
+    ///   - accessControl: The authentication requirement gating a future read.
+    /// - Returns: `true` when the item was saved successfully.
+    /// - Throws: `SymairaKeychainError.saveFailed` if the keychain rejects the
+    ///   write or the access control cannot be created.
+    @discardableResult
+    public func save(_ value: String, key: String, accessControl: SymairaKeychainAccessControl) throws -> Bool {
         let data = Data(value.utf8)
 
         // Remove any existing item first to avoid errSecDuplicateItem.
@@ -81,18 +133,18 @@ public struct SymairaKeychain: Sendable {
             kSecAttrSynchronizable as String: false,
         ]
 
-        if requireUserPresence {
+        if let flags = accessControl.secAccessControlFlags {
             var accessError: Unmanaged<CFError>?
-            guard let accessControl = SecAccessControlCreateWithFlags(
+            guard let control = SecAccessControlCreateWithFlags(
                 nil,
                 kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly,
-                .devicePasscode,
+                flags,
                 &accessError
             ) else {
                 let status = accessError.map { OSStatus(CFErrorGetCode($0.takeRetainedValue())) } ?? errSecParam
                 throw SymairaKeychainError.saveFailed(status)
             }
-            query[kSecAttrAccessControl as String] = accessControl
+            query[kSecAttrAccessControl as String] = control
         } else {
             query[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
         }

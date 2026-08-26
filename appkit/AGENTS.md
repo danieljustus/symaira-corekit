@@ -14,7 +14,7 @@ swift test
   ```bash
   DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer swift test
   ```
-- Keychain code is intentionally untested beyond compilation (headless CI has no keyring).
+- `SymairaKeychainTests` exercises the data-protection keychain paths, but skips (via `XCTSkip`) on `errSecMissingEntitlement` — an unsigned `swift test` binary has no `keychain-access-groups` entitlement, so CI runs them as skips, not passes. Only a signed app/test target (a real Symaira client) exercises them for real.
 
 ## Architecture & Boundaries
 
