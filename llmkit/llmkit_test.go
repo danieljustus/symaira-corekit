@@ -1,3 +1,4 @@
+//nolint:gosec // G104/G204 in test servers: ignored write/decode errors and the exec indirection are intentional here
 package llmkit
 
 import (

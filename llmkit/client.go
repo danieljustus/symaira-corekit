@@ -158,7 +158,7 @@ func (c *Client) do(ctx context.Context, method, path string, body any, contentT
 	}
 	if resp.StatusCode >= 300 {
 		b, _ := io.ReadAll(io.LimitReader(resp.Body, 8<<10))
-		resp.Body.Close()
+		_ = resp.Body.Close() //nolint:gosec // G104: close error on an error path is not actionable
 		e := classify(resp.StatusCode, string(b))
 		if ra := resp.Header.Get("Retry-After"); ra != "" {
 			e.RetryAfter = ra
