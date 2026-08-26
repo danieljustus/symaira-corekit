@@ -42,8 +42,8 @@ func TestConformanceChatShape(t *testing.T) {
 			var gotPath string
 			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				gotPath = r.URL.Path
-				io.Copy(io.Discard, r.Body)
-				w.Write([]byte(`{"choices":[{"message":{"role":"assistant","content":"ok"},"finish_reason":"stop"}]}`))
+				_, _ = io.Copy(io.Discard, r.Body)
+				_, _ = w.Write([]byte(`{"choices":[{"message":{"role":"assistant","content":"ok"},"finish_reason":"stop"}]}`))
 			}))
 			defer srv.Close()
 
@@ -78,8 +78,8 @@ func TestConformanceStreaming(t *testing.T) {
 		t.Run(p.ID, func(t *testing.T) {
 			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.Header().Set("Content-Type", "text/event-stream")
-				io.WriteString(w, "data: {\"choices\":[{\"delta\":{\"content\":\"x\"}}]}\n\n")
-				io.WriteString(w, "data: [DONE]\n\n")
+				_, _ = io.WriteString(w, "data: {\"choices\":[{\"delta\":{\"content\":\"x\"}}]}\n\n")
+				_, _ = io.WriteString(w, "data: [DONE]\n\n")
 			}))
 			defer srv.Close()
 
@@ -108,7 +108,7 @@ func TestConformanceEmbeddingsCapabilityGate(t *testing.T) {
 	hitNetwork := false
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		hitNetwork = true
-		io.WriteString(w, `{"data":[{"embedding":[1,2]}]}`)
+		_, _ = io.WriteString(w, `{"data":[{"embedding":[1,2]}]}`)
 	}))
 	defer srv.Close()
 
@@ -231,7 +231,7 @@ func TestConformanceRegistryCoverage(t *testing.T) {
 // change and without a release of this package.
 func TestWorkedExampleUnlistedVendor(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		io.WriteString(w, `{"choices":[{"message":{"content":"from self-hosted vllm"},"finish_reason":"stop"}]}`)
+		_, _ = io.WriteString(w, `{"choices":[{"message":{"content":"from self-hosted vllm"},"finish_reason":"stop"}]}`)
 	}))
 	defer srv.Close()
 
@@ -259,7 +259,7 @@ func TestLocalOnlySetupWorks(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case "/api/tags":
-			io.WriteString(w, `{"models":[{"name":"llama3.1"}]}`)
+			_, _ = io.WriteString(w, `{"models":[{"name":"llama3.1"}]}`)
 		default:
 			t.Errorf("unexpected path %q", r.URL.Path)
 		}
