@@ -139,11 +139,17 @@ material or opaque accessibility fallbacks on earlier systems. See
 ## Build & Test
 
 ```bash
-swift build
-swift test
+make build
+make test
 ```
 
-Requires macOS 14+ or iOS 17+, Swift 6. Native Liquid Glass is enabled on
+The Makefile resolves a full Xcode toolchain and exports `DEVELOPER_DIR` for
+the build itself, so these work regardless of what `xcode-select` points at.
+A bare `swift build` fails when Command Line Tools are the active developer
+directory, since they ship no XCTest and no SwiftUI macro plugins.
+`make toolchain` shows which toolchain will be used.
+
+Requires macOS 14+ or iOS 17+, Swift 6, and a full Xcode installation. Native Liquid Glass is enabled on
 macOS/iOS 26+ when built with a compatible SDK.
 
 ## License

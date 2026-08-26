@@ -5,15 +5,20 @@ Shared public Swift library (Apache-2.0) for Symaira macOS clients. GUI counterp
 ## Build & Test
 
 ```bash
-swift build
-swift test
+make build
+make test
+make toolchain          # show which Swift toolchain will be used
 ```
 
 - macOS 14+, Swift 6 (strict concurrency). No Xcode project — pure SPM.
-- Local toolchain note: Command Line Tools lack XCTest. Run tests with the Xcode toolchain (same workaround as symaira-cockpit):
-  ```bash
-  DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer swift test
-  ```
+- **Use the Makefile, not bare `swift build`/`swift test`.** Command Line Tools ship
+  no XCTest and no SwiftUI macro plugins, so a bare `swift build` fails outright
+  whenever `xcode-select -p` points at `/Library/Developer/CommandLineTools`. The
+  Makefile resolves a full Xcode itself and exports `DEVELOPER_DIR` for the child
+  process only — no machine-wide `sudo xcode-select -s` needed. Precedence: an
+  explicit `DEVELOPER_DIR`, then the active `xcode-select` path if it is a real
+  Xcode, then `Xcode.app`, then `Xcode-beta.app`. `make toolchain` prints the
+  result and fails with a clear message when no Xcode is installed.
 - `SymairaKeychainTests` exercises the data-protection keychain paths, but skips (via `XCTSkip`) on `errSecMissingEntitlement` — an unsigned `swift test` binary has no `keychain-access-groups` entitlement, so CI runs them as skips, not passes. Only a signed app/test target (a real Symaira client) exercises them for real.
 - **Cross-language contract fixtures:** `contracts/*.json` are vendored copies of `symaira-corekit`'s `contracts/*.json` (see `contracts/README.md` for provenance and the update procedure). `Tests/SymairaUpdateCheckTests/ContractFixtureTests.swift` and `Tests/SymairaMCPTests/ContractFixtureTests.swift` assert this repo's Swift code against them as part of the normal `swift test` run — no separate CI job.
 
