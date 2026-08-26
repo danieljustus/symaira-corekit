@@ -89,6 +89,16 @@ public struct UpdateChecker: Sendable {
         guard let latestVersion = StableVersion(latest.tagName), latestVersion > current else {
             return nil
         }
+
+        // V0-major gap: mirrors corekit's Checker.Check. A pre-v1.0 consumer
+        // should not suddenly be offered a v1.0+ release before the
+        // ecosystem has decided it's ready for that jump. Applies to both
+        // the cache-hit and freshly-fetched paths above, since they both
+        // funnel through this one comparison.
+        if current.major == 0 && latestVersion.major > 0 {
+            return nil
+        }
+
         return ReleaseInfo(tagName: latest.tagName, htmlURL: latest.htmlURL)
     }
 

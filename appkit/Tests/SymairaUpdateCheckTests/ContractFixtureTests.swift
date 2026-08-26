@@ -51,18 +51,8 @@ final class UpdateCheckContractFixtureTests: XCTestCase {
         XCTAssertNotNil(StableVersion("1.2.3"), "a plain stable version should still parse")
     }
 
-    /// KNOWN DIVERGENCE — tracked in danieljustus/symaira-appkit#116.
-    ///
-    /// corekit's `Checker.Check` suppresses offering a release when
-    /// `current.major == 0 && latest.major > 0` (see corekit's
-    /// `updatecheck.go`). `UpdateChecker.check` has no equivalent check, so
-    /// this currently fails. Per danieljustus/symaira-appkit#105's scope,
-    /// a fixture-revealed divergence is fixed in its own issue with its own
-    /// reasoning, not silently patched here or hidden by bending the
-    /// fixture — hence `XCTExpectFailure` instead of a passing assertion.
-    /// Remove the `XCTExpectFailure` wrapper once #116 lands; if this
-    /// unexpectedly *passes* in the meantime, that's your signal #116 is
-    /// already fixed.
+    /// Fixed in danieljustus/symaira-appkit#116: `UpdateChecker.check` now
+    /// mirrors corekit's `Checker.Check` v0-major-gap suppression.
     func testV0MajorGapSuppressedPerFixture() async throws {
         let fixture = try loadFixture()
         guard fixture.v0MajorGapSuppressed else {
@@ -77,15 +67,28 @@ final class UpdateCheckContractFixtureTests: XCTestCase {
         let client = FixtureStubHTTPClient(body: body, status: 200)
         let checker = UpdateChecker(owner: "danieljustus", repo: "x", client: client, cacheDirectory: cacheDir)
 
-        // The async fetch itself doesn't fail today — only the assertion
-        // below does, since `check` wrongly returns the v1.0.0 release. Keep
-        // the await outside XCTExpectFailure to avoid Swift's ambiguity
-        // between its sync- and async-closure overloads.
         let release = try await checker.check(currentVersion: "v0.9.0")
+        XCTAssertNil(release, "a v0.x consumer should not be offered a v1.0.0+ release")
+    }
 
-        XCTExpectFailure("known divergence from the documented contract — see danieljustus/symaira-appkit#116") {
-            XCTAssertNil(release, "a v0.x consumer should not be offered a v1.0.0+ release")
+    /// Companion to the suppression test above: the v0-major-gap check must
+    /// not swallow a normal same-major update.
+    func testNormalV0UpdateStillOffered() async throws {
+        let fixture = try loadFixture()
+        guard fixture.v0MajorGapSuppressed else {
+            throw XCTSkip("fixture does not claim v0-major gap suppression")
         }
+
+        let cacheDir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("appkit-contract-v0update-\(UUID().uuidString)")
+        defer { try? FileManager.default.removeItem(at: cacheDir) }
+
+        let body = #"{"tag_name":"v0.10.0","html_url":"https://github.com/danieljustus/x/releases/tag/v0.10.0"}"#
+        let client = FixtureStubHTTPClient(body: body, status: 200)
+        let checker = UpdateChecker(owner: "danieljustus", repo: "x", client: client, cacheDirectory: cacheDir)
+
+        let release = try await checker.check(currentVersion: "v0.9.0")
+        XCTAssertEqual(release?.tagName, "v0.10.0", "a same-major v0.x -> v0.y update should still be offered")
     }
 }
 
