@@ -44,6 +44,12 @@ type ChatOptions struct {
 	MaxTokens   int
 	System      string // convenience system prompt; merged into messages
 	Tools       []Tool // requires the provider's tool_use capability
+	// ResponseFormat constrains the model output on OpenAI-wire endpoints
+	// (response_format body field). Consumers that must parse structured
+	// output pass the provider's JSON-schema shape here, e.g. the OpenAI
+	// object {"type":"json_schema","json_schema":{...}}. Anthropic-wire
+	// endpoints ignore it.
+	ResponseFormat json.RawMessage
 }
 
 // Chat performs a non-streaming chat completion and returns the first choice.
@@ -71,12 +77,13 @@ func (c *Client) Chat(ctx context.Context, model string, messages []Message, opt
 // --- OpenAI dialect -----------------------------------------------------
 
 type openaiChatRequest struct {
-	Model       string       `json:"model"`
-	Messages    []openaiMsg  `json:"messages"`
-	Temperature *float64     `json:"temperature,omitempty"`
-	MaxTokens   int          `json:"max_tokens,omitempty"`
-	Stream      bool         `json:"stream"`
-	Tools       []openaiTool `json:"tools,omitempty"`
+	Model          string          `json:"model"`
+	Messages       []openaiMsg     `json:"messages"`
+	Temperature    *float64        `json:"temperature,omitempty"`
+	MaxTokens      int             `json:"max_tokens,omitempty"`
+	Stream         bool            `json:"stream"`
+	Tools          []openaiTool    `json:"tools,omitempty"`
+	ResponseFormat json.RawMessage `json:"response_format,omitempty"`
 }
 
 type openaiMsg struct {
@@ -178,6 +185,7 @@ func (c *Client) chatOpenAI(ctx context.Context, model string, messages []Messag
 	if opts != nil {
 		req.Temperature = opts.Temperature
 		req.MaxTokens = opts.MaxTokens
+		req.ResponseFormat = opts.ResponseFormat
 		if len(opts.Tools) > 0 {
 			if !c.desc.Capabilities.ToolUse {
 				return nil, fmt.Errorf("llmkit: provider %q does not promise tool_use", c.desc.ID)

@@ -145,16 +145,46 @@ type GenerateResponse struct {
 	Done     bool   `json:"done"`
 }
 
+// GenerateOption configures a native /api/generate call.
+type GenerateOption func(*generateConfig)
+
+type generateConfig struct {
+	system string
+	format any // JSON-schema object for Ollama's `format` field
+}
+
+// WithGenerateSystem sets the system prompt on a native generate call.
+func WithGenerateSystem(p string) GenerateOption {
+	return func(c *generateConfig) { c.system = p }
+}
+
+// WithGenerateFormat constrains the generated output to a JSON-schema
+// object (Ollama `format` field). Pass the schema itself, e.g. the
+// consolidation schema consumers send for structured replies.
+func WithGenerateFormat(schema map[string]any) GenerateOption {
+	return func(c *generateConfig) { c.format = schema }
+}
+
 // Generate streams a native Ollama text generation. The callback receives one
 // chunk per line of the NDJSON stream.
-func (c *Client) Generate(ctx context.Context, model, prompt string, callback func(GenerateResponse) error) error {
+func (c *Client) Generate(ctx context.Context, model, prompt string, callback func(GenerateResponse) error, opts ...GenerateOption) error {
 	if !c.isOllama() {
 		return fmt.Errorf("llmkit: Generate is only available for the ollama provider")
 	}
 	if model == "" {
 		model = c.desc.DefaultModel()
 	}
+	var cfg generateConfig
+	for _, opt := range opts {
+		opt(&cfg)
+	}
 	body := map[string]any{"model": model, "prompt": prompt, "stream": true}
+	if cfg.system != "" {
+		body["system"] = cfg.system
+	}
+	if cfg.format != nil {
+		body["format"] = cfg.format
+	}
 	return c.streamNDJSON(ctx, "/api/generate", body, func(raw []byte) error {
 		var chunk GenerateResponse
 		if err := json.Unmarshal(raw, &chunk); err != nil {
