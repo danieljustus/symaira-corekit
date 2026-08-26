@@ -7,6 +7,10 @@
       "base_url": "https://api.anthropic.com",
       "base_url_overridable": true,
       "auth_scheme": "header",
+      "auth_header": "x-api-key",
+      "extra_headers": {
+        "anthropic-version": "2023-06-01"
+      },
       "dialect": "anthropic",
       "capabilities": {
         "streaming": true,
@@ -18,10 +22,6 @@
       "models": {
         "mode": "static",
         "default": "claude-sonnet-5-20250915"
-      },
-      "auth_header": "x-api-key",
-      "extra_headers": {
-        "anthropic-version": "2023-06-01"
       },
       "credential_env_default": "ANTHROPIC_API_KEY"
     },
@@ -61,8 +61,8 @@
       },
       "models": {
         "mode": "discovered",
-        "default": "anthropic/claude-sonnet-5",
-        "discovery_path": "/models"
+        "discovery_path": "/models",
+        "default": "anthropic/claude-sonnet-5"
       },
       "credential_env_default": "OPENROUTER_API_KEY"
     },
@@ -231,7 +231,9 @@
       "display_name": "Azure OpenAI",
       "base_url": null,
       "base_url_overridable": false,
+      "base_url_required_override": true,
       "auth_scheme": "header",
+      "auth_header": "api-key",
       "dialect": "openai",
       "capabilities": {
         "streaming": true,
@@ -244,8 +246,6 @@
         "mode": "deployment",
         "default": ""
       },
-      "base_url_required_override": true,
-      "auth_header": "api-key",
       "credential_env_default": "AZURE_OPENAI_API_KEY"
     },
     {
@@ -264,8 +264,8 @@
       },
       "models": {
         "mode": "discovered",
-        "default": "llama3.1",
-        "discovery_path": "/api/tags"
+        "discovery_path": "/api/tags",
+        "default": "llama3.1"
       }
     },
     {
@@ -273,8 +273,10 @@
       "display_name": "Custom endpoint",
       "base_url": null,
       "base_url_overridable": false,
+      "base_url_required_override": true,
       "auth_scheme": "bearer",
       "dialect": "openai",
+      "dialect_configurable": true,
       "capabilities": {
         "streaming": true,
         "tool_use": true,
@@ -285,9 +287,7 @@
       "models": {
         "mode": "configured",
         "default": ""
-      },
-      "base_url_required_override": true,
-      "dialect_configurable": true
+      }
     }
   ]
 }

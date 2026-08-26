@@ -62,10 +62,11 @@ cloud-specific behavior.
 | `evidencekit` | v0.4.0 | Grounded extraction contract (`SourceRef`, `Span`, `Extraction`, `AlignmentStatus`), JSONL sidecar encode/decode, exact/normalized text-span alignment, and grounded-only validation |
 | `exitcodes` | v0.1.0 | Typed exit codes (`ExitOK`, `ExitError`, `ExitUsage`, `ExitAuth`) and `CLIError` type |
 | `fsutil` | v0.1.0 | Atomic file writes, path traversal validation, temp-file safety |
+| `llmkit` | v0.14.0 | Shared LLM provider layer: descriptor-driven registry, one OpenAI transport plus an Anthropic dialect, streaming, tool use, embeddings, model discovery, credential references (`symvault://`/`env://`), and the contract error taxonomy |
 | `logkit` | v0.1.0 | Structured logging (`log/slog`) to stderr, configurable via `SYM<APP>_LOG_LEVEL` |
 | `mcpcfgkit` | v0.10.0 | MCP server config discovery across AI client applications (JSONC/JSON/YAML) |
 | `mcpserver` | v0.1.0 | Generic JSON-RPC 2.0 stdio server for MCP tool registration |
-| `ollamakit` | v0.4.1 | CGO-free shared Ollama HTTP client: embeddings, streamed generation/chat, model discovery, and typed errors |
+| `ollamakit` | v0.4.1 | Deprecated: superseded by `llmkit` (Ollama is now a provider descriptor); thin shim, removal after one minor release |
 | `sqlitekit` | v0.1.0 | `modernc.org/sqlite` wrapper with WAL mode and embedded migrations |
 | `updatecheck` | v0.1.0 | GitHub release checker (opt-in, max 1×/24h) |
 | `updatecheck/cosign` | v0.6.0 | Cosign keyless signature verification for release checksums (Repo/BinaryName/IdentityRegexp parametrisierbar) |
