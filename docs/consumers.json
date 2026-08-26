@@ -1,0 +1,11 @@
+{
+  "$schema_note": "Consumers of github.com/danieljustus/symaira-corekit and where each one pins it. Read by scripts/check-consumer-pins.sh and .github/workflows/consumer-pin-drift.yml. Update this file whenever a consumer repo is added, renamed, archived, or its go.mod moves.",
+  "consumers": [
+    { "repo": "danieljustus/symaira-brain", "pins": ["go.mod", "guard/go.mod"] },
+    { "repo": "danieljustus/symaira-browse", "pins": ["go.mod"] },
+    { "repo": "danieljustus/symaira-desktop", "pins": ["go.mod"] },
+    { "repo": "danieljustus/symaira-fritz", "pins": ["go.mod"] },
+    { "repo": "danieljustus/symaira-vault", "pins": ["go.mod"] },
+    { "repo": "danieljustus/symaira-vibecoder", "pins": ["go.mod"] }
+  ]
+}

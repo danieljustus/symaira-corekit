@@ -1,0 +1,50 @@
+# Checks every consumer listed in docs/consumers.json against the latest
+# symaira-corekit release and opens/updates a tracking issue when any of
+# them lag. This is the follow-up mechanism for the "who bumps, on what
+# trigger" ownership rule in AGENTS.md "Consumer Bump Ownership" — without
+# it, a shipped corekit release only reaches consumers when someone
+# happens to notice, which is what left several consumers multiple minors
+# behind before danieljustus/symaira-corekit#157.
+#
+# Required secret: CONSUMER_READ_TOKEN
+#   - Fine-grained PAT scoped to every repo in docs/consumers.json, with
+#     Contents: Read-only permission (no write access needed — this
+#     workflow only reads go.mod files and opens issues in this repo).
+#   - Add it under this repo's Settings -> Secrets and variables -> Actions.
+#   - Without it, the workflow logs a warning and exits successfully
+#     rather than failing CI on every scheduled run.
+#
+# Manual test: gh workflow run consumer-pin-drift.yml --repo danieljustus/symaira-corekit
+
+name: Consumer Pin Drift Check
+
+on:
+  schedule:
+    - cron: '0 6 1 * *' # monthly, 1st at 06:00 UTC
+  workflow_dispatch: {}
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: consumer-pin-drift
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Check consumer pins
+        env:
+          GH_TOKEN: ${{ secrets.CONSUMER_READ_TOKEN }}
+        run: |
+          if [ -z "${GH_TOKEN:-}" ]; then
+            echo "::warning::CONSUMER_READ_TOKEN is not set — skipping the cross-repo drift check. See this workflow's header comment or AGENTS.md 'Consumer Bump Ownership' for setup."
+            exit 0
+          fi
+          scripts/check-consumer-pins.sh --create-issue
