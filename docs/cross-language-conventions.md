@@ -169,8 +169,8 @@ version from package metadata (e.g. `importlib.metadata.version("symeraseme")`).
 
 Prefer typed domain errors that map to exit codes. Examples:
 
-- `symoperate.AutomationError`
-- `symtune.TuneError`
+- `symcockpit` (operate module) — `SymOperateCore.AutomationError`
+- `symcockpit` (tune module) — `SymTuneCore.TuneError`
 - `symeraseme.SymerasemeError`
 
 `corekit/exitcodes.CLIError` provides the Go equivalent: a typed error that
@@ -195,14 +195,10 @@ and `symcockpit tune doctor`.
 
 ## Candidates for Future Corekit Extraction
 
-The following generic patterns are currently implemented inside individual tools
-and could be candidates for moving into `corekit` if another Go tool needs them:
-
-- **Advisory file locking** (`flock` / `funlock`) in
-  `symaira-scope/internal/cache/lock_unix.go` and `lock_windows.go`.
-
-These are intentionally left in their current homes until a second consumer
-justifies the extraction.
+None currently tracked. The previous entry here (advisory file locking in
+`symaira-scope/internal/cache/lock_unix.go`) is gone: `symaira-scope` was
+archived and its functionality ported to Swift, so the Go implementation this
+candidate pointed at no longer exists.
 
 ## References
 

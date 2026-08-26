@@ -1,0 +1,9 @@
+{
+  "application_json_key_case": "snake_case",
+  "application_json_key_case_scope": "tool-defined result and argument payloads (e.g. RegisterTyped-derived schemas, structuredContent)",
+  "protocol_envelope_key_case": "camelCase",
+  "protocol_envelope_key_case_note": "The MCP JSON-RPC envelope itself (jsonrpc, id, method, params, and hint fields like readOnlyHint) follows the MCP specification, which is camelCase and is not a Symaira convention to change.",
+  "stdout_pollution": "forbidden",
+  "stdout_pollution_rule": "A tool exposing an MCP server over stdio must write only structured JSON-RPC frames to stdout; logs, diagnostics, and warnings go to stderr.",
+  "transport_framing": "Content-Length header followed by CRLFCRLF and the JSON-RPC body, per the MCP stdio transport spec."
+}

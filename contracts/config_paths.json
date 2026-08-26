@@ -1,0 +1,8 @@
+{
+  "config_path_pattern": "~/.config/<app>/config.toml",
+  "cache_path_pattern": "~/.cache/<app>/",
+  "data_path_pattern": "~/.local/share/<app>/",
+  "config_file_format": "toml",
+  "workspace_local_state_format": "json",
+  "note": "corekit/configkit.DefaultPath implements the config_path_pattern exactly (~/.config/<app>/config.toml) but does not itself honor XDG_CONFIG_HOME/XDG_CACHE_HOME/XDG_DATA_HOME overrides; a consumer that wants XDG override behavior implements it on top of configkit, as mcpcfgkit does for XDG_CONFIG_HOME."
+}
