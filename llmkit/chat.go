@@ -227,7 +227,7 @@ func (c *Client) chatOpenAI(ctx context.Context, model string, messages []Messag
 
 // StreamChat performs a streaming chat completion, invoking callback for each
 // content delta. Requires the provider's streaming capability.
-func (c *Client) StreamChat(ctx context.Context, model string, messages []Message, opts *ChatOptions, callback func(delta string) error) error {
+func (c *Client) StreamChat(ctx context.Context, model string, messages []Message, opts *ChatOptions, callback func(delta string) error, streamOpts ...StreamOption) error {
 	if !c.desc.Capabilities.Streaming {
 		return fmt.Errorf("llmkit: provider %q does not promise streaming", c.desc.ID)
 	}
@@ -237,14 +237,33 @@ func (c *Client) StreamChat(ctx context.Context, model string, messages []Messag
 	if model == "" {
 		return fmt.Errorf("llmkit: model is required for provider %q", c.desc.ID)
 	}
+	var cfg streamConfig
+	for _, opt := range streamOpts {
+		opt(&cfg)
+	}
 	switch c.dialect {
 	case DialectOpenAI:
-		return c.streamOpenAI(ctx, model, messages, opts, callback)
+		return c.streamOpenAI(ctx, model, messages, opts, callback, cfg)
 	case DialectAnthropic:
-		return c.streamAnthropicDialect(ctx, model, messages, opts, callback)
+		return c.streamAnthropicDialect(ctx, model, messages, opts, callback, cfg)
 	default:
 		return fmt.Errorf("llmkit: unsupported dialect %q", c.dialect)
 	}
+}
+
+// StreamOption configures a streaming chat call.
+type StreamOption func(*streamConfig)
+
+type streamConfig struct {
+	onFinish func(reason string)
+}
+
+// WithStreamFinished registers a callback invoked when the provider signals
+// the terminal finish/stop reason of the stream (e.g. "max_tokens",
+// "stop", "tool_calls"). The callback is called at most once; when the
+// provider never reports a reason it is not called.
+func WithStreamFinished(h func(reason string)) StreamOption {
+	return func(c *streamConfig) { c.onFinish = h }
 }
 
 type openaiStreamChunk struct {
@@ -293,7 +312,7 @@ func (c *Client) streamSSE(ctx context.Context, path string, body any, handle fu
 	return nil
 }
 
-func (c *Client) streamOpenAI(ctx context.Context, model string, messages []Message, opts *ChatOptions, callback func(string) error) error {
+func (c *Client) streamOpenAI(ctx context.Context, model string, messages []Message, opts *ChatOptions, callback func(string) error, cfg streamConfig) error {
 	body := openaiChatRequest{
 		Model:    model,
 		Messages: toOpenAIMessages(messages, opts),
@@ -310,6 +329,9 @@ func (c *Client) streamOpenAI(ctx context.Context, model string, messages []Mess
 		}
 		if len(chunk.Choices) == 0 {
 			return nil
+		}
+		if fr := chunk.Choices[0].FinishReason; fr != "" && cfg.onFinish != nil {
+			cfg.onFinish(fr)
 		}
 		delta := chunk.Choices[0].Delta.Content
 		if delta == "" {
@@ -446,19 +468,24 @@ func (c *Client) chatAnthropic(ctx context.Context, model string, messages []Mes
 type anthropicStreamEvent struct {
 	Type  string `json:"type"`
 	Delta struct {
-		Type string `json:"type"`
-		Text string `json:"text"`
+		Type       string `json:"type"`
+		Text       string `json:"text"`
+		StopReason string `json:"stop_reason"`
 	} `json:"delta"`
 	Error *struct {
 		Message string `json:"message"`
 	} `json:"error"`
 }
 
-func (c *Client) streamAnthropicDialect(ctx context.Context, model string, messages []Message, opts *ChatOptions, callback func(string) error) error {
+func (c *Client) streamAnthropicDialect(ctx context.Context, model string, messages []Message, opts *ChatOptions, callback func(string) error, cfg streamConfig) error {
 	return c.streamSSE(ctx, "/messages", c.buildAnthropicRequest(model, messages, opts, true), func(data []byte) error {
 		var ev anthropicStreamEvent
 		if err := json.Unmarshal(data, &ev); err != nil {
 			return nil // skip unknown event shapes rather than killing streams
+		}
+		if ev.Type == "message_delta" && ev.Delta.StopReason != "" && cfg.onFinish != nil {
+			cfg.onFinish(ev.Delta.StopReason)
+			return nil
 		}
 		if ev.Type == "content_block_delta" && ev.Delta.Text != "" {
 			return callback(ev.Delta.Text)

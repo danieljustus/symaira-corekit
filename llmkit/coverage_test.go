@@ -924,6 +924,82 @@ func TestTruncateBody(t *testing.T) {
 	}
 }
 
+func TestStreamFinishedReason(t *testing.T) {
+	t.Run("openai finish_reason", func(t *testing.T) {
+		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "text/event-stream")
+			io.WriteString(w, "data: {\"choices\":[{\"delta\":{\"content\":\"x\"}}]}\n\n")
+			io.WriteString(w, "data: {\"choices\":[{\"delta\":{},\"finish_reason\":\"max_tokens\"}]}\n\n")
+			io.WriteString(w, "data: [DONE]\n\n")
+		}))
+		defer srv.Close()
+		c := ollamaClient(t, srv.URL)
+		var fin string
+		err := c.StreamChat(context.Background(), "m", []Message{{Role: "user", Content: "x"}}, nil,
+			func(string) error { return nil },
+			WithStreamFinished(func(reason string) { fin = reason }))
+		if err != nil {
+			t.Fatalf("StreamChat: %v", err)
+		}
+		if fin != "max_tokens" {
+			t.Errorf("finish reason = %q, want max_tokens", fin)
+		}
+	})
+	t.Run("anthropic message_delta stop_reason", func(t *testing.T) {
+		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "text/event-stream")
+			io.WriteString(w, "data: {\"type\":\"content_block_delta\",\"delta\":{\"type\":\"text_delta\",\"text\":\"hi\"}}\n\n")
+			io.WriteString(w, "data: {\"type\":\"message_delta\",\"delta\":{\"stop_reason\":\"max_tokens\"}}\n\n")
+			io.WriteString(w, "data: [DONE]\n\n")
+		}))
+		defer srv.Close()
+		envKey(t, "ANTHROPIC_API_KEY")
+		c, err := NewClient(mustDescriptor(t, "anthropic"), "", WithBaseURL(srv.URL))
+		if err != nil {
+			t.Fatalf("NewClient: %v", err)
+		}
+		var fin string
+		var sb strings.Builder
+		err = c.StreamChat(context.Background(), "m", []Message{{Role: "user", Content: "x"}}, nil,
+			func(d string) error { sb.WriteString(d); return nil },
+			WithStreamFinished(func(reason string) { fin = reason }))
+		if err != nil {
+			t.Fatalf("StreamChat: %v", err)
+		}
+		if fin != "max_tokens" {
+			t.Errorf("finish reason = %q, want max_tokens", fin)
+		}
+		if sb.String() != "hi" {
+			t.Errorf("deltas = %q", sb.String())
+		}
+	})
+}
+
+func TestWithAPIKeyBypassesResolution(t *testing.T) {
+	t.Setenv("ANTHROPIC_API_KEY", "") // would fail resolution if consulted
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if got := r.Header.Get("x-api-key"); got != "direct-key" {
+			t.Errorf("x-api-key = %q, want direct-key", got)
+		}
+		io.WriteString(w, `{"content":[{"type":"text","text":"ok"}]}`)
+	}))
+	defer srv.Close()
+
+	desc := mustDescriptor(t, "anthropic")
+	c, err := NewClient(desc, "", WithBaseURL(srv.URL), WithAPIKey("direct-key"))
+	if err != nil {
+		t.Fatalf("NewClient: %v", err)
+	}
+	if _, err := c.Chat(context.Background(), "m", []Message{{Role: "user", Content: "x"}}, nil); err != nil {
+		t.Fatalf("Chat: %v", err)
+	}
+	// Without the key, resolution fails honestly (no env), even on a
+	// provider whose default env is unset.
+	if _, err := NewClient(desc, "", WithBaseURL(srv.URL)); err == nil {
+		t.Error("expected auth error without credential")
+	}
+}
+
 // --- provider.go -----------------------------------------------------------
 
 func TestDescriptorValidate(t *testing.T) {
@@ -937,6 +1013,43 @@ func TestDescriptorValidate(t *testing.T) {
 	}
 	if err := (Descriptor{ID: "x", Dialect: DialectAnthropic, BaseURL: "http://x"}).Validate(); err != nil {
 		t.Fatalf("valid descriptor rejected: %v", err)
+	}
+}
+
+func TestEmbedWithDimensionsOnWire(t *testing.T) {
+	var got struct {
+		Model      string   `json:"model"`
+		Input      []string `json:"input"`
+		Dimensions int      `json:"dimensions"`
+	}
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_ = json.NewDecoder(r.Body).Decode(&got)
+		io.WriteString(w, `{"data":[{"embedding":[0.1,0.2]}]}`)
+	}))
+	defer srv.Close()
+
+	c := ollamaClient(t, srv.URL)
+	embs, err := c.Embed(context.Background(), "m", []string{"x"}, WithEmbedDimensions(768))
+	if err != nil {
+		t.Fatalf("Embed: %v", err)
+	}
+	if len(embs) != 1 || len(embs[0].Vector) != 2 {
+		t.Fatalf("embeddings = %+v", embs)
+	}
+	if got.Dimensions != 768 {
+		t.Errorf("dimensions = %d, want 768", got.Dimensions)
+	}
+	// 0 means omitted.
+	got = struct {
+		Model      string   `json:"model"`
+		Input      []string `json:"input"`
+		Dimensions int      `json:"dimensions"`
+	}{}
+	if _, err := c.Embed(context.Background(), "m", []string{"x"}); err != nil {
+		t.Fatalf("Embed: %v", err)
+	}
+	if got.Dimensions != 0 {
+		t.Errorf("dimensions = %d, want omitted (0)", got.Dimensions)
 	}
 }
 

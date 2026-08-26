@@ -14,9 +14,23 @@ type Embedding struct {
 	Model  string
 }
 
+// EmbedOption configures an embeddings call.
+type EmbedOption func(*embedConfig)
+
+type embedConfig struct {
+	dimensions int // 0 = provider default
+}
+
+// WithEmbedDimensions pins the output dimension via the OpenAI-wire
+// `dimensions` body field (Matryoshka truncation). 0 means the provider
+// default dimension.
+func WithEmbedDimensions(n int) EmbedOption {
+	return func(c *embedConfig) { c.dimensions = n }
+}
+
 // Embed returns embeddings for inputs via the OpenAI /embeddings wire format.
 // Requires the provider's embeddings capability.
-func (c *Client) Embed(ctx context.Context, model string, inputs []string) ([]Embedding, error) {
+func (c *Client) Embed(ctx context.Context, model string, inputs []string, opts ...EmbedOption) ([]Embedding, error) {
 	if !c.desc.Capabilities.Embeddings {
 		return nil, fmt.Errorf("llmkit: provider %q does not promise embeddings", c.desc.ID)
 	}
@@ -29,11 +43,16 @@ func (c *Client) Embed(ctx context.Context, model string, inputs []string) ([]Em
 	if model == "" {
 		return nil, fmt.Errorf("llmkit: model is required for provider %q", c.desc.ID)
 	}
+	var cfg embedConfig
+	for _, opt := range opts {
+		opt(&cfg)
+	}
 
 	req := struct {
-		Model string   `json:"model"`
-		Input []string `json:"input"`
-	}{Model: model, Input: inputs}
+		Model      string   `json:"model"`
+		Input      []string `json:"input"`
+		Dimensions int      `json:"dimensions,omitempty"`
+	}{Model: model, Input: inputs, Dimensions: cfg.dimensions}
 
 	resp, err := c.do(ctx, http.MethodPost, "/embeddings", req, "application/json")
 	if err != nil {

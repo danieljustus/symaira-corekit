@@ -35,6 +35,7 @@ type clientConfig struct {
 	dialect    WireDialect
 	timeout    time.Duration
 	httpClient *http.Client
+	apiKey     string
 }
 
 // WithBaseURL overrides the descriptor's default endpoint (only valid when
@@ -85,8 +86,8 @@ func NewClient(desc Descriptor, credRef string, opts ...Option) (*Client, error)
 	}
 	cfg.baseURL = strings.TrimRight(cfg.baseURL, "/")
 
-	key := ""
-	if desc.AuthScheme != AuthNone {
+	key := cfg.apiKey
+	if key == "" && desc.AuthScheme != AuthNone {
 		var err error
 		key, err = ResolveCredential(credRef, desc.CredentialEnvDefault)
 		if err != nil {
@@ -259,4 +260,12 @@ func retryAfterSeconds(v string) (int, bool) {
 		return 0, false
 	}
 	return n, true
+}
+
+// WithAPIKey supplies the credential directly, bypassing the shared
+// reference resolution. Used by consumers that hold their own secret
+// store (keychain, vault integrations) and only need llmkit for the
+// wire transport.
+func WithAPIKey(key string) Option {
+	return func(c *clientConfig) { c.apiKey = key }
 }
