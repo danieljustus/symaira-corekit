@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.12.0] - 2026-08-26
+
+### Added
+- `SymairaKeychain` gained biometry-bound storage: a
+  `SymairaKeychainAccessControl` policy (`none`, `devicePasscode`,
+  `biometryCurrentSet`) can gate stored items, so secrets invalidate when the
+  user's biometric enrollment changes. `save(_:key:requireUserPresence:)`
+  remains available and now maps to `.devicePasscode` (#115).
+
+### Changed
+- `Package.swift` declares per-product iOS availability, so iOS clients only
+  see modules that are actually supported on iOS; CI verifies this with an
+  iOS Simulator SDK build (#115).
+- `UpdateChecker` suppresses the v0-major update gap: pre-1.0 apps no longer
+  see a major-version jump (e.g. `0.11.0` → `1.0.0`) as an available update
+  (#118).
+- The package consumes corekit's cross-language contract fixtures
+  (`contracts/*.json`) in its test suite, keeping the Swift implementation
+  aligned with the Go contract tests (#117).
+- `SymairaToolRegistry`: dropped symvibe from the tool registry after the
+  product was discontinued — the install UI no longer offers a tile for the
+  removed Homebrew formula.
+
 ## [0.11.0] - 2026-08-24
 
 ### Added

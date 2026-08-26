@@ -21,7 +21,7 @@ Every Symaira app stays fully standalone: this package is consumed as a **pinned
 Add the package as an exact-pinned dependency in the client app's `Package.swift`:
 
 ```swift
-.package(url: "https://github.com/danieljustus/symaira-appkit.git", exact: "0.11.0")
+.package(url: "https://github.com/danieljustus/symaira-appkit.git", exact: "0.12.0")
 ```
 
 ## Modules
