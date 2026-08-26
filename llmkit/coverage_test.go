@@ -975,6 +975,31 @@ func TestStreamFinishedReason(t *testing.T) {
 	})
 }
 
+func TestWithAPIKeyBypassesResolution(t *testing.T) {
+	t.Setenv("ANTHROPIC_API_KEY", "") // would fail resolution if consulted
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if got := r.Header.Get("x-api-key"); got != "direct-key" {
+			t.Errorf("x-api-key = %q, want direct-key", got)
+		}
+		io.WriteString(w, `{"content":[{"type":"text","text":"ok"}]}`)
+	}))
+	defer srv.Close()
+
+	desc := mustDescriptor(t, "anthropic")
+	c, err := NewClient(desc, "", WithBaseURL(srv.URL), WithAPIKey("direct-key"))
+	if err != nil {
+		t.Fatalf("NewClient: %v", err)
+	}
+	if _, err := c.Chat(context.Background(), "m", []Message{{Role: "user", Content: "x"}}, nil); err != nil {
+		t.Fatalf("Chat: %v", err)
+	}
+	// Without the key, resolution fails honestly (no env), even on a
+	// provider whose default env is unset.
+	if _, err := NewClient(desc, "", WithBaseURL(srv.URL)); err == nil {
+		t.Error("expected auth error without credential")
+	}
+}
+
 // --- provider.go -----------------------------------------------------------
 
 func TestDescriptorValidate(t *testing.T) {
