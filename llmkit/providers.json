@@ -1,5 +1,4 @@
 {
-  "$comment": "Shared LLM provider descriptor registry. Source of truth for the Go (llmkit) and Swift (SymairaProviderKit) provider layers, decided in danieljustus/symaira-corekit#172. Consumers MUST read this file (or their generated copy) rather than hard-coding the table.",
   "schema_version": 1,
   "providers": [
     {
@@ -7,10 +6,8 @@
       "display_name": "Anthropic",
       "base_url": "https://api.anthropic.com",
       "base_url_overridable": true,
-      "auth": {
-        "scheme": "header",
-        "header": "x-api-key"
-      },
+      "auth_scheme": "header",
+      "auth_header": "x-api-key",
       "extra_headers": {
         "anthropic-version": "2023-06-01"
       },
@@ -26,16 +23,14 @@
         "mode": "static",
         "default": "claude-sonnet-5-20250915"
       },
-      "credential_ref_env_default": "ANTHROPIC_API_KEY"
+      "credential_env_default": "ANTHROPIC_API_KEY"
     },
     {
       "id": "openai",
       "display_name": "OpenAI",
       "base_url": "https://api.openai.com/v1",
       "base_url_overridable": true,
-      "auth": {
-        "scheme": "bearer"
-      },
+      "auth_scheme": "bearer",
       "dialect": "openai",
       "capabilities": {
         "streaming": true,
@@ -48,16 +43,14 @@
         "mode": "static",
         "default": "gpt-5"
       },
-      "credential_ref_env_default": "OPENAI_API_KEY"
+      "credential_env_default": "OPENAI_API_KEY"
     },
     {
       "id": "openrouter",
       "display_name": "OpenRouter",
       "base_url": "https://openrouter.ai/api/v1",
       "base_url_overridable": true,
-      "auth": {
-        "scheme": "bearer"
-      },
+      "auth_scheme": "bearer",
       "dialect": "openai",
       "capabilities": {
         "streaming": true,
@@ -71,16 +64,14 @@
         "discovery_path": "/models",
         "default": "anthropic/claude-sonnet-5"
       },
-      "credential_ref_env_default": "OPENROUTER_API_KEY"
+      "credential_env_default": "OPENROUTER_API_KEY"
     },
     {
       "id": "google",
       "display_name": "Google Gemini",
       "base_url": "https://generativelanguage.googleapis.com/v1beta/openai",
       "base_url_overridable": true,
-      "auth": {
-        "scheme": "bearer"
-      },
+      "auth_scheme": "bearer",
       "dialect": "openai",
       "capabilities": {
         "streaming": true,
@@ -93,16 +84,14 @@
         "mode": "static",
         "default": "gemini-3-flash"
       },
-      "credential_ref_env_default": "GEMINI_API_KEY"
+      "credential_env_default": "GEMINI_API_KEY"
     },
     {
       "id": "groq",
       "display_name": "Groq",
       "base_url": "https://api.groq.com/openai/v1",
       "base_url_overridable": true,
-      "auth": {
-        "scheme": "bearer"
-      },
+      "auth_scheme": "bearer",
       "dialect": "openai",
       "capabilities": {
         "streaming": true,
@@ -113,18 +102,16 @@
       },
       "models": {
         "mode": "static",
-        "default": null
+        "default": ""
       },
-      "credential_ref_env_default": "GROQ_API_KEY"
+      "credential_env_default": "GROQ_API_KEY"
     },
     {
       "id": "deepseek",
       "display_name": "DeepSeek",
       "base_url": "https://api.deepseek.com/v1",
       "base_url_overridable": true,
-      "auth": {
-        "scheme": "bearer"
-      },
+      "auth_scheme": "bearer",
       "dialect": "openai",
       "capabilities": {
         "streaming": true,
@@ -135,18 +122,16 @@
       },
       "models": {
         "mode": "static",
-        "default": null
+        "default": ""
       },
-      "credential_ref_env_default": "DEEPSEEK_API_KEY"
+      "credential_env_default": "DEEPSEEK_API_KEY"
     },
     {
       "id": "mistral",
       "display_name": "Mistral",
       "base_url": "https://api.mistral.ai/v1",
       "base_url_overridable": true,
-      "auth": {
-        "scheme": "bearer"
-      },
+      "auth_scheme": "bearer",
       "dialect": "openai",
       "capabilities": {
         "streaming": true,
@@ -157,18 +142,16 @@
       },
       "models": {
         "mode": "static",
-        "default": null
+        "default": ""
       },
-      "credential_ref_env_default": "MISTRAL_API_KEY"
+      "credential_env_default": "MISTRAL_API_KEY"
     },
     {
       "id": "xai",
       "display_name": "xAI",
       "base_url": "https://api.x.ai/v1",
       "base_url_overridable": true,
-      "auth": {
-        "scheme": "bearer"
-      },
+      "auth_scheme": "bearer",
       "dialect": "openai",
       "capabilities": {
         "streaming": true,
@@ -179,18 +162,16 @@
       },
       "models": {
         "mode": "static",
-        "default": null
+        "default": ""
       },
-      "credential_ref_env_default": "XAI_API_KEY"
+      "credential_env_default": "XAI_API_KEY"
     },
     {
       "id": "moonshot",
       "display_name": "Moonshot AI",
       "base_url": "https://api.moonshot.ai/v1",
       "base_url_overridable": true,
-      "auth": {
-        "scheme": "bearer"
-      },
+      "auth_scheme": "bearer",
       "dialect": "openai",
       "capabilities": {
         "streaming": true,
@@ -201,18 +182,16 @@
       },
       "models": {
         "mode": "static",
-        "default": null
+        "default": ""
       },
-      "credential_ref_env_default": "MOONSHOT_API_KEY"
+      "credential_env_default": "MOONSHOT_API_KEY"
     },
     {
       "id": "together",
       "display_name": "Together AI",
       "base_url": "https://api.together.xyz/v1",
       "base_url_overridable": true,
-      "auth": {
-        "scheme": "bearer"
-      },
+      "auth_scheme": "bearer",
       "dialect": "openai",
       "capabilities": {
         "streaming": true,
@@ -223,18 +202,16 @@
       },
       "models": {
         "mode": "static",
-        "default": null
+        "default": ""
       },
-      "credential_ref_env_default": "TOGETHER_API_KEY"
+      "credential_env_default": "TOGETHER_API_KEY"
     },
     {
       "id": "fireworks",
       "display_name": "Fireworks AI",
       "base_url": "https://api.fireworks.ai/inference/v1",
       "base_url_overridable": true,
-      "auth": {
-        "scheme": "bearer"
-      },
+      "auth_scheme": "bearer",
       "dialect": "openai",
       "capabilities": {
         "streaming": true,
@@ -245,19 +222,18 @@
       },
       "models": {
         "mode": "static",
-        "default": null
+        "default": ""
       },
-      "credential_ref_env_default": "FIREWORKS_API_KEY"
+      "credential_env_default": "FIREWORKS_API_KEY"
     },
     {
       "id": "azure-openai",
       "display_name": "Azure OpenAI",
       "base_url": null,
+      "base_url_overridable": false,
       "base_url_required_override": true,
-      "auth": {
-        "scheme": "header",
-        "header": "api-key"
-      },
+      "auth_scheme": "header",
+      "auth_header": "api-key",
       "dialect": "openai",
       "capabilities": {
         "streaming": true,
@@ -268,18 +244,16 @@
       },
       "models": {
         "mode": "deployment",
-        "default": null
+        "default": ""
       },
-      "credential_ref_env_default": "AZURE_OPENAI_API_KEY"
+      "credential_env_default": "AZURE_OPENAI_API_KEY"
     },
     {
       "id": "ollama",
       "display_name": "Ollama (local)",
       "base_url": "http://localhost:11434/v1",
       "base_url_overridable": true,
-      "auth": {
-        "scheme": "none"
-      },
+      "auth_scheme": "none",
       "dialect": "openai",
       "capabilities": {
         "streaming": true,
@@ -292,18 +266,15 @@
         "mode": "discovered",
         "discovery_path": "/api/tags",
         "default": "llama3.1"
-      },
-      "credential_ref_env_default": null
+      }
     },
     {
       "id": "custom",
       "display_name": "Custom endpoint",
       "base_url": null,
+      "base_url_overridable": false,
       "base_url_required_override": true,
-      "auth": {
-        "scheme": "bearer",
-        "configurable_scheme": true
-      },
+      "auth_scheme": "bearer",
       "dialect": "openai",
       "dialect_configurable": true,
       "capabilities": {
@@ -315,9 +286,8 @@
       },
       "models": {
         "mode": "configured",
-        "default": null
-      },
-      "credential_ref_env_default": null
+        "default": ""
+      }
     }
   ]
 }

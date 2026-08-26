@@ -1,7 +1,13 @@
 // Package ollamakit provides a shared, CGO-free Ollama HTTP client for the
-// Symaira tools. It covers the three call patterns that have independently
-// grown across the sibling repositories: batch embeddings, streamed text
-// generation, and streamed chat, plus model discovery and health checks.
+// Symaira tools.
+//
+// Deprecated: llmkit supersedes this package. Ollama is a descriptor in the
+// shared LLM provider layer (see docs/llm-provider-contract.md); use
+// llmkit.NewClient(llmkit.Lookup("ollama"), ...) for chat, streaming,
+// embeddings, model discovery, and the native generate/chat surface.
+// This package is a thin compatibility shim: it forwards to llmkit and will
+// be removed after one minor release. Existing imports keep compiling and
+// their behavior is unchanged.
 //
 // The client is intentionally thin over the Ollama REST API so it can be
 // adopted by seek, memory, and desktop without forcing a new abstraction on
@@ -16,7 +22,8 @@
 // callback returns an error.
 //
 // This package has no cloud, LLM, or tool-specific dependencies and does not
-// import any sibling Symaira tool. It uses only the Go standard library.
+// import any sibling Symaira tool. It uses only the Go standard library plus
+// this module's own llmkit package.
 package ollamakit
 
 import (
