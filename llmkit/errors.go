@@ -48,8 +48,13 @@ func (e *Error) Error() string {
 	if e.StatusCode != 0 {
 		fmt.Fprintf(&b, " (status %d)", e.StatusCode)
 	}
+	// Local failures (decode errors, bad URLs, count mismatches) carry the
+	// detail in Err; upstream failures carry the provider body. Rendering
+	// neither made every local failure read as a bare "provider_error".
 	if e.Body != "" {
 		fmt.Fprintf(&b, ": %s", e.Body)
+	} else if e.Err != nil {
+		fmt.Fprintf(&b, ": %v", e.Err)
 	}
 	return b.String()
 }
