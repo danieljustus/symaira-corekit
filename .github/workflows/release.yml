@@ -1,0 +1,60 @@
+# Release automation for a Go library.
+#
+# symaira-corekit is a library: it ships no binaries, so there are no release
+# assets to build or sign. The only manual step left in the tag -> release path
+# was opening the GitHub Release itself — which is exactly what went wrong for
+# four consecutive tags (see #158) until it was backfilled by hand.
+#
+# This workflow closes that gap: every `v*` tag push creates the GitHub Release
+# with generated notes. It runs after the test gate on the tagged commit passes,
+# so a failing tree cannot get a release. Apple signing/notarization and the
+# Homebrew tap do not apply (nothing binary is produced).
+
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: '1.26.6'
+
+      - name: Test
+        run: go test -race ./...
+
+      - name: Lint
+        run: |
+          gofmt_out=$(gofmt -l .)
+          if [ -n "$gofmt_out" ]; then
+            echo "::error::gofmt needs formatting:"
+            echo "$gofmt_out"
+            exit 1
+          fi
+          go vet ./...
+
+  release:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release create "$GITHUB_REF_NAME" --verify-tag --generate-notes
