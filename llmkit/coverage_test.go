@@ -1016,6 +1016,43 @@ func TestDescriptorValidate(t *testing.T) {
 	}
 }
 
+func TestEmbedWithDimensionsOnWire(t *testing.T) {
+	var got struct {
+		Model      string   `json:"model"`
+		Input      []string `json:"input"`
+		Dimensions int      `json:"dimensions"`
+	}
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_ = json.NewDecoder(r.Body).Decode(&got)
+		io.WriteString(w, `{"data":[{"embedding":[0.1,0.2]}]}`)
+	}))
+	defer srv.Close()
+
+	c := ollamaClient(t, srv.URL)
+	embs, err := c.Embed(context.Background(), "m", []string{"x"}, WithEmbedDimensions(768))
+	if err != nil {
+		t.Fatalf("Embed: %v", err)
+	}
+	if len(embs) != 1 || len(embs[0].Vector) != 2 {
+		t.Fatalf("embeddings = %+v", embs)
+	}
+	if got.Dimensions != 768 {
+		t.Errorf("dimensions = %d, want 768", got.Dimensions)
+	}
+	// 0 means omitted.
+	got = struct {
+		Model      string   `json:"model"`
+		Input      []string `json:"input"`
+		Dimensions int      `json:"dimensions"`
+	}{}
+	if _, err := c.Embed(context.Background(), "m", []string{"x"}); err != nil {
+		t.Fatalf("Embed: %v", err)
+	}
+	if got.Dimensions != 0 {
+		t.Errorf("dimensions = %d, want omitted (0)", got.Dimensions)
+	}
+}
+
 // --- structured-output options (issue #321 support) ------------------------
 
 func TestChatSendsResponseFormat(t *testing.T) {
