@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.14.0] - 2026-08-26
+
+### Added
+- `SymairaKeychain.read(key:timeout:)` — bounded read for headless
+  contexts (a wedged `securityd` degrades to "no credential" instead of
+  freezing the process; the pattern symtune hardened in #358).
+- `SymairaKeychain.saveVerified` — save with read-back verification
+  (catches signing-identity ACL mismatches on locally built unsigned
+  apps immediately).
+- `SymairaProviderCredentialStore.save` now uses the verified save path.
+
 ## [0.13.0] - 2026-08-26
 
 ### Added

@@ -4,6 +4,10 @@ import Security
 public enum SymairaKeychainError: Error, LocalizedError, Sendable {
     case saveFailed(OSStatus)
     case readFailed(OSStatus)
+    /// The write succeeded at the SecItem level but the read-back did not
+    /// return the stored value — the item may not be retrievable by this
+    /// binary (signing-identity ACL mismatch on locally built apps).
+    case verificationFailed
 
     public var errorDescription: String? {
         switch self {
@@ -11,6 +15,8 @@ public enum SymairaKeychainError: Error, LocalizedError, Sendable {
             return "Keychain save failed (OSStatus \(status))."
         case .readFailed(let status):
             return "Keychain read failed (OSStatus \(status))."
+        case .verificationFailed:
+            return "Keychain save succeeded but read-back failed — the credential may not be retrievable."
         }
     }
 }
@@ -179,6 +185,55 @@ public struct SymairaKeychain: Sendable {
         }
 
         return String(data: data, encoding: .utf8)
+    }
+
+    /// Bounded keychain read for headless contexts.
+    ///
+    /// `SecItemCopyMatching` can block indefinitely on a securityd
+    /// round-trip when there is no GUI session to service it — headless
+    /// automation, a locked screen, or an SSH session (observed: 0% CPU,
+    /// stuck in `mach_msg`). Callers that read credentials during catalog
+    /// builds or CLI startup (where a hang is worse than "no credential")
+    /// must use this bounded variant.
+    ///
+    /// - Returns: the stored value, `nil` when absent **or** when the
+    ///   keychain did not answer within `timeout` seconds.
+    public func read(key: String, timeout: TimeInterval) throws -> String? {
+        let lock = NSLock()
+        var storedResult: Result<String?, Error>?
+        let semaphore = DispatchSemaphore(value: 0)
+
+        DispatchQueue.global(qos: .userInitiated).async {
+            let result = Result { try self.read(key: key) }
+            lock.lock(); storedResult = result; lock.unlock()
+            semaphore.signal()
+        }
+
+        guard semaphore.wait(timeout: .now() + timeout) == .success else {
+            return nil
+        }
+        lock.lock()
+        defer { lock.unlock() }
+        return try storedResult?.get()
+    }
+
+    /// Saves a value and verifies the write with a read-back (issue #358
+    /// pattern): a successful `SecItemAdd` does NOT guarantee the item is
+    /// retrievable by this binary — on locally built unsigned apps the ACL
+    /// can be bound to a signing identity that does not match on the next
+    /// build. Verified saves surface that failure immediately instead of
+    /// silently returning to an empty field.
+    ///
+    /// - Throws: `SymairaKeychainError.saveFailed` when the write **or the
+    ///   read-back** fails.
+    @discardableResult
+    public func saveVerified(_ value: String, key: String) throws -> Bool {
+        try save(value, key: key)
+        let readBack = try read(key: key)
+        guard readBack == value else {
+            throw SymairaKeychainError.verificationFailed
+        }
+        return true
     }
 
     /// One-shot legacy read with automatic migration to the hardened keychain.

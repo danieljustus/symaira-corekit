@@ -134,7 +134,10 @@ public struct SymairaProviderCredentialStore: Sendable {
         guard !trimmed.isEmpty else {
             return keychain.delete(key: account(for: providerID))
         }
-        return try keychain.save(trimmed, key: account(for: providerID))
+        // Verified save: read-back catches signing-identity ACL mismatches
+        // on locally built unsigned apps instead of silently losing the key.
+        _ = try keychain.saveVerified(trimmed, key: account(for: providerID))
+        return true
     }
 
     @discardableResult
