@@ -1,0 +1,17 @@
+{
+  "cache_ttl_hours": 24,
+  "cache_scope": "in_memory_per_process",
+  "semver_prefix_optional": "v",
+  "semver_shape": "MAJOR.MINOR.PATCH",
+  "prerelease_and_build_metadata_rejected": true,
+  "prerelease_and_build_metadata_markers": ["-", "+"],
+  "v0_major_gap_suppressed": true,
+  "v0_major_gap_rule": "when current.major == 0 and latest.major > 0, no update is offered",
+  "opt_out_env_var_pattern": "SYM<NAME>_CHECK_UPDATES",
+  "opt_out_config_key": "general.check_updates",
+  "opt_out_note": "corekit's Checker does not read the opt-out itself; each consumer is responsible for skipping the Check call when the env var or config key is set.",
+  "check_failure_behavior": "silent_skip",
+  "apply_failure_behavior": "surfaced_to_caller",
+  "default_api_timeout_seconds": 3,
+  "default_download_timeout_minutes": 15
+}

@@ -15,6 +15,7 @@ swift test
   DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer swift test
   ```
 - `SymairaKeychainTests` exercises the data-protection keychain paths, but skips (via `XCTSkip`) on `errSecMissingEntitlement` — an unsigned `swift test` binary has no `keychain-access-groups` entitlement, so CI runs them as skips, not passes. Only a signed app/test target (a real Symaira client) exercises them for real.
+- **Cross-language contract fixtures:** `contracts/*.json` are vendored copies of `symaira-corekit`'s `contracts/*.json` (see `contracts/README.md` for provenance and the update procedure). `Tests/SymairaUpdateCheckTests/ContractFixtureTests.swift` and `Tests/SymairaMCPTests/ContractFixtureTests.swift` assert this repo's Swift code against them as part of the normal `swift test` run — no separate CI job. A known divergence (`UpdateChecker` doesn't yet suppress the v0-major update gap corekit's `Checker.Check` does — danieljustus/symaira-appkit#116) is marked `XCTExpectFailure` rather than silently patched or hidden by bending the fixture.
 
 ## Architecture & Boundaries
 
