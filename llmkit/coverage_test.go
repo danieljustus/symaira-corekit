@@ -939,3 +939,65 @@ func TestDescriptorValidate(t *testing.T) {
 		t.Fatalf("valid descriptor rejected: %v", err)
 	}
 }
+
+// --- structured-output options (issue #321 support) ------------------------
+
+func TestChatSendsResponseFormat(t *testing.T) {
+	var got openaiChatRequest
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_ = json.NewDecoder(r.Body).Decode(&got)
+		io.WriteString(w, `{"choices":[{"message":{"content":"{}"},"finish_reason":"stop"}]}`)
+	}))
+	defer srv.Close()
+
+	c := ollamaClient(t, srv.URL)
+	schema := json.RawMessage(`{"type":"json_schema","json_schema":{"name":"x","schema":{"type":"object"}}}`)
+	if _, err := c.Chat(context.Background(), "m", []Message{{Role: "user", Content: "go"}},
+		&ChatOptions{ResponseFormat: schema}); err != nil {
+		t.Fatalf("Chat: %v", err)
+	}
+	if string(got.ResponseFormat) != string(schema) {
+		t.Errorf("response_format = %s, want %s", got.ResponseFormat, schema)
+	}
+	// Omitted when unset.
+	got = openaiChatRequest{} // decoder does not reset missing fields
+	if _, err := c.Chat(context.Background(), "m", []Message{{Role: "user", Content: "go"}}, nil); err != nil {
+		t.Fatalf("Chat: %v", err)
+	}
+	if got.ResponseFormat != nil {
+		t.Error("response_format must be omitted when not configured")
+	}
+}
+
+func TestGenerateOptionsOnWire(t *testing.T) {
+	var got struct {
+		Model  string         `json:"model"`
+		Prompt string         `json:"prompt"`
+		Stream bool           `json:"stream"`
+		System string         `json:"system"`
+		Format map[string]any `json:"format"`
+	}
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_ = json.NewDecoder(r.Body).Decode(&got)
+		io.WriteString(w, "{\"response\":\"ok\",\"done\":true}\n")
+	}))
+	defer srv.Close()
+
+	c := ollamaClient(t, srv.URL)
+	schema := map[string]any{"type": "object", "properties": map[string]any{"a": map[string]any{"type": "string"}}}
+	err := c.Generate(context.Background(), "", "summarize", func(ch GenerateResponse) error {
+		if ch.Response != "ok" {
+			t.Errorf("chunk = %+v", ch)
+		}
+		return nil
+	}, WithGenerateSystem("be strict"), WithGenerateFormat(schema))
+	if err != nil {
+		t.Fatalf("Generate: %v", err)
+	}
+	if got.System != "be strict" {
+		t.Errorf("system = %q", got.System)
+	}
+	if got.Format["type"] != "object" {
+		t.Errorf("format = %v", got.Format)
+	}
+}
