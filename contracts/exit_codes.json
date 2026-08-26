@@ -1,0 +1,13 @@
+[
+  { "code": 0, "name": "ExitOK", "meaning": "Success" },
+  { "code": 1, "name": "ExitGeneric", "meaning": "Generic or unspecified error" },
+  { "code": 2, "name": "ExitNoInput", "meaning": "Input missing or required but not provided" },
+  { "code": 3, "name": "ExitNoAuth", "meaning": "Authentication failure (bad credentials, missing token)" },
+  { "code": 4, "name": "ExitForbidden", "meaning": "Operation permitted but not allowed (insufficient permissions)" },
+  { "code": 5, "name": "ExitNotFound", "meaning": "Requested resource was not found" },
+  { "code": 6, "name": "ExitConflict", "meaning": "Conflict with the current state (e.g. resource already exists or version mismatch)" },
+  { "code": 7, "name": "ExitSoftware", "meaning": "Internal software error (bug)" },
+  { "code": 8, "name": "ExitData", "meaning": "Error in the data format or content" },
+  { "code": 9, "name": "ExitConfig", "meaning": "Configuration error" },
+  { "code": 10, "name": "ExitInterrupted", "meaning": "Operation was interrupted" }
+]
