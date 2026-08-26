@@ -1,3 +1,5 @@
+//nolint:gosec // G104 in test servers: ignored write/copy errors are intentional here
+
 package llmkit
 
 // Conformance suite: every provider descriptor must pass the same invariants,
