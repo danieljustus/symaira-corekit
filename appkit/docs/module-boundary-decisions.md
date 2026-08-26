@@ -148,3 +148,44 @@ lifting `symaira-terminal`'s provider onboarding into appkit. Tracked separately
 - A second repository needs `DiffView`-style diff rendering, or
 - a third client starts a settings surface that `SymairaFormSection` cannot carry, or
 - the generic step-flow scaffold lands and turns out to want companions.
+
+---
+
+## 2026-08-26 — `SymairaProviderKit` belongs in appkit; provider behavior stays with hosts
+
+**Question.** Provider settings, credential storage, endpoint configuration and
+OAuth were duplicated between the former terminal implementation and cockpit.
+Should the shared Swift provider layer move into appkit, and which parts must
+remain application-owned?
+
+**Verdict: yes to `SymairaProviderKit`; no to agent, usage or billing logic.**
+
+The shared layer is needed by at least two host applications: cockpit's provider
+settings surface (`symaira-cockpit#42`) and desktop's consumer migration
+(`symaira-desktop#617`). Corekit's provider contract explicitly names appkit as
+the Swift half, so the descriptor registry and error taxonomy are a cross-language
+boundary rather than app-specific configuration.
+
+### What moves here
+
+- descriptor-driven provider catalog, vendored from corekit's contract fixtures;
+- typed credential references and the existing `SymairaKeychain` as the only
+  keychain implementation;
+- redaction and stable provider error classification;
+- endpoint/model discovery and a non-billable connectivity check;
+- reusable SwiftUI controls and a PKCE OAuth/token-store primitive.
+
+### What stays in the host app
+
+Agent turns, prompt assembly, usage/quota/billing, conversation state, provider
+ordering preferences and product-specific onboarding remain in the consuming
+application. `SymairaProviderKit` does not add a network-backed runtime service
+or a third-party SDK; it is a dependency-free library with injected HTTP and
+optional vault resolution seams.
+
+### Revisit when
+
+- the corekit descriptor schema changes and the Swift fixture needs a deliberate
+  migration;
+- a host requires a native provider dialect not expressible by the contract; or
+- OAuth metadata becomes stable enough to belong in the shared descriptor data.

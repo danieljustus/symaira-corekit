@@ -36,6 +36,7 @@ Add the package as an exact-pinned dependency in the client app's `Package.swift
 | `SymairaDaemonKit` | `DaemonSupervisor` for launching and supervising long-running Symaira core daemon processes. |
 | `SymairaIngestContract` | JSON contract clients for the ingest rules/mail config and ReOCR requests (the engine ships inside `symdesk`). |
 | `SymairaMCP` | Shared MCP server plumbing: `MCPServer`, stdio `MCPTransport` with message-size guard, and JSON-RPC `MCPTypes` with machine-readable `MCPError` payloads. |
+| `SymairaProviderKit` | Shared LLM provider catalog, typed credential references, Keychain-backed credentials, redacted error taxonomy, model discovery, non-billable connection checks, PKCE OAuth/token storage, and reusable SwiftUI provider settings. |
 
 ### Platform availability
 
@@ -49,6 +50,7 @@ compile error, not a silently empty API.
 | `SymairaTheme` | Full | Has explicit `os(iOS)` branches. |
 | `SymairaKeychain` | Full | Security framework APIs behave the same on both platforms. |
 | `SymairaMCP` | Full | No macOS-specific APIs; stdio transport works but is unusual for an iOS app to use. |
+| `SymairaProviderKit` | Full | Provider HTTP and SwiftUI surfaces use Foundation/SwiftUI; credentials use the cross-platform Security keychain. |
 | `SymairaCLIRunner` | **Unavailable** | Entire module is `#if os(macOS)` (subprocess execution does not exist on iOS). Importing it still succeeds; using any symbol from it fails to build. |
 | `SymairaDaemonKit` | **Unavailable** | `DaemonSupervisor` is `#if os(macOS)` for the same reason (wraps `SymairaCLIRunner`). |
 | `SymairaToolKit` | Mixed | `SymairaTool` / `SymairaToolRegistry` (plain data) build on iOS. `BinaryLocator` and `ToolDetector` are `#if os(macOS)` — using them from an iOS target fails to build. |

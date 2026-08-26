@@ -16,6 +16,7 @@ let package = Package(
         .library(name: "SymairaDaemonKit", targets: ["SymairaDaemonKit"]),
         .library(name: "SymairaIngestContract", targets: ["SymairaIngestContract"]),
         .library(name: "SymairaMCP", targets: ["SymairaMCP"]),
+        .library(name: "SymairaProviderKit", targets: ["SymairaProviderKit"]),
     ],
     targets: [
         .target(name: "SymairaTheme"),
@@ -26,6 +27,11 @@ let package = Package(
         .target(name: "SymairaDaemonKit", dependencies: ["SymairaCLIRunner"]),
         .target(name: "SymairaIngestContract", dependencies: ["SymairaToolKit", "SymairaCLIRunner"]),
         .target(name: "SymairaMCP"),
+        .target(
+            name: "SymairaProviderKit",
+            dependencies: ["SymairaKeychain", "SymairaTheme"],
+            resources: [.process("Resources")]
+        ),
         .testTarget(name: "SymairaThemeTests", dependencies: ["SymairaTheme"]),
         .testTarget(name: "SymairaKeychainTests", dependencies: ["SymairaKeychain"]),
         .testTarget(name: "SymairaCLIRunnerTests", dependencies: ["SymairaCLIRunner"]),
@@ -34,5 +40,6 @@ let package = Package(
         .testTarget(name: "SymairaDaemonKitTests", dependencies: ["SymairaDaemonKit"]),
         .testTarget(name: "SymairaIngestContractTests", dependencies: ["SymairaIngestContract"]),
         .testTarget(name: "SymairaMCPTests", dependencies: ["SymairaMCP"]),
+        .testTarget(name: "SymairaProviderKitTests", dependencies: ["SymairaProviderKit"]),
     ]
 )

@@ -15,6 +15,8 @@ quietly diverging.
 |---|---|
 | `update_check_invariants.json` | `symaira-corekit` [`v0.13.0:contracts/update_check_invariants.json`](https://github.com/danieljustus/symaira-corekit/blob/v0.13.0/contracts/update_check_invariants.json) |
 | `json_encoding.json` | `symaira-corekit` [`v0.13.0:contracts/json_encoding.json`](https://github.com/danieljustus/symaira-corekit/blob/v0.13.0/contracts/json_encoding.json) |
+| `llm_providers.json` | `symaira-corekit` `main:contracts/llm_providers.json` (provider contract issue #172) |
+| `llm_errors.json` | `symaira-corekit` `main:contracts/llm_errors.json` (provider contract issue #172) |
 
 `exit_codes.json` and `config_paths.json` are not vendored — neither has an
 appkit-side counterpart to assert against (this package has no CLI exit-code
@@ -30,8 +32,8 @@ corekit tag and re-vendor on purpose.
 1. Pick the corekit tag to vendor from (usually the version this repo is
    about to bump `SymairaUpdateCheck`/`SymairaMCP` behavior against, or the
    latest release if just refreshing).
-2. `curl -sL https://raw.githubusercontent.com/danieljustus/symaira-corekit/<tag>/contracts/update_check_invariants.json -o contracts/update_check_invariants.json`
-   (same for `json_encoding.json`).
+2. `curl -sL https://raw.githubusercontent.com/danieljustus/symaira-corekit/<tag>/contracts/<file>.json -o contracts/<file>.json`
+   for each vendored file.
 3. Update the "Vendored from" table above with the new tag.
 4. Run the Swift test suite. A content change that shifts an invariant's
    meaning should make one of the `ContractFixtureTests` fail or its
