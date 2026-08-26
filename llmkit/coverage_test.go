@@ -924,6 +924,57 @@ func TestTruncateBody(t *testing.T) {
 	}
 }
 
+func TestStreamFinishedReason(t *testing.T) {
+	t.Run("openai finish_reason", func(t *testing.T) {
+		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "text/event-stream")
+			io.WriteString(w, "data: {\"choices\":[{\"delta\":{\"content\":\"x\"}}]}\n\n")
+			io.WriteString(w, "data: {\"choices\":[{\"delta\":{},\"finish_reason\":\"max_tokens\"}]}\n\n")
+			io.WriteString(w, "data: [DONE]\n\n")
+		}))
+		defer srv.Close()
+		c := ollamaClient(t, srv.URL)
+		var fin string
+		err := c.StreamChat(context.Background(), "m", []Message{{Role: "user", Content: "x"}}, nil,
+			func(string) error { return nil },
+			WithStreamFinished(func(reason string) { fin = reason }))
+		if err != nil {
+			t.Fatalf("StreamChat: %v", err)
+		}
+		if fin != "max_tokens" {
+			t.Errorf("finish reason = %q, want max_tokens", fin)
+		}
+	})
+	t.Run("anthropic message_delta stop_reason", func(t *testing.T) {
+		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "text/event-stream")
+			io.WriteString(w, "data: {\"type\":\"content_block_delta\",\"delta\":{\"type\":\"text_delta\",\"text\":\"hi\"}}\n\n")
+			io.WriteString(w, "data: {\"type\":\"message_delta\",\"delta\":{\"stop_reason\":\"max_tokens\"}}\n\n")
+			io.WriteString(w, "data: [DONE]\n\n")
+		}))
+		defer srv.Close()
+		envKey(t, "ANTHROPIC_API_KEY")
+		c, err := NewClient(mustDescriptor(t, "anthropic"), "", WithBaseURL(srv.URL))
+		if err != nil {
+			t.Fatalf("NewClient: %v", err)
+		}
+		var fin string
+		var sb strings.Builder
+		err = c.StreamChat(context.Background(), "m", []Message{{Role: "user", Content: "x"}}, nil,
+			func(d string) error { sb.WriteString(d); return nil },
+			WithStreamFinished(func(reason string) { fin = reason }))
+		if err != nil {
+			t.Fatalf("StreamChat: %v", err)
+		}
+		if fin != "max_tokens" {
+			t.Errorf("finish reason = %q, want max_tokens", fin)
+		}
+		if sb.String() != "hi" {
+			t.Errorf("deltas = %q", sb.String())
+		}
+	})
+}
+
 // --- provider.go -----------------------------------------------------------
 
 func TestDescriptorValidate(t *testing.T) {
