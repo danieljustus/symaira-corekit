@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.13.0] - 2026-08-26
+
+### Added
+- `SymairaProviderKit`: shared provider settings layer seeded from the
+  former terminal ProviderKit (#119). `SymairaProviderCatalog` (bundled
+  descriptor registry incl. `custom`/local), `SymairaProviderStore`
+  (selection, base-URL override, model, credential reference,
+  connection state), `SymairaProviderCredentialStore` (keychain-backed
+  credential storage with reference-based resolution), reusable views
+  `SymairaProviderPicker` and `SymairaProviderCredentialField`, plus
+  OAuth support for providers that need it.
+
+### Changed
+- `Package.swift` drop-in consumers can now pin 0.13.0 and use the
+  provider layer instead of app-local API-key UI.
+
 ## [0.12.0] - 2026-08-26
 
 ### Added
