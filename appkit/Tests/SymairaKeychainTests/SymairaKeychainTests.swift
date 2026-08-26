@@ -106,4 +106,56 @@ final class SymairaKeychainTests: XCTestCase {
             SymairaKeychainAccessControl.biometryCurrentSet.secAccessControlFlags
         )
     }
+
+    // MARK: - Entitlement-independent behavior
+
+    func testErrorDescriptionIncludesOSStatusCode() {
+        XCTAssertEqual(
+            SymairaKeychainError.saveFailed(errSecDuplicateItem).errorDescription,
+            "Keychain save failed (OSStatus -25299)."
+        )
+        XCTAssertEqual(
+            SymairaKeychainError.readFailed(errSecItemNotFound).errorDescription,
+            "Keychain read failed (OSStatus -25300)."
+        )
+    }
+
+    func testServiceNamesAreDerivedFromAppAndPreservedVerbatim() {
+        XCTAssertEqual(SymairaKeychain(app: "symseek").service, "dev.symaira.symseek")
+        XCTAssertEqual(
+            SymairaKeychain(service: "com.symaira.memory").service,
+            "com.symaira.memory",
+            "the escape-hatch initializer must keep legacy service names verbatim"
+        )
+    }
+
+    /// Portable contract for `read(key:)`: in an entitled environment reading
+    /// an unknown key returns `nil` after the legacy-migration fallback; on an
+    /// unsigned test binary the data-protection keychain rejects the query
+    /// outright with `readFailed(errSecMissingEntitlement)`. Both outcomes are
+    /// valid — anything else is a regression.
+    func testReadOfUnknownKeySucceedsOrFailsWithMissingEntitlement() throws {
+        let kc = makeKeychain()
+
+        do {
+            let value = try kc.read(key: "portable-unknown-key-probe")
+            XCTAssertNil(value, "an unknown key must read back as nil when the keychain is reachable")
+        } catch SymairaKeychainError.readFailed(let status) where status == errSecMissingEntitlement {
+            // Unsigned test binary without keychain-access-groups: expected.
+        }
+    }
+
+    /// `delete(key:)` is best-effort by design — it reports its outcome as a
+    /// `Bool` instead of throwing, whatever the entitlement state reports.
+    func testDeleteReportsOutcomeInsteadOfThrowing() {
+        let kc = makeKeychain()
+        // Must complete without throwing regardless of entitlement state;
+        // the result legitimately differs between signed and unsigned runs.
+        let deleted = kc.delete(key: "delete-probe-no-such-item")
+        #if DEBUG_ENTITLED_KEYCHAIN
+        XCTAssertTrue(deleted)
+        #else
+        _ = deleted
+        #endif
+    }
 }

@@ -10,7 +10,7 @@ final class RegistryTests: XCTestCase {
     func testRegistryContainsAllKnownTools() {
         let expected = [
             "symvault", "symmemory", "symseek", "symfetch", "symscope",
-            "symfritz", "symprint", "symskills", "symvibe", "symguard",
+            "symfritz", "symprint", "symskills", "symguard",
             "symingest", "symeraseme", "symtune", "symoperate", "symdesk",
             "symmeet", "symbrain", "symrelate", "symbrowse", "symcockpit",
         ]
@@ -82,7 +82,7 @@ final class RegistryTests: XCTestCase {
 
     func testActiveToolsAreNotDeprecated() {
         // These tools still have independent repos and active formulae.
-        let active = ["symvault", "symfritz", "symvibe", "symbrain",
+        let active = ["symvault", "symfritz", "symbrain",
                       "symdesk", "symbrowse", "symcockpit", "symeraseme"]
         for id in active {
             let tool = SymairaToolRegistry.tool(id: id)

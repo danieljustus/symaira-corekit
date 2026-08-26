@@ -2,7 +2,7 @@ import Foundation
 
 /// Describes a Symaira CLI tool and how to install and talk to it.
 ///
-/// Extracted from symaira-terminal's `StackKit/SymairaTool.swift`; the
+/// Extracted from the former symaira-terminal's `StackKit/SymairaTool.swift`; the
 /// registry below is the single source of truth for all clients.
 public struct SymairaTool: Equatable, Sendable, Identifiable {
     public let id: String
@@ -53,7 +53,7 @@ public struct SymairaTool: Equatable, Sendable, Identifiable {
 /// `active` to show migration hints instead of a regular install.
 ///
 /// MCP subcommands verified against each repo's cobra commands (2026-08):
-/// vault `serve --stdio`, brain/seek/skills/vibecoder `serve`,
+/// vault `serve --stdio`, brain/seek/skills `serve`,
 /// fetch/scope/fritz/print/ingest/meet `mcp` (symingest since v0.6.0),
 /// browse `mcp`, relate `mcp`. `symguard` does not expose an MCP server yet;
 /// `symeraseme` is a Python CLI without one; `symbrain`'s `serve` requires
@@ -142,13 +142,6 @@ public enum SymairaToolRegistry {
             homebrewFormula: "danieljustus/tap/symskills",
             mcpArgs: ["serve"],
             deprecated: "absorbed into Symaira Brain (symbrain)"
-        ),
-        SymairaTool(
-            id: "symvibe",
-            displayName: "Symaira Vibecoder",
-            binaryName: "symvibe",
-            homebrewFormula: "danieljustus/tap/symvibe",
-            mcpArgs: ["serve"]
         ),
         SymairaTool(
             id: "symguard",
