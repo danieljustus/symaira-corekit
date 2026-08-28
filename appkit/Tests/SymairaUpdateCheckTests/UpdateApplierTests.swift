@@ -711,6 +711,48 @@ final class UpdateApplierTests: XCTestCase {
         XCTAssertEqual(downloaded, assetBody, "binary asset downloaded via applyBundle should match")
     }
 
+    // MARK: - UpdateChecker payload/cache to applyBundle (#126)
+
+    func testCachedReleaseAssetsFeedApplyBundle() async throws {
+        let cacheDirectory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("updateapply-cache-\(UUID().uuidString)")
+        defer { try? FileManager.default.removeItem(at: cacheDirectory) }
+
+        let assetBody = Data("cached-bundle-payload".utf8)
+        let checksum = sha256Hex(assetBody)
+        let client = StubUpdateHTTPClient()
+        let payload = """
+        {"tag_name":"v1.2.0","html_url":"https://github.com/example/releases/tag/v1.2.0","assets":[{"name":"mytool_darwin_arm64","browser_download_url":"https://example.com/asset","size":\(assetBody.count)},{"name":"checksums.txt","browser_download_url":"https://example.com/checksums.txt","size":80}]}
+        """
+        client.setResponse(path: "/repos/example/mytool/releases/latest", body: Data(payload.utf8))
+        client.setResponse(path: "/checksums.txt", body: Data("\(checksum)  mytool_darwin_arm64\n".utf8))
+        client.setResponse(path: "/asset", body: assetBody)
+
+        let freshChecker = UpdateChecker(
+            owner: "example",
+            repo: "mytool",
+            client: client,
+            cacheDirectory: cacheDirectory
+        )
+        _ = try await freshChecker.check(currentVersion: "v1.0.0", force: true)
+
+        let cachedChecker = UpdateChecker(
+            owner: "example",
+            repo: "mytool",
+            client: client,
+            cacheDirectory: cacheDirectory
+        )
+        let cachedResult = try await cachedChecker.check(currentVersion: "v1.0.0")
+        let release = try XCTUnwrap(cachedResult)
+        XCTAssertEqual(release.assets.first?.browserDownloadURL, "https://example.com/asset")
+        XCTAssertEqual(release.assets.first?.size, Int64(assetBody.count))
+
+        let applier = UpdateApplier(os: "darwin", arch: "arm64", client: client)
+        let result = try await applier.applyBundle(release: release)
+        defer { try? FileManager.default.removeItem(at: result) }
+        XCTAssertEqual(try Data(contentsOf: result), assetBody)
+    }
+
     // MARK: - Install method rejection (with stub client)
 
     func testApplyBundleRejectsHomebrewWhenCheckEnabled() async throws {
@@ -796,14 +838,20 @@ final class UpdateApplierTests: XCTestCase {
         XCTAssertEqual(cfg.downloadBaseURLOrDefault(), "https://releases.example.com")
     }
 
-    func testCosignConfigDefaultIdentityRegexp() {
-        let cfg = CosignConfig(
+    func testCosignConfigDefaultIdentityRegexpAgreesWithCLIVerifier() {
+        let config = CosignConfig(
             repo: "danieljustus/symaira-vault",
             binaryName: "symvault"
         )
-        let regexp = cfg.identityRegexpOrDefault()
-        XCTAssertTrue(regexp.contains("danieljustus/symaira-vault"))
-        XCTAssertTrue(regexp.contains("release"))
+        let cliVerifier = CosignCLIVerifier(
+            repo: "danieljustus/symaira-vault",
+            binaryName: "symvault"
+        )
+
+        XCTAssertEqual(config.identityRegexpOrDefault(), cliVerifier.identityRegexpOrDefault())
+        XCTAssertEqual(config.downloadBaseURLOrDefault(), cliVerifier.downloadBaseURLOrDefault())
+        XCTAssertEqual(config.signatureFileName(tag: "v2.3.4"), cliVerifier.signatureFileName(tag: "v2.3.4"))
+        XCTAssertEqual(config.certificateFileName(tag: "v2.3.4"), cliVerifier.certificateFileName(tag: "v2.3.4"))
     }
 
     func testCosignConfigCustomIdentityRegexp() {
@@ -949,6 +997,63 @@ final class UpdateApplierTests: XCTestCase {
             XCTFail("expected cosignVerificationFailed error")
         } catch UpdateApplierError.cosignVerificationFailed {
             // expected
+        } catch {
+            XCTFail("unexpected error: \(error)")
+        }
+    }
+
+    // MARK: - Cosign: apply(release:) uses the shared verification pipeline
+
+    func testApplyRejectsOnInvalidCosignSignature() async throws {
+        let assetBody = Data("fake-binary-content".utf8)
+        let expectedSum = sha256Hex(assetBody)
+        let client = StubUpdateHTTPClient()
+        client.setResponse(path: "/checksums.txt", body: Data("\(expectedSum)  mytool_darwin_arm64\n".utf8))
+        client.setResponse(path: "/asset", body: assetBody)
+
+        let release = ReleaseInfo(
+            tagName: "v1.2.0",
+            htmlURL: "https://github.com/example/releases/tag/v1.2.0",
+            assets: [
+                Asset(name: "mytool_darwin_arm64", browserDownloadURL: "https://example.com/asset", size: Int64(assetBody.count)),
+                Asset(name: "checksums.txt", browserDownloadURL: "https://example.com/checksums.txt", size: 0),
+            ]
+        )
+        let cosignConfig = CosignConfig(
+            repo: "danieljustus/symaira-vault",
+            binaryName: "symvault",
+            verifier: StubFailingCosignVerifier()
+        )
+        let applier = UpdateApplier(os: "darwin", arch: "arm64", client: client, cosignConfig: cosignConfig)
+
+        do {
+            _ = try await applier.apply(release: release)
+            XCTFail("expected cosignVerificationFailed error")
+        } catch UpdateApplierError.cosignVerificationFailed {
+            // expected
+        } catch {
+            XCTFail("unexpected error: \(error)")
+        }
+    }
+
+    // MARK: - Install-method checks use the shared verification pipeline
+
+    func testApplyRejectsHomebrewWhenCheckEnabled() async throws {
+        let release = ReleaseInfo(
+            tagName: "v1.2.0",
+            htmlURL: "https://github.com/example/releases/tag/v1.2.0",
+            assets: [
+                Asset(name: "mytool_darwin_arm64", browserDownloadURL: "https://example.com/asset", size: 0),
+                Asset(name: "checksums.txt", browserDownloadURL: "https://example.com/checksums.txt", size: 0),
+            ]
+        )
+        let applier = UpdateApplier(os: "darwin", arch: "arm64", checkInstallMethod: true)
+
+        do {
+            _ = try await applier.apply(release: release, targetPath: "/opt/homebrew/bin/mytool")
+            XCTFail("expected unsupportedInstallMethod error for Homebrew")
+        } catch UpdateApplierError.unsupportedInstallMethod(let method, guidance: _) {
+            XCTAssertEqual(method, .homebrew)
         } catch {
             XCTFail("unexpected error: \(error)")
         }

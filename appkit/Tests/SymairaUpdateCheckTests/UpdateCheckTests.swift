@@ -90,6 +90,34 @@ final class UpdateCheckerTests: XCTestCase {
         }
     }
 
+    func testReleaseAssetsDecodeAndSurviveDiskCache() async throws {
+        let payload = """
+        {"tag_name":"v1.1.0","html_url":"https://github.com/danieljustus/x/releases/tag/v1.1.0","assets":[{"name":"x_darwin_arm64.zip","browser_download_url":"https://example.com/x.zip","size":1234},{"name":"checksums.txt","browser_download_url":"https://example.com/checksums.txt","size":56}]}
+        """
+        let fresh = UpdateChecker(
+            owner: "danieljustus",
+            repo: "x",
+            client: StubHTTPClient(body: payload, status: 200),
+            cacheDirectory: cacheDir
+        )
+
+        let fetched = try await fresh.check(currentVersion: "v1.0.0", force: true)
+        let expected = [
+            Asset(name: "x_darwin_arm64.zip", browserDownloadURL: "https://example.com/x.zip", size: 1234),
+            Asset(name: "checksums.txt", browserDownloadURL: "https://example.com/checksums.txt", size: 56),
+        ]
+        XCTAssertEqual(fetched?.assets, expected)
+
+        let cached = UpdateChecker(
+            owner: "danieljustus",
+            repo: "x",
+            client: StubHTTPClient(body: "unreachable", status: 500),
+            cacheDirectory: cacheDir
+        )
+        let fromCache = try await cached.check(currentVersion: "v1.0.0")
+        XCTAssertEqual(fromCache?.assets, expected, "release assets must survive the disk cache")
+    }
+
     func testSecondCheckUsesDiskCache() async throws {
         _ = try await checker(latestTag: "v2.0.0").check(currentVersion: "v1.0.0")
         // New checker with a failing transport: must be served from cache.

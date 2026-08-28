@@ -11,6 +11,12 @@ public struct Asset: Sendable, Equatable, Codable {
         self.browserDownloadURL = browserDownloadURL
         self.size = size
     }
+
+    private enum CodingKeys: String, CodingKey {
+        case name
+        case browserDownloadURL = "browser_download_url"
+        case size
+    }
 }
 
 /// An available newer release on GitHub.
@@ -99,7 +105,7 @@ public struct UpdateChecker: Sendable {
             return nil
         }
 
-        return ReleaseInfo(tagName: latest.tagName, htmlURL: latest.htmlURL)
+        return ReleaseInfo(tagName: latest.tagName, htmlURL: latest.htmlURL, assets: latest.assets)
     }
 
     // MARK: - GitHub API
@@ -107,7 +113,30 @@ public struct UpdateChecker: Sendable {
     private struct LatestRelease: Codable {
         let tagName: String
         let htmlURL: String
+        let assets: [Asset]
         var fetchedAt: Date?
+
+        private enum CodingKeys: String, CodingKey {
+            case tagName
+            case htmlURL
+            case assets
+            case fetchedAt
+        }
+
+        init(tagName: String, htmlURL: String, assets: [Asset], fetchedAt: Date?) {
+            self.tagName = tagName
+            self.htmlURL = htmlURL
+            self.assets = assets
+            self.fetchedAt = fetchedAt
+        }
+
+        init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            tagName = try container.decode(String.self, forKey: .tagName)
+            htmlURL = try container.decode(String.self, forKey: .htmlURL)
+            assets = try container.decodeIfPresent([Asset].self, forKey: .assets) ?? []
+            fetchedAt = try container.decodeIfPresent(Date.self, forKey: .fetchedAt)
+        }
     }
 
     private func fetchLatest() async throws -> LatestRelease {
@@ -122,14 +151,32 @@ public struct UpdateChecker: Sendable {
 
         struct GitHubRelease: Decodable {
             let tagName: String
-            let htmlUrl: String
+            let htmlURL: String
+            let assets: [Asset]
+
+            enum CodingKeys: String, CodingKey {
+                case tagName = "tag_name"
+                case htmlURL = "html_url"
+                case assets
+            }
+
+            init(from decoder: Decoder) throws {
+                let container = try decoder.container(keyedBy: CodingKeys.self)
+                tagName = try container.decode(String.self, forKey: .tagName)
+                htmlURL = try container.decode(String.self, forKey: .htmlURL)
+                assets = try container.decodeIfPresent([Asset].self, forKey: .assets) ?? []
+            }
         }
         let decoder = JSONDecoder()
-        decoder.keyDecodingStrategy = .convertFromSnakeCase
         guard let release = try? decoder.decode(GitHubRelease.self, from: data) else {
             throw UpdateCheckError.decodeFailed
         }
-        return LatestRelease(tagName: release.tagName, htmlURL: release.htmlUrl, fetchedAt: Date())
+        return LatestRelease(
+            tagName: release.tagName,
+            htmlURL: release.htmlURL,
+            assets: release.assets,
+            fetchedAt: Date()
+        )
     }
 
     // MARK: - Disk cache

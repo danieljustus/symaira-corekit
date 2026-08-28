@@ -49,19 +49,20 @@ public struct UserDefaultsSkippedVersionStore: SkippedVersionStore, @unchecked S
 
 // MARK: - Auto-update preference store
 
-/// Persists user preferences for automatic update checking and installation.
+/// Persists the user's automatic update-check preference.
 public protocol AutoUpdatePreferenceStore: Sendable {
     /// Whether to automatically check for updates on app launch.
     var autoCheckEnabled: Bool { get set }
-    /// Whether to automatically install found updates (requires autoCheckEnabled).
-    var autoInstallEnabled: Bool { get set }
 }
 
 /// A UserDefaults-backed auto-update preference store with a configurable key prefix.
 ///
 /// Each app should use its own key prefix so preferences are tracked per app.
-/// Example key: `"com.symaira.desktop"` → stores `com.symaira.desktop.autoCheckEnabled`
-/// and `com.symaira.desktop.autoInstallEnabled`.
+/// Example key: `"com.symaira.desktop"` → stores
+/// `com.symaira.desktop.autoCheckEnabled`.
+///
+/// Installation is intentionally not a preference: consumers own the explicit
+/// `UpdateApplier` call after presenting and approving an available release.
 public struct UserDefaultsAutoUpdatePreferenceStore: AutoUpdatePreferenceStore, @unchecked Sendable {
     private let keyPrefix: String
     private let defaults: UserDefaults
@@ -75,18 +76,15 @@ public struct UserDefaultsAutoUpdatePreferenceStore: AutoUpdatePreferenceStore, 
         get { defaults.bool(forKey: "\(keyPrefix).autoCheckEnabled") }
         set { defaults.set(newValue, forKey: "\(keyPrefix).autoCheckEnabled") }
     }
-
-    public var autoInstallEnabled: Bool {
-        get { defaults.bool(forKey: "\(keyPrefix).autoInstallEnabled") }
-        set { defaults.set(newValue, forKey: "\(keyPrefix).autoInstallEnabled") }
-    }
 }
 
 /// Checks for a newer release and gates re-prompting for a version the user already skipped.
 ///
 /// This is the high-level, `@MainActor`-bound checker that combines the
 /// low-level `UpdateChecker` with a `SkippedVersionStore`. It is designed
-/// to be used as an `ObservableObject` in SwiftUI views.
+/// to be used as an `ObservableObject` in SwiftUI views. It never installs
+/// releases itself; consumers explicitly invoke `UpdateApplier` after the
+/// user has approved an available release.
 @MainActor
 public final class AppUpdateChecker: ObservableObject {
     @Published public private(set) var status: AppUpdateStatus = .unknown
@@ -136,13 +134,10 @@ public final class AppUpdateChecker: ObservableObject {
 
     /// Call this on app launch. If auto-update preferences are configured
     /// and enabled, it runs a check (respecting the disk cache — no forced fetch).
-    /// If auto-install is also enabled and an update is found, installation begins.
+    /// The resulting status remains `.available` for the consumer to present;
+    /// installation is an explicit consumer-owned `UpdateApplier` operation.
     public func checkOnLaunchIfEnabled() async {
         guard let prefs = autoPrefs, prefs.autoCheckEnabled else { return }
         await checkForUpdate(force: false)
-        if prefs.autoInstallEnabled, case .available = status {
-            // Installation is handled by the consumer; we just surface the
-            // available release. The consumer can call install() on UpdateApplier.
-        }
     }
 }

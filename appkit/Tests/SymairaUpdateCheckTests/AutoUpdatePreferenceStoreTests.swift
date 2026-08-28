@@ -32,27 +32,14 @@ final class AutoUpdatePreferenceStoreTests: XCTestCase {
         XCTAssertFalse(store.autoCheckEnabled)
     }
 
-    func testAutoInstallEnabledRoundTrips() {
-        let defaults = makeDefaults()
-        var store = UserDefaultsAutoUpdatePreferenceStore(keyPrefix: "com.test.app", defaults: defaults)
-
-        XCTAssertFalse(store.autoInstallEnabled)
-        store.autoInstallEnabled = true
-        XCTAssertTrue(store.autoInstallEnabled)
-        store.autoInstallEnabled = false
-        XCTAssertFalse(store.autoInstallEnabled)
-    }
-
     func testPreferencesAreStoredUnderPrefixedKeys() {
         let defaults = makeDefaults()
         let prefix = "com.test.app"
         var store = UserDefaultsAutoUpdatePreferenceStore(keyPrefix: prefix, defaults: defaults)
 
         store.autoCheckEnabled = true
-        store.autoInstallEnabled = true
 
         XCTAssertTrue(defaults.bool(forKey: "\(prefix).autoCheckEnabled"))
-        XCTAssertTrue(defaults.bool(forKey: "\(prefix).autoInstallEnabled"))
     }
 
     func testDifferentKeyPrefixesAreIsolated() {
@@ -61,9 +48,7 @@ final class AutoUpdatePreferenceStoreTests: XCTestCase {
         let other = UserDefaultsAutoUpdatePreferenceStore(keyPrefix: "com.test.other", defaults: defaults)
 
         store.autoCheckEnabled = true
-        store.autoInstallEnabled = true
 
         XCTAssertFalse(other.autoCheckEnabled)
-        XCTAssertFalse(other.autoInstallEnabled)
     }
 }

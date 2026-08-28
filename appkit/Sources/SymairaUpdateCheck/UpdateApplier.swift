@@ -111,36 +111,8 @@ public struct UpdateApplier: Sendable {
     ///
     /// - Parameter release: The release containing assets and a checksums.txt.
     /// - Returns: The URL of the verified downloaded asset.
-    public func apply(release: ReleaseInfo) async throws -> URL {
-        // 1. Select the asset matching os + arch.
-        let asset = try selectAsset(from: release.assets)
-
-        // 2. Download and parse checksums.txt.
-        let (_, checksums) = try await fetchChecksums(from: release.assets)
-
-        // 3. Look up the expected checksum for the selected asset.
-        guard let expectedSum = checksums[asset.name] else {
-            throw UpdateApplierError.checksumMismatch(
-                assetName: asset.name,
-                got: "<no entry in checksums.txt>",
-                expected: "<any entry>"
-            )
-        }
-
-        // 4. Download the asset to a temp file (with progress + streaming SHA256).
-        let (tempURL, actualSum) = try await downloader.downloadToTemp(asset: asset)
-
-        // 5. Verify the checksum.
-        guard actualSum.lowercased() == expectedSum.lowercased() else {
-            try? FileManager.default.removeItem(at: tempURL)
-            throw UpdateApplierError.checksumMismatch(
-                assetName: asset.name,
-                got: actualSum.lowercased(),
-                expected: expectedSum.lowercased()
-            )
-        }
-
-        return tempURL
+    public func apply(release: ReleaseInfo, targetPath: String? = nil) async throws -> URL {
+        try await verifyAndDownload(release: release, targetPath: targetPath).tempURL
     }
 
     // MARK: - Apply (bundle install)
@@ -164,10 +136,29 @@ public struct UpdateApplier: Sendable {
     /// - Returns: The URL of the installed artifact (temp file for binaries,
     ///         `/Applications/AppName.app` for bundles).
     public func applyBundle(release: ReleaseInfo, targetPath: String? = nil) async throws -> URL {
-        // 1. Select the asset matching os + arch.
+        let verified = try await verifyAndDownload(release: release, targetPath: targetPath)
+
+        switch detectAssetType(name: verified.asset.name) {
+        case .appBundleDMG:
+            return try await AppInstaller.installDMG(at: verified.tempURL, assetName: verified.asset.name)
+        case .appBundleZip:
+            return try await AppInstaller.installZip(at: verified.tempURL, assetName: verified.asset.name)
+        case .binary, .unknown:
+            return verified.tempURL
+        }
+    }
+
+    private struct VerifiedAsset: Sendable {
+        let asset: Asset
+        let tempURL: URL
+    }
+
+    /// Select, verify, download, and hash one release asset. Both public apply
+    /// entry points use this exact pipeline so checksum, cosign, and install
+    /// method checks cannot drift between binary and bundle updates.
+    private func verifyAndDownload(release: ReleaseInfo, targetPath: String?) async throws -> VerifiedAsset {
         let asset = try selectAsset(from: release.assets)
 
-        // 2. Optional install method detection.
         if checkInstallMethod, let path = targetPath {
             let method = UpdateApplier.detectInstallMethod(at: path)
             guard UpdateApplier.isSelfUpdateSupported(method) else {
@@ -176,18 +167,11 @@ public struct UpdateApplier: Sendable {
             }
         }
 
-        // 3. Determine asset type.
-        let assetType = detectAssetType(name: asset.name)
-
-        // 4. Download and parse checksums.txt.
         let (rawChecksums, checksums) = try await fetchChecksums(from: release.assets)
-
-        // 4b. Optional cosign verification of checksums.
         if let cosign = cosignConfig {
             try await CosignVerification(config: cosign).verify(rawChecksums: rawChecksums, tag: release.tagName)
         }
 
-        // 5. Look up the expected checksum for the selected asset.
         guard let expectedSum = checksums[asset.name] else {
             throw UpdateApplierError.checksumMismatch(
                 assetName: asset.name,
@@ -196,10 +180,7 @@ public struct UpdateApplier: Sendable {
             )
         }
 
-        // 6. Download the asset to a temp file (with progress + streaming SHA256).
         let (tempURL, actualSum) = try await downloader.downloadToTemp(asset: asset)
-
-        // 7. Verify the checksum.
         guard actualSum.lowercased() == expectedSum.lowercased() else {
             try? FileManager.default.removeItem(at: tempURL)
             throw UpdateApplierError.checksumMismatch(
@@ -209,15 +190,7 @@ public struct UpdateApplier: Sendable {
             )
         }
 
-        // 8. If it's a bundle, install it to /Applications.
-        switch assetType {
-        case .appBundleDMG:
-            return try await AppInstaller.installDMG(at: tempURL, assetName: asset.name)
-        case .appBundleZip:
-            return try await AppInstaller.installZip(at: tempURL, assetName: asset.name)
-        case .binary, .unknown:
-            return tempURL
-        }
+        return VerifiedAsset(asset: asset, tempURL: tempURL)
     }
 
     // MARK: - Asset type detection

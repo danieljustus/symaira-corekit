@@ -25,7 +25,6 @@ private final class InMemorySkippedVersionStore: SkippedVersionStore, @unchecked
 
 private final class InMemoryAutoUpdatePreferenceStore: AutoUpdatePreferenceStore, @unchecked Sendable {
     var autoCheckEnabled = false
-    var autoInstallEnabled = false
 }
 
 final class AppUpdateCheckerTests: XCTestCase {
@@ -176,6 +175,20 @@ final class AppUpdateCheckerTests: XCTestCase {
         await checker.checkOnLaunchIfEnabled()
         guard case .available(let release) = checker.status else {
             return XCTFail("expected .available after launch check, got \(checker.status)")
+        }
+        XCTAssertEqual(release.tagName, "v1.1.0")
+    }
+
+    @MainActor
+    func testLaunchCheckLeavesAvailableForConsumerOwnedInstallation() async {
+        let prefs = InMemoryAutoUpdatePreferenceStore()
+        prefs.autoCheckEnabled = true
+        let checker = makeChecker(latestTag: "v1.1.0", autoPrefs: prefs)
+
+        await checker.checkOnLaunchIfEnabled()
+
+        guard case .available(let release) = checker.status else {
+            return XCTFail("launch checks must leave the release available for the consumer")
         }
         XCTAssertEqual(release.tagName, "v1.1.0")
     }

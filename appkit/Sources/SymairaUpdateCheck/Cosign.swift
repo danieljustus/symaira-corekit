@@ -15,6 +15,28 @@ public protocol CosignVerifier: Sendable {
 }
 
 #if os(macOS)
+private enum CosignArtifactHelpers {
+    static func identityRegexpOrDefault(identityRegexp: String, repo: String) -> String {
+        if !identityRegexp.isEmpty { return identityRegexp }
+        return #"(?i)https://github\.com/\#(repo)/\.github/workflows/release\.yml@refs/tags/v.*"#
+    }
+
+    static func downloadBaseURLOrDefault(downloadBaseURL: String, repo: String) -> String {
+        if !downloadBaseURL.isEmpty { return downloadBaseURL }
+        return "https://github.com/\(repo)/releases/download"
+    }
+
+    static func signatureFileName(binaryName: String, tag: String) -> String {
+        let version = tag.replacingOccurrences(of: "v", with: "", options: .anchored)
+        return "\(binaryName)_\(version)_checksums.txt.sig"
+    }
+
+    static func certificateFileName(binaryName: String, tag: String) -> String {
+        let version = tag.replacingOccurrences(of: "v", with: "", options: .anchored)
+        return "\(binaryName)_\(version)_checksums.txt.pem"
+    }
+}
+
 /// Configuration for Cosign keyless signature verification.
 /// When non-nil on an `UpdateApplier`, the checksums.txt is verified
 /// against its cosign signature before any downloaded asset is trusted.
@@ -61,26 +83,22 @@ public struct CosignConfig: Sendable {
 
     /// Returns the identity regexp, defaulting to a GitHub Actions release workflow pattern.
     public func identityRegexpOrDefault() -> String {
-        if !identityRegexp.isEmpty { return identityRegexp }
-        return #"https://github\.com/\#(repo)/\.github/workflows/release\.yml@refs/tags/v.*"#
+        CosignArtifactHelpers.identityRegexpOrDefault(identityRegexp: identityRegexp, repo: repo)
     }
 
     /// Returns the download base URL, defaulting to the GitHub releases download path.
     public func downloadBaseURLOrDefault() -> String {
-        if !downloadBaseURL.isEmpty { return downloadBaseURL }
-        return "https://github.com/\(repo)/releases/download"
+        CosignArtifactHelpers.downloadBaseURLOrDefault(downloadBaseURL: downloadBaseURL, repo: repo)
     }
 
     /// The signature filename for the given tag (e.g. "symvault_1.0.0_checksums.txt.sig").
     public func signatureFileName(tag: String) -> String {
-        let v = tag.replacingOccurrences(of: "v", with: "", options: .anchored)
-        return "\(binaryName)_\(v)_checksums.txt.sig"
+        CosignArtifactHelpers.signatureFileName(binaryName: binaryName, tag: tag)
     }
 
     /// The certificate filename for the given tag (e.g. "symvault_1.0.0_checksums.txt.pem").
     public func certificateFileName(tag: String) -> String {
-        let v = tag.replacingOccurrences(of: "v", with: "", options: .anchored)
-        return "\(binaryName)_\(v)_checksums.txt.pem"
+        CosignArtifactHelpers.certificateFileName(binaryName: binaryName, tag: tag)
     }
 
     /// Fetch the cosign signature for a release tag. Delegates to the verifier.
@@ -131,25 +149,21 @@ public struct CosignCLIVerifier: CosignVerifier, Sendable {
     }
 
     /// Returns the identity regexp, defaulting to a GitHub Actions release
-    /// workflow pattern — mirrors `CosignConfig.identityRegexpOrDefault()`.
+    /// workflow pattern. This delegates to the shared Cosign artifact helper.
     func identityRegexpOrDefault() -> String {
-        if !identityRegexp.isEmpty { return identityRegexp }
-        return #"(?i)https://github\.com/\#(repo)/\.github/workflows/release\.yml@refs/tags/v.*"#
+        CosignArtifactHelpers.identityRegexpOrDefault(identityRegexp: identityRegexp, repo: repo)
     }
 
-    private func downloadBaseURLOrDefault() -> String {
-        if !downloadBaseURL.isEmpty { return downloadBaseURL }
-        return "https://github.com/\(repo)/releases/download"
+    func downloadBaseURLOrDefault() -> String {
+        CosignArtifactHelpers.downloadBaseURLOrDefault(downloadBaseURL: downloadBaseURL, repo: repo)
     }
 
-    private func signatureFileName(tag: String) -> String {
-        let v = tag.replacingOccurrences(of: "v", with: "", options: .anchored)
-        return "\(binaryName)_\(v)_checksums.txt.sig"
+    func signatureFileName(tag: String) -> String {
+        CosignArtifactHelpers.signatureFileName(binaryName: binaryName, tag: tag)
     }
 
-    private func certificateFileName(tag: String) -> String {
-        let v = tag.replacingOccurrences(of: "v", with: "", options: .anchored)
-        return "\(binaryName)_\(v)_checksums.txt.pem"
+    func certificateFileName(tag: String) -> String {
+        CosignArtifactHelpers.certificateFileName(binaryName: binaryName, tag: tag)
     }
 
     public func fetchSignature(tag: String) async throws -> Data {
