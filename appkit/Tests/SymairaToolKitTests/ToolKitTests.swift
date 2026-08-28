@@ -1,5 +1,24 @@
+import Foundation
 import XCTest
 @testable import SymairaToolKit
+
+private final class SignatureVerificationRecorder: @unchecked Sendable {
+    private let lock = NSLock()
+    private var count = 0
+
+    func verify(_ url: URL) -> Bool {
+        lock.lock()
+        count += 1
+        lock.unlock()
+        return true
+    }
+
+    var invocationCount: Int {
+        lock.lock()
+        defer { lock.unlock() }
+        return count
+    }
+}
 
 final class RegistryTests: XCTestCase {
     func testRegistryHasNoGhostTools() {
@@ -285,6 +304,28 @@ final class BinaryLocatorTests: XCTestCase {
         XCTAssertFalse(BinaryLocator.verifySignature(at: url))
     }
 
+    func testSignatureVerificationCacheUsesPathAndModificationDate() throws {
+        let bin = try makeExecutable(named: "symcached-signature", in: tempDir)
+        let recorder = SignatureVerificationRecorder()
+        let locator = BinaryLocator(
+            bundle: nil,
+            searchPATH: tempDir.path,
+            extraDirectories: [],
+            signatureVerifier: recorder.verify
+        )
+
+        XCTAssertNotNil(locator.locate("symcached-signature"))
+        XCTAssertNotNil(locator.locate("symcached-signature"))
+        XCTAssertEqual(recorder.invocationCount, 1, "An unchanged binary should be verified once")
+
+        try FileManager.default.setAttributes(
+            [.modificationDate: Date(timeIntervalSinceNow: 2)],
+            ofItemAtPath: bin.path
+        )
+        XCTAssertNotNil(locator.locate("symcached-signature"))
+        XCTAssertEqual(recorder.invocationCount, 2, "A binary with a changed modification date should be re-verified")
+    }
+
     /// Builds a minimal, loadable app bundle so `Bundle.executableURL` resolves.
     private func makeFakeBundle(executableName: String, in macOSDir: URL) throws -> Bundle {
         let contentsDir = macOSDir.deletingLastPathComponent()
@@ -456,5 +497,57 @@ final class ToolDetectorTests: XCTestCase {
         let countStr = try String(contentsOf: counterFile, encoding: .utf8).trimmingCharacters(in: .whitespacesAndNewlines)
         let count = Int(countStr) ?? -1
         XCTAssertEqual(count, 1, "Handshake should only run once due to caching — got \(count)")
+    }
+
+    func testDetectInstalledSlidesWindowWithoutBarrier() async throws {
+        let fastEnded = tempDir.appendingPathComponent("fast-ended")
+        let events = tempDir.appendingPathComponent("events.txt")
+
+        let slow = try makeFakeTool(
+            named: "symsliding-slow",
+            script: """
+            #!/bin/sh
+            printf 'slow-start\\n' >> "\(events.path)"
+            sleep 1
+            printf 'slow-end\\n' >> "\(events.path)"
+            echo '{"version":"1.0.0","schema_version":1}'
+            """
+        )
+        let fast = try makeFakeTool(
+            named: "symsliding-fast",
+            script: """
+            #!/bin/sh
+            printf 'fast-start\\n' >> "\(events.path)"
+            sleep 0.1
+            printf 'fast-end\\n' >> "\(events.path)"
+            touch "\(fastEnded.path)"
+            echo '{"version":"1.0.0","schema_version":1}'
+            """
+        )
+        let waiting = try makeFakeTool(
+            named: "symsliding-waiting",
+            script: """
+            #!/bin/sh
+            printf 'waiting-start\\n' >> "\(events.path)"
+            while [ ! -f "\(fastEnded.path)" ]; do sleep 0.02; done
+            printf 'waiting-end\\n' >> "\(events.path)"
+            echo '{"version":"1.0.0","schema_version":1}'
+            """
+        )
+
+        let slidingDetector = ToolDetector(
+            locator: BinaryLocator(bundle: nil, searchPATH: tempDir.path, extraDirectories: []),
+            maxConcurrentHandshakes: 2,
+            allowUnverified: true
+        )
+        let results = await slidingDetector.detectInstalled(from: [slow, fast, waiting])
+        XCTAssertEqual(results.map(\.tool.id), [slow.id, fast.id, waiting.id])
+
+        let eventLines = try String(contentsOf: events, encoding: .utf8)
+            .split(whereSeparator: \.isNewline)
+            .map(String.init)
+        let waitingStart = try XCTUnwrap(eventLines.firstIndex(of: "waiting-start"))
+        let slowEnd = try XCTUnwrap(eventLines.firstIndex(of: "slow-end"))
+        XCTAssertLessThan(waitingStart, slowEnd, "A completed fast task should admit the next task before the slow task ends")
     }
 }

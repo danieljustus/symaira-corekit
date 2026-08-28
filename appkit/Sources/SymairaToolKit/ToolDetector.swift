@@ -97,37 +97,36 @@ public struct ToolDetector: Sendable {
 
     /// Detect every registry tool that is installed on this machine.
     ///
-    /// Handshakes run concurrently in bounded chunks (default 4) so a single
-    /// slow binary does not serialise the others. Results are returned in the
-    /// same order as the input `tools` array.
+    /// Handshakes run concurrently in a bounded sliding window (default 4),
+    /// admitting the next tool as soon as any in-flight handshake completes.
+    /// Results are returned in the same order as the input `tools` array.
     public func detectInstalled(from tools: [SymairaTool] = SymairaToolRegistry.all) async -> [DetectedTool] {
-        let chunkSize = maxConcurrentHandshakes
-        var results: [(Int, DetectedTool)] = []
+        let concurrency = max(1, maxConcurrentHandshakes)
+        var detected = Array<DetectedTool?>(repeating: nil, count: tools.count)
 
-        var offset = 0
-        while offset < tools.count {
-            let end = min(offset + chunkSize, tools.count)
-            let chunk = Array(tools[offset..<end])
-
-            await withTaskGroup(of: (Int, DetectedTool?).self) { group in
-                for (i, tool) in chunk.enumerated() {
-                    let index = offset + i
-                    group.addTask {
-                        let result = await self.detect(tool)
-                        return (index, result)
-                    }
-                }
-                for await (index, opt) in group {
-                    if let hit = opt {
-                        results.append((index, hit))
-                    }
+        await withTaskGroup(of: (Int, DetectedTool?).self) { group in
+            var nextIndex = 0
+            for _ in 0..<min(concurrency, tools.count) {
+                let index = nextIndex
+                nextIndex += 1
+                group.addTask {
+                    (index, await self.detect(tools[index]))
                 }
             }
 
-            offset += chunkSize
+            while let (index, result) = await group.next() {
+                detected[index] = result
+                guard nextIndex < tools.count else { continue }
+
+                let indexToStart = nextIndex
+                nextIndex += 1
+                group.addTask {
+                    (indexToStart, await self.detect(tools[indexToStart]))
+                }
+            }
         }
 
-        return results.sorted { $0.0 < $1.0 }.map { $0.1 }
+        return detected.compactMap { $0 }
     }
 
     /// Verify a detected tool satisfies the schema version this app expects.

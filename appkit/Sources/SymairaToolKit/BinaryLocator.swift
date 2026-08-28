@@ -3,6 +3,41 @@ import Foundation
 import Security
 import Darwin
 
+private final class SignatureVerificationCache: @unchecked Sendable {
+    private struct Key: Hashable {
+        let path: String
+        let modificationTime: TimeInterval
+    }
+
+    private let lock = NSLock()
+    private var storage: [Key: Bool] = [:]
+
+    func verify(
+        at url: URL,
+        using verifier: @Sendable (URL) -> Bool
+    ) -> Bool {
+        let key = Key(path: url.path, modificationTime: modificationTime(of: url))
+
+        lock.lock()
+        defer { lock.unlock() }
+        if let cached = storage[key] {
+            return cached
+        }
+
+        let result = verifier(url)
+        storage[key] = result
+        return result
+    }
+
+    private func modificationTime(of url: URL) -> TimeInterval {
+        guard let values = try? url.resourceValues(forKeys: [.contentModificationDateKey]),
+              let date = values.contentModificationDate else {
+            return 0
+        }
+        return date.timeIntervalSinceReferenceDate
+    }
+}
+
 /// Locates a Symaira CLI binary using the ecosystem-wide discovery order:
 ///
 /// 1. explicit user override (from app settings)
@@ -20,7 +55,9 @@ import Darwin
 /// By default, binaries found on `PATH` or in extra directories are rejected
 /// if the containing directory is not root-owned or is group/world-writable.
 /// Every located binary is checked for a valid code signature against its
-/// own designated requirement via `SecStaticCodeCheckValidity`. Pass
+/// own designated requirement via `SecStaticCodeCheckValidity`. Verification
+/// results are cached by binary path and modification time for repeated
+/// lookups. Pass
 /// `allowUnverified: true` to skip these checks (e.g. local dev builds).
 public struct BinaryLocator: Sendable {
     public var userOverride: URL?
@@ -29,6 +66,8 @@ public struct BinaryLocator: Sendable {
     private let bundleResourceURL: URL?
     private let executableDirectory: URL?
     private let ownExecutablePath: String?
+    private let signatureVerifier: @Sendable (URL) -> Bool
+    private static let signatureVerificationCache = SignatureVerificationCache()
 
     public init(
         bundle: Bundle? = Bundle.main,
@@ -36,12 +75,29 @@ public struct BinaryLocator: Sendable {
         searchPATH: String? = nil,
         extraDirectories: [String] = ["/opt/homebrew/bin", "/usr/local/bin"]
     ) {
+        self.init(
+            bundle: bundle,
+            userOverride: userOverride,
+            searchPATH: searchPATH,
+            extraDirectories: extraDirectories,
+            signatureVerifier: Self.verifySignatureUncached
+        )
+    }
+
+    init(
+        bundle: Bundle? = Bundle.main,
+        userOverride: URL? = nil,
+        searchPATH: String? = nil,
+        extraDirectories: [String] = ["/opt/homebrew/bin", "/usr/local/bin"],
+        signatureVerifier: @escaping @Sendable (URL) -> Bool
+    ) {
         self.userOverride = userOverride
         self.searchPATH = searchPATH ?? ProcessInfo.processInfo.environment["PATH"] ?? ""
         self.extraDirectories = extraDirectories
         self.bundleResourceURL = bundle?.resourceURL
         self.executableDirectory = bundle?.executableURL?.deletingLastPathComponent()
         self.ownExecutablePath = bundle?.executableURL?.path
+        self.signatureVerifier = signatureVerifier
     }
 
     /// Where a located binary came from — useful for diagnostics views.
@@ -80,7 +136,7 @@ public struct BinaryLocator: Sendable {
 
         // 1. User override — always honoured, verification is advisory.
         if let userOverride, fm.isExecutableFile(atPath: userOverride.path) {
-            let verified = Self.verifySignature(at: userOverride)
+            let verified = Self.signatureVerificationCache.verify(at: userOverride, using: signatureVerifier)
             return Located(url: userOverride, source: .userOverride, verified: verified)
         }
 
@@ -88,7 +144,7 @@ public struct BinaryLocator: Sendable {
         if let bundleResourceURL {
             let candidate = bundleResourceURL.appendingPathComponent(binaryName)
             if fm.isExecutableFile(atPath: candidate.path), !isOwnExecutable(candidate) {
-                let verified = Self.verifySignature(at: candidate)
+                let verified = Self.signatureVerificationCache.verify(at: candidate, using: signatureVerifier)
                 return Located(url: candidate, source: .bundle, verified: verified)
             }
         }
@@ -97,7 +153,7 @@ public struct BinaryLocator: Sendable {
         if let executableDirectory {
             let candidate = executableDirectory.appendingPathComponent(binaryName)
             if fm.isExecutableFile(atPath: candidate.path), !isOwnExecutable(candidate) {
-                let verified = Self.verifySignature(at: candidate)
+                let verified = Self.signatureVerificationCache.verify(at: candidate, using: signatureVerifier)
                 return Located(url: candidate, source: .executableDirectory, verified: verified)
             }
         }
@@ -110,7 +166,7 @@ public struct BinaryLocator: Sendable {
             guard allowUnverified || Self.isDirectorySecure(dirStr) else { continue }
             let candidate = URL(fileURLWithPath: dirStr).appendingPathComponent(binaryName)
             if fm.isExecutableFile(atPath: candidate.path) {
-                let verified = Self.verifySignature(at: candidate)
+                let verified = Self.signatureVerificationCache.verify(at: candidate, using: signatureVerifier)
                 if !allowUnverified && !verified { continue }
                 return Located(url: candidate, source: .path, verified: verified)
             }
@@ -121,7 +177,7 @@ public struct BinaryLocator: Sendable {
             guard allowUnverified || Self.isDirectorySecure(dir) else { continue }
             let candidate = URL(fileURLWithPath: dir).appendingPathComponent(binaryName)
             if fm.isExecutableFile(atPath: candidate.path) {
-                let verified = Self.verifySignature(at: candidate)
+                let verified = Self.signatureVerificationCache.verify(at: candidate, using: signatureVerifier)
                 if !allowUnverified && !verified { continue }
                 return Located(url: candidate, source: .extraDirectory, verified: verified)
             }
@@ -170,6 +226,10 @@ public struct BinaryLocator: Sendable {
     /// signature chain and the designated requirement embedded in the
     /// code object.
     static func verifySignature(at url: URL) -> Bool {
+        verifySignatureUncached(at: url)
+    }
+
+    private static func verifySignatureUncached(at url: URL) -> Bool {
         var code: SecStaticCode?
         guard SecStaticCodeCreateWithPath(url as CFURL, [], &code) == errSecSuccess,
               let code = code else {
