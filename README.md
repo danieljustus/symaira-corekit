@@ -60,7 +60,7 @@ cloud-specific behavior.
 | `domkit` | v0.9.0 | Shared semantic DOM pipeline for schema, selector, image, truncation, and markdown extraction |
 | `envutil` | v0.1.0 | Safe environment variable access with alias support |
 | `evidencekit` | v0.4.0 | Grounded extraction contract (`SourceRef`, `Span`, `Extraction`, `AlignmentStatus`), JSONL sidecar encode/decode, exact/normalized text-span alignment, and grounded-only validation |
-| `exitcodes` | v0.1.0 | Typed exit codes (`ExitOK`, `ExitError`, `ExitUsage`, `ExitAuth`) and `CLIError` type |
+| `exitcodes` | v0.1.0 | Typed exit codes (`ExitOK`, `ExitGeneric`, `ExitNoInput`, `ExitNoAuth`, `ExitForbidden`, `ExitNotFound`, `ExitConflict`, `ExitSoftware`, `ExitData`, `ExitConfig`, `ExitInterrupted`) and `CLIError` type; see [`contracts/exit_codes.json`](contracts/exit_codes.json) |
 | `fsutil` | v0.1.0 | Atomic file writes, path traversal validation, temp-file safety |
 | `llmkit` | v0.14.0 | Shared LLM provider layer: descriptor-driven registry, one OpenAI transport plus an Anthropic dialect, streaming, tool use, embeddings, model discovery, credential references (`symvault://`/`env://`), and the contract error taxonomy |
 | `logkit` | v0.1.0 | Structured logging (`log/slog`) to stderr, configurable via `SYM<APP>_LOG_LEVEL` |

@@ -54,6 +54,19 @@ jobs:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
 
+      - name: Verify migration notes
+        run: |
+          tag="${GITHUB_REF_NAME:-}"
+          if [ -z "$tag" ]; then
+            echo "::error::GITHUB_REF_NAME is empty; cannot verify migration notes"
+            exit 1
+          fi
+          if ! grep -Fqx -- "## $tag" docs/migrations.md; then
+            echo "::error::docs/migrations.md has no exact heading for $tag"
+            exit 1
+          fi
+          echo "Found exact migration heading for $tag"
+
       - name: Create GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
