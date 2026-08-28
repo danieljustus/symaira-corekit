@@ -21,7 +21,7 @@ Every Symaira app stays fully standalone: this package is consumed as a **pinned
 Add the package as an exact-pinned dependency in the client app's `Package.swift`:
 
 ```swift
-.package(url: "https://github.com/danieljustus/symaira-appkit.git", exact: "0.12.0")
+.package(url: "https://github.com/danieljustus/symaira-appkit.git", exact: "0.14.0")
 ```
 
 ## Modules
@@ -67,6 +67,7 @@ adopt in an iOS client today.
 Review the [CHANGELOG](CHANGELOG.md) before bumping your pin — every release documents its additions, fixes, and breaking changes.
 
 ```swift
+import SymairaCLIRunner
 import SymairaToolKit
 
 let detector = ToolDetector()
@@ -85,11 +86,17 @@ if let desk = await detector.detect(SymairaToolRegistry.tool(id: "symdesk")!) {
 ```swift
 import SymairaUpdateCheck
 
+let release = ReleaseInfo(
+    tagName: "0.15.0",
+    htmlURL: "https://github.com/danieljustus/symaira-appkit/releases/tag/0.15.0"
+)
+let installURL = "/Applications/Symaira.app"
 let applier = UpdateApplier(
     checkInstallMethod: true,
     cosignConfig: CosignConfig(
-        identityRegExp: "https://github.com/danieljustus/",
-        issuer: "https://token.actions.githubusercontent.com"
+        repo: "danieljustus/symaira-appkit",
+        binaryName: "symaira-appkit",
+        identityRegexp: "https://github.com/danieljustus/"
     )
 )
 let result = try await applier.applyBundle(release: release, targetPath: installURL)

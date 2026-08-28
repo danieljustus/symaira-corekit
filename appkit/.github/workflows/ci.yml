@@ -58,6 +58,8 @@ jobs:
           MEM_GB=$(($(sysctl -n hw.memsize) / 1073741824))
           if [ "$MEM_GB" -le 8 ]; then JOBS=2; elif [ "$MEM_GB" -le 16 ]; then JOBS=4; else JOBS=6; fi
           swift test -v -j "$JOBS"
+      - name: Verify README examples
+        run: python3 scripts/check-readme.py
 
   swift-62-build:
     if: github.event_name != 'pull_request'  # PR test already builds with the same Swift 6.2/Xcode 27 toolchain
