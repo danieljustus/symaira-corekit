@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.14.1] - 2026-08-28
+
+### Added
+- `SymairaUpdateCheck` now preserves and verifies release assets through the
+  update cache, with shared helpers for cosign artifacts.
+- `SymairaSecretRedactor` centralizes redaction of provider and CLI secrets.
+- Tool detection uses a sliding concurrency window and caches unchanged
+  binary-signature checks.
+
+### Changed
+- CLI output truncation is synchronized across concurrent readers.
+- Keychain saves preserve existing values on failed updates, and provider
+  credential reads/writes use bounded verification timeouts.
+
+### Removed
+- The inert automatic-installation preference was removed from update checks.
+
+### Security
+- PKCE S256 hashing now uses the platform crypto implementation, with the
+  Swift Crypto fallback retained for supported toolchains.
+
 ## [0.14.0] - 2026-08-26
 
 ### Added
