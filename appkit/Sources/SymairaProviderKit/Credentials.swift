@@ -118,14 +118,21 @@ public struct SymairaCredentialResolver: Sendable {
 
 /// Keychain-backed credential storage used by provider settings UI and hosts.
 public struct SymairaProviderCredentialStore: Sendable {
-    public let keychain: SymairaKeychain
+    public static let defaultKeychainTimeout: TimeInterval = 5
 
-    public init(keychain: SymairaKeychain = SymairaKeychain(app: "provider")) {
+    public let keychain: SymairaKeychain
+    public let keychainTimeout: TimeInterval
+
+    public init(
+        keychain: SymairaKeychain = SymairaKeychain(app: "provider"),
+        keychainTimeout: TimeInterval = SymairaProviderCredentialStore.defaultKeychainTimeout
+    ) {
         self.keychain = keychain
+        self.keychainTimeout = keychainTimeout
     }
 
     public func credential(for providerID: String) throws -> String? {
-        try keychain.read(key: account(for: providerID))
+        try keychain.read(key: account(for: providerID), timeout: keychainTimeout)
     }
 
     @discardableResult
@@ -136,7 +143,11 @@ public struct SymairaProviderCredentialStore: Sendable {
         }
         // Verified save: read-back catches signing-identity ACL mismatches
         // on locally built unsigned apps instead of silently losing the key.
-        _ = try keychain.saveVerified(trimmed, key: account(for: providerID))
+        _ = try keychain.saveVerified(
+            trimmed,
+            key: account(for: providerID),
+            timeout: keychainTimeout
+        )
         return true
     }
 

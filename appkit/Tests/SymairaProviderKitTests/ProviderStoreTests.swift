@@ -19,6 +19,16 @@ final class ProviderStoreTests: XCTestCase {
         XCTAssertNil(workspace.credentialReference)
     }
 
+    func testCredentialStoreUsesBoundedKeychainTimeout() {
+        let store = SymairaProviderCredentialStore(keychainTimeout: 0.25)
+
+        XCTAssertEqual(store.keychainTimeout, 0.25)
+        XCTAssertEqual(
+            SymairaProviderCredentialStore.defaultKeychainTimeout,
+            5
+        )
+    }
+
     func testStoreResetsEndpointAndModelWhenProviderChanges() throws {
         let catalog = try SymairaProviderCatalog.load()
         let store = SymairaProviderStore(providerID: "openai", catalog: catalog)
