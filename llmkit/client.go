@@ -1,16 +1,19 @@
 package llmkit
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
+	"net/netip"
 	"net/url"
 	"os"
 	"strconv"
 	"strings"
 	"time"
+	"unicode"
 )
 
 // DefaultTimeout is the default per-request timeout.
@@ -85,6 +88,9 @@ func NewClient(desc Descriptor, credRef string, opts ...Option) (*Client, error)
 		return nil, fmt.Errorf("llmkit: provider %q does not allow base URL overrides", desc.ID)
 	}
 	cfg.baseURL = strings.TrimRight(cfg.baseURL, "/")
+	if err := validateBaseURL(cfg.baseURL, desc); err != nil {
+		return nil, err
+	}
 
 	key := cfg.apiKey
 	if key == "" && desc.AuthScheme != AuthNone {
@@ -169,6 +175,31 @@ func (c *Client) do(ctx context.Context, method, path string, body any, contentT
 	return resp, nil
 }
 
+// validateBaseURL prevents credentials from being sent over cleartext to
+// non-loopback endpoints. Local HTTP servers and no-auth descriptors are
+// intentionally exempt.
+func validateBaseURL(baseURL string, desc Descriptor) error {
+	if desc.AuthScheme == AuthNone {
+		return nil
+	}
+	u, err := url.Parse(baseURL)
+	if err != nil || u.Scheme == "" || u.Host == "" {
+		return &Error{Code: ErrCodeAuth, Err: fmt.Errorf("provider %q requires an HTTPS base URL for credentialed requests", desc.ID)}
+	}
+	if strings.EqualFold(u.Scheme, "https") || isLoopbackHost(u.Hostname()) {
+		return nil
+	}
+	return &Error{Code: ErrCodeAuth, Err: fmt.Errorf("provider %q requires an HTTPS base URL for credentialed requests outside loopback hosts", desc.ID)}
+}
+
+func isLoopbackHost(host string) bool {
+	if strings.EqualFold(host, "localhost") {
+		return true
+	}
+	addr, err := netip.ParseAddr(host)
+	return err == nil && addr.IsLoopback()
+}
+
 // applyAuth writes the credential and mandatory headers onto the request.
 func (c *Client) applyAuth(req *http.Request) {
 	switch c.desc.AuthScheme {
@@ -188,7 +219,7 @@ func (c *Client) applyAuth(req *http.Request) {
 
 // ResolveCredential resolves a credential reference in the shared format:
 //
-//	symvault://path  -> `symvault get path --print`
+//	symvault://path  -> `symvault get -- path --print`
 //	keychain://svc/acct -> reserved for Swift consumers; unsupported here
 //	env://NAME       -> os.Getenv("NAME")
 //	NAME             -> bare env name shorthand for env://NAME
@@ -241,12 +272,38 @@ func refLabel(ref string) string {
 // resolveSymvault shells out to the vault CLI. Kept as a small indirection so
 // tests can replace it.
 var resolveSymvault = func(path string) (string, error) {
-	cmd := execCommand("symvault", "get", path, "--print")
+	if err := validateSymvaultPath(path); err != nil {
+		return "", err
+	}
+
+	cmd := execCommand("symvault", "get", "--", path, "--print")
+	var stderr bytes.Buffer
+	cmd.Stderr = &stderr
 	out, err := cmd.Output()
 	if err != nil {
+		if detail := strings.TrimSpace(stderr.String()); detail != "" {
+			return "", fmt.Errorf("%w: %s", err, detail)
+		}
 		return "", err
 	}
 	return strings.TrimSpace(string(out)), nil
+}
+
+func validateSymvaultPath(path string) error {
+	switch {
+	case path == "":
+		return fmt.Errorf("invalid symvault credential path: empty")
+	case strings.HasPrefix(path, "-"):
+		return fmt.Errorf("invalid symvault credential path: must not start with '-'")
+	case strings.IndexByte(path, 0) >= 0:
+		return fmt.Errorf("invalid symvault credential path: contains a null byte")
+	}
+	for _, r := range path {
+		if unicode.IsControl(r) {
+			return fmt.Errorf("invalid symvault credential path: contains control characters")
+		}
+	}
+	return nil
 }
 
 // retryAfterSeconds parses the Retry-After header value (seconds form); ok is
