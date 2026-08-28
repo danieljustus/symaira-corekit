@@ -1,4 +1,5 @@
 import XCTest
+import SymairaCLIRunner
 @testable import SymairaProviderKit
 
 final class CredentialAndErrorTests: XCTestCase {
@@ -36,7 +37,7 @@ final class CredentialAndErrorTests: XCTestCase {
         let input = "Authorization: Bearer *** api_key=\(token)"
         let redacted = SymairaSecretRedactor.redact(input)
         XCTAssertFalse(redacted.contains(token))
-        XCTAssertEqual(redacted.filter { $0 == "<" }.count, 1)
+        XCTAssertTrue(redacted.contains(SymairaSecretRedactor.placeholder))
     }
 
     func testRedactorCoversDelimitedCredentialValues() {
@@ -46,6 +47,23 @@ final class CredentialAndErrorTests: XCTestCase {
         let redacted = SymairaSecretRedactor.redact(input)
 
         XCTAssertFalse(redacted.contains(value))
+    }
+
+    func testSharedRedactorRedactsAdditionalCredentialShapes() {
+        let aiza = "AIza" + String(repeating: "a1", count: 12)
+        let glpat = "glpat-" + String(repeating: "g7", count: 8)
+        let akia = "AK" + "IA" + String(repeating: "B7", count: 8)
+        let asia = "AS" + "IA" + String(repeating: "C8", count: 8)
+        let stripe = "sk" + "_live_" + String(repeating: "q7", count: 12)
+        let pem = "-----BEGIN " + "RSA PRIVATE KEY-----\n"
+            + String(repeating: "A", count: 64)
+            + "\n-----END " + "RSA PRIVATE KEY-----"
+
+        for fixture in [aiza, glpat, akia, asia, stripe, pem] {
+            let redacted = SymairaSecretRedactor.redact("error: \(fixture)")
+            XCTAssertFalse(redacted.contains(fixture), "Credential shape not redacted: \(redacted)")
+            XCTAssertTrue(redacted.contains(SymairaSecretRedactor.placeholder), "Expected redaction in: \(redacted)")
+        }
     }
 
     func testHTTPErrorTaxonomy() {

@@ -29,7 +29,7 @@ let package = Package(
         .target(name: "SymairaMCP"),
         .target(
             name: "SymairaProviderKit",
-            dependencies: ["SymairaKeychain", "SymairaTheme"],
+            dependencies: ["SymairaKeychain", "SymairaTheme", "SymairaCLIRunner"],
             resources: [.process("Resources")]
         ),
         .testTarget(name: "SymairaThemeTests", dependencies: ["SymairaTheme"]),

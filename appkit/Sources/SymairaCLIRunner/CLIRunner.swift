@@ -90,89 +90,7 @@ public enum CLIRunnerError: Error, LocalizedError, Sendable {
     ///   hex‑heavy strings, and key‑name‑prefixed values) are replaced
     ///   with `[REDACTED]`.
     public static func redactedForUser(_ raw: String, maxBytes: Int = 200) -> String {
-        var redacted = raw
-
-        // 1. Redact PEM blocks (multiline — must happen before we split to
-        //    first line, otherwise BEGIN/END markers span lines).
-        let pemPattern = #"-----BEGIN [A-Z ]+-----[A-Za-z0-9+/=.\s]+?-----END [A-Z ]+-----"#
-        if let regex = try? NSRegularExpression(pattern: pemPattern, options: [.dotMatchesLineSeparators]) {
-            redacted = regex.stringByReplacingMatches(
-                in: redacted,
-                range: NSRange(redacted.startIndex..., in: redacted),
-                withTemplate: "[REDACTED]"
-            )
-        }
-
-        // 2. Take only the first line for the user‑facing message.
-        let firstLine = redacted.split(separator: "\n", omittingEmptySubsequences: false).first.map(String.init) ?? redacted
-        redacted = firstLine
-
-        // 3. Long base64‑like tokens (40+ chars of base64 alphabet).
-        let b64Pattern = #"[A-Za-z0-9+/=]{40,}"#
-        if let regex = try? NSRegularExpression(pattern: b64Pattern, options: []) {
-            redacted = regex.stringByReplacingMatches(
-                in: redacted,
-                range: NSRange(redacted.startIndex..., in: redacted),
-                withTemplate: "[REDACTED]"
-            )
-        }
-
-        // Provider‑prefixed tokens whose structural separators (underscores,
-        // dots, dashes) defeat the length‑based patterns in this function:
-        // GitHub PATs, Slack tokens, Stripe live keys, AWS access key IDs and JWTs.
-        let providerPatterns = [
-            #"gh[pousr]_[A-Za-z0-9]{20,}"#,                         // GitHub PAT / OAuth / user-to-server / server-to-server / refresh
-            #"github_pat_[A-Za-z0-9_]{20,}"#,                       // fine‑grained GitHub PAT
-            #"xox[baprs]-[A-Za-z0-9-]{10,}"#,                       // Slack
-            #"sk_live_[A-Za-z0-9]{10,}"#,                           // Stripe live secret key
-            #"(?:AKIA|ASIA)[0-9A-Z]{16}"#,                          // AWS access key id
-            #"eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]*"#,  // JWT (header.payload.signature)
-        ]
-        for pattern in providerPatterns {
-            if let regex = try? NSRegularExpression(pattern: pattern, options: []) {
-                redacted = regex.stringByReplacingMatches(
-                    in: redacted,
-                    range: NSRange(redacted.startIndex..., in: redacted),
-                    withTemplate: "[REDACTED]"
-                )
-            }
-        }
-
-        // Long hex strings (32+ hex chars).
-        let hexPattern = #"\b[0-9a-fA-F]{32,}\b"#
-        if let regex = try? NSRegularExpression(pattern: hexPattern, options: []) {
-            redacted = regex.stringByReplacingMatches(
-                in: redacted,
-                range: NSRange(redacted.startIndex..., in: redacted),
-                withTemplate: "[REDACTED]"
-            )
-        }
-
-        // Key‑prefixed secrets: patterns like KEY=... or token: ... or
-        // secret=... where the value part is long and opaque.
-        let keyValuePattern = #"(?:api[_-]?key|apikey|secret|token|password|passwd|credential|auth)\s*[=:]\s*\S{8,}"#
-        if let regex = try? NSRegularExpression(pattern: keyValuePattern, options: [.caseInsensitive]) {
-            redacted = regex.stringByReplacingMatches(
-                in: redacted,
-                range: NSRange(redacted.startIndex..., in: redacted),
-                withTemplate: "[REDACTED]"
-            )
-        }
-
-        // Truncate to maxBytes (UTF‑8).  Walk character by character
-        // so we never split a multi-byte codepoint.
-        var byteCount = 0
-        var result = ""
-        for ch in redacted {
-            let chBytes = String(ch).utf8.count
-            if byteCount + chBytes > maxBytes { break }
-            result.append(ch)
-            byteCount += chBytes
-        }
-        if byteCount < redacted.utf8.count {
-            result += "…"
-        }
-        return result
+        SymairaSecretRedactor.redact(raw, maxBytes: maxBytes, firstLineOnly: true)
     }
 }
 
@@ -180,8 +98,12 @@ public enum CLIRunnerError: Error, LocalizedError, Sendable {
 /// so they can be reached from the cancellation handler.
 private final class ProcessBox: @unchecked Sendable {
     let process = Process()
+    private let terminationLock = NSLock()
 
     func terminateIfRunning() {
+        terminationLock.lock()
+        defer { terminationLock.unlock() }
+
         if process.isRunning {
             process.terminate()
         }
@@ -462,11 +384,23 @@ public struct CLIRunner: Sendable {
 
 // MARK: - Shared mutable truncation flag
 
-/// Lightweight `@unchecked Sendable` box for a boolean flag that
-/// `readWithLimit` sets when output exceeds the cap.  Only ever
-/// accessed from the `DispatchQueue` serial context or read after
-/// both reads have settled, so a full lock is not required.
+/// Thread-safe box for a flag written by the two concurrent pipe readers and
+/// read after both reads have settled.
 private final class TruncationFlag: @unchecked Sendable {
-    var value = false
+    private let lock = NSLock()
+    private var storedValue = false
+
+    var value: Bool {
+        get {
+            lock.lock()
+            defer { lock.unlock() }
+            return storedValue
+        }
+        set {
+            lock.lock()
+            defer { lock.unlock() }
+            storedValue = newValue
+        }
+    }
 }
 #endif

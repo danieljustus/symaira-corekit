@@ -175,8 +175,26 @@ final class CLIRunnerTests: XCTestCase {
         }
     }
 
+    func testErrorDescriptionRedactsAdditionalCredentialShapes() {
+        let aiza = "AIza" + String(repeating: "a1", count: 12)
+        let glpat = "glpat-" + String(repeating: "g7", count: 8)
+        let akia = "AK" + "IA" + String(repeating: "B7", count: 8)
+        let asia = "AS" + "IA" + String(repeating: "C8", count: 8)
+        let stripe = "sk" + "_live_" + String(repeating: "q7", count: 12)
+        let pem = "-----BEGIN " + "RSA PRIVATE KEY-----\n"
+            + String(repeating: "A", count: 64)
+            + "\n-----END " + "RSA PRIVATE KEY-----"
+
+        for fixture in [aiza, glpat, akia, asia, stripe, pem] {
+            let err = CLIRunnerError.executionFailed(code: 1, fullStderr: "error: \(fixture)")
+            let desc = err.errorDescription ?? ""
+            XCTAssertFalse(desc.contains(fixture), "Credential shape not redacted: \(desc)")
+            XCTAssertTrue(desc.contains(SymairaSecretRedactor.placeholder), "Expected redaction in: \(desc)")
+        }
+    }
+
     func testFullStderrIsNeverRedacted() {
-        let secretStderr = "API_KEY=sk-supersecret"
+        let secretStderr = "API_KEY=sk-" + "supersecret"
         let err = CLIRunnerError.executionFailed(code: 1, fullStderr: secretStderr)
         // The fullStderr property returns the raw, unredacted text.
         XCTAssertEqual(err.fullStderr, secretStderr)
@@ -194,6 +212,23 @@ final class CLIRunnerTests: XCTestCase {
         XCTAssertTrue(result.isTruncated, "Expected isTruncated=true")
         // The output must be ≤ the cap (with a small buffer for chunk alignment).
         XCTAssertLessThanOrEqual(result.stdout.count, 10_100)
+    }
+
+    func testOutputTruncationHandlesBothStreamsConcurrently() async throws {
+        let command = "printf 'stdout-start'; printf 'stderr-start' >&2; "
+            + "dd if=/dev/zero bs=65536 count=8 2>/dev/null & "
+            + "dd if=/dev/zero bs=65536 count=8 >&2 2>/dev/null & wait"
+        let result = try await runner.run(
+            sh,
+            arguments: ["-c", command],
+            maxOutputBytes: 10_000
+        )
+
+        XCTAssertTrue(result.isTruncated, "Expected truncation from either stream")
+        XCTAssertGreaterThan(result.stdout.count, 0, "stdout reader did not receive output")
+        XCTAssertGreaterThan(result.stderr.count, 0, "stderr reader did not receive output")
+        XCTAssertLessThanOrEqual(result.stdout.count, 10_000)
+        XCTAssertLessThanOrEqual(result.stderr.count, 10_000)
     }
 
     func testRunCheckedThrowsOnTruncation() async {

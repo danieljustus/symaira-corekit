@@ -1,4 +1,5 @@
 import SwiftUI
+import SymairaCLIRunner
 
 /// Reusable provider picker backed by the shared descriptor registry.
 public struct SymairaProviderPicker: View {

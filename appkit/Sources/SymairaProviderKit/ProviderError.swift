@@ -1,4 +1,5 @@
 import Foundation
+import SymairaCLIRunner
 
 /// Machine-readable error categories shared with corekit's contract.
 public enum SymairaProviderErrorCode: String, Codable, Sendable, Equatable {
@@ -136,7 +137,7 @@ public struct SymairaProviderError: Error, LocalizedError, Codable, Sendable, Eq
         self.message = SymairaSecretRedactor.redact(message)
         self.statusCode = statusCode
         self.retryAfter = retryAfter
-        self.bodyExcerpt = bodyExcerpt.map(SymairaSecretRedactor.redact)
+        self.bodyExcerpt = bodyExcerpt.map { SymairaSecretRedactor.redact($0) }
     }
 
     public var errorDescription: String? {
@@ -245,30 +246,5 @@ public enum SymairaProviderErrorMapper {
         guard text.count > 512 else { return SymairaSecretRedactor.redact(text) }
         let end = text.index(text.startIndex, offsetBy: 512)
         return SymairaSecretRedactor.redact(String(text[..<end])) + "…"
-    }
-}
-
-/// Redacts credentials from errors, diagnostics and host-provided log output.
-public enum SymairaSecretRedactor {
-    public static let placeholder = "<redacted>"
-
-    private static let patterns: [NSRegularExpression] = [
-        #"(sk-[A-Za-z0-9_-]{8,}|ghp_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|glpat-[A-Za-z0-9_-]{8,}|xox[baprs]-[A-Za-z0-9-]{8,}|AIza[0-9A-Za-z_-]{20,})"#,
-        #"(?i)(authorization|bearer|api[_-]?key|token)\s*[:=]\s*("[^"]+"|'[^']+'|[A-Za-z0-9._-]{12,})"#,
-        #"(?i)\bbearer\s+[A-Za-z0-9._-]{12,}"#,
-        #"«redacted:[^»]*»"#,
-        #"eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}"#,
-    ].compactMap { try? NSRegularExpression(pattern: $0) }
-
-    public static func redact(_ text: String) -> String {
-        var result = text
-        for pattern in patterns {
-            result = pattern.stringByReplacingMatches(
-                in: result,
-                range: NSRange(result.startIndex..., in: result),
-                withTemplate: placeholder
-            )
-        }
-        return result
     }
 }
