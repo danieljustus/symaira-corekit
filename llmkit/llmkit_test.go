@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"os/exec"
 	"strings"
 	"testing"
 
@@ -433,5 +434,41 @@ func TestResolveSymvaultReference(t *testing.T) {
 	e := AsError(err)
 	if e == nil || e.Code != ErrCodeAuth {
 		t.Fatalf("want auth-classified symvault failure, got %v", err)
+	}
+}
+
+func TestResolveSymvaultPathValidationBeforeExec(t *testing.T) {
+	cases := []struct {
+		name string
+		ref  string
+	}{
+		{name: "empty", ref: "symvault://"},
+		{name: "leading dash", ref: "symvault://--config=/tmp/attacker.toml"},
+		{name: "control character", ref: "symvault://secrets/\nkey"},
+		{name: "null byte", ref: "symvault://secrets/\x00key"},
+	}
+
+	orig := execCommand
+	called := false
+	execCommand = func(name string, args ...string) *exec.Cmd {
+		called = true
+		return exec.Command(name, args...)
+	}
+	defer func() { execCommand = orig }()
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			_, err := ResolveCredential(tc.ref, "")
+			e := AsError(err)
+			if e == nil || e.Code != ErrCodeAuth {
+				t.Fatalf("want auth error, got %v", err)
+			}
+			if !strings.Contains(err.Error(), "invalid symvault credential path") {
+				t.Fatalf("want path-validation detail, got %v", err)
+			}
+		})
+	}
+	if called {
+		t.Fatal("invalid symvault paths must be rejected before exec")
 	}
 }

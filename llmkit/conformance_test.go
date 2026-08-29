@@ -295,5 +295,38 @@ func confTestCredRef(d Descriptor) string {
 	return ""
 }
 
+func TestConformanceBaseURLTransportSecurity(t *testing.T) {
+	credentialed := mustDescriptor(t, "openai")
+
+	if _, err := NewClient(credentialed, "env://LLMKIT_MISSING_SECURITY_KEY", WithBaseURL("http://api.example.com/v1")); err == nil {
+		t.Fatal("non-loopback HTTP endpoint accepted for credentialed descriptor")
+	} else if e := AsError(err); e == nil || e.Code != ErrCodeAuth {
+		t.Fatalf("want classified auth error for insecure endpoint, got %v", err)
+	}
+	t.Setenv("LLMKIT_CONFORMANCE_TEST_KEY", "test-key")
+
+	for _, baseURL := range []string{
+		"http://localhost:11434/v1",
+		"http://127.0.0.2:1234/v1",
+		"http://[::1]:1234/v1",
+	} {
+		t.Run("loopback/"+baseURL, func(t *testing.T) {
+			if _, err := NewClient(credentialed, "env://LLMKIT_CONFORMANCE_TEST_KEY", WithBaseURL(baseURL)); err != nil {
+				t.Fatalf("loopback HTTP endpoint rejected: %v", err)
+			}
+		})
+	}
+
+	if _, err := NewClient(credentialed, "env://LLMKIT_CONFORMANCE_TEST_KEY", WithBaseURL("https://api.example.com/v1")); err != nil {
+		t.Fatalf("HTTPS endpoint rejected: %v", err)
+	}
+
+	noAuth := credentialed
+	noAuth.AuthScheme = AuthNone
+	if _, err := NewClient(noAuth, "", WithBaseURL("http://api.example.com/v1")); err != nil {
+		t.Fatalf("HTTP endpoint for no-auth descriptor rejected: %v", err)
+	}
+}
+
 // guard: keep encoding/json referenced even if future edits drop direct uses.
 var _ = json.Marshal

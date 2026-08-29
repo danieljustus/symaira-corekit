@@ -57,13 +57,23 @@ be able to stream that provider; if `tool_use` is true tool calls round-trip.
 A consumer must not offer a feature the descriptor does not promise, and the
 conformance suite (below) tests every promised capability per dialect.
 
+### Base URL transport security
+
+When a descriptor carries credentials, its effective base URL must use
+`https`. The Go client rejects a non-HTTPS endpoint as `auth_failure` before
+resolving or sending the credential. HTTP is allowed only for descriptors with
+`auth.scheme: none` or for loopback hosts (`localhost`, `127.0.0.0/8`, and
+`::1`), which covers local servers such as Ollama, llama.cpp, LM Studio, and
+vLLM. This rule applies equally to descriptor defaults and
+`base_url_overridable` overrides.
+
 ## Credential references
 
 Credentials are never passed as raw key strings inside config files. A config
 value may be:
 
 1. A vault reference: `symvault://secrets/anthropic_key` — resolved via
-   `symvault get secrets/anthropic_key --print` (the `vault://` alias is
+   `symvault get -- secrets/anthropic_key --print` (the `vault://` alias is
    accepted but deprecated; see `ECOSYSTEM.md`).
 2. An OS-keychain reference: `keychain://<service>/<account>` (Swift consumers
    via symaira-appkit's Keychain broker).

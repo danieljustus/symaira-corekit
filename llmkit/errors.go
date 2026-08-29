@@ -87,6 +87,15 @@ func (e *Error) Retryable() bool {
 	}
 }
 
+// RetryAfterSeconds parses the seconds form of the provider's Retry-After
+// value. It returns false when the value is absent or unparseable.
+func (e *Error) RetryAfterSeconds() (int, bool) {
+	if e == nil {
+		return 0, false
+	}
+	return retryAfterSeconds(e.RetryAfter)
+}
+
 // classify turns an HTTP response into a contract Error. body must already be
 // truncated to a sane excerpt.
 func classify(status int, body string) *Error {
@@ -104,11 +113,6 @@ func classify(status int, body string) *Error {
 		code = ErrCodeProvider
 	}
 	e := &Error{Code: code, StatusCode: status, Body: truncateBody(body)}
-	if code == ErrCodeRateLimited || status == http.StatusTooManyRequests {
-		// Callers that need the raw header value can read it off the error;
-		// classification itself stays header-free because the taxonomy only
-		// promises the field when the provider reports one.
-	}
 	return e
 }
 
