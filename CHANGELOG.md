@@ -2,6 +2,14 @@
 
 The GitHub Releases page is the authoritative source for complete release notes.
 
+## v0.16.1 — 2026-08-29
+
+- `configkit`: honors `XDG_CONFIG_HOME` by default, with an explicit legacy-path opt-out.
+- `updatecheck`: persists its once-per-24-hour cache across checker instances.
+- `ollamakit`: delegates Ollama transport to `llmkit` while preserving the compatibility API.
+- `auditkit`: fingerprints checkpointed logs and validates the chain during recovery.
+- Consumer action: update the exact `corekit` pin; existing APIs remain compatible.
+
 ## v0.16.0 — 2026-08-26
 
 - `llmkit`: added `WithStreamFinished` for provider terminal finish/stop reasons, `WithAPIKey` for consumers that resolve credentials in their own secret store, and `WithEmbedDimensions` for Matryoshka embedding dimension pinning (#187).
