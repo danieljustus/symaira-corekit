@@ -1,3 +1,5 @@
+//go:build !windows
+
 //nolint:gosec
 package fsutil
 
