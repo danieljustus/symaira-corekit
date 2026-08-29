@@ -9,6 +9,43 @@ Strict SemVer within a major version means these are additive/non-breaking
 by contract; "check" below means "new capability you may want to adopt or a
 behavior change worth confirming," not "your build will fail."
 
+## v0.16.0
+
+- `llmkit`: `StreamChat` accepts `WithStreamFinished` to receive the provider's terminal finish/stop reason; `WithAPIKey` lets consumers supply a credential resolved by their own keychain or vault; `Embed` accepts `WithEmbedDimensions` for OpenAI-wire Matryoshka dimension pinning.
+- Consumer action: raise the `corekit` pin and adopt these options where needed. Existing `llmkit` calls remain compatible, so no source migration is required for consumers that do not need them.
+
+[Release notes](https://github.com/danieljustus/symaira-corekit/releases/tag/v0.16.0)
+
+## v0.15.0
+
+- `llmkit`: `ChatOptions.ResponseFormat` carries an OpenAI-wire `response_format`; native `Generate` calls accept `WithGenerateSystem` and `WithGenerateFormat` for system prompts and JSON-schema-constrained output.
+- Consumer action: raise the `corekit` pin and pass these options when structured output is needed. Existing calls remain compatible; no migration is required otherwise.
+
+[Release notes](https://github.com/danieljustus/symaira-corekit/releases/tag/v0.15.0)
+
+## v0.14.0
+
+- `llmkit`: new shared provider package with descriptor-driven OpenAI-compatible and Anthropic transports, streaming, tool use, embeddings, model discovery, credential references, and the documented provider error taxonomy.
+- `ollamakit`: now a thin deprecated shim because Ollama support is represented by `llmkit` provider descriptors.
+- Consumer action: raise the `corekit` pin. Existing `ollamakit` users can migrate incrementally; new provider integrations should use `llmkit` and plan to leave the deprecated shim before removal.
+
+[Release notes](https://github.com/danieljustus/symaira-corekit/releases/tag/v0.14.0)
+
+## v0.13.0
+
+- `configkit`, `exitcodes`, and `updatecheck`: cross-language contract fixtures and Go conformance tests now cover config paths, exit codes, update-check invariants, and JSON encoding/stdio rules.
+- Consumer action: no Go API migration is required. Consumers maintaining Swift or Python ports should use `contracts/*.json` as the shared behavior reference and verify their implementations against it.
+
+[Release notes](https://github.com/danieljustus/symaira-corekit/releases/tag/v0.13.0)
+
+## v0.12.1
+
+- `sqlitekit`: the shared pure-Go SQLite dependency moved from `modernc.org/sqlite` 1.56.0 to 1.57.0.
+- Documentation and repository hygiene changed the README structure and linked changelog; no runtime package API changed.
+- Consumer action: raise the `corekit` pin and run SQLite-related tests. No source migration is required; documentation-only and CI-maintenance changes require no consumer action.
+
+[Release notes](https://github.com/danieljustus/symaira-corekit/releases/tag/v0.12.1)
+
 ## v0.9.1 → v0.9.2
 
 - `updatecheck` exports the hardened HTTP client that was previously internal:
