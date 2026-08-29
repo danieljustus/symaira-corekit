@@ -117,19 +117,12 @@ func loadRegistry() error {
 		}
 		registryByID = make(map[string]Descriptor, len(raw.Providers))
 		for _, p := range raw.Providers {
-			// Normalize the JSON spelling of auth into the typed fields.
-			p.AuthScheme = authSchemeOf(p)
 			registryByID[p.ID] = p
 			registryList = append(registryList, p)
 		}
 	})
 	return registryErr
 }
-
-// authSchemeOf extracts the typed auth scheme. The raw JSON stores the scheme
-// under "auth"; the embedded copy is pre-flattened by gen so this reads the
-// flattened fields.
-func authSchemeOf(p Descriptor) AuthScheme { return p.AuthScheme }
 
 // Providers returns every descriptor in the shared registry.
 func Providers() ([]Descriptor, error) {
