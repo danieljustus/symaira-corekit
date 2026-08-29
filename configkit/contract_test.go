@@ -14,8 +14,8 @@ type configPathsFixture struct {
 }
 
 // TestDefaultPathMatchesContractFixture asserts DefaultPath produces the
-// "~/.config/<app>/config.toml" shape the fixture documents, and that the
-// documented format extension (toml) is what DefaultPath actually appends.
+// documented config path shape, and that the documented format extension
+// (toml) is what DefaultPath actually appends.
 func TestDefaultPathMatchesContractFixture(t *testing.T) {
 	raw, err := os.ReadFile("../contracts/config_paths.json")
 	if err != nil {

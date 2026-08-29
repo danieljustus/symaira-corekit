@@ -813,3 +813,51 @@ func TestTypeErrorConsistency(t *testing.T) {
 		t.Errorf("env error = %q, want it to mention 'TIMEOUT'", envErr.Error())
 	}
 }
+
+func TestDefaultPathUsesXDGConfigHome(t *testing.T) {
+	xdg := t.TempDir()
+	t.Setenv("XDG_CONFIG_HOME", xdg)
+	want := filepath.Join(xdg, "symfetch", "config.toml")
+	if got := DefaultPath("symfetch"); got != want {
+		t.Fatalf("DefaultPath = %q, want %q", got, want)
+	}
+}
+
+func TestLoaderUsesXDGConfigHomeAndLegacyOptOut(t *testing.T) {
+	home := t.TempDir()
+	xdg := t.TempDir()
+	t.Setenv("HOME", home)
+	t.Setenv("XDG_CONFIG_HOME", xdg)
+
+	app := "configkit-xdg-test"
+	xdgPath := filepath.Join(xdg, app, "config.toml")
+	legacyPath := filepath.Join(home, ".config", app, "config.toml")
+	if err := os.MkdirAll(filepath.Dir(xdgPath), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(filepath.Dir(legacyPath), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(xdgPath, []byte("name = \"xdg\"\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(legacyPath, []byte("name = \"legacy\"\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	xdgCfg, err := NewLoader(Options{AppName: app}, testDefaults).Load()
+	if err != nil {
+		t.Fatalf("XDG Load() error = %v", err)
+	}
+	if xdgCfg.Name != "xdg" {
+		t.Errorf("XDG config Name = %q, want xdg", xdgCfg.Name)
+	}
+
+	legacyCfg, err := NewLoader(Options{AppName: app, UseLegacyConfigPath: true}, testDefaults).Load()
+	if err != nil {
+		t.Fatalf("legacy Load() error = %v", err)
+	}
+	if legacyCfg.Name != "legacy" {
+		t.Errorf("legacy config Name = %q, want legacy", legacyCfg.Name)
+	}
+}

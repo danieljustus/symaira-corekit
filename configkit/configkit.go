@@ -3,7 +3,8 @@
 // Configuration is loaded in order of precedence (later overrides earlier):
 //
 //  1. Defaults (from caller-provided function)
-//  2. Global TOML file (~/.config/{appName}/config.toml)
+//  2. Global TOML file ($XDG_CONFIG_HOME/{appName}/config.toml, or
+//     ~/.config/{appName}/config.toml when XDG_CONFIG_HOME is unset)
 //  3. Project-local TOML file (./.{appName}.toml)
 //  4. Environment variables ({PREFIX}_{SECTION}_{FIELD})
 //
@@ -44,14 +45,25 @@ type Options struct {
 	EnvPrefix string
 
 	// ConfigName overrides the config filename without extension.
-	// Default: AppName. Global file: ~/.config/{ConfigName}/config.toml.
+	// Default: AppName. Global file: $XDG_CONFIG_HOME/{ConfigName}/config.toml,
+	// falling back to ~/.config/{ConfigName}/config.toml.
 	// Project file: ./{ConfigName}.toml.
 	ConfigName string
+
+	// UseLegacyConfigPath retains the pre-XDG behavior and always reads the
+	// global file from ~/.config/{ConfigName}/config.toml. It is intended as a
+	// temporary opt-out for consumers that need an explicit migration window.
+	UseLegacyConfigPath bool
 }
 
 // DefaultPath returns the default global config file path for the given app name.
-// Example: DefaultPath("symfetch") → "~/.config/symfetch/config.toml"
+// It honors XDG_CONFIG_HOME when it is set to an absolute path. Otherwise it
+// falls back to ~/.config. Example: DefaultPath("symfetch") →
+// "~/.config/symfetch/config.toml".
 func DefaultPath(appName string) string {
+	if xdg := os.Getenv("XDG_CONFIG_HOME"); filepath.IsAbs(xdg) {
+		return filepath.Join(xdg, appName, "config.toml")
+	}
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return filepath.Join(".config", appName, "config.toml")
@@ -120,8 +132,12 @@ func (l *Loader[T]) loadOnce() (*T, error) {
 		return cfg, fmt.Errorf("cannot determine home directory: %w", err)
 	}
 
-	// Global config: ~/.config/{appName}/config.toml
-	globalPath := filepath.Join(home, ".config", l.opts.ConfigName, "config.toml")
+	// Global config: XDG_CONFIG_HOME/{appName}/config.toml, or the legacy
+	// ~/.config path when explicitly requested.
+	globalPath := DefaultPath(l.opts.ConfigName)
+	if l.opts.UseLegacyConfigPath {
+		globalPath = filepath.Join(home, ".config", l.opts.ConfigName, "config.toml")
+	}
 	if err := mergeFile(cfg, globalPath); err != nil {
 		return cfg, fmt.Errorf("global config error: %w", err)
 	}

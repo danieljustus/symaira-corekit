@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -774,4 +775,53 @@ func (b neverEnding) Read(p []byte) (int, error) {
 		p[i] = byte(b)
 	}
 	return len(p), nil
+}
+
+func TestCheckPersistsCacheAcrossCheckerInstances(t *testing.T) {
+	var requests int
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requests++
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = io.WriteString(w, `{"tag_name":"v1.2.0","body":"update"}`)
+	}))
+	defer server.Close()
+
+	cachePath := filepath.Join(t.TempDir(), "updatecheck.json")
+	first := NewChecker("owner", "repo")
+	first.HTTPClient = server.Client()
+	first.LatestReleaseURL = server.URL
+	first.CachePath = cachePath
+	if release, err := first.Check(context.Background(), "v1.0.0"); err != nil || release == nil {
+		t.Fatalf("first check = %#v, %v; want update", release, err)
+	}
+	if requests != 1 {
+		t.Fatalf("first check requests = %d, want 1", requests)
+	}
+
+	second := NewChecker("owner", "repo")
+	second.LatestReleaseURL = server.URL
+	second.CachePath = cachePath
+	second.HTTPClient = stubHTTPDoer{do: func(*http.Request) (*http.Response, error) {
+		t.Fatal("second checker unexpectedly contacted the release API")
+		return nil, nil
+	}}
+	release, err := second.Check(context.Background(), "v1.0.0")
+	if err != nil {
+		t.Fatalf("second check error = %v", err)
+	}
+	if release == nil || release.TagName != "v1.2.0" {
+		t.Fatalf("second check = %#v, want v1.2.0", release)
+	}
+}
+
+func TestDefaultCachePathUsesXDGCacheHome(t *testing.T) {
+	xdg := t.TempDir()
+	t.Setenv("XDG_CACHE_HOME", xdg)
+	path := DefaultCachePath("owner", "repo")
+	if !strings.HasPrefix(path, filepath.Join(xdg, "symaira", "updatecheck")) {
+		t.Fatalf("DefaultCachePath = %q, want XDG cache root", path)
+	}
+	if filepath.Ext(path) != ".json" {
+		t.Fatalf("DefaultCachePath = %q, want .json file", path)
+	}
 }

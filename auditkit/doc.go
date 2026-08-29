@@ -5,7 +5,8 @@
 // Scope (deliberately narrow — no tool-specific logic):
 //   - HashEntry / VerifyChain: SHA-256 chaining over entry lines
 //   - ChainAnchor checkpoints (separate file, atomic replace) to detect
-//     truncation of the log tail — chaining alone only detects modification
+//     truncation and authenticate the complete log for fast recovery —
+//     chaining alone only detects modification
 //   - Sink: append-only JSONL writer with rotation and fsync semantics
 //
 // Domain models stay with the consumers: brain's redacting gateway logger
