@@ -9,6 +9,22 @@ Strict SemVer within a major version means these are additive/non-breaking
 by contract; "check" below means "new capability you may want to adopt or a
 behavior change worth confirming," not "your build will fail."
 
+## v0.16.1
+
+- `configkit`: global configuration now honors `$XDG_CONFIG_HOME`; set
+  `Options.UseLegacyConfigPath` while migrating from the former `~/.config`
+  location.
+- `updatecheck`: the once-per-24-hour timestamp and release result persist in
+  the XDG cache directory; set `Checker.CachePath` for an application-specific
+  location.
+- `ollamakit`: remains available as a deprecated compatibility package, with
+  HTTP transport delegated to `llmkit`; new code should use `llmkit` directly.
+- `auditkit`: checkpointed logs include a size and content fingerprint. Recovery
+  uses the fast path only when both match and otherwise validates the hash chain
+  while replaying. Existing checkpoints safely fall back to replay.
+- Consumer action: raise the exact `corekit` pin; no migration is required for
+  consumers that do not adopt the new options.
+
 ## v0.16.0
 
 - `llmkit`: `StreamChat` accepts `WithStreamFinished` to receive the provider's terminal finish/stop reason; `WithAPIKey` lets consumers supply a credential resolved by their own keychain or vault; `Embed` accepts `WithEmbedDimensions` for OpenAI-wire Matryoshka dimension pinning.
