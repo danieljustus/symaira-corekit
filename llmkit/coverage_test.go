@@ -15,6 +15,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"os/exec"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -185,6 +186,9 @@ func TestDoKeepsRetryAfterHeader(t *testing.T) {
 	if e == nil || e.Code != ErrCodeRateLimited || e.RetryAfter != "7" {
 		t.Fatalf("want rate-limited error with RetryAfter=7, got %v", err)
 	}
+	if seconds, ok := e.RetryAfterSeconds(); !ok || seconds != 7 {
+		t.Fatalf("RetryAfterSeconds() = (%d, %v), want (7, true)", seconds, ok)
+	}
 }
 
 func TestAuthHeaderDefaultsToAuthorization(t *testing.T) {
@@ -241,7 +245,11 @@ func helperProcess(t *testing.T) {
 
 func TestResolveSymvaultExecPath(t *testing.T) {
 	orig := execCommand
+	var gotName string
+	var gotArgs []string
 	execCommand = func(name string, args ...string) *exec.Cmd {
+		gotName = name
+		gotArgs = append([]string(nil), args...)
 		c := exec.Command(os.Args[0], "-test.run=TestHelperResolveSymvault")
 		c.Env = append(os.Environ(), "LLMKIT_HELPER_PROCESS=1")
 		return c
@@ -252,6 +260,9 @@ func TestResolveSymvaultExecPath(t *testing.T) {
 	key, err := ResolveCredential("symvault://secrets/ai_key", "")
 	if err != nil || key != "secret-key-from-vault" {
 		t.Fatalf("symvault resolution = (%q, %v)", key, err)
+	}
+	if gotName != "symvault" || !reflect.DeepEqual(gotArgs, []string{"get", "--", "secrets/ai_key", "--print"}) {
+		t.Errorf("symvault invocation = %q %q", gotName, gotArgs)
 	}
 }
 
@@ -271,12 +282,19 @@ func TestResolveSymvaultExecFailure(t *testing.T) {
 	if e == nil || e.Code != ErrCodeAuth {
 		t.Fatalf("want auth-classified symvault exec failure, got %v", err)
 	}
+	if !strings.Contains(err.Error(), "entry not found") {
+		t.Fatalf("vault stderr missing from auth error: %v", err)
+	}
+	if strings.Contains(err.Error(), "resolved-secret-should-not-leak") {
+		t.Fatal("vault stdout credential leaked into auth error")
+	}
 }
 
 func TestHelperResolveSymvaultFail(t *testing.T) {
 	if os.Getenv("LLMKIT_HELPER_PROCESS") != "1" {
 		t.Skip("helper subprocess target")
 	}
+	fmt.Fprintln(os.Stdout, "resolved-secret-should-not-leak")
 	fmt.Fprintln(os.Stderr, "entry not found")
 	os.Exit(1)
 }

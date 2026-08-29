@@ -4,8 +4,33 @@ run:
   go: "1.26.6"
   timeout: 5m
 
+formatters:
+  enable:
+    - gofmt
+
 linters:
   default: none
   enable:
     - gosec
     - govet
+    - staticcheck
+  exclusions:
+    rules:
+      - path: configkit/configkit_test.go
+        linters: [staticcheck]
+        text: "SA4006"
+      - path: llmkit/chat.go
+        linters: [staticcheck]
+        text: "SA4006|S1016"
+      - path: llmkit/errors.go
+        linters: [staticcheck]
+        text: "SA9003"
+      - path: logkit/logkit_test.go
+        linters: [staticcheck]
+        text: "SA1012"
+      - path: mcpcfgkit/jsonc.go
+        linters: [staticcheck]
+        text: "QF1001"
+      - path: updatecheck/updatecheck.go
+        linters: [staticcheck]
+        text: "S1016"
