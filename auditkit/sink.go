@@ -59,8 +59,25 @@ func OpenSink(path string, opts ...SinkOption) (*Sink, error) {
 	return s, nil
 }
 
-// recoverState replays the existing file so headHash/count survive restarts.
+// recoverState uses an authenticated anchor when possible and otherwise
+// replays the existing file, validating every chain link.
 func (s *Sink) recoverState() error {
+	anchor, err := ReadCheckpoint(DefaultAnchorPath(s.path))
+	if err != nil {
+		return err
+	}
+	if anchor != nil && anchor.SchemaVersion >= AnchorSchemaVersion && anchor.ContentHash != "" {
+		info, statErr := os.Stat(s.path)
+		if statErr == nil && info.Size() == anchor.LogSize {
+			contentHash, hashErr := hashFile(s.path)
+			if hashErr == nil && contentHash == anchor.ContentHash {
+				s.count = anchor.EntryCount
+				s.headHash = anchor.LastEntryHash
+				return nil
+			}
+		}
+	}
+
 	f, err := os.Open(s.path)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -81,6 +98,9 @@ func (s *Sink) recoverState() error {
 		var entry chainedEntry
 		if err := json.Unmarshal([]byte(line), &entry); err != nil || entry.Hash == "" {
 			break
+		}
+		if HashEntry(entry.Data, s.headHash) != entry.Hash {
+			return fmt.Errorf("auditkit: invalid chain link during recovery")
 		}
 		s.count++
 		s.headHash = entry.Hash
@@ -153,8 +173,15 @@ func (s *Sink) HeadHash() string {
 func (s *Sink) Checkpoint() error {
 	s.mu.Lock()
 	hash, count := s.headHash, s.count
+	if s.writer != nil {
+		if err := s.writer.Flush(); err != nil {
+			s.mu.Unlock()
+			return fmt.Errorf("auditkit: flush before checkpoint: %w", err)
+		}
+	}
+	path := s.path
 	s.mu.Unlock()
-	return WriteCheckpoint(DefaultAnchorPath(s.path), hash, count)
+	return WriteCheckpointForLog(DefaultAnchorPath(path), path, hash, count)
 }
 
 // Verify reads back the log file and checks chain integrity plus the anchor
@@ -200,7 +227,15 @@ func (s *Sink) Verify() (Verification, error) {
 	}
 	if anchor != nil {
 		v.Anchored = true
-		v.AnchorOK = VerifyAnchor(payload, GenesisHash, anchor)
+		if anchor.SchemaVersion >= AnchorSchemaVersion && anchor.ContentHash != "" {
+			info, statErr := os.Stat(path)
+			if statErr == nil {
+				contentHash, hashErr := hashFile(path)
+				v.AnchorOK = hashErr == nil && VerifyAnchorForLog(payload, GenesisHash, anchor, info.Size(), contentHash)
+			}
+		} else {
+			v.AnchorOK = VerifyAnchor(payload, GenesisHash, anchor)
+		}
 		v.Truncated = v.Entries < anchor.EntryCount
 	}
 	return v, nil

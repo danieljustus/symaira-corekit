@@ -3,17 +3,23 @@ package updatecheck
 
 import (
 	"context"
+	"crypto/sha256"
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/danieljustus/symaira-corekit/fsutil"
 )
 
 const (
@@ -59,14 +65,25 @@ type Checker struct {
 	HTTPClient       httpDoer
 	LatestReleaseURL string
 	CacheTTL         time.Duration
+	// CachePath is the JSON file used for the cross-process update cache. New
+	// checkers receive a stable XDG cache path; set it to an empty string to
+	// disable persistence or to an explicit path for isolated consumers.
+	CachePath string
 
-	mu    sync.Mutex
-	cache *cacheEntry
+	mu               sync.Mutex
+	cache            *cacheEntry
+	defaultURL       string
+	defaultCachePath string
 }
 
 type cacheEntry struct {
 	timestamp time.Time
 	release   *Release
+}
+
+type diskCacheEntry struct {
+	Timestamp time.Time `json:"timestamp"`
+	Release   *Release  `json:"release"`
 }
 
 type latestReleaseResponse struct {
@@ -87,11 +104,34 @@ type githubAsset struct {
 // NewChecker creates a new update checker for the given GitHub repo.
 // The URL format is https://api.github.com/repos/{owner}/{repo}/releases/latest.
 func NewChecker(owner, repo string) *Checker {
+	latestURL := fmt.Sprintf("https://api.github.com/repos/%s/%s/releases/latest", owner, repo)
+	cachePath := DefaultCachePath(owner, repo)
 	return &Checker{
 		HTTPClient:       newSecureClient(),
-		LatestReleaseURL: fmt.Sprintf("https://api.github.com/repos/%s/%s/releases/latest", owner, repo),
+		LatestReleaseURL: latestURL,
 		CacheTTL:         DefaultCacheTTL,
+		CachePath:        cachePath,
+		defaultURL:       latestURL,
+		defaultCachePath: cachePath,
 	}
+}
+
+// DefaultCachePath returns the stable on-disk cache path for a GitHub release
+// checker. It honors an absolute XDG_CACHE_HOME and otherwise uses ~/.cache.
+// The repository identity is hashed so owner/repo input cannot escape the
+// updatecheck cache directory through path traversal.
+func DefaultCachePath(owner, repo string) string {
+	base := os.Getenv("XDG_CACHE_HOME")
+	if !filepath.IsAbs(base) {
+		home, err := os.UserHomeDir()
+		if err != nil {
+			base = ".cache"
+		} else {
+			base = filepath.Join(home, ".cache")
+		}
+	}
+	hash := sha256.Sum256([]byte(owner + "\x00" + repo))
+	return filepath.Join(base, "symaira", "updatecheck", hex.EncodeToString(hash[:])+".json")
 }
 
 // Check checks for updates. Returns nil release if currentVersion is latest
@@ -112,6 +152,9 @@ func (c *Checker) CheckWithForce(ctx context.Context, currentVersion string, for
 		entry := c.cache
 		ttl := c.CacheTTL
 		c.mu.Unlock()
+		if entry == nil {
+			entry = c.loadPersistentCache()
+		}
 
 		if entry != nil && time.Since(entry.timestamp) < ttl {
 			if entry.release != nil {
@@ -139,12 +182,14 @@ func (c *Checker) CheckWithForce(ctx context.Context, currentVersion string, for
 		return nil, fmt.Errorf("latest release tag %q is not a stable semantic version", release.TagName)
 	}
 
+	now := time.Now()
 	c.mu.Lock()
 	c.cache = &cacheEntry{
-		timestamp: time.Now(),
+		timestamp: now,
 		release:   release,
 	}
 	c.mu.Unlock()
+	c.persistCache(cacheEntry{timestamp: now, release: release})
 
 	if compareStableVersions(current, latest) < 0 {
 		if current.major == 0 && latest.major > 0 {
@@ -154,6 +199,53 @@ func (c *Checker) CheckWithForce(ctx context.Context, currentVersion string, for
 	}
 
 	return nil, nil
+}
+
+func (c *Checker) loadPersistentCache() *cacheEntry {
+	if !c.shouldPersistCache() {
+		return nil
+	}
+	raw, err := os.ReadFile(c.CachePath)
+	if err != nil {
+		return nil
+	}
+	var disk diskCacheEntry
+	if err := json.Unmarshal(raw, &disk); err != nil || disk.Timestamp.IsZero() || disk.Release == nil {
+		return nil
+	}
+	entry := &cacheEntry{timestamp: disk.Timestamp, release: disk.Release}
+	c.mu.Lock()
+	if c.cache == nil {
+		c.cache = entry
+	} else {
+		entry = c.cache
+	}
+	c.mu.Unlock()
+	return entry
+}
+
+func (c *Checker) persistCache(entry cacheEntry) {
+	if !c.shouldPersistCache() {
+		return
+	}
+	raw, err := json.Marshal(diskCacheEntry{Timestamp: entry.timestamp, Release: entry.release})
+	if err != nil {
+		return
+	}
+	if err := fsutil.SafeMkdirAll(filepath.Dir(c.CachePath), 0o700); err != nil {
+		return
+	}
+	_ = fsutil.AtomicWriteFile(c.CachePath, raw, 0o600)
+}
+
+func (c *Checker) shouldPersistCache() bool {
+	if c.CachePath == "" {
+		return false
+	}
+	// Tests and consumers may replace the endpoint. The default cache identity
+	// is only safe for the canonical GitHub URL; custom endpoints must opt into
+	// persistence with their own CachePath.
+	return c.defaultURL == "" || c.LatestReleaseURL == c.defaultURL || c.CachePath != c.defaultCachePath
 }
 
 func (c *Checker) fetchLatestRelease(ctx context.Context, currentVersion string) (*Release, error) {

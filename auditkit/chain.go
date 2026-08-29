@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 )
@@ -48,10 +49,15 @@ type ChainAnchor struct {
 	EntryCount int64 `json:"entry_count"`
 	// SchemaVersion for forward compatibility.
 	SchemaVersion int `json:"schema_version"`
+	// LogSize is the exact byte size of the checkpointed log file.
+	LogSize int64 `json:"log_size,omitempty"`
+	// ContentHash authenticates the complete checkpointed log bytes. It keeps
+	// the fast recovery path from trusting a same-size modified log.
+	ContentHash string `json:"content_hash,omitempty"`
 }
 
 // AnchorSchemaVersion is the current version of the ChainAnchor schema.
-const AnchorSchemaVersion = 1
+const AnchorSchemaVersion = 2
 
 // DefaultAnchorPath returns the conventional anchor file path next to the
 // log file: <logPath>.anchor.
@@ -63,8 +69,37 @@ func DefaultAnchorPath(logPath string) string {
 // (write-to-temp then rename). The directory is created with 0700 if
 // missing; the anchor itself gets 0600.
 func WriteCheckpoint(anchorPath, hash string, count int64) error {
-	data := fmt.Sprintf(`{"schema_version":%d,"last_entry_hash":%q,"entry_count":%d}`+"\n",
-		AnchorSchemaVersion, hash, count)
+	return writeCheckpoint(anchorPath, ChainAnchor{SchemaVersion: AnchorSchemaVersion, LastEntryHash: hash, EntryCount: count})
+}
+
+// WriteCheckpointForLog writes an anchor that also authenticates the complete
+// log file, allowing recovery to skip JSONL replay while retaining tamper
+// detection. The legacy WriteCheckpoint API remains available for callers
+// that do not have a log path.
+func WriteCheckpointForLog(anchorPath, logPath, hash string, count int64) error {
+	info, err := os.Stat(logPath)
+	if err != nil {
+		return fmt.Errorf("auditkit: stat log: %w", err)
+	}
+	contentHash, err := hashFile(logPath)
+	if err != nil {
+		return fmt.Errorf("auditkit: hash log: %w", err)
+	}
+	return writeCheckpoint(anchorPath, ChainAnchor{
+		SchemaVersion: AnchorSchemaVersion,
+		LastEntryHash: hash,
+		EntryCount:    count,
+		LogSize:       info.Size(),
+		ContentHash:   contentHash,
+	})
+}
+
+func writeCheckpoint(anchorPath string, anchor ChainAnchor) error {
+	data, err := json.Marshal(anchor)
+	if err != nil {
+		return fmt.Errorf("auditkit: marshal anchor: %w", err)
+	}
+	data = append(data, '\n')
 
 	dir := filepath.Dir(anchorPath)
 	if err := os.MkdirAll(dir, 0o700); err != nil {
@@ -78,6 +113,19 @@ func WriteCheckpoint(anchorPath, hash string, count int64) error {
 		return fmt.Errorf("auditkit: rename anchor: %w", err)
 	}
 	return nil
+}
+
+func hashFile(path string) (string, error) {
+	f, err := os.Open(path) //nolint:gosec // path is constructed by caller
+	if err != nil {
+		return "", err
+	}
+	defer f.Close()
+	h := sha256.New()
+	if _, err := io.Copy(h, f); err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(h.Sum(nil)), nil
 }
 
 // ReadCheckpoint reads the anchor file. A missing anchor returns (nil, nil)
@@ -108,6 +156,16 @@ func VerifyAnchor(entries []string, initialHash string, anchor *ChainAnchor) boo
 		return false
 	}
 	return VerifyChain(entries, initialHash, anchor.LastEntryHash)
+}
+
+// VerifyAnchorForLog verifies the chain anchor and the byte-level identity of
+// the log. New anchors should use this stronger check; the older helper stays
+// compatible with anchors produced without a log path.
+func VerifyAnchorForLog(entries []string, initialHash string, anchor *ChainAnchor, logSize int64, contentHash string) bool {
+	if anchor == nil || anchor.LogSize != logSize || anchor.ContentHash == "" || anchor.ContentHash != contentHash {
+		return false
+	}
+	return VerifyAnchor(entries, initialHash, anchor)
 }
 
 func countNonEmpty(entries []string) int {

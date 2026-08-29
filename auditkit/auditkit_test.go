@@ -246,3 +246,55 @@ func readAllLines(t *testing.T, path string) []string {
 }
 
 var _ = json.Valid
+
+func TestCheckpointStoresLogFingerprintAndRejectsSameSizeTamper(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "audit.jsonl")
+	sink, err := OpenSink(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := sink.Append(`{"event":"one"}`); err != nil {
+		t.Fatal(err)
+	}
+	if err := sink.Checkpoint(); err != nil {
+		t.Fatal(err)
+	}
+	wantCount, wantHead := sink.Count(), sink.HeadHash()
+	if err := sink.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	anchor, err := ReadCheckpoint(DefaultAnchorPath(path))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if anchor == nil || anchor.LogSize == 0 || anchor.ContentHash == "" {
+		t.Fatalf("anchor = %#v, want log fingerprint", anchor)
+	}
+
+	reopened, err := OpenSink(path)
+	if err != nil {
+		t.Fatalf("reopen with valid anchor: %v", err)
+	}
+	if reopened.Count() != wantCount || reopened.HeadHash() != wantHead {
+		t.Fatalf("recovered state = (%d, %q), want (%d, %q)", reopened.Count(), reopened.HeadHash(), wantCount, wantHead)
+	}
+	if err := reopened.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	mutated := strings.Replace(string(raw), "one", "two", 1)
+	if mutated == string(raw) {
+		t.Fatal("test mutation did not change the log")
+	}
+	if err := os.WriteFile(path, []byte(mutated), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := OpenSink(path); err == nil {
+		t.Fatal("expected same-size tampering to fail recovery")
+	}
+}

@@ -141,7 +141,7 @@ func (c *Client) discoverModels(ctx context.Context, path string) ([]ModelInfo, 
 			Name string `json:"name"`
 		} `json:"models"`
 	}
-	if err := json.Unmarshal(raw, &ollamaShape); err == nil && len(ollamaShape.Models) > 0 {
+	if err := json.Unmarshal(raw, &ollamaShape); err == nil && ollamaShape.Models != nil {
 		out := make([]ModelInfo, 0, len(ollamaShape.Models))
 		for _, m := range ollamaShape.Models {
 			out = append(out, ModelInfo{ID: m.Name})
@@ -157,6 +157,71 @@ func (c *Client) discoverModels(ctx context.Context, path string) ([]ModelInfo, 
 // expose cleanly (generate with images, native chat streaming shape). These
 // methods speak it directly against the same client.
 
+// EmbedNative returns embeddings through Ollama's native /api/embed endpoint.
+// A zero dimensions value omits the optional dimensions field.
+func (c *Client) EmbedNative(ctx context.Context, model string, inputs []string, dimensions int) ([][]float32, error) {
+	if !c.isOllama() {
+		return nil, fmt.Errorf("llmkit: EmbedNative is only available for the ollama provider")
+	}
+	if len(inputs) == 0 {
+		return nil, fmt.Errorf("llmkit: embed inputs must not be empty")
+	}
+	if model == "" {
+		model = c.desc.DefaultModel()
+	}
+	if model == "" {
+		return nil, fmt.Errorf("llmkit: model is required for provider %q", c.desc.ID)
+	}
+	body := struct {
+		Model      string   `json:"model"`
+		Input      []string `json:"input"`
+		Dimensions int      `json:"dimensions,omitempty"`
+	}{Model: model, Input: inputs, Dimensions: dimensions}
+	resp, err := c.do(ctx, http.MethodPost, "/api/embed", body, "application/json")
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	var parsed struct {
+		Embeddings [][]float32 `json:"embeddings"`
+	}
+	if err := json.NewDecoder(io.LimitReader(resp.Body, 64<<20)).Decode(&parsed); err != nil {
+		return nil, &Error{Code: ErrCodeProvider, Err: fmt.Errorf("decode native embeddings response: %w", err)}
+	}
+	if len(parsed.Embeddings) != len(inputs) {
+		return nil, &Error{Code: ErrCodeProvider, Err: fmt.Errorf("expected %d embeddings, got %d", len(inputs), len(parsed.Embeddings))}
+	}
+	return parsed.Embeddings, nil
+}
+
+// OllamaModelInfo is the native metadata returned by Ollama's /api/tags
+// endpoint. It is separate from ModelInfo so generic provider JSON contracts
+// do not gain Ollama-specific fields.
+type OllamaModelInfo struct {
+	Name     string `json:"name"`
+	Modified string `json:"modified_at"`
+	Size     int64  `json:"size"`
+}
+
+// ListOllamaModels returns native Ollama model metadata.
+func (c *Client) ListOllamaModels(ctx context.Context) ([]OllamaModelInfo, error) {
+	if !c.isOllama() {
+		return nil, fmt.Errorf("llmkit: ListOllamaModels is only available for the ollama provider")
+	}
+	resp, err := c.do(ctx, http.MethodGet, "/api/tags", nil, "")
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	var parsed struct {
+		Models []OllamaModelInfo `json:"models"`
+	}
+	if err := json.NewDecoder(io.LimitReader(resp.Body, 16<<20)).Decode(&parsed); err != nil {
+		return nil, &Error{Code: ErrCodeProvider, Err: fmt.Errorf("decode Ollama model list: %w", err)}
+	}
+	return parsed.Models, nil
+}
+
 // GenerateResponse is one chunk from a streaming native /api/generate call.
 type GenerateResponse struct {
 	Model    string `json:"model"`
@@ -168,8 +233,10 @@ type GenerateResponse struct {
 type GenerateOption func(*generateConfig)
 
 type generateConfig struct {
-	system string
-	format any // JSON-schema object for Ollama's `format` field
+	system      string
+	format      any // JSON-schema object or string for Ollama's `format` field
+	temperature *float32
+	images      []string
 }
 
 // WithGenerateSystem sets the system prompt on a native generate call.
@@ -182,6 +249,23 @@ func WithGenerateSystem(p string) GenerateOption {
 // consolidation schema consumers send for structured replies.
 func WithGenerateFormat(schema map[string]any) GenerateOption {
 	return func(c *generateConfig) { c.format = schema }
+}
+
+// WithGenerateFormatValue sets Ollama's format field to either "json" or a
+// JSON-schema object. It exists for compatibility with the legacy ollamakit
+// API while retaining the typed schema helper above.
+func WithGenerateFormatValue(format any) GenerateOption {
+	return func(c *generateConfig) { c.format = format }
+}
+
+// WithGenerateTemperature sets the native Ollama sampling temperature.
+func WithGenerateTemperature(temperature float32) GenerateOption {
+	return func(c *generateConfig) { c.temperature = &temperature }
+}
+
+// WithGenerateImages sets the base64-encoded images sent to a vision model.
+func WithGenerateImages(images []string) GenerateOption {
+	return func(c *generateConfig) { c.images = images }
 }
 
 // Generate streams a native Ollama text generation. The callback receives one
@@ -204,6 +288,12 @@ func (c *Client) Generate(ctx context.Context, model, prompt string, callback fu
 	if cfg.format != nil {
 		body["format"] = cfg.format
 	}
+	if cfg.temperature != nil {
+		body["temperature"] = *cfg.temperature
+	}
+	if len(cfg.images) > 0 {
+		body["images"] = cfg.images
+	}
 	return c.streamNDJSON(ctx, "/api/generate", body, func(raw []byte) error {
 		var chunk GenerateResponse
 		if err := json.Unmarshal(raw, &chunk); err != nil {
@@ -222,13 +312,47 @@ type ChatStreamResponse struct {
 
 // ChatStream streams a native Ollama chat completion.
 func (c *Client) ChatStream(ctx context.Context, model string, messages []Message, callback func(ChatStreamResponse) error) error {
+	return c.ChatStreamWithOptions(ctx, model, messages, callback)
+}
+
+// NativeChatOption configures a native Ollama chat request.
+type NativeChatOption func(*nativeChatConfig)
+
+type nativeChatConfig struct {
+	temperature *float32
+	format      string
+}
+
+// WithNativeChatTemperature sets the native Ollama sampling temperature.
+func WithNativeChatTemperature(temperature float32) NativeChatOption {
+	return func(c *nativeChatConfig) { c.temperature = &temperature }
+}
+
+// WithNativeChatFormat sets Ollama's JSON response mode.
+func WithNativeChatFormat(format string) NativeChatOption {
+	return func(c *nativeChatConfig) { c.format = format }
+}
+
+// ChatStreamWithOptions streams a native Ollama chat completion with optional
+// request parameters.
+func (c *Client) ChatStreamWithOptions(ctx context.Context, model string, messages []Message, callback func(ChatStreamResponse) error, opts ...NativeChatOption) error {
 	if !c.isOllama() {
 		return fmt.Errorf("llmkit: ChatStream is only available for the ollama provider")
 	}
 	if model == "" {
 		model = c.desc.DefaultModel()
 	}
+	var cfg nativeChatConfig
+	for _, opt := range opts {
+		opt(&cfg)
+	}
 	body := map[string]any{"model": model, "messages": messages, "stream": true}
+	if cfg.temperature != nil {
+		body["temperature"] = *cfg.temperature
+	}
+	if cfg.format != "" {
+		body["format"] = cfg.format
+	}
 	return c.streamNDJSON(ctx, "/api/chat", body, func(raw []byte) error {
 		var chunk ChatStreamResponse
 		if err := json.Unmarshal(raw, &chunk); err != nil {
