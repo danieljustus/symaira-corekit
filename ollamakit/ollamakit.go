@@ -26,6 +26,24 @@ var (
 	ErrResponse      = errors.New("ollamakit: unexpected response")
 )
 
+// Error preserves the original package's structured compatibility error.
+type Error struct {
+	Message string
+	Err     error
+}
+
+func (e *Error) Error() string {
+	if e.Err == nil {
+		return e.Message
+	}
+	if e.Message == "" {
+		return e.Err.Error()
+	}
+	return fmt.Sprintf("%s: %v", e.Message, e.Err)
+}
+
+func (e *Error) Unwrap() error { return e.Err }
+
 // ResponseError wraps an unexpected HTTP response from Ollama.
 type ResponseError struct {
 	StatusCode int
