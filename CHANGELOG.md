@@ -10,6 +10,18 @@ The GitHub Releases page is the authoritative source for complete release notes.
 - `auditkit`: fingerprints checkpointed logs and validates the chain during recovery.
 - Consumer action: update the exact `corekit` pin; existing APIs remain compatible.
 
+## v0.16.2 — 2026-08-30
+
+- `secretref`: added the shared Go resolver for `symvault://`, `keychain://`,
+  `env://`, and bare environment-variable references, with a default
+  subprocess timeout and documented fallback behavior. Existing
+  `llmkit.ResolveCredential` callers remain compatible through its deprecated
+  forwarder.
+- `mcpserver`: published the cross-language MCP tool-annotation contract and
+  conformance tests.
+- Consumer action: update the exact `corekit` pin; consumers adopting
+  `secretref` should use the package instead of maintaining a local resolver.
+
 ## v0.16.0 — 2026-08-26
 
 - `llmkit`: added `WithStreamFinished` for provider terminal finish/stop reasons, `WithAPIKey` for consumers that resolve credentials in their own secret store, and `WithEmbedDimensions` for Matryoshka embedding dimension pinning (#187).

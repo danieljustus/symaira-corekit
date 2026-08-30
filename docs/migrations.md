@@ -25,6 +25,19 @@ behavior change worth confirming," not "your build will fail."
 - Consumer action: raise the exact `corekit` pin; no migration is required for
   consumers that do not adopt the new options.
 
+## v0.16.2
+
+- `secretref`: adds the shared Go resolver for `symvault://`, `keychain://`,
+  `env://`, and bare environment-variable references, including a default
+  subprocess timeout and the documented fallback behavior. Existing
+  `llmkit.ResolveCredential` callers remain compatible through its deprecated
+  forwarder.
+- `mcpserver`: publishes the cross-language MCP tool-annotation contract and
+  conformance tests.
+- Consumer action: raise the exact `corekit` pin. Consumers adopting
+  `secretref` should use its package path rather than copying resolver logic;
+  no migration is required for consumers that do not adopt it.
+
 ## v0.16.0
 
 - `llmkit`: `StreamChat` accepts `WithStreamFinished` to receive the provider's terminal finish/stop reason; `WithAPIKey` lets consumers supply a credential resolved by their own keychain or vault; `Embed` accepts `WithEmbedDimensions` for OpenAI-wire Matryoshka dimension pinning.
