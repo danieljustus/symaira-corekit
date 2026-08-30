@@ -1,7 +1,6 @@
 package llmkit
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -9,11 +8,11 @@ import (
 	"net/http"
 	"net/netip"
 	"net/url"
-	"os"
 	"strconv"
 	"strings"
 	"time"
-	"unicode"
+
+	"github.com/danieljustus/symaira-corekit/secretref"
 )
 
 // DefaultTimeout is the default per-request timeout.
@@ -226,6 +225,12 @@ func (c *Client) applyAuth(req *http.Request) {
 //
 // An empty ref falls back to envDefault (a bare env name). The resolved value
 // must never be logged; errors name only the reference.
+//
+// Deprecated: the resolution logic now lives in [secretref.Resolve], the
+// shared implementation used across the Symaira Go tools. This forwarder is
+// kept so existing llmkit callers do not need to change; keychain:// stays
+// refused here exactly as before — llmkit itself has no Swift-side identity,
+// so it never attempts the macOS-only resolution secretref now offers.
 func ResolveCredential(ref, envDefault string) (string, error) {
 	target := ref
 	if target == "" {
@@ -234,76 +239,17 @@ func ResolveCredential(ref, envDefault string) (string, error) {
 	if target == "" {
 		return "", &Error{Code: ErrCodeAuth, Err: fmt.Errorf("no credential reference or default provided")}
 	}
-	switch {
-	case strings.HasPrefix(target, "symvault://"):
-		path := strings.TrimPrefix(target, "symvault://")
-		out, err := resolveSymvault(path)
-		if err != nil {
-			return "", &Error{Code: ErrCodeAuth, Err: fmt.Errorf("resolve %s: %w", refLabel(ref), err)}
-		}
-		return out, nil
-	case strings.HasPrefix(target, "keychain://"):
+	if strings.HasPrefix(target, "keychain://") {
 		return "", &Error{Code: ErrCodeAuth, Err: fmt.Errorf("keychain:// references are resolved by the Swift half (SymairaProviderKit), not by llmkit")}
-	case strings.HasPrefix(target, "env://"):
-		name := strings.TrimPrefix(target, "env://")
-		v := os.Getenv(name)
-		if v == "" {
-			return "", &Error{Code: ErrCodeAuth, Err: fmt.Errorf("environment variable %s is not set (reference %s)", name, refLabel(ref))}
-		}
-		return v, nil
-	default:
-		v := os.Getenv(target)
-		if v == "" {
-			return "", &Error{Code: ErrCodeAuth, Err: fmt.Errorf("environment variable %s is not set (reference %s)", target, refLabel(ref))}
-		}
-		return v, nil
-	}
-}
-
-// refLabel keeps error messages pointing at the reference the user
-// configured, never at any resolved value.
-func refLabel(ref string) string {
-	if ref == "" {
-		return "<default>"
-	}
-	return ref
-}
-
-// resolveSymvault shells out to the vault CLI. Kept as a small indirection so
-// tests can replace it.
-var resolveSymvault = func(path string) (string, error) {
-	if err := validateSymvaultPath(path); err != nil {
-		return "", err
 	}
 
-	cmd := execCommand("symvault", "get", "--", path, "--print")
-	var stderr bytes.Buffer
-	cmd.Stderr = &stderr
-	out, err := cmd.Output()
+	ctx, cancel := context.WithTimeout(context.Background(), secretref.DefaultTimeout)
+	defer cancel()
+	v, err := secretref.Resolve(ctx, ref, envDefault)
 	if err != nil {
-		if detail := strings.TrimSpace(stderr.String()); detail != "" {
-			return "", fmt.Errorf("%w: %s", err, detail)
-		}
-		return "", err
+		return "", &Error{Code: ErrCodeAuth, Err: err}
 	}
-	return strings.TrimSpace(string(out)), nil
-}
-
-func validateSymvaultPath(path string) error {
-	switch {
-	case path == "":
-		return fmt.Errorf("invalid symvault credential path: empty")
-	case strings.HasPrefix(path, "-"):
-		return fmt.Errorf("invalid symvault credential path: must not start with '-'")
-	case strings.IndexByte(path, 0) >= 0:
-		return fmt.Errorf("invalid symvault credential path: contains a null byte")
-	}
-	for _, r := range path {
-		if unicode.IsControl(r) {
-			return fmt.Errorf("invalid symvault credential path: contains control characters")
-		}
-	}
-	return nil
+	return v, nil
 }
 
 // retryAfterSeconds parses the Retry-After header value (seconds form); ok is

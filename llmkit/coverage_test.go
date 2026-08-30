@@ -13,9 +13,6 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
-	"os"
-	"os/exec"
-	"reflect"
 	"strings"
 	"testing"
 
@@ -232,85 +229,9 @@ func TestResolveCredentialValidation(t *testing.T) {
 	}
 }
 
-// helperProcess re-executes the test binary in a fake-CLI mode so the real
-// resolveSymvault exec path can be exercised platform-neutrally.
-func helperProcess(t *testing.T) {
-	t.Helper()
-	if os.Getenv("LLMKIT_HELPER_PROCESS") != "1" {
-		t.Skip("helper subprocess target")
-	}
-	fmt.Println("secret-key-from-vault")
-	os.Exit(0)
-}
-
-func TestResolveSymvaultExecPath(t *testing.T) {
-	orig := execCommand
-	var gotName string
-	var gotArgs []string
-	execCommand = func(name string, args ...string) *exec.Cmd {
-		gotName = name
-		gotArgs = append([]string(nil), args...)
-		c := exec.Command(os.Args[0], "-test.run=TestHelperResolveSymvault")
-		c.Env = append(os.Environ(), "LLMKIT_HELPER_PROCESS=1")
-		return c
-	}
-	defer func() { execCommand = orig }()
-
-	// Success path: symvault prints the secret on stdout.
-	key, err := ResolveCredential("symvault://secrets/ai_key", "")
-	if err != nil || key != "secret-key-from-vault" {
-		t.Fatalf("symvault resolution = (%q, %v)", key, err)
-	}
-	if gotName != "symvault" || !reflect.DeepEqual(gotArgs, []string{"get", "--", "secrets/ai_key", "--print"}) {
-		t.Errorf("symvault invocation = %q %q", gotName, gotArgs)
-	}
-}
-
-func TestHelperResolveSymvault(t *testing.T) { helperProcess(t) }
-
-func TestResolveSymvaultExecFailure(t *testing.T) {
-	orig := execCommand
-	execCommand = func(name string, args ...string) *exec.Cmd {
-		c := exec.Command(os.Args[0], "-test.run=TestHelperResolveSymvaultFail")
-		c.Env = append(os.Environ(), "LLMKIT_HELPER_PROCESS=1")
-		return c
-	}
-	defer func() { execCommand = orig }()
-
-	_, err := ResolveCredential("symvault://secrets/missing", "")
-	e := AsError(err)
-	if e == nil || e.Code != ErrCodeAuth {
-		t.Fatalf("want auth-classified symvault exec failure, got %v", err)
-	}
-	if !strings.Contains(err.Error(), "entry not found") {
-		t.Fatalf("vault stderr missing from auth error: %v", err)
-	}
-	if strings.Contains(err.Error(), "resolved-secret-should-not-leak") {
-		t.Fatal("vault stdout credential leaked into auth error")
-	}
-}
-
-func TestHelperResolveSymvaultFail(t *testing.T) {
-	if os.Getenv("LLMKIT_HELPER_PROCESS") != "1" {
-		t.Skip("helper subprocess target")
-	}
-	fmt.Fprintln(os.Stdout, "resolved-secret-should-not-leak")
-	fmt.Fprintln(os.Stderr, "entry not found")
-	os.Exit(1)
-}
-
-func TestExecCommandIndirection(t *testing.T) {
-	// The real execCommand hook must produce a runnable command (issue #183
-	// coverage: exec.go package-level indirection).
-	cmd := execCommand("go", "version")
-	out, err := cmd.Output()
-	if err != nil {
-		t.Fatalf("execCommand go version: %v", err)
-	}
-	if !strings.Contains(string(out), "go version") {
-		t.Errorf("go version output = %q", out)
-	}
-}
+// The symvault/keychain subprocess exec path now lives in secretref and is
+// covered there (secretref_test.go); ResolveCredential is a thin forwarder,
+// verified by TestResolveCredentialValidation above.
 
 func TestRetryAfterSeconds(t *testing.T) {
 	cases := []struct {

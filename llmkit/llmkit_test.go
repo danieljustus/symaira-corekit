@@ -1,14 +1,12 @@
-//nolint:gosec // G104/G204 in test servers: ignored write/decode errors and the exec indirection are intentional here
+//nolint:gosec // G104 in test servers: ignored write/decode errors are intentional here
 package llmkit
 
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
-	"os/exec"
 	"strings"
 	"testing"
 
@@ -414,30 +412,11 @@ func TestCustomDescriptor(t *testing.T) {
 	}
 }
 
-func TestResolveSymvaultReference(t *testing.T) {
-	orig := resolveSymvault
-	resolveSymvault = func(path string) (string, error) {
-		if path != "secrets/anthropic_key" {
-			t.Errorf("symvault path = %q", path)
-		}
-		return "sv-resolved-key", nil
-	}
-	defer func() { resolveSymvault = orig }()
-
-	key, err := ResolveCredential("symvault://secrets/anthropic_key", "")
-	if err != nil || key != "sv-resolved-key" {
-		t.Fatalf("ResolveCredential symvault = (%q, %v)", key, err)
-	}
-
-	resolveSymvault = func(path string) (string, error) { return "", errors.New("boom") }
-	_, err = ResolveCredential("symvault://secrets/x", "")
-	e := AsError(err)
-	if e == nil || e.Code != ErrCodeAuth {
-		t.Fatalf("want auth-classified symvault failure, got %v", err)
-	}
-}
-
-func TestResolveSymvaultPathValidationBeforeExec(t *testing.T) {
+// The symvault exec path (success, failure, timeout) is covered in
+// secretref_test.go now that the resolution logic lives there. This test
+// only proves ResolveCredential still forwards secretref's path-validation
+// failure with the ErrCodeAuth classification existing callers rely on.
+func TestResolveSymvaultPathValidationForwarded(t *testing.T) {
 	cases := []struct {
 		name string
 		ref  string
@@ -447,14 +426,6 @@ func TestResolveSymvaultPathValidationBeforeExec(t *testing.T) {
 		{name: "control character", ref: "symvault://secrets/\nkey"},
 		{name: "null byte", ref: "symvault://secrets/\x00key"},
 	}
-
-	orig := execCommand
-	called := false
-	execCommand = func(name string, args ...string) *exec.Cmd {
-		called = true
-		return exec.Command(name, args...)
-	}
-	defer func() { execCommand = orig }()
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -467,8 +438,5 @@ func TestResolveSymvaultPathValidationBeforeExec(t *testing.T) {
 				t.Fatalf("want path-validation detail, got %v", err)
 			}
 		})
-	}
-	if called {
-		t.Fatal("invalid symvault paths must be rejected before exec")
 	}
 }
