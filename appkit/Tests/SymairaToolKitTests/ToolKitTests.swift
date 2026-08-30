@@ -32,10 +32,31 @@ final class RegistryTests: XCTestCase {
             "symfritz", "symprint", "symskills", "symguard",
             "symingest", "symeraseme", "symtune", "symoperate", "symdesk",
             "symmeet", "symbrain", "symrelate", "symbrowse", "symcockpit",
+            "symroom",
         ]
         for id in expected {
             XCTAssertNotNil(SymairaToolRegistry.tool(id: id), "missing tool: \\(id)")
         }
+    }
+
+    // MARK: - Issue #143: symroom ships with symdesk but was missing from the registry
+
+    func testSymroomEntryIsPresentAndNotDeprecated() {
+        // symroom is absorbed into symdesk's release only for distribution
+        // (no in-process call), so it has symdesk's Homebrew formula but
+        // remains its own installable/detectable tool, not deprecated.
+        let symroom = SymairaToolRegistry.tool(id: "symroom")
+        XCTAssertNotNil(symroom, "symroom is missing from the registry")
+        XCTAssertEqual(symroom?.binaryName, "symroom")
+        XCTAssertEqual(symroom?.homebrewFormula, "danieljustus/tap/symdesk")
+        XCTAssertEqual(symroom?.supportsMCP, true)
+        XCTAssertEqual(symroom?.mcpArgs, ["mcp"])
+        XCTAssertNil(symroom?.deprecated)
+        XCTAssertFalse(symroom?.isDeprecated ?? true)
+    }
+
+    func testSymroomIsIncludedInActive() {
+        XCTAssertTrue(SymairaToolRegistry.active.map(\.id).contains("symroom"))
     }
 
     func testBrainAndRelateRegistryEntries() {
@@ -102,7 +123,7 @@ final class RegistryTests: XCTestCase {
     func testActiveToolsAreNotDeprecated() {
         // These tools still have independent repos and active formulae.
         let active = ["symvault", "symfritz", "symbrain",
-                      "symdesk", "symbrowse", "symcockpit", "symeraseme"]
+                      "symdesk", "symbrowse", "symcockpit", "symeraseme", "symroom"]
         for id in active {
             let tool = SymairaToolRegistry.tool(id: id)
             XCTAssertNotNil(tool, "active tool missing from registry: \(id)")

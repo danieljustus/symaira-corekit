@@ -52,14 +52,15 @@ public struct SymairaTool: Equatable, Sendable, Identifiable {
 /// Consumers that present an install UI should filter on `isDeprecated` /
 /// `active` to show migration hints instead of a regular install.
 ///
-/// MCP subcommands verified against each repo's cobra commands (2026-08):
-/// vault `serve --stdio`, brain/seek/skills `serve`,
-/// fetch/scope/fritz/print/ingest/meet `mcp` (symingest since v0.6.0),
-/// browse `mcp`, relate `mcp`. `symguard` does not expose an MCP server yet;
-/// `symeraseme` is a Python CLI without one; `symbrain`'s `serve` requires
-/// a runtime `--profile` argument the static registry cannot express, so it
-/// is listed as not MCP-capable until the API can model caller-supplied
-/// arguments (see the entry's comment below).
+/// MCP subcommands verified against each active tool's cobra commands
+/// (2026-08): vault `serve --stdio`; fritz, browse, cockpit, desk and room
+/// `mcp`. `symguard` does not expose an MCP server yet; `symeraseme` is a
+/// Python CLI without one; `symbrain`'s `serve` requires a runtime
+/// `--profile` argument the static registry cannot express, so it is listed
+/// as not MCP-capable until the API can model caller-supplied arguments (see
+/// the entry's comment below). Deprecated entries keep the MCP subcommand
+/// their last shipped binary used, for historical reference only — their
+/// binaries no longer exist independently, see `deprecated` below.
 ///
 /// Deprecated tools (absorbed into other products — see the `deprecated` field):
 /// symmemory/symseek/symskills/symguard → symbrain; symfetch → symbrowse;
@@ -219,6 +220,16 @@ public enum SymairaToolRegistry {
             homebrewFormula: "danieljustus/tap/symrelate",
             mcpArgs: ["mcp"],
             deprecated: "absorbed into Symaira Desktop (symdesk)"
+        ),
+        // symroom is the one absorbed tool symdesk does not call in-process,
+        // so its binary ships with the symdesk release instead of its own
+        // formula; it is still independently installable and detectable.
+        SymairaTool(
+            id: "symroom",
+            displayName: "Symaira Room",
+            binaryName: "symroom",
+            homebrewFormula: "danieljustus/tap/symdesk",
+            mcpArgs: ["mcp"]
         ),
     ]
 
