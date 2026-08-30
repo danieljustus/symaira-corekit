@@ -69,6 +69,13 @@ func newResponseWriter(w io.Writer, mode responseMode, mu *sync.Mutex) *response
 // serialised as the standard "annotations" field in tools/list. These are
 // client-facing advisory hints, not Guard-style enforcement. A nil/zero
 // value omits the field entirely from the protocol response.
+//
+// The four hint fields (ReadOnlyHint, IdempotentHint, OpenWorldHint,
+// DestructiveHint) and their wire names are specified in
+// contracts/mcp_tool_annotations.json, the cross-language contract the Swift
+// half (symaira-appkit/SymairaMCP) is implemented against. Every registered
+// tool should set ReadOnlyHint explicitly: a missing hint is read by
+// downstream consumers as "write", the least-trusted classification.
 type ToolAnnotations struct {
 	// Title is a human-readable title for the tool.
 	Title string `json:"title,omitempty"`
