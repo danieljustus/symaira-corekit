@@ -291,11 +291,44 @@ public struct MCPTool: Sendable, Equatable, Codable {
     public var name: String
     public var description: String?
     public var inputSchema: MCPJSONSchema
+    public var annotations: MCPToolAnnotations?
 
-    public init(name: String, description: String? = nil, inputSchema: MCPJSONSchema) {
+    public init(
+        name: String,
+        description: String? = nil,
+        inputSchema: MCPJSONSchema,
+        annotations: MCPToolAnnotations? = nil
+    ) {
         self.name = name
         self.description = description
         self.inputSchema = inputSchema
+        self.annotations = annotations
+    }
+}
+
+/// The MCP `tools` capability's tool annotation hints — `readOnlyHint`,
+/// `idempotentHint`, `openWorldHint` and `destructiveHint` — encoded verbatim
+/// under those wire names per `contracts/mcp_tool_annotations.json`. A `nil`
+/// hint is omitted from the wire entirely rather than encoded as `null`:
+/// per the contract's `explicit_declaration_rule`, downstream consumers read
+/// a missing `readOnlyHint` as the least-trusted "write" classification, so
+/// silence is meaningful and must not be spoofed by an explicit `false`.
+public struct MCPToolAnnotations: Sendable, Equatable, Codable {
+    public var readOnlyHint: Bool?
+    public var idempotentHint: Bool?
+    public var openWorldHint: Bool?
+    public var destructiveHint: Bool?
+
+    public init(
+        readOnlyHint: Bool? = nil,
+        idempotentHint: Bool? = nil,
+        openWorldHint: Bool? = nil,
+        destructiveHint: Bool? = nil
+    ) {
+        self.readOnlyHint = readOnlyHint
+        self.idempotentHint = idempotentHint
+        self.openWorldHint = openWorldHint
+        self.destructiveHint = destructiveHint
     }
 }
 
