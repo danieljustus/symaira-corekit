@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.14.2] - 2026-08-30
+
+### Added
+- `MCPToolAnnotations` lets MCP tools declare `readOnlyHint`,
+  `idempotentHint`, `openWorldHint`, and `destructiveHint` using the MCP wire
+  format, while omitting the `annotations` field when no hints are set.
+- `SymairaToolRegistry` now registers `symroom` through the `symdesk`
+  Homebrew formula, matching the binary's distribution path.
+
+### Changed
+- The tool-registry documentation now reflects the current independent-binary
+  and MCP-subcommand boundaries.
+
 ## [0.14.1] - 2026-08-28
 
 ### Added
