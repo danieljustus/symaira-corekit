@@ -2,6 +2,15 @@
 
 The GitHub Releases page is the authoritative source for complete release notes.
 
+## v0.16.3 — 2026-08-31
+
+- `updatecheck/updateapply`: added the optional `Applier.ValidateBinary` hook
+  for post-swap executable validation. A failed validation restores the previous
+  binary, or removes the failed installation when no previous binary exists.
+- Consumer action: configure `ValidateBinary` when the installed executable
+  must pass a startup check such as `--version`; consumers that do not set it
+  retain the existing behavior.
+
 ## v0.16.1 — 2026-08-29
 
 - `configkit`: honors `XDG_CONFIG_HOME` by default, with an explicit legacy-path opt-out.
