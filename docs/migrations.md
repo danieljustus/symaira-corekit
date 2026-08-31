@@ -9,6 +9,16 @@ Strict SemVer within a major version means these are additive/non-breaking
 by contract; "check" below means "new capability you may want to adopt or a
 behavior change worth confirming," not "your build will fail."
 
+## v0.16.3
+
+- `updatecheck/updateapply`: `Applier.ValidateBinary` optionally validates the
+  installed executable after the swap and before the rollback backup is
+  removed. Returning an error restores the previous binary; when no previous
+  binary exists, the failed installation is removed.
+- Consumer action: set `ValidateBinary` when the installed executable must pass
+  a startup check such as `--version`. Consumers that do not set the hook need
+  no migration.
+
 ## v0.16.1
 
 - `configkit`: global configuration now honors `$XDG_CONFIG_HOME`; set

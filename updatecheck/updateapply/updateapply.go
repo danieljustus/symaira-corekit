@@ -7,6 +7,7 @@
 //   - Cosign keyless signature verification (set CosignConfig)
 //   - Archive extraction from tar.gz/zip releases (set ExtractBinary)
 //   - Install method detection rejecting Homebrew installs (set CheckInstallMethod)
+//   - Post-swap executable validation with rollback (set ValidateBinary)
 package updateapply
 
 import (
@@ -37,6 +38,10 @@ const maxAssetBody = 1 << 30 // 1 GiB
 // ProgressFunc reports download progress. written and total are byte counts;
 // total is 0 when the server did not report Content-Length.
 type ProgressFunc func(written, total int64)
+
+// BinaryValidator validates an installed executable at path. Returning an
+// error rejects the update and causes the previous binary to be restored.
+type BinaryValidator func(path string) error
 
 type httpDoer interface {
 	Do(req *http.Request) (*http.Response, error)
@@ -75,6 +80,12 @@ type Applier struct {
 	// the archive is extracted and the binary matching ExtractBinary is
 	// used for installation.
 	ExtractBinary string
+
+	// ValidateBinary, when set, is called after the new binary has replaced
+	// targetPath and before the rollback backup is removed. Returning an error
+	// restores the previous binary and returns that error from Apply. When no
+	// previous binary exists, the failed installation is removed instead.
+	ValidateBinary BinaryValidator
 }
 
 // NewApplier creates an Applier using the running binary's OS/arch and the
@@ -100,6 +111,8 @@ func NewApplier() *Applier {
 //  1. Install method detection (CheckInstallMethod): rejects Homebrew installs.
 //  2. Cosign verification (CosignConfig): verifies checksums.txt signature.
 //  3. Archive extraction (ExtractBinary): unpacks the downloaded archive.
+//  4. Executable validation (ValidateBinary): validates the installed binary
+//     and rolls back when the hook returns an error.
 func (a *Applier) Apply(ctx context.Context, release *updatecheck.Release, targetPath string) error {
 	if release == nil {
 		return errors.New("updateapply: release is nil")
@@ -230,7 +243,7 @@ func (a *Applier) Apply(ctx context.Context, release *updatecheck.Release, targe
 		return fmt.Errorf("updateapply: make downloaded asset executable: %w", err)
 	}
 
-	return atomicSwap(installTarget, absTarget)
+	return atomicSwap(installTarget, absTarget, a.ValidateBinary)
 }
 
 // InstallMethod detects the installation method of the given binary path.
@@ -477,8 +490,8 @@ func checkWritable(targetPath string) error {
 }
 
 // atomicSwap replaces targetPath with newPath, keeping a backup and rolling
-// back if the swap fails partway.
-func atomicSwap(newPath, targetPath string) error {
+// back if the swap fails partway or validation rejects the new binary.
+func atomicSwap(newPath, targetPath string, validate BinaryValidator) error {
 	backupPath := targetPath + ".bak"
 
 	_, statErr := os.Stat(targetPath)
@@ -500,8 +513,31 @@ func atomicSwap(newPath, targetPath string) error {
 		return fmt.Errorf("install new binary: %w", err)
 	}
 
+	if validate != nil {
+		if err := validate(targetPath); err != nil {
+			if hadExisting {
+				if rbErr := restoreBackup(backupPath, targetPath); rbErr != nil {
+					return fmt.Errorf("validate installed binary failed (%v) and rollback failed: %w", err, rbErr)
+				}
+			} else if rmErr := os.Remove(targetPath); rmErr != nil && !os.IsNotExist(rmErr) {
+				return fmt.Errorf("validate installed binary failed (%v) and remove failed: %w", err, rmErr)
+			}
+			return fmt.Errorf("validate installed binary: %w", err)
+		}
+	}
+
 	if hadExisting {
 		_ = os.Remove(backupPath)
+	}
+	return nil
+}
+
+func restoreBackup(backupPath, targetPath string) error {
+	if err := os.Remove(targetPath); err != nil && !os.IsNotExist(err) {
+		return fmt.Errorf("remove failed installed binary: %w", err)
+	}
+	if err := os.Rename(backupPath, targetPath); err != nil {
+		return fmt.Errorf("restore previous binary: %w", err)
 	}
 	return nil
 }

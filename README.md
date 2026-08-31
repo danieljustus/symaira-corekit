@@ -72,7 +72,7 @@ cloud-specific behavior.
 | `updatecheck/cosign` | v0.6.0 | Cosign keyless signature verification for release checksums (Repo/BinaryName/IdentityRegexp parametrisierbar) |
 | `updatecheck/extract` | v0.6.0 | Safe archive extraction (tar.gz/zip) with path-traversal protection |
 | `updatecheck/installmethod` | v0.6.0 | Install-method detection: Homebrew, `go install`, package-manager, direct-download, build-from-source |
-| `updatecheck/updateapply` | v0.5.0 | Self-update installer: matching-asset download, checksum verification, atomic replacement with rollback, re-exec, and optional Cosign verification, archive extraction, and install-method detection |
+| `updatecheck/updateapply` | v0.5.0 | Self-update installer: matching-asset download, checksum verification, atomic replacement with rollback, re-exec, and optional Cosign verification, archive extraction, install-method detection, and post-swap executable validation |
 | `vectorkit/turboquant` | v0.2.0 | CGO-free TurboQuant scalar vector quantization: deterministic rotation, packed encode/decode, inner-product/cosine scoring, sidecar metadata, benchmarks |
 | `versionkit` | v0.3.0 | Standardized handshake payload (`{tool, version, schema_version}`) for CLI tools |
 

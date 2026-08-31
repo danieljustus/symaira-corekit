@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"crypto/tls"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -251,7 +252,7 @@ func TestAtomicSwapRollsBackOnFailedRename(t *testing.T) {
 
 	// newPath does not exist, so os.Rename must fail and roll back.
 	missingNew := filepath.Join(dir, "does-not-exist")
-	err := atomicSwap(missingNew, target)
+	err := atomicSwap(missingNew, target, nil)
 	if err == nil {
 		t.Fatal("expected atomicSwap to fail for missing source, got nil")
 	}
@@ -908,4 +909,146 @@ func globHasStagedFile(t *testing.T, dir string) bool {
 		t.Fatal(err)
 	}
 	return len(matches) > 0
+}
+
+func TestApplyValidatesInstalledBinary(t *testing.T) {
+	assetBody := []byte("validated-binary")
+	checksums := fmt.Sprintf("%s  mytool_linux_amd64\n", sha256Hex(assetBody))
+
+	server, assetURL, checksumsURL := newTestServer(t, assetBody, checksums)
+	defer server.Close()
+
+	release := &updatecheck.Release{
+		Assets: []updatecheck.Asset{
+			{Name: "mytool_linux_amd64", BrowserDownloadURL: assetURL},
+			{Name: "checksums.txt", BrowserDownloadURL: checksumsURL},
+		},
+	}
+
+	target := filepath.Join(t.TempDir(), "mytool")
+	if err := os.WriteFile(target, []byte("old-binary"), 0o755); err != nil { //nolint:gosec
+		t.Fatalf("seed target: %v", err)
+	}
+
+	var validatedPath string
+	a := &Applier{
+		HTTPClient: http.DefaultClient,
+		GOOS:       "linux",
+		GOARCH:     "amd64",
+		ValidateBinary: func(path string) error {
+			validatedPath = path
+			got, err := os.ReadFile(path) //nolint:gosec
+			if err != nil {
+				return err
+			}
+			if string(got) != string(assetBody) {
+				return fmt.Errorf("installed content = %q, want %q", got, assetBody)
+			}
+			return nil
+		},
+	}
+
+	if err := a.Apply(context.Background(), release, target); err != nil {
+		t.Fatalf("Apply() error = %v", err)
+	}
+	if validatedPath != target {
+		t.Fatalf("validator path = %q, want %q", validatedPath, target)
+	}
+	if _, err := os.Stat(target + ".bak"); !os.IsNotExist(err) {
+		t.Fatalf("expected backup file to be cleaned up, stat err = %v", err)
+	}
+}
+
+func TestApplyRollsBackWhenBinaryValidationFails(t *testing.T) {
+	assetBody := []byte("invalid-binary")
+	checksums := fmt.Sprintf("%s  mytool_linux_amd64\n", sha256Hex(assetBody))
+
+	server, assetURL, checksumsURL := newTestServer(t, assetBody, checksums)
+	defer server.Close()
+
+	release := &updatecheck.Release{
+		Assets: []updatecheck.Asset{
+			{Name: "mytool_linux_amd64", BrowserDownloadURL: assetURL},
+			{Name: "checksums.txt", BrowserDownloadURL: checksumsURL},
+		},
+	}
+
+	target := filepath.Join(t.TempDir(), "mytool")
+	original := []byte("old-binary")
+	if err := os.WriteFile(target, original, 0o640); err != nil { //nolint:gosec
+		t.Fatalf("seed target: %v", err)
+	}
+	if err := os.Chmod(target, 0o640); err != nil { //nolint:gosec
+		t.Fatalf("set target permissions: %v", err)
+	}
+
+	validationErr := errors.New("installed binary does not start")
+	a := &Applier{
+		HTTPClient: http.DefaultClient,
+		GOOS:       "linux",
+		GOARCH:     "amd64",
+		ValidateBinary: func(path string) error {
+			return validationErr
+		},
+	}
+
+	err := a.Apply(context.Background(), release, target)
+	if !errors.Is(err, validationErr) {
+		t.Fatalf("Apply() error = %v, want validation error %v", err, validationErr)
+	}
+
+	got, readErr := os.ReadFile(target) //nolint:gosec
+	if readErr != nil {
+		t.Fatalf("read target after rollback: %v", readErr)
+	}
+	if string(got) != string(original) {
+		t.Fatalf("target after rollback = %q, want original %q", got, original)
+	}
+	info, statErr := os.Stat(target)
+	if statErr != nil {
+		t.Fatalf("stat target after rollback: %v", statErr)
+	}
+	if gotPerm := info.Mode().Perm(); gotPerm != 0o640 {
+		t.Fatalf("target permissions after rollback = %o, want %o", gotPerm, 0o640)
+	}
+	if _, statErr := os.Stat(target + ".bak"); !os.IsNotExist(statErr) {
+		t.Fatalf("expected backup file to be consumed by rollback, stat err = %v", statErr)
+	}
+}
+
+func TestApplyRemovesFailedInstallWhenNoPreviousBinaryExists(t *testing.T) {
+	assetBody := []byte("invalid-binary")
+	checksums := fmt.Sprintf("%s  mytool_linux_amd64\n", sha256Hex(assetBody))
+
+	server, assetURL, checksumsURL := newTestServer(t, assetBody, checksums)
+	defer server.Close()
+
+	release := &updatecheck.Release{
+		Assets: []updatecheck.Asset{
+			{Name: "mytool_linux_amd64", BrowserDownloadURL: assetURL},
+			{Name: "checksums.txt", BrowserDownloadURL: checksumsURL},
+		},
+	}
+
+	target := filepath.Join(t.TempDir(), "mytool")
+	validationErr := errors.New("installed binary does not start")
+	a := &Applier{
+		HTTPClient: http.DefaultClient,
+		GOOS:       "linux",
+		GOARCH:     "amd64",
+		ValidateBinary: func(path string) error {
+			return validationErr
+		},
+	}
+
+	err := a.Apply(context.Background(), release, target)
+	if !errors.Is(err, validationErr) {
+		t.Fatalf("Apply() error = %v, want validation error %v", err, validationErr)
+	}
+	if _, statErr := os.Stat(target); !os.IsNotExist(statErr) {
+		t.Fatalf("failed install still exists, stat err = %v", statErr)
+	}
+	if _, statErr := os.Stat(target + ".bak"); !os.IsNotExist(statErr) {
+		t.Fatalf("unexpected backup after failed first install, stat err = %v", statErr)
+	}
 }
