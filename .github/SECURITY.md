@@ -4,10 +4,10 @@
 
 | Version | Supported          |
 | ------- | ------------------ |
-| v0.11.x | :white_check_mark: |
-| v0.10.x | :white_check_mark: |
-| v0.9.x  | :white_check_mark: |
-| < v0.9  | :x:                |
+| v0.16.x | :white_check_mark: |
+| v0.15.x | :white_check_mark: |
+| v0.14.x | :white_check_mark: |
+| < v0.14  | :x:                |
 
 All releases are covered by security updates for 3 months after the next minor release.
 
