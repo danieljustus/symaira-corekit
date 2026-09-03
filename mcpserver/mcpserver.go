@@ -507,7 +507,7 @@ func (s *Server) handleToolsCall(ctx context.Context, w *responseWriter, req *js
 	}
 	result, err := tool.Handler(ctx, params.Arguments)
 	if err != nil {
-		sendToolError(w, req.ID, err.Error())
+		sendToolError(w, req.ID, err.Error(), ToolErrorData(err))
 		return
 	}
 
@@ -522,7 +522,7 @@ func (s *Server) handleToolsCall(ctx context.Context, w *responseWriter, req *js
 
 	data, err := json.Marshal(result)
 	if err != nil {
-		sendToolError(w, req.ID, "Failed to marshal tool result: "+err.Error())
+		sendToolError(w, req.ID, "Failed to marshal tool result: "+err.Error(), nil)
 		return
 	}
 	sendToolResponseRaw(w, req.ID, data)
@@ -581,13 +581,23 @@ func sendToolResponseRaw(w *responseWriter, id any, raw json.RawMessage) {
 	})
 }
 
-func sendToolError(w *responseWriter, id any, text string) {
-	sendResponse(w, id, map[string]any{
+// sendToolError reports a failed tool call as an MCP tool result with
+// isError set, which is where the specification puts a tool's own failure —
+// a JSON-RPC error object is reserved for protocol-level faults and would
+// hide the message from the model. data, when non-empty, is published under
+// ToolErrorMetaKey so the failure is machine-readable as well as legible;
+// nil data leaves the result exactly as it was before "_meta" existed.
+func sendToolError(w *responseWriter, id any, text string, data map[string]any) {
+	result := map[string]any{
 		"content": []map[string]any{
 			{"type": "text", "text": text},
 		},
 		"isError": true,
-	})
+	}
+	if len(data) > 0 {
+		result["_meta"] = map[string]any{ToolErrorMetaKey: data}
+	}
+	sendResponse(w, id, result)
 }
 
 func sendError(w *responseWriter, id any, code int, message string) {
