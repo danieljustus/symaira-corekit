@@ -2,6 +2,20 @@
 
 The GitHub Releases page is the authoritative source for complete release notes.
 
+## Unreleased
+
+- `mcpserver`: a failed `tools/call` now publishes its structured error under
+  the tool result's `_meta` key `symaira.dev/tool_error` — `code`, `message`,
+  `retryable`, `requires_confirmation`, `resume_hint`, `hint`, `details` — built
+  from optional interfaces on the returned error (`ErrorCode`,
+  `RetryableError`, `RequiresConfirmation`, `ResumeGuidance`, `ErrorHint` /
+  `Hint`, `ErrorDetails`), resolved through `errors.As`. Published as
+  `contracts/mcp_tool_errors.json`.
+- Consumer action: none required — an error that implements none of the
+  interfaces produces no `_meta`, leaving its result byte-identical. A tool
+  whose errors already carry this metadata (symbrowse's daemon proxy does)
+  stops having to render it into the message text once the pin is raised.
+
 ## v0.16.3 — 2026-08-31
 
 - `updatecheck/updateapply`: added the optional `Applier.ValidateBinary` hook

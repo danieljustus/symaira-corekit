@@ -1,0 +1,62 @@
+{
+  "schema_version": 1,
+  "transport": "A failed tools/call is an MCP tool result with isError: true, never a JSON-RPC error object. The JSON-RPC error object is reserved for protocol-level faults (unparseable request, unknown method); a tool that failed on its own terms must stay visible to the model as tool output.",
+  "meta_key": "symaira.dev/tool_error",
+  "meta_key_note": "The structured error object lives in the tool result's _meta under this key. _meta is part of the base MCP Result type from protocol version 2024-11-05 onward, and the key follows the MCP naming rule of a reverse-DNS-style prefix, a slash, and a name.",
+  "key_case": "snake_case",
+  "omit_when_empty": true,
+  "omit_when_empty_note": "An error that carries no metadata produces no _meta member at all, so a server adopting this contract does not change the wire format of errors that have nothing to add.",
+  "fields": [
+    {
+      "wire_name": "code",
+      "type": "string",
+      "source_method": "ErrorCode() string",
+      "meaning": "The tool's own stable error code. Consumers define the enum; corekit does not constrain its members.",
+      "omitted_when": "empty"
+    },
+    {
+      "wire_name": "message",
+      "type": "string",
+      "source_method": "Error() string",
+      "meaning": "The same text as the result's text content block, repeated so a client reading only the metadata has the whole failure.",
+      "omitted_when": "never, when the object is present at all"
+    },
+    {
+      "wire_name": "retryable",
+      "type": "boolean",
+      "source_method": "RetryableError() bool",
+      "meaning": "Whether repeating the same call can plausibly succeed. Reported even when false: false is the actionable claim that a retry is wasted.",
+      "omitted_when": "the error does not implement the method"
+    },
+    {
+      "wire_name": "requires_confirmation",
+      "type": "boolean",
+      "source_method": "RequiresConfirmation() bool",
+      "meaning": "Whether resuming needs a confirmed human action. A client may not derive an implicit takeover from anything else in this object.",
+      "omitted_when": "the error does not implement the method"
+    },
+    {
+      "wire_name": "resume_hint",
+      "type": "string",
+      "source_method": "ResumeGuidance() string",
+      "meaning": "The single permitted next step after this failure.",
+      "omitted_when": "empty"
+    },
+    {
+      "wire_name": "hint",
+      "type": "string",
+      "source_method": "ErrorHint() string, else Hint() string, else exitcodes.CLIError.Hint",
+      "meaning": "Remediation advice for the caller.",
+      "omitted_when": "empty"
+    },
+    {
+      "wire_name": "details",
+      "type": "object",
+      "source_method": "ErrorDetails() map[string]any",
+      "meaning": "Free-form machine-readable context the tool attaches to this failure class, for example replacement URL candidates found by a 404 recovery probe.",
+      "omitted_when": "empty"
+    }
+  ],
+  "resolution": "Every method is looked up with errors.As, so a wrapped error still reports the metadata of the error underneath. A corekit exitcodes.CLIError fills in code (from its Kind) and hint only where nothing more specific already did.",
+  "canonical_implementation": "corekit/mcpserver.ToolErrorData"
+}
