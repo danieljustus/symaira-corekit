@@ -2,7 +2,7 @@
 
 The GitHub Releases page is the authoritative source for complete release notes.
 
-## Unreleased
+## v0.17.0 — 2026-09-03
 
 - `mcpserver`: a failed `tools/call` now publishes its structured error under
   the tool result's `_meta` key `symaira.dev/tool_error` — `code`, `message`,
