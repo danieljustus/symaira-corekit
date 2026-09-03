@@ -9,6 +9,22 @@ Strict SemVer within a major version means these are additive/non-breaking
 by contract; "check" below means "new capability you may want to adopt or a
 behavior change worth confirming," not "your build will fail."
 
+## v0.17.0
+
+- `mcpserver`: a failed `tools/call` publishes its structured error under the
+  tool result's `_meta` key `symaira.dev/tool_error` — `code`, `message`,
+  `retryable`, `requires_confirmation`, `resume_hint`, `hint`, `details` —
+  derived from optional interfaces on the returned error (`ErrorCode`,
+  `RetryableError`, `RequiresConfirmation`, `ResumeGuidance`, `ErrorHint` or
+  `Hint`, `ErrorDetails`), resolved through `errors.As`. A tool failure remains
+  an `isError` result rather than a JSON-RPC error object. Pinned as
+  `contracts/mcp_tool_errors.json`.
+- Consumer action: raise the exact `corekit` pin. Nothing to migrate — an error
+  implementing none of the interfaces produces no `_meta` and its result stays
+  byte-identical. A consumer whose errors already carry this metadata gets the
+  fields on the wire by adding the matching methods, and can stop rendering
+  them into the message text.
+
 ## v0.16.3
 
 - `updatecheck/updateapply`: `Applier.ValidateBinary` optionally validates the
