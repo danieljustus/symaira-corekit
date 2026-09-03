@@ -131,6 +131,42 @@ Use `snake_case` for JSON keys in JSON-RPC payloads and tool results. `symtune`
 already follows this convention. `symoperate` and `symterminal` use `camelCase`
 for historical reasons; new tools should prefer `snake_case`.
 
+### Tool Error Metadata
+
+A tool call that fails is reported as an MCP tool result with `isError: true`,
+not as a JSON-RPC error object — the JSON-RPC error is for protocol faults
+(unparseable request, unknown method), and using it for a tool's own failure
+hides the message from the model.
+
+That result carries prose. A tool whose error knows more about itself — a
+stable code, whether a retry can help, what the caller is allowed to do next —
+publishes those as structured fields under the result's `_meta`, keyed
+`symaira.dev/tool_error`, instead of rendering them into the sentence:
+
+```json
+{
+  "content": [{"type": "text", "text": "peer_denied: robots.txt forbids this path"}],
+  "isError": true,
+  "_meta": {
+    "symaira.dev/tool_error": {
+      "code": "peer_denied",
+      "message": "peer_denied: robots.txt forbids this path",
+      "retryable": false,
+      "requires_confirmation": false,
+      "resume_hint": "pick a path robots.txt allows",
+      "details": {"robots_rule": "Disallow: /private"}
+    }
+  }
+}
+```
+
+The Go implementation (`corekit/mcpserver.ToolErrorData`) derives the object
+from optional interfaces on the returned error, so a tool opts in by giving
+its error type the methods it already has elsewhere; an error with nothing to
+add produces no `_meta` at all. The field set, the method names behind each
+field, and the omission rules are pinned in
+[`../contracts/mcp_tool_errors.json`](../contracts/mcp_tool_errors.json).
+
 ## Update Checking
 
 The recommended update-check contract is shared across Go and Swift tools to

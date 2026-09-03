@@ -14,6 +14,7 @@ implementations of the same contract fails a build instead of going unnoticed.
 | `update_check_invariants.json` | The update-check contract (`corekit/updatecheck`), twinned by `SymairaUpdateCheck` in appkit |
 | `config_paths.json` | XDG-style config/cache/data path conventions (`corekit/configkit`) |
 | `json_encoding.json` | JSON key casing and stdio transport rules for MCP servers (`corekit/mcpserver`) |
+| `mcp_tool_errors.json` | Structured error metadata on a failed `tools/call` (`corekit/mcpserver.ToolErrorData`) |
 | `llm_providers.json` | Shared LLM provider descriptor registry (`llm-provider-contract.md`, issue #172); consumed by Go `llmkit` and appkit `SymairaProviderKit` |
 | `llm_errors.json` | Shared LLM provider error taxonomy mapped to exit codes (`llm-provider-contract.md`) |
 
