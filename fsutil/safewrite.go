@@ -50,13 +50,22 @@ func SafeWriteFile(path string, data []byte, perm os.FileMode) error {
 }
 
 func SafeRemove(path string) error {
+	return safeRemove(path, os.Remove, syscall.Close)
+}
+
+func safeRemove(path string, remove func(string) error, closeFD func(int) error) error {
 	flags := syscall.O_NOFOLLOW | syscall.O_RDONLY
 
 	fd, err := syscall.Open(path, flags, 0)
 	if err != nil {
 		return &os.PathError{Op: "open", Path: path, Err: err}
 	}
-	defer func() { _ = syscall.Close(fd) }()
+	closed := false
+	defer func() {
+		if !closed {
+			_ = closeFD(fd)
+		}
+	}()
 
 	var stat syscall.Stat_t
 	if err = syscall.Fstat(fd, &stat); err != nil {
@@ -71,11 +80,13 @@ func SafeRemove(path string) error {
 		}
 	}
 
-	if err = syscall.Close(fd); err != nil {
+	err = closeFD(fd)
+	closed = true
+	if err != nil {
 		return &os.PathError{Op: "close", Path: path, Err: err}
 	}
 
-	return os.Remove(path)
+	return remove(path)
 }
 
 // SafeMkdirAll creates a directory at path and all necessary parent directories,
