@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Language-neutral process comparator for Go↔Rust contract cases."""
+"""Language-neutral process comparator for Go-to-Rust contract cases."""
 
 from __future__ import annotations
 
@@ -395,7 +395,7 @@ def self_test() -> None:
             time.sleep(0.05)
         else:
             raise AssertionError(f"descendant process {pid} survived timeout cleanup")
-    print("PASS Go↔Go equality, identical-binary rejection, byte fixtures, isolation and process-tree cleanup")
+    print("PASS Go-to-Go equality, identical-binary rejection, byte fixtures, isolation and process-tree cleanup")
 
 
 def helper(mode: str) -> None:
