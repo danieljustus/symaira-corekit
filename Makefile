@@ -1,4 +1,4 @@
-.PHONY: build test lint fmt-check clean consumer-drift golangci-lint rust-port-validate port-fixture-source-check port-oracle-selftest port-contract rust-lint rust-test rust-foundation-contract rust-mcp-contract mcp-differential mcp-fuzz-smoke
+.PHONY: build test lint fmt-check clean consumer-drift golangci-lint rust-port-validate port-fixture-source-check port-oracle-selftest port-contract rust-lint rust-test rust-foundation-contract rust-fs-secret-contract rust-mcp-contract mcp-differential mcp-fuzz-smoke
 
 build:
 	CGO_ENABLED=0 go build ./...
@@ -31,6 +31,17 @@ rust-foundation-contract:
 	GOTOOLCHAIN=go1.26.6 CGO_ENABLED=0 go test -count=1 ./versionkit ./exitcodes ./envutil ./logkit ./configkit
 	cargo test -p symaira-contract-fixtures --all-features --locked
 	cargo test -p symaira-core-foundation --all-features --locked
+
+rust-fs-secret-contract:
+	cargo fmt --all --check
+	cargo test -p symaira-core-fs -p symaira-core-secretref --all-features --locked
+	cargo clippy -p symaira-core-fs -p symaira-core-secretref --all-targets --all-features --locked -- -D warnings
+	python3 scripts/rust-port/generate_fs_secret.py --check
+	python3 scripts/rust-port/validate_fs_secret.py
+	python3 scripts/rust-port/diff_fs_secret.py
+	cargo audit
+	cargo deny check
+	@command -v cargo-miri >/dev/null 2>&1 && MIRIFLAGS=-Zmiri-disable-isolation cargo +nightly miri test -p symaira-core-fs -p symaira-core-secretref --all-features || { echo "cargo-miri is required for rust-fs-secret-contract"; exit 1; }
 
 rust-mcp-contract:
 	cargo fmt --all --check

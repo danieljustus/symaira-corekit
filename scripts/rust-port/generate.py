@@ -320,7 +320,19 @@ def generate_tree(target: Path) -> dict[str, Any]:
 
 def compare_trees(expected: Path, actual: Path) -> None:
     expected_files = sorted(p.relative_to(expected) for p in expected.rglob("*") if p.is_file())
-    actual_files = sorted(p.relative_to(actual) for p in actual.rglob("*") if p.is_file()) if actual.exists() else []
+    actual_files = (
+        sorted(
+            relative
+            for p in actual.rglob("*")
+            if p.is_file()
+            for relative in [p.relative_to(actual)]
+            # RUST-003 fixtures have their own production-backed generator and
+            # validator; the generic RUST-001 generator must not claim them.
+            if relative.parts[0] != "fs-secret"
+        )
+        if actual.exists()
+        else []
+    )
     if expected_files != actual_files:
         raise RuntimeError(f"fixture file set drift: generated={expected_files}, committed={actual_files}")
     for rel in expected_files:
@@ -351,9 +363,15 @@ def main() -> int:
         with tempfile.TemporaryDirectory(prefix="corekit-fixtures-") as raw:
             generated = Path(raw) / "fixtures"
             index = generate_tree(generated)
+            preserved = Path(raw) / "preserved"
+            independent = FIXTURES / "fs-secret"
+            if independent.exists():
+                shutil.copytree(independent, preserved / "fs-secret")
             if FIXTURES.exists():
                 shutil.rmtree(FIXTURES)
             shutil.copytree(generated, FIXTURES)
+            if preserved.exists():
+                shutil.copytree(preserved, FIXTURES, dirs_exist_ok=True)
             LOCAL_FOUNDATION.parent.mkdir(parents=True, exist_ok=True)
             shutil.copytree(generated / "foundation", LOCAL_FOUNDATION, dirs_exist_ok=True)
         target = index["public_api"]["targets"]

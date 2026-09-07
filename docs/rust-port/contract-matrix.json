@@ -465,7 +465,7 @@
         "windows"
       ],
       "rust_test": "symaira-core-fs/tests/parity.rs",
-      "status": "todo"
+      "status": "parity"
     },
     {
       "id": "FS-002",
@@ -480,7 +480,7 @@
         "windows"
       ],
       "rust_test": "symaira-core-fs/tests/parity.rs",
-      "status": "todo"
+      "status": "parity"
     },
     {
       "id": "FS-003",
@@ -495,7 +495,7 @@
         "windows"
       ],
       "rust_test": "symaira-core-fs/tests/parity.rs",
-      "status": "todo"
+      "status": "parity"
     },
     {
       "id": "FS-004",
@@ -510,7 +510,7 @@
         "windows"
       ],
       "rust_test": "symaira-core-fs/tests/parity.rs",
-      "status": "todo"
+      "status": "parity"
     },
     {
       "id": "FS-005",
@@ -525,7 +525,7 @@
         "windows"
       ],
       "rust_test": "symaira-core-fs/tests/parity.rs",
-      "status": "todo"
+      "status": "parity"
     },
     {
       "id": "FS-006",
@@ -540,7 +540,7 @@
         "windows"
       ],
       "rust_test": "symaira-core-fs/tests/parity.rs",
-      "status": "todo"
+      "status": "parity"
     },
     {
       "id": "FS-007",
@@ -555,7 +555,7 @@
         "windows"
       ],
       "rust_test": "symaira-core-fs/tests/parity.rs",
-      "status": "todo"
+      "status": "parity"
     },
     {
       "id": "SEC-001",
@@ -569,8 +569,8 @@
         "linux",
         "windows"
       ],
-      "rust_test": "symaira-core-secret/tests/parity.rs",
-      "status": "todo"
+      "rust_test": "symaira-core-secretref/tests/parity.rs",
+      "status": "parity"
     },
     {
       "id": "SEC-002",
@@ -584,8 +584,8 @@
         "linux",
         "windows"
       ],
-      "rust_test": "symaira-core-secret/tests/parity.rs",
-      "status": "todo"
+      "rust_test": "symaira-core-secretref/tests/parity.rs",
+      "status": "parity"
     },
     {
       "id": "SEC-003",
@@ -599,8 +599,8 @@
         "linux",
         "windows"
       ],
-      "rust_test": "symaira-core-secret/tests/parity.rs",
-      "status": "todo"
+      "rust_test": "symaira-core-secretref/tests/parity.rs",
+      "status": "parity"
     },
     {
       "id": "SEC-004",
@@ -614,8 +614,8 @@
         "linux",
         "windows"
       ],
-      "rust_test": "symaira-core-secret/tests/parity.rs",
-      "status": "todo"
+      "rust_test": "symaira-core-secretref/tests/parity.rs",
+      "status": "parity"
     },
     {
       "id": "SEC-005",
@@ -627,8 +627,8 @@
       "platforms": [
         "darwin"
       ],
-      "rust_test": "symaira-core-secret/tests/parity.rs",
-      "status": "todo"
+      "rust_test": "symaira-core-secretref/tests/parity.rs",
+      "status": "parity"
     },
     {
       "id": "SEC-006",
@@ -642,8 +642,8 @@
         "linux",
         "windows"
       ],
-      "rust_test": "symaira-core-secret/tests/parity.rs",
-      "status": "todo"
+      "rust_test": "symaira-core-secretref/tests/parity.rs",
+      "status": "parity"
     },
     {
       "id": "MCP-001",

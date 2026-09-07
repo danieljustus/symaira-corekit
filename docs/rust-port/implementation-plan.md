@@ -68,7 +68,7 @@ quality review passed.
 
 **Objective:** Provide the first security-sensitive reusable substrate without weaker race, symlink or redaction behavior.
 
-**Create:** `rust/symaira-core-fs`, `rust/symaira-core-secret` and focused native fixtures.
+**Create:** `rust/symaira-core-fs` and `rust/symaira-core-secretref` plus focused native fixtures.
 
 **Steps:**
 
@@ -78,6 +78,8 @@ quality review passed.
 4. Port `env://`, bare env, `symvault://` and Darwin `keychain://` parsing.
 5. Inject process execution; freeze argv, deadline precedence, missing-binary and redacted error behavior.
 6. Run native macOS/Linux/Windows cases, symlink/race tests, Miri and dependency review.
+
+**Evidence:** The two independent `publish = false` crates implement the FS-001..007 and SEC-001..006 seams with `#![deny(unsafe_code)]`. The fixture corpus is generated from the pinned production Go oracle and covers six native targets, accepted OS differences, symlink/permission/rollback/contention cases, subprocess argv/deadline injection, contract byte identity and redaction. The focused Rust/Go differential gate, Clippy, fmt, audit, deny and native Linux/macOS/Windows CI job are wired through `make rust-fs-secret-contract`; the executable Miri command is `MIRIFLAGS=-Zmiri-disable-isolation cargo +nightly miri test -p symaira-core-secretref --all-features`.
 
 ## RUST-004: MCP stdio and typed-tool feasibility slice
 

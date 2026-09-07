@@ -7,13 +7,21 @@ license.workspace = true
 repository.workspace = true
 publish = false
 
+[[bin]]
+name = "rust-fs-secret"
+path = "src/bin/rust_fs_secret.rs"
+
 [dependencies]
 symaira-contract-fixtures = { path = "../symaira-contract-fixtures", version = "=0.0.0" }
 symaira-core-config = { path = "../../symaira-core-config", version = "=0.0.0" }
 symaira-core-env = { path = "../../symaira-core-env", version = "=0.0.0" }
 symaira-core-exit = { path = "../../symaira-core-exit", version = "=0.0.0" }
+symaira-core-fs = { path = "../../symaira-core-fs", version = "=0.0.0" }
 symaira-core-log = { path = "../../symaira-core-log", version = "=0.0.0" }
+symaira-core-secretref = { path = "../../symaira-core-secretref", version = "=0.0.0" }
 symaira-core-version = { path = "../../symaira-core-version", version = "=0.0.0" }
 serde.workspace = true
 serde_json.workspace = true
+sha2 = "=0.11.0"
+tempfile = "=3.23.0"
 tracing.workspace = true

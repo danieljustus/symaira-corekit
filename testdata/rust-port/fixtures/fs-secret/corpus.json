@@ -1,0 +1,315 @@
+{
+  "schema_version": 2,
+  "oracle": {
+    "commit": "f3d3eb79b9b1f31b4f973d2ed518a8292cedf588",
+    "source_sha256": "b374a9f870dcd632a43a95737748a6cf8bf89a145907db59195a7da62981377f",
+    "generator": "scripts/rust-port/generate_fs_secret.py",
+    "generator_sha256": "66bf7be7e565cf1cd8d8b889a81b78fb7df49a4e4eefd6afa3c2b7246309a982"
+  },
+  "native_targets": [
+    "darwin-amd64",
+    "darwin-arm64",
+    "linux-amd64",
+    "linux-arm64",
+    "windows-amd64",
+    "windows-arm64"
+  ],
+  "contract_ids": [
+    "FS-001",
+    "FS-002",
+    "FS-003",
+    "FS-004",
+    "FS-005",
+    "FS-006",
+    "FS-007",
+    "SEC-001",
+    "SEC-002",
+    "SEC-003",
+    "SEC-004",
+    "SEC-005",
+    "SEC-006"
+  ],
+  "probe": {
+    "oracle_commit": "f3d3eb79b9b1f31b4f973d2ed518a8292cedf588",
+    "cases": {
+      "FS-001": {
+        "outcomes": {
+          "": {
+            "ok": false
+          },
+          "../escape": {
+            "ok": false
+          },
+          "/absolute": {
+            "ok": false
+          },
+          "C:\\tmp\\x": {
+            "ok": true
+          },
+          "a\u0000b": {
+            "ok": false
+          },
+          "a\nline": {
+            "ok": false
+          },
+          "a//b": {
+            "ok": false
+          },
+          "a\\..\\b": {
+            "ok": false
+          },
+          "valid/file": {
+            "ok": true
+          }
+        }
+      },
+      "FS-002": {
+        "outcomes": {
+          "": {
+            "ok": true,
+            "value": "false"
+          },
+          "..": {
+            "ok": true,
+            "value": "true"
+          },
+          "../escape": {
+            "ok": true,
+            "value": "true"
+          },
+          "/..": {
+            "ok": true,
+            "value": "true"
+          },
+          "a/../b": {
+            "ok": true,
+            "value": "true"
+          },
+          "a/b..": {
+            "ok": true,
+            "value": "false"
+          },
+          "a\\..\\b": {
+            "ok": true,
+            "value": "false"
+          },
+          "valid/file": {
+            "ok": true,
+            "value": "false"
+          }
+        }
+      },
+      "FS-003": {
+        "outcomes": {
+          "create": {
+            "ok": true
+          },
+          "overwrite": {
+            "ok": true
+          }
+        },
+        "files": [
+          {
+            "path": "atomic",
+            "type": "dir",
+            "mode": 448
+          },
+          {
+            "path": "atomic/value",
+            "type": "file",
+            "mode": 384,
+            "size": 6,
+            "sha256": "16367aacb67a4a017c8da8ab95682ccb390863780f7114dda0a0e0c55644c7c4"
+          }
+        ],
+        "bytes_sha256": "16367aacb67a4a017c8da8ab95682ccb390863780f7114dda0a0e0c55644c7c4",
+        "mode": 384
+      },
+      "FS-004": {
+        "outcomes": {
+          "directory": {
+            "ok": false,
+            "error": "error"
+          },
+          "missing-parent": {
+            "ok": false,
+            "error": "not_found"
+          }
+        },
+        "files": [
+          {
+            "path": "target",
+            "type": "dir",
+            "mode": 448
+          }
+        ]
+      },
+      "FS-005": {
+        "outcomes": {
+          "create": {
+            "ok": true
+          },
+          "directory": {
+            "ok": false,
+            "error": "not_directory"
+          },
+          "missing-parent": {
+            "ok": false,
+            "error": "not_found"
+          },
+          "overwrite": {
+            "ok": true
+          }
+        },
+        "files": [
+          {
+            "path": "directory",
+            "type": "dir",
+            "mode": 448
+          },
+          {
+            "path": "value",
+            "type": "file",
+            "mode": 384,
+            "size": 7,
+            "sha256": "27eb5e51506c911f6fc4bb345c0d9db6f60415fceab7c18e1e9b862637415777"
+          }
+        ],
+        "bytes_sha256": "27eb5e51506c911f6fc4bb345c0d9db6f60415fceab7c18e1e9b862637415777",
+        "mode": 384
+      },
+      "FS-006": {
+        "outcomes": {
+          "directory": {
+            "ok": false,
+            "error": "not_directory"
+          },
+          "missing": {
+            "ok": false,
+            "error": "not_found"
+          },
+          "regular": {
+            "ok": true
+          }
+        },
+        "files": [
+          {
+            "path": "directory",
+            "type": "dir",
+            "mode": 448
+          }
+        ]
+      },
+      "FS-007": {
+        "outcomes": {
+          "file-parent": {
+            "ok": false,
+            "error": "not_directory"
+          },
+          "nested": {
+            "ok": true
+          }
+        },
+        "files": [
+          {
+            "path": "a",
+            "type": "dir",
+            "mode": 488
+          },
+          {
+            "path": "a/b",
+            "type": "dir",
+            "mode": 488
+          },
+          {
+            "path": "file",
+            "type": "file",
+            "mode": 384,
+            "size": 1,
+            "sha256": "2d711642b726b04401627ca9fbac32f5c8530fb1903cc4db02258717921a4881"
+          }
+        ],
+        "mode": 488
+      },
+      "SEC-001": {
+        "outcomes": {
+          "bare": {
+            "ok": true,
+            "value": "fixture-value"
+          },
+          "default": {
+            "ok": true,
+            "value": "fixture-value"
+          },
+          "empty": {
+            "ok": false,
+            "error": "invalid"
+          },
+          "env": {
+            "ok": true,
+            "value": "fixture-value"
+          },
+          "missing": {
+            "ok": false,
+            "error": "environment_unset"
+          }
+        }
+      },
+      "SEC-002": {
+        "outcomes": {
+          "resolve": {
+            "ok": true,
+            "value": "oracle-secret-value"
+          }
+        },
+        "argv": [
+          "get",
+          "--",
+          "secrets/api",
+          "--print"
+        ]
+      },
+      "SEC-003": {
+        "outcomes": {
+          "failure": {
+            "ok": false,
+            "error": "helper_failed"
+          },
+          "missing-binary": {
+            "ok": false,
+            "error": "helper_missing"
+          }
+        },
+        "sanitized": true
+      },
+      "SEC-004": {
+        "outcomes": {
+          "deadline": {
+            "ok": false,
+            "error": "timeout"
+          }
+        },
+        "sanitized": true
+      },
+      "SEC-005": {
+        "outcomes": {
+          "resolve": {
+            "ok": true,
+            "value": "oracle-secret-value"
+          }
+        },
+        "platform": "${TARGET_OS}"
+      },
+      "SEC-006": {
+        "outcomes": {
+          "failure": {
+            "ok": false,
+            "error": "helper_failed"
+          }
+        },
+        "sanitized": true,
+        "platform": "${TARGET_OS}"
+      }
+    }
+  }
+}
