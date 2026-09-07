@@ -28,6 +28,8 @@ jobs:
         uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version: ${{ matrix.go-version }}
+      - name: Verify vendored brand assets
+        run: python3 scripts/verify-brand-assets.py
       - name: Download dependencies
         run: go mod download
       - name: Verify dependencies
