@@ -1,0 +1,11 @@
+{
+  "levels": {
+    "": "WARN",
+    "bogus": "WARN",
+    "debug": "DEBUG",
+    "error": "ERROR",
+    "info": "INFO",
+    "warn": "WARN",
+    "warning": "WARN"
+  }
+}

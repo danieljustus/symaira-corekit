@@ -39,7 +39,7 @@
         "make port-oracle-selftest",
         "make port-fixture-source-check"
       ],
-      "stop_rule": "No Rust production crate until Go↔Go self-equality, source-digest rejection, isolated side effects and a deliberate negative-control failure are proven."
+      "stop_rule": "No Rust production crate until Go\u2194Go self-equality, source-digest rejection, isolated side effects and a deliberate negative-control failure are proven."
     },
     {
       "id": "RUST-002",
@@ -68,7 +68,7 @@
         "CFG-006",
         "CFG-007"
       ],
-      "status": "ready",
+      "status": "complete",
       "demand_class": "required",
       "acceptance_commands": [
         "make rust-lint",
@@ -98,7 +98,7 @@
         "SEC-005",
         "SEC-006"
       ],
-      "status": "blocked",
+      "status": "ready",
       "demand_class": "required",
       "acceptance_commands": [
         "make rust-fs-secret-contract",
@@ -127,7 +127,7 @@
         "MCP-011",
         "MCP-012"
       ],
-      "status": "blocked",
+      "status": "ready",
       "demand_class": "required",
       "acceptance_commands": [
         "make rust-mcp-contract",

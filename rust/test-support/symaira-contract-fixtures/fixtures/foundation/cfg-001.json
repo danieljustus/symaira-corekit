@@ -1,0 +1,6 @@
+{
+  "legacy": "/fixture/home/.config/symx/config.toml",
+  "relative_xdg": "/fixture/home/.config/symx/config.toml",
+  "windows_home_env": "USERPROFILE",
+  "xdg": "/fixture/xdg/symx/config.toml"
+}

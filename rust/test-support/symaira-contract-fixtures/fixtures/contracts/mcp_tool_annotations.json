@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "hints": [
+    {
+      "wire_name": "readOnlyHint",
+      "type": "boolean",
+      "meaning": "This tool performs no side-effect state changes.",
+      "must_be_declared_explicitly": true
+    },
+    {
+      "wire_name": "idempotentHint",
+      "type": "boolean",
+      "meaning": "Calling this tool repeatedly with the same arguments produces the same result.",
+      "must_be_declared_explicitly": false
+    },
+    {
+      "wire_name": "openWorldHint",
+      "type": "boolean",
+      "meaning": "This tool may interact with external entities outside the MCP server's control.",
+      "must_be_declared_explicitly": false
+    },
+    {
+      "wire_name": "destructiveHint",
+      "type": "boolean",
+      "meaning": "This tool may perform destructive updates (deletes, overwrites, etc.).",
+      "must_be_declared_explicitly": false
+    }
+  ],
+  "explicit_declaration_rule": "Every registered tool declares readOnlyHint explicitly rather than relying on a default. Downstream consumers (for example symaira-brain's foreign-tool exposure policy) read a missing readOnlyHint as \"write\", the least-trusted classification — silence is not neutral, it is the worst case.",
+  "canonical_implementation": "corekit/mcpserver.ToolAnnotations"
+}

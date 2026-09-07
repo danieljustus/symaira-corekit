@@ -42,7 +42,7 @@ rejected, rejects reserved environment overrides, and verifies native
 parent-plus-descendant timeout cleanup. `DEFECT-001` is corrected in CoreKit and
 the vendored AppKit fixture/test. No Rust production crate was created.
 
-## RUST-002: Pinned Rust workspace and contracts/foundation slice
+## RUST-002: Pinned Rust workspace and contracts/foundation slice — COMPLETE
 
 **Objective:** Establish the dual-language build and implement the smallest highly reused deterministic surface.
 
@@ -56,6 +56,13 @@ the vendored AppKit fixture/test. No Rust production crate was created.
 4. Port version, exit/error, env, log and config behavior as independent modules.
 5. Preserve exact version/error/log bytes and config precedence/type behavior through generated fixtures.
 6. Add fmt, check, Clippy, nextest, doctest, feature and coverage gates while every Go gate remains mandatory.
+
+**Evidence:** Rust 1.98 is pinned with five independent, non-publishable
+foundation crates plus private fixture/support crates. Nineteen contracts use
+production-Go-generated fixtures and pass byte/semantic parity tests. Format,
+Clippy, nextest, doctests, each-feature checks, Miri for the unsafe environment
+seam, audit, deny, Windows cross-check, complete Go gates, spec review and code
+quality review passed.
 
 ## RUST-003: Filesystem and secret-reference safety slice
 

@@ -595,7 +595,7 @@ def main() -> int:
     validate_links()
     print(
         f"ok: {len(contract_ids)} contracts, {len(work_ids)} work items, "
-        f"{checked_oracles} Go test patterns, one ready item, acyclic DAG, "
+        f"{checked_oracles} Go test patterns, {len(ready)} ready item(s), acyclic DAG, "
         "value barrier and links valid"
     )
     return 0

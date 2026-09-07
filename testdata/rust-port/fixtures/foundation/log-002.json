@@ -1,0 +1,4 @@
+{
+  "control_output": "time=2024-01-02T03:04:05.678Z level=INFO msg=\"nul\\x00message\" value=\"nul\\x00value\" \"bad key=\"=quoted\n",
+  "output": "time=2024-01-02T03:04:05.678Z level=INFO msg=hello path=\"a\\nb\" request.id=x request.ok=true\n"
+}

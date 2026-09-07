@@ -1,0 +1,6 @@
+{
+  "host": "remote",
+  "name": "environment",
+  "port": 9000,
+  "timeout": 40
+}

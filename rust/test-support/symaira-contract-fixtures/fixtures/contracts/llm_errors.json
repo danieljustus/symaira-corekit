@@ -1,0 +1,42 @@
+{
+  "$comment": "Shared LLM provider error taxonomy, decided in danieljustus/symaira-corekit#172. Consumers map these to exitcodes values; they must not string-match provider-specific error text.",
+  "schema_version": 1,
+  "errors": [
+    {
+      "code": "auth_failure",
+      "meaning": "Missing, invalid or expired credential (HTTP 401/403).",
+      "exit_code": "ExitNoAuth",
+      "retryable": false
+    },
+    {
+      "code": "rate_limited",
+      "meaning": "Provider rejected the request for rate limiting (HTTP 429). Carries retry_after when the provider reports one.",
+      "exit_code": "ExitConflict",
+      "retryable": true
+    },
+    {
+      "code": "context_overflow",
+      "meaning": "Prompt exceeds the model's context window (HTTP 400 with overflow signature).",
+      "exit_code": "ExitData",
+      "retryable": false
+    },
+    {
+      "code": "model_not_found",
+      "meaning": "Requested model/deployment does not exist for this credential (HTTP 404 or equivalent body).",
+      "exit_code": "ExitNotFound",
+      "retryable": false
+    },
+    {
+      "code": "transport_error",
+      "meaning": "Network-level failure: connection refused/reset, DNS, TLS, timeout. Local-first setups hit this whenever a local endpoint is down.",
+      "exit_code": "ExitGeneric",
+      "retryable": true
+    },
+    {
+      "code": "provider_error",
+      "meaning": "Any provider-reported failure that fits no more specific category. Carries the upstream status and body excerpt.",
+      "exit_code": "ExitGeneric",
+      "retryable": false
+    }
+  ]
+}

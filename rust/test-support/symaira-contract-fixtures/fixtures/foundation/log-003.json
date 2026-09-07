@@ -1,0 +1,4 @@
+{
+  "output": "{\"time\":\"2024-01-02T03:04:05.678901234Z\",\"level\":\"DEBUG\",\"msg\":\"quoted \\\"message\\\"\",\"count\":3,\"newline\":\"a\\nb\",\"request\":{\"id\":\"x\"}}\n",
+  "unicode_output": "{\"time\":\"2024-01-02T03:04:05.678901234Z\",\"level\":\"INFO\",\"msg\":\"line\\u2028paragraph\\u2029\",\"key\\u2028\":\"value\\u2029\",\"nested\":{\"value\":\"nested\\u2028\"}}\n"
+}

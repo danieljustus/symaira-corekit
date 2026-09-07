@@ -1,4 +1,4 @@
-.PHONY: build test lint fmt-check clean consumer-drift golangci-lint rust-port-validate port-fixture-source-check port-oracle-selftest port-contract
+.PHONY: build test lint fmt-check clean consumer-drift golangci-lint rust-port-validate port-fixture-source-check port-oracle-selftest port-contract rust-lint rust-test rust-foundation-contract
 
 build:
 	CGO_ENABLED=0 go build ./...
@@ -18,6 +18,19 @@ port-oracle-selftest:
 
 port-contract: rust-port-validate port-fixture-source-check port-oracle-selftest
 	cd scripts/rust-port/go-oracle && GOTOOLCHAIN=go1.26.6 go test ./...
+
+rust-lint:
+	cargo fmt --all --check
+	cargo clippy --workspace --all-targets --all-features --locked -- -D warnings
+
+rust-test:
+	cargo test --workspace --all-features --locked
+
+rust-foundation-contract:
+	python3 scripts/rust-port/generate.py --check
+	GOTOOLCHAIN=go1.26.6 CGO_ENABLED=0 go test -count=1 ./versionkit ./exitcodes ./envutil ./logkit ./configkit
+	cargo test -p symaira-contract-fixtures --all-features --locked
+	cargo test -p symaira-core-foundation --all-features --locked
 
 test:
 	CGO_ENABLED=0 go test -race ./...

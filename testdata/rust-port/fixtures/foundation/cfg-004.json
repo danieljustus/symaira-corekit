@@ -1,0 +1,25 @@
+{
+  "bools": {
+    "0": false,
+    "1": true,
+    "F": false,
+    "FALSE": false,
+    "False": false,
+    "T": true,
+    "TRUE": true,
+    "True": true,
+    "f": false,
+    "false": false,
+    "t": true,
+    "true": true
+  },
+  "duration_strings": {
+    "-1500ns": "-1.5µs",
+    "1500000ns": "1.5ms",
+    "1500ns": "1.5µs"
+  },
+  "maximum_u64": 18446744073709551615,
+  "negative_duration": "-1.5s",
+  "optional_string": "123",
+  "overflow_error": true
+}

@@ -1,0 +1,12 @@
+[package]
+name = "symaira-core-log"
+version = "0.0.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+publish = false
+
+[dependencies]
+serde_json.workspace = true
+tracing.workspace = true

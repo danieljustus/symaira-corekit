@@ -1,6 +1,6 @@
 # Go→Rust migration handoff
 
-Status: **RUST-001 complete; RUST-002 ready; no Rust production crate and no cutover approval**.
+Status: **RUST-001 and RUST-002 complete; RUST-003 and RUST-004 ready; no cutover approval**.
 
 This directory freezes the starting point for a contract-first Rust implementation of `symaira-corekit`. The Go implementation remains supported, buildable and the executable oracle while Go consumers exist. Rust crates are added beside it and are adopted package by package; this is not a flag-day repository rewrite.
 
@@ -91,4 +91,6 @@ Stop and reassess when any of these holds:
 - [`../../testdata/rust-port/`](../../testdata/rust-port/) — generated public API, contract fixtures, neutral cases, isolation limits and paired-consumer canaries.
 - [`../../scripts/rust-port/`](../../scripts/rust-port/) — exact-oracle generator plus Go↔Go differential self-test.
 
-Run `make port-contract`. RUST-001 is complete and RUST-002 is the only ready item; it introduces the pinned Rust workspace and first production crates.
+Run `make port-contract`, `make rust-foundation-contract`, `make rust-lint`,
+and `make rust-test`. The filesystem/secret and MCP slices are now the two
+ready work items; the value gate remains blocked on both.
