@@ -218,12 +218,15 @@ jobs:
           fetch-depth: 0
       - name: Install pinned Rust toolchain
         shell: bash
-        run: |
-          rustup toolchain install 1.98.0 --profile minimal --component rustfmt,clippy
-          rustup toolchain install nightly-2026-09-03 --profile minimal
+        run: rustup toolchain install 1.98.0 --profile minimal --component rustfmt,clippy
+      - name: Install pinned fuzz toolchain
+        if: runner.os != 'Windows'
+        shell: bash
+        run: rustup toolchain install nightly-2026-09-03 --profile minimal
       - name: Rust MCP contract
         run: make rust-mcp-contract
       - name: Rust MCP parser fuzz smoke
+        if: runner.os != 'Windows'
         run: |
           cargo install cargo-fuzz --version 0.13.2 --locked
           make mcp-fuzz-smoke
