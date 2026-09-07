@@ -119,8 +119,8 @@ func TestWriteResponseMarshalFallback(t *testing.T) {
 	}
 }
 
-// TestUnmarshalJSONErrorPaths covers the error branches of the custom
-// jsonRPCRequest.UnmarshalJSON (malformed body in framed mode).
+// TestUnmarshalJSONErrorPaths covers valid JSON values that are not valid
+// JSON-RPC request envelopes (an array body in framed mode).
 func TestUnmarshalJSONErrorPaths(t *testing.T) {
 	srv := New("test", "1.0")
 
@@ -136,11 +136,11 @@ func TestUnmarshalJSONErrorPaths(t *testing.T) {
 	}
 	resp := readResponse(t, &buf)
 	if resp.Error == nil {
-		t.Fatal("expected parse error response for array body")
+		t.Fatal("expected invalid request response for array body")
 	}
 	errObj := resp.Error.(map[string]any)
-	if errObj["code"] != float64(CodeParseError) {
-		t.Errorf("error code = %v, want %v", errObj["code"], CodeParseError)
+	if errObj["code"] != float64(CodeInvalidRequest) {
+		t.Errorf("error code = %v, want %v", errObj["code"], CodeInvalidRequest)
 	}
 }
 

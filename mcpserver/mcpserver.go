@@ -6,6 +6,7 @@ package mcpserver
 
 import (
 	"bufio"
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -23,7 +24,11 @@ const ProtocolVersion = "2024-11-05"
 // maxLineBytes bounds a single newline-delimited line (a header line or a
 // line-mode JSON message). It matches the 1 MiB cap on framed message bodies so
 // a peer cannot cause unbounded buffering by sending data without a newline.
-const maxLineBytes = 1 << 20
+const (
+	maxLineBytes   = 1 << 20
+	maxHeaderBytes = 64 << 10
+	maxHeaderLines = 100
+)
 
 const (
 	CodeParseError     = -32700
@@ -42,6 +47,14 @@ type jsonParseError struct {
 
 func (e *jsonParseError) Error() string { return e.msg }
 
+type jsonInvalidRequestError struct {
+	mode responseMode
+}
+
+func (e *jsonInvalidRequestError) Error() string { return "invalid JSON-RPC request" }
+
+var errFramedHeaderLimits = errors.New("framed header limits exceeded")
+
 type responseMode int
 
 const (
@@ -52,9 +65,10 @@ const (
 // responseWriter wraps an io.Writer with a mutex so concurrent tool handlers
 // can write responses without interleaving bytes on the wire.
 type responseWriter struct {
-	w    io.Writer
-	mode responseMode
-	mu   *sync.Mutex
+	w        io.Writer
+	mode     responseMode
+	mu       *sync.Mutex
+	suppress bool
 }
 
 // newResponseWriter creates a responseWriter wrapping w in the given mode.
@@ -141,11 +155,12 @@ type Tool struct {
 }
 
 type jsonRPCRequest struct {
-	JSONRPC string          `json:"jsonrpc"`
-	ID      any             `json:"id,omitempty"`
-	Method  string          `json:"method"`
-	Params  json.RawMessage `json:"params,omitempty"`
-	HasID   bool            `json:"-"`
+	JSONRPC   string          `json:"jsonrpc"`
+	ID        any             `json:"id,omitempty"`
+	Method    string          `json:"method"`
+	Params    json.RawMessage `json:"params,omitempty"`
+	HasID     bool            `json:"-"`
+	HasParams bool            `json:"-"`
 }
 
 // UnmarshalJSON records whether the request included an id. JSON-RPC
@@ -154,7 +169,9 @@ type jsonRPCRequest struct {
 func (r *jsonRPCRequest) UnmarshalJSON(data []byte) error {
 	type requestAlias jsonRPCRequest
 	var parsed requestAlias
-	if err := json.Unmarshal(data, &parsed); err != nil {
+	decoder := json.NewDecoder(bytes.NewReader(data))
+	decoder.UseNumber()
+	if err := decoder.Decode(&parsed); err != nil {
 		return err
 	}
 	var fields map[string]json.RawMessage
@@ -163,7 +180,25 @@ func (r *jsonRPCRequest) UnmarshalJSON(data []byte) error {
 	}
 	*r = jsonRPCRequest(parsed)
 	_, r.HasID = fields["id"]
+	_, r.HasParams = fields["params"]
 	return nil
+}
+
+func validRequestID(id any) bool {
+	switch id.(type) {
+	case nil, string, float64, json.Number:
+		return true
+	default:
+		return false
+	}
+}
+
+func validRequestParams(params json.RawMessage) bool {
+	params = bytes.TrimSpace(params)
+	if len(params) == 0 {
+		return false
+	}
+	return params[0] == '{' || params[0] == '['
 }
 
 type jsonRPCResponse struct {
@@ -221,6 +256,12 @@ func (s *Server) ServeStdio(ctx context.Context) error {
 	return s.ServeIO(ctx, os.Stdin, os.Stdout)
 }
 
+type readResult struct {
+	req  *jsonRPCRequest
+	mode responseMode
+	err  error
+}
+
 // ServeIO runs the server on the given reader and writer. This method is the
 // primary entry point for testing.
 //
@@ -230,48 +271,166 @@ func (s *Server) ServeStdio(ctx context.Context) error {
 // because they are fast and their order relative to tool calls is significant.
 // The method waits for all in-flight tool handlers to complete before
 // returning, so callers can safely close the writer after ServeIO returns.
+// Readers that may block indefinitely should implement io.Closer. On
+// cancellation or write failure, ServeIO cannot forcibly stop a non-closable
+// Reader and therefore returns without waiting for that read operation.
 func (s *Server) ServeIO(ctx context.Context, r io.Reader, w io.Writer) error {
 	br := bufio.NewReader(r)
+	serveCtx, cancel := context.WithCancel(ctx)
 	var wg sync.WaitGroup
 	var readErr error
+	var writeErr error
+	var errMu sync.Mutex
 	var wmu sync.Mutex // shared across all responseWriters for this ServeIO call
-	for {
-		if err := ctx.Err(); err != nil {
-			break
-		}
-
-		req, mode, err := readRequest(br)
-		if err != nil {
-			if err == io.EOF {
-				break
+	_, inputClosable := r.(io.Closer)
+	var closeInputOnce sync.Once
+	closeInput := func() {
+		closeInputOnce.Do(func() {
+			if closer, ok := r.(io.Closer); ok {
+				_ = closer.Close()
 			}
-			var pe *jsonParseError
-			if errors.As(err, &pe) {
-				wg.Wait()
-				rww := newResponseWriter(w, pe.mode, &wmu)
-				sendError(rww, nil, CodeParseError, "Parse error: "+pe.msg)
-				continue
-			}
-			readErr = fmt.Errorf("mcpserver: read error: %w", err)
-			break
+		})
+	}
+	recordWriteErr := func(err error) {
+		if err == nil {
+			return
 		}
-
-		rw := newResponseWriter(w, mode, &wmu)
-		if req.Method == "tools/call" {
-			wg.Add(1)
-			go func() {
-				defer wg.Done()
-				s.handleRequest(ctx, rw, req)
-			}()
-		} else {
-			s.handleRequest(ctx, rw, req)
+		errMu.Lock()
+		first := writeErr == nil
+		if first {
+			writeErr = fmt.Errorf("mcpserver: write response: %w", err)
+		}
+		errMu.Unlock()
+		if first {
+			cancel()
+			closeInput()
 		}
 	}
-	wg.Wait()
+	getWriteErr := func() error {
+		errMu.Lock()
+		defer errMu.Unlock()
+		return writeErr
+	}
+
+	readResults := make(chan readResult, 1)
+	readDone := make(chan struct{})
+	go func() {
+		defer close(readDone)
+		defer close(readResults)
+		for {
+			req, mode, err := readRequest(br)
+			select {
+			case readResults <- readResult{req: req, mode: mode, err: err}:
+			case <-serveCtx.Done():
+				return
+			}
+			if err != nil {
+				return
+			}
+		}
+	}()
+	defer func() {
+		// Normal EOF is not cancellation: in-flight handlers must be allowed to
+		// finish and produce their responses. Error/caller-cancellation paths
+		// already cancel serveCtx via recordWriteErr or the parent context.
+		writeFailed := getWriteErr() != nil
+		aborted := ctx.Err() != nil || readErr != nil || writeFailed
+		if aborted {
+			cancel()
+			closeInput()
+		}
+		wg.Wait()
+		cancel()
+		closeInput()
+		// Normal EOF and read errors already terminate the read goroutine. A
+		// closable input can also be joined after cancellation. Waiting on an
+		// arbitrary non-closable blocking Reader would deadlock ServeIO.
+		if !aborted || readErr != nil || inputClosable {
+			<-readDone
+		}
+	}()
+
+readLoop:
+	for {
+		select {
+		case <-serveCtx.Done():
+			break readLoop
+		case result, ok := <-readResults:
+			if !ok {
+				break readLoop
+			}
+			if err := serveCtx.Err(); err != nil {
+				break readLoop
+			}
+			if err := getWriteErr(); err != nil {
+				break readLoop
+			}
+			if result.err != nil {
+				if result.err == io.EOF {
+					break readLoop
+				}
+				var pe *jsonParseError
+				if errors.As(result.err, &pe) {
+					wg.Wait()
+					rww := newResponseWriter(w, pe.mode, &wmu)
+					if sendErr := sendError(rww, nil, CodeParseError, "Parse error: "+pe.msg); sendErr != nil {
+						recordWriteErr(sendErr)
+						break readLoop
+					}
+					continue
+				}
+				var ire *jsonInvalidRequestError
+				if errors.As(result.err, &ire) {
+					wg.Wait()
+					rww := newResponseWriter(w, ire.mode, &wmu)
+					if sendErr := sendError(rww, nil, CodeInvalidRequest, "Invalid Request"); sendErr != nil {
+						recordWriteErr(sendErr)
+						break readLoop
+					}
+					continue
+				}
+				readErr = fmt.Errorf("mcpserver: read error: %w", result.err)
+				break readLoop
+			}
+
+			rw := newResponseWriter(w, result.mode, &wmu)
+			if result.req.Method == "tools/call" {
+				wg.Add(1)
+				go func(req *jsonRPCRequest, rw *responseWriter) {
+					defer wg.Done()
+					if err := s.handleRequest(serveCtx, rw, req); err != nil {
+						recordWriteErr(err)
+					}
+				}(result.req, rw)
+			} else if err := s.handleRequest(serveCtx, rw, result.req); err != nil {
+				recordWriteErr(err)
+				break readLoop
+			}
+		}
+	}
+
+	if err := getWriteErr(); err != nil {
+		return err
+	}
 	if readErr != nil {
 		return readErr
 	}
 	return ctx.Err()
+}
+
+func looksLikeJSONLine(line string) bool {
+	if json.Valid([]byte(line)) {
+		return true
+	}
+	if line == "" {
+		return false
+	}
+	switch line[0] {
+	case '{', '[', '"', '-', 't', 'f', 'n':
+		return true
+	default:
+		return line[0] >= '0' && line[0] <= '9'
+	}
 }
 
 // readRequest reads a single JSON-RPC request from either a Content-Length
@@ -282,17 +441,22 @@ func (s *Server) ServeIO(ctx context.Context, r io.Reader, w io.Writer) error {
 //	\r\n
 //	<json bytes of length n>
 func readRequest(br *bufio.Reader) (*jsonRPCRequest, responseMode, error) {
-	line, err := readNonEmptyLine(br)
+	line, lineBytes, err := readNonEmptyLineWithBytes(br)
 	if err != nil {
 		return nil, responseModeFramed, err
 	}
 
-	if strings.HasPrefix(line, "{") || !strings.Contains(line, ":") {
+	if looksLikeJSONLine(line) {
 		return parseLineRequest(line)
 	}
 
-	var contentLength int
+	contentLength := 0
 	found := false
+	headerBytes := lineBytes
+	headerLines := 1
+	if headerBytes > maxHeaderBytes || headerLines > maxHeaderLines {
+		return nil, responseModeFramed, errFramedHeaderLimits
+	}
 	if rest, ok := strings.CutPrefix(line, "Content-Length:"); ok {
 		val := strings.TrimSpace(rest)
 		n, err := strconv.Atoi(val)
@@ -308,10 +472,16 @@ func readRequest(br *bufio.Reader) (*jsonRPCRequest, responseMode, error) {
 		if err != nil {
 			return nil, responseModeFramed, err
 		}
-		line = strings.TrimRight(line, "\r\n")
-		if line == "" {
+		trimmedLine := strings.TrimRight(line, "\r\n")
+		if trimmedLine == "" {
 			break
 		}
+		headerBytes += len(line)
+		headerLines++
+		if headerBytes > maxHeaderBytes || headerLines > maxHeaderLines {
+			return nil, responseModeFramed, errFramedHeaderLimits
+		}
+		line = trimmedLine
 		if rest, ok := strings.CutPrefix(line, "Content-Length:"); ok {
 			val := strings.TrimSpace(rest)
 			n, err := strconv.Atoi(val)
@@ -333,27 +503,29 @@ func readRequest(br *bufio.Reader) (*jsonRPCRequest, responseMode, error) {
 	if _, err := io.ReadFull(br, body); err != nil {
 		return nil, responseModeFramed, fmt.Errorf("read body: %w", err)
 	}
-
-	var req jsonRPCRequest
-	if err := json.Unmarshal(body, &req); err != nil {
-		return nil, responseModeFramed, &jsonParseError{msg: err.Error(), mode: responseModeFramed}
-	}
-	return &req, responseModeFramed, nil
+	return parseJSONRequest(body, responseModeFramed)
 }
 
 func readNonEmptyLine(br *bufio.Reader) (string, error) {
+	line, _, err := readNonEmptyLineWithBytes(br)
+	return line, err
+}
+
+func readNonEmptyLineWithBytes(br *bufio.Reader) (string, int, error) {
+	var totalBytes int
 	for {
 		line, err := readLineLimited(br)
+		totalBytes += len(line)
 		if err != nil {
 			if err == io.EOF && line != "" {
-				return strings.TrimSpace(line), nil
+				return strings.TrimSpace(line), totalBytes, nil
 			}
-			return "", err
+			return "", totalBytes, err
 		}
 
 		line = strings.TrimSpace(line)
 		if line != "" {
-			return line, nil
+			return line, totalBytes, nil
 		}
 	}
 }
@@ -381,63 +553,90 @@ func readLineLimited(br *bufio.Reader) (string, error) {
 }
 
 func parseLineRequest(line string) (*jsonRPCRequest, responseMode, error) {
-	var req jsonRPCRequest
-	if err := json.Unmarshal([]byte(line), &req); err != nil {
-		return nil, responseModeLine, &jsonParseError{msg: err.Error(), mode: responseModeLine}
-	}
-	return &req, responseModeLine, nil
+	return parseJSONRequest([]byte(line), responseModeLine)
 }
 
-func writeResponse(rw *responseWriter, resp jsonRPCResponse) {
+func parseJSONRequest(data []byte, mode responseMode) (*jsonRPCRequest, responseMode, error) {
+	var raw json.RawMessage
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return nil, mode, &jsonParseError{msg: err.Error(), mode: mode}
+	}
+
+	var req jsonRPCRequest
+	if err := json.Unmarshal(raw, &req); err != nil || req.JSONRPC != "2.0" || req.Method == "" || (req.HasID && !validRequestID(req.ID)) || (req.HasParams && !validRequestParams(req.Params)) {
+		return nil, mode, &jsonInvalidRequestError{mode: mode}
+	}
+	return &req, mode, nil
+}
+
+func writeResponse(rw *responseWriter, resp jsonRPCResponse) error {
 	data, err := json.Marshal(resp)
 	if err != nil {
 		slog.Error("mcpserver: failed to marshal JSON-RPC response", "err", err)
-		writeBytes(rw, []byte(fallbackError))
-		return
+		return writeBytes(rw, []byte(fallbackError))
 	}
-	writeBytes(rw, data)
+	return writeBytes(rw, data)
 }
 
-func writeBytes(rw *responseWriter, data []byte) {
+// flusher is an optional response-writer capability. When the supplied writer
+// implements it, ServeIO flushes exactly once after each complete response.
+type flusher interface {
+	Flush() error
+}
+
+func writeBytes(rw *responseWriter, data []byte) error {
+	if rw.suppress {
+		return nil
+	}
 	rw.mu.Lock()
 	defer rw.mu.Unlock()
+
+	var frame []byte
 	if rw.mode == responseModeLine {
-		fmt.Fprintf(rw.w, "%s\n", data)
-		return
+		frame = append(append([]byte(nil), data...), '\n')
+	} else {
+		frame = []byte(fmt.Sprintf("Content-Length: %d\r\n\r\n%s", len(data), data))
 	}
-	fmt.Fprintf(rw.w, "Content-Length: %d\r\n\r\n%s", len(data), data)
+	written, err := rw.w.Write(frame)
+	if err != nil {
+		return err
+	}
+	if written != len(frame) {
+		return io.ErrShortWrite
+	}
+	if flusher, ok := rw.w.(flusher); ok {
+		return flusher.Flush()
+	}
+	return nil
 }
 
-func (s *Server) handleRequest(ctx context.Context, w *responseWriter, req *jsonRPCRequest) {
+func (s *Server) handleRequest(ctx context.Context, w *responseWriter, req *jsonRPCRequest) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			slog.Error("mcpserver: handler panicked", "method", req.Method, "panic", r)
-			sendError(w, req.ID, CodeInternalError, "Internal error: handler panicked")
+			err = sendError(w, req.ID, CodeInternalError, "Internal error: handler panicked")
 		}
 	}()
 
-	// JSON-RPC notifications have no id and never receive a response,
-	// including when the method is unknown. This check must happen before
-	// dispatch so notification methods can grow without producing errors.
-	if !req.HasID && req.ID == nil {
-		return
-	}
+	// Notifications still dispatch, but their response writer suppresses all
+	// protocol output, including errors and panic recovery responses.
+	w.suppress = !req.HasID
 
 	switch req.Method {
 	case "initialize":
-		s.handleInitialize(w, req)
+		return s.handleInitialize(w, req)
 	case "ping":
-		sendResponse(w, req.ID, map[string]any{})
+		return sendResponse(w, req.ID, map[string]any{})
 	case "tools/list":
-		s.handleToolsList(w, req)
+		return s.handleToolsList(w, req)
 	case "tools/call":
-		s.handleToolsCall(ctx, w, req)
+		return s.handleToolsCall(ctx, w, req)
 	default:
-		sendError(w, req.ID, CodeMethodNotFound, "Method not found: "+req.Method)
+		return sendError(w, req.ID, CodeMethodNotFound, "Method not found: "+req.Method)
 	}
 }
 
-func (s *Server) handleInitialize(w *responseWriter, req *jsonRPCRequest) {
+func (s *Server) handleInitialize(w *responseWriter, req *jsonRPCRequest) error {
 	result := map[string]any{
 		"protocolVersion": ProtocolVersion,
 		"capabilities": map[string]any{
@@ -451,10 +650,10 @@ func (s *Server) handleInitialize(w *responseWriter, req *jsonRPCRequest) {
 	if s.instructions != "" {
 		result["instructions"] = s.instructions
 	}
-	sendResponse(w, req.ID, result)
+	return sendResponse(w, req.ID, result)
 }
 
-func (s *Server) handleToolsList(w *responseWriter, req *jsonRPCRequest) {
+func (s *Server) handleToolsList(w *responseWriter, req *jsonRPCRequest) error {
 	tools := make([]map[string]any, 0, len(s.order))
 	for _, name := range s.order {
 		t := s.tools[name]
@@ -475,31 +674,28 @@ func (s *Server) handleToolsList(w *responseWriter, req *jsonRPCRequest) {
 		}
 		tools = append(tools, tool)
 	}
-	sendResponse(w, req.ID, map[string]any{
+	return sendResponse(w, req.ID, map[string]any{
 		"tools": tools,
 	})
 }
 
-func (s *Server) handleToolsCall(ctx context.Context, w *responseWriter, req *jsonRPCRequest) {
+func (s *Server) handleToolsCall(ctx context.Context, w *responseWriter, req *jsonRPCRequest) error {
 	var params struct {
 		Name      string          `json:"name"`
 		Arguments json.RawMessage `json:"arguments"`
 		Meta      map[string]any  `json:"_meta,omitempty"`
 	}
 	if err := json.Unmarshal(req.Params, &params); err != nil {
-		sendError(w, req.ID, CodeInvalidParams, "Invalid params: "+err.Error())
-		return
+		return sendError(w, req.ID, CodeInvalidParams, "Invalid params: "+err.Error())
 	}
 
 	tool, ok := s.tools[params.Name]
 	if !ok {
-		sendError(w, req.ID, CodeMethodNotFound, "Unknown tool: "+params.Name)
-		return
+		return sendError(w, req.ID, CodeMethodNotFound, "Unknown tool: "+params.Name)
 	}
 
 	if tool.Handler == nil {
-		sendError(w, req.ID, CodeInternalError, "Tool has no handler: "+params.Name)
-		return
+		return sendError(w, req.ID, CodeInternalError, "Tool has no handler: "+params.Name)
 	}
 
 	if params.Meta != nil {
@@ -507,32 +703,28 @@ func (s *Server) handleToolsCall(ctx context.Context, w *responseWriter, req *js
 	}
 	result, err := tool.Handler(ctx, params.Arguments)
 	if err != nil {
-		sendToolError(w, req.ID, err.Error(), ToolErrorData(err))
-		return
+		return sendToolError(w, req.ID, err.Error(), ToolErrorData(err))
 	}
 
 	if typed, ok := result.(ToolResult); ok {
-		sendToolResponse(w, req.ID, typed)
-		return
+		return sendToolResponse(w, req.ID, typed)
 	}
 	if typed, ok := result.(*ToolResult); ok && typed != nil {
-		sendToolResponse(w, req.ID, *typed)
-		return
+		return sendToolResponse(w, req.ID, *typed)
 	}
 
 	data, err := json.Marshal(result)
 	if err != nil {
-		sendToolError(w, req.ID, "Failed to marshal tool result: "+err.Error(), nil)
-		return
+		return sendToolError(w, req.ID, "Failed to marshal tool result: "+err.Error(), nil)
 	}
-	sendToolResponseRaw(w, req.ID, data)
+	return sendToolResponseRaw(w, req.ID, data)
 }
 
-func sendResponse(w *responseWriter, id any, result any) {
-	writeResponse(w, jsonRPCResponse{JSONRPC: "2.0", ID: id, Result: result})
+func sendResponse(w *responseWriter, id any, result any) error {
+	return writeResponse(w, jsonRPCResponse{JSONRPC: "2.0", ID: id, Result: result})
 }
 
-func sendToolResponse(w *responseWriter, id any, result ToolResult) {
+func sendToolResponse(w *responseWriter, id any, result ToolResult) error {
 	content := result.Content
 	if content == nil {
 		content = []ContentBlock{}
@@ -547,14 +739,14 @@ func sendToolResponse(w *responseWriter, id any, result ToolResult) {
 	if result.Meta != nil {
 		toolResult["_meta"] = result.Meta
 	}
-	writeResponse(w, jsonRPCResponse{
+	return writeResponse(w, jsonRPCResponse{
 		JSONRPC: "2.0",
 		ID:      id,
 		Result:  toolResult,
 	})
 }
 
-func sendToolResponseRaw(w *responseWriter, id any, raw json.RawMessage) {
+func sendToolResponseRaw(w *responseWriter, id any, raw json.RawMessage) error {
 	// raw is the JSON-marshalled handler return value. MCP TextContent.text
 	// must be a JSON string, so we convert any non-string JSON (maps,
 	// slices, scalars) to its string representation. This keeps the
@@ -569,7 +761,7 @@ func sendToolResponseRaw(w *responseWriter, id any, raw json.RawMessage) {
 	} else {
 		text = string(raw)
 	}
-	writeResponse(w, jsonRPCResponse{
+	return writeResponse(w, jsonRPCResponse{
 		JSONRPC: "2.0",
 		ID:      id,
 		Result: map[string]any{
@@ -587,7 +779,7 @@ func sendToolResponseRaw(w *responseWriter, id any, raw json.RawMessage) {
 // hide the message from the model. data, when non-empty, is published under
 // ToolErrorMetaKey so the failure is machine-readable as well as legible;
 // nil data leaves the result exactly as it was before "_meta" existed.
-func sendToolError(w *responseWriter, id any, text string, data map[string]any) {
+func sendToolError(w *responseWriter, id any, text string, data map[string]any) error {
 	result := map[string]any{
 		"content": []map[string]any{
 			{"type": "text", "text": text},
@@ -597,11 +789,11 @@ func sendToolError(w *responseWriter, id any, text string, data map[string]any) 
 	if len(data) > 0 {
 		result["_meta"] = map[string]any{ToolErrorMetaKey: data}
 	}
-	sendResponse(w, id, result)
+	return sendResponse(w, id, result)
 }
 
-func sendError(w *responseWriter, id any, code int, message string) {
-	writeResponse(w, jsonRPCResponse{
+func sendError(w *responseWriter, id any, code int, message string) error {
+	return writeResponse(w, jsonRPCResponse{
 		JSONRPC: "2.0",
 		ID:      id,
 		Error: map[string]any{
