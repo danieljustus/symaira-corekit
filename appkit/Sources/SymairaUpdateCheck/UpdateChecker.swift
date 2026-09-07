@@ -1,4 +1,9 @@
 import Foundation
+#if canImport(CryptoKit)
+import CryptoKit
+#else
+import Crypto
+#endif
 
 /// A downloadable release asset (binary, checksums, etc.).
 public struct Asset: Sendable, Equatable, Codable {
@@ -43,20 +48,26 @@ extension URLSession: UpdateHTTPClient {}
 public enum UpdateCheckError: Error, Sendable {
     case httpStatus(Int)
     case decodeFailed
+    case draftRelease
+    case prereleaseRelease
+    case invalidReleaseTag(String)
 }
 
-/// Never-blocking GitHub release checker (Swift port of corekit/updatecheck).
+/// GitHub release checker (Swift port of corekit/updatecheck).
 ///
-/// Returns nil when the current version is up to date, when it is not a
-/// stable semver (dev builds), or when the latest tag cannot be parsed.
-/// Results are cached on disk with a TTL so app launches stay cheap.
+/// Returns nil when the current version is up to date or is not a stable
+/// semver (dev builds). Malformed latest-release tags are surfaced as errors.
+/// Results are cached on disk with a TTL. Callers should run optional checks
+/// off startup-critical paths and decide how to present surfaced failures.
 public struct UpdateChecker: Sendable {
+    public static let defaultAPITimeout: TimeInterval = 3
+
     public let owner: String
     public let repo: String
     public let cacheTTL: TimeInterval
 
     private let client: UpdateHTTPClient
-    private let cacheDirectory: URL
+    let cacheDirectory: URL
 
     public init(
         owner: String,
@@ -69,12 +80,9 @@ public struct UpdateChecker: Sendable {
         self.repo = repo
         self.client = client
         self.cacheTTL = cacheTTL
-#if os(iOS) || os(tvOS) || os(watchOS)
-        let defaultCache: URL = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first!
-#else
-        let defaultCache: URL = FileManager.default.homeDirectoryForCurrentUser
-            .appendingPathComponent(".cache/symaira-appkit", isDirectory: true)
-#endif
+        let platformCache = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first
+            ?? FileManager.default.temporaryDirectory
+        let defaultCache = platformCache.appendingPathComponent("symaira/updatecheck", isDirectory: true)
         self.cacheDirectory = cacheDirectory ?? defaultCache
     }
 
@@ -85,14 +93,20 @@ public struct UpdateChecker: Sendable {
         }
 
         let latest: LatestRelease
-        if !force, let cached = readCache() {
+        let latestVersion: StableVersion
+        if !force, let cached = readCache(), let cachedVersion = StableVersion(cached.tagName) {
             latest = cached
+            latestVersion = cachedVersion
         } else {
             latest = try await fetchLatest()
+            guard let fetchedVersion = StableVersion(latest.tagName) else {
+                throw UpdateCheckError.invalidReleaseTag(latest.tagName)
+            }
+            latestVersion = fetchedVersion
             writeCache(latest)
         }
 
-        guard let latestVersion = StableVersion(latest.tagName), latestVersion > current else {
+        guard latestVersion > current else {
             return nil
         }
 
@@ -141,7 +155,7 @@ public struct UpdateChecker: Sendable {
 
     private func fetchLatest() async throws -> LatestRelease {
         let url = URL(string: "https://api.github.com/repos/\(owner)/\(repo)/releases/latest")!
-        var request = URLRequest(url: url, timeoutInterval: 10)
+        var request = URLRequest(url: url, timeoutInterval: Self.defaultAPITimeout)
         request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
 
         let (data, response) = try await client.data(for: request)
@@ -150,11 +164,15 @@ public struct UpdateChecker: Sendable {
         }
 
         struct GitHubRelease: Decodable {
+            let draft: Bool
+            let prerelease: Bool
             let tagName: String
             let htmlURL: String
             let assets: [Asset]
 
             enum CodingKeys: String, CodingKey {
+                case draft
+                case prerelease
                 case tagName = "tag_name"
                 case htmlURL = "html_url"
                 case assets
@@ -162,6 +180,8 @@ public struct UpdateChecker: Sendable {
 
             init(from decoder: Decoder) throws {
                 let container = try decoder.container(keyedBy: CodingKeys.self)
+                draft = try container.decodeIfPresent(Bool.self, forKey: .draft) ?? false
+                prerelease = try container.decodeIfPresent(Bool.self, forKey: .prerelease) ?? false
                 tagName = try container.decode(String.self, forKey: .tagName)
                 htmlURL = try container.decode(String.self, forKey: .htmlURL)
                 assets = try container.decodeIfPresent([Asset].self, forKey: .assets) ?? []
@@ -170,6 +190,12 @@ public struct UpdateChecker: Sendable {
         let decoder = JSONDecoder()
         guard let release = try? decoder.decode(GitHubRelease.self, from: data) else {
             throw UpdateCheckError.decodeFailed
+        }
+        if release.draft {
+            throw UpdateCheckError.draftRelease
+        }
+        if release.prerelease {
+            throw UpdateCheckError.prereleaseRelease
         }
         return LatestRelease(
             tagName: release.tagName,
@@ -181,8 +207,10 @@ public struct UpdateChecker: Sendable {
 
     // MARK: - Disk cache
 
-    private var cacheFile: URL {
-        cacheDirectory.appendingPathComponent("\(owner)-\(repo).json")
+    var cacheFile: URL {
+        let identity = Data("\(owner)\0\(repo)".utf8)
+        let digest = SHA256.hash(data: identity).map { String(format: "%02x", $0) }.joined()
+        return cacheDirectory.appendingPathComponent("\(digest).json")
     }
 
     private func readCache() -> LatestRelease? {

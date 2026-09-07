@@ -13,16 +13,16 @@ quietly diverging.
 
 | File | Vendored from |
 |---|---|
-| `update_check_invariants.json` | `symaira-corekit` [`v0.13.0:contracts/update_check_invariants.json`](https://github.com/danieljustus/symaira-corekit/blob/v0.13.0/contracts/update_check_invariants.json) |
+| `update_check_invariants.json` | `symaira-corekit` [`5626213:contracts/update_check_invariants.json`](https://github.com/danieljustus/symaira-corekit/blob/56262137f7be9fabcc152b09032fedbbfec83c1c/contracts/update_check_invariants.json) (RUST-001 contract correction) |
 | `json_encoding.json` | `symaira-corekit` [`v0.13.0:contracts/json_encoding.json`](https://github.com/danieljustus/symaira-corekit/blob/v0.13.0/contracts/json_encoding.json) |
 | `llm_providers.json` | `symaira-corekit` `main:contracts/llm_providers.json` (provider contract issue #172) |
 | `llm_errors.json` | `symaira-corekit` `main:contracts/llm_errors.json` (provider contract issue #172) |
 | `mcp_tool_annotations.json` | `symaira-corekit` `main:contracts/mcp_tool_annotations.json` (MCP tool annotations contract issue #207) |
 
-`exit_codes.json` and `config_paths.json` are not vendored — neither has an
-appkit-side counterpart to assert against (this package has no CLI exit-code
-convention, and `SymairaUpdateCheck`'s cache directory is not part of the
-documented XDG contract).
+`exit_codes.json` and `config_paths.json` are not vendored because AppKit has
+no CLI exit-code or general XDG configuration-path counterpart. The
+update-check fixture itself owns the narrower platform-cache semantics tested
+by `SymairaUpdateCheck`.
 
 ## Updating
 
