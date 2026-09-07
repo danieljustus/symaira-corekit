@@ -98,11 +98,11 @@
         "SEC-005",
         "SEC-006"
       ],
-      "status": "ready",
+      "status": "complete",
       "demand_class": "required",
       "acceptance_commands": [
         "make rust-fs-secret-contract",
-        "cargo +nightly miri test -p symaira-core-fs",
+        "MIRIFLAGS=-Zmiri-disable-isolation cargo +nightly miri test -p symaira-core-fs -p symaira-core-secretref --all-features",
         "cargo audit && cargo deny check"
       ],
       "stop_rule": "Stop on weaker symlink/race/path protection, secret disclosure, extra runtime coupling or owned unsafe code without an approved ADR."
@@ -152,7 +152,7 @@
         "PERF-002",
         "PERF-004"
       ],
-      "status": "blocked",
+      "status": "ready",
       "demand_class": "required",
       "acceptance_commands": [
         "python3 scripts/rust-port/adoption.py --check --min-consumers 2",

@@ -245,3 +245,62 @@ jobs:
       - name: Run MCP differential corpus (Linux)
         if: runner.os == 'Linux'
         run: make mcp-differential
+
+  rust-rust003-native:
+    name: Rust RUST-003 native (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
+        with:
+          fetch-depth: 0
+      - name: Set up Go oracle toolchain
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: "1.26.6"
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: "3.12"
+      - name: Install pinned Rust toolchain
+        shell: bash
+        run: rustup toolchain install 1.98.0 --profile minimal --component rustfmt,clippy
+      - name: Format and focused native tests
+        run: |
+          cargo +1.98.0 fmt --all --check
+          cargo +1.98.0 test -p symaira-core-fs -p symaira-core-secretref --all-features --locked
+      - name: Build and run native differential probe
+        shell: bash
+        env:
+          GOTOOLCHAIN: go1.26.6
+          CGO_ENABLED: 0
+        run: |
+          cargo +1.98.0 build --locked --bin rust-fs-secret
+          target="${{ runner.os }}"
+          case "$target" in Linux) target=linux ;; macOS) target=darwin ;; Windows) target=windows ;; esac
+          corpus="$RUNNER_TEMP/rust003-corpus-${target}.json"
+          python scripts/rust-port/generate_fs_secret.py --target "$target" --output "$corpus"
+          python scripts/rust-port/validate_fs_secret.py --target "$target" --corpus "$corpus"
+          python scripts/rust-port/diff_fs_secret.py
+      - name: Audit Rust dependencies
+        if: runner.os == 'Linux'
+        run: |
+          cargo install cargo-audit --version 0.22.2 --locked
+          cargo audit
+          cargo install cargo-deny --version 0.20.2 --locked
+          cargo deny check
+
+  rust-rust003-miri:
+    name: Rust RUST-003 Miri
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
+      - name: Install pinned nightly and Miri
+        run: |
+          rustup toolchain install nightly --profile minimal
+          rustup component add miri --toolchain nightly
+      - name: Run Miri with filesystem isolation disabled
+        run: MIRIFLAGS=-Zmiri-disable-isolation cargo +nightly miri test -p symaira-core-fs -p symaira-core-secretref --all-features
