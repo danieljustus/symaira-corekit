@@ -27,6 +27,71 @@ def fail(message: str) -> NoReturn:
     raise ValueError(message)
 
 
+def integrity_digest(path: Path) -> str:
+    """Hash tracked text independent of Git's platform EOL checkout."""
+    return hashlib.sha256(path.read_bytes().replace(b"\r\n", b"\n")).hexdigest()
+
+
+def validate_gate_benchmark_binding(metrics: object, smokes: object, benchmark: dict) -> None:
+    benchmark_metrics = [
+        {
+            "repository": entry.get("repository"),
+            "workload": entry.get("workload"),
+            "baseline_commit": entry.get("baseline_commit"),
+            "candidate_commit": entry.get("candidate_commit"),
+            "runs": entry.get("runs"),
+            "maximum_regression_ratio": entry.get("maximum_regression_ratio"),
+        }
+        for entry in benchmark.get("measurements", [])
+        if isinstance(entry, dict)
+    ]
+    if metrics != benchmark_metrics:
+        fail("value-gate: consumer metrics differ from integrity-bound benchmark evidence")
+    benchmark_smokes = [
+        {"repository": entry.get("repository"), "passed": entry.get("passed")}
+        for entry in benchmark.get("standalone_smokes", [])
+        if isinstance(entry, dict)
+    ]
+    if smokes != benchmark_smokes:
+        fail("value-gate: standalone smokes differ from integrity-bound benchmark evidence")
+
+
+def validate_integrity(value_gate: dict) -> None:
+    integrity = value_gate.get("integrity")
+    if not isinstance(integrity, dict) or not isinstance(integrity.get("files"), list) or not integrity["files"]:
+        fail("value-gate: independently validated integrity manifest is required")
+    seen: set[str] = set()
+    for entry in integrity["files"]:
+        if not isinstance(entry, dict) or not isinstance(entry.get("path"), str) or not (isinstance(entry.get("sha256"), str) or entry.get("sha256") is None):
+            fail("value-gate: malformed integrity entry")
+        relative = PurePosixPath(entry["path"])
+        if relative.is_absolute() or ".." in relative.parts or entry["path"] in seen:
+            fail("value-gate: integrity path must be unique, relative and non-traversing")
+        seen.add(entry["path"])
+        path = (REPO / Path(*relative.parts)).resolve()
+        try:
+            path.relative_to(REPO.resolve())
+        except ValueError:
+            fail("value-gate: integrity path escapes repository")
+        if entry.get("sha256") is None:
+            if value_gate.get("status") == "pending" and entry["path"] == "testdata/rust-port/benchmarks/foundation.json":
+                continue
+            fail(f"value-gate: missing integrity digest for {entry['path']}")
+        if not path.is_file() or not re.fullmatch(r"[0-9a-f]{64}", entry["sha256"]):
+            fail(f"value-gate: invalid or missing integrity file {entry['path']}")
+        if integrity_digest(path) != entry["sha256"]:
+            fail(f"value-gate: digest mismatch for {entry['path']}")
+    required = {
+        "testdata/rust-port/benchmarks/foundation.json",
+        "testdata/rust-port/adoption/evidence.json",
+        "testdata/rust-port/cases/consumer-canaries.json",
+        "scripts/rust-port/adoption.py",
+        "scripts/rust-port/bench.py",
+    }
+    if not required.issubset(seen):
+        fail(f"value-gate: integrity manifest is missing {sorted(required - seen)}")
+
+
 def unique_ids(items: list[dict], label: str) -> set[str]:
     raw = [item.get("id") for item in items]
     if any(not isinstance(value, str) or not ID_RE.fullmatch(value) for value in raw):
@@ -397,6 +462,7 @@ def main() -> int:
     ):
         if doc.get("schema_version") != 1:
             fail(f"{label}: unsupported schema_version")
+    validate_integrity(value_gate)
 
     oracle = baseline.get("oracle", {}).get("commit")
     if not isinstance(oracle, str) or not ORACLE_RE.fullmatch(oracle):
@@ -562,6 +628,8 @@ def main() -> int:
             fail("value-gate: duplicate-removal rule or commit provenance failed")
 
         metrics = evidence.get("consumer_metrics", [])
+        benchmark = json.loads((REPO / "testdata/rust-port/benchmarks/foundation.json").read_text(encoding="utf-8"))
+
         ceiling = requirements.get("maximum_regression_ratio")
         exception = evidence.get("security_exception")
         if not isinstance(ceiling, (int, float)) or ceiling > 1.1:
@@ -575,6 +643,7 @@ def main() -> int:
             for entry in metrics
         ):
             fail("value-gate: insufficient reproducible consumer metrics")
+
         if any(entry["maximum_regression_ratio"] > ceiling for entry in metrics):
             if not isinstance(exception, dict) or not exception.get("issue_url"):
                 fail("value-gate: regression ceiling exceeded without tracked security exception")
@@ -586,6 +655,7 @@ def main() -> int:
             for entry in smokes
         ):
             fail("value-gate: standalone smoke evidence is incomplete")
+        validate_gate_benchmark_binding(metrics, smokes, benchmark)
 
     plan = (ROOT / "implementation-plan.md").read_text(encoding="utf-8")
     for item_id in sorted(work_ids):

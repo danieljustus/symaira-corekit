@@ -1,29 +1,37 @@
 {
-  "schema_version": 1,
-  "purpose": "Repeatable paired-consumer canaries for the RUST-005 value gate; no Rust measurements are claimed by RUST-001.",
-  "runs": {
-    "startup_and_operation": 50,
-    "clean_and_warm_build": 10
-  },
+  "schema_version": 2,
+  "purpose": "Repeatable paired-consumer canaries for RUST-005; all binaries are built from exact local pre-adoption and adoption commits.",
+  "runs": {"startup_and_operation": 50, "clean_and_warm_build": 10},
   "consumers": [
     {
-      "repository": "symaira-browse",
-      "snapshot_commit": "652453d1595fc302bd69c328e7da8a21dbee28b9",
+      "repository": "danieljustus/symaira-vault",
+      "snapshot_commit": "772165a2b3a8efc6aebed7f904f38edeac45458a",
+      "pre_adoption_commit": "555f7c6f24af9acf29fd8a68d582702166d3e40b",
+      "adoption_commit": "772165a2b3a8efc6aebed7f904f38edeac45458a",
       "capability": "version --json",
-      "go_build": "CGO_ENABLED=0 GOTOOLCHAIN=go1.26.6 go build -trimpath -o <out>/symbrowse-go ./cmd/symbrowse",
-      "go_run": "<out>/symbrowse-go version --json",
-      "rust_build": "cargo build --release --locked --bin symbrowse",
-      "rust_run": "target/release/symbrowse version --json",
+      "tool": "symvault",
+      "version_argv": ["version", "--json"],
+      "go_build": "CGO_ENABLED=0 GOTOOLCHAIN=local go build -trimpath -o <artifact> .",
+      "go_run": "<artifact> version --json",
+      "rust_build": "CARGO_TARGET_DIR=<benchmark-target> cargo build --release --locked --bin symvault",
+      "rust_run": "<artifact> version --json",
+      "rust_binary": "symvault",
       "metrics": ["binary_size_bytes", "startup_p95_ms", "peak_rss_median_bytes", "clean_build_ms", "warm_build_ms"]
     },
     {
-      "repository": "symaira-desktop",
-      "snapshot_commit": "ae86331930fdfa2b128b68ae5af7437091b9949a",
+      "repository": "danieljustus/symaira-eraseme",
+      "snapshot_commit": "27a3f790c59771e53636fa9b6b13e5687c689f3a",
+      "pre_adoption_commit": "c5ea58d32ab71b342bb7e4aa430e13dd28deca49",
+      "adoption_commit": "27a3f790c59771e53636fa9b6b13e5687c689f3a",
       "capability": "version --json",
-      "go_build": "CGO_ENABLED=0 GOTOOLCHAIN=go1.26.6 go build -trimpath -o <out>/symdesk-go ./cmd/symdesk",
-      "go_run": "<out>/symdesk-go version --json",
-      "rust_build": "cargo build --release --locked --bin symdesk",
-      "rust_run": "target/release/symdesk version --json",
+      "tool": "symeraseme",
+      "version_argv": ["version", "--json"],
+      "go_build": "CGO_ENABLED=0 GOTOOLCHAIN=local go build -trimpath -o <artifact> ./cmd/symeraseme",
+      "go_ldflags": "-X main.versionValue=0.13.0",
+      "go_run": "<artifact> version --json",
+      "rust_build": "CARGO_TARGET_DIR=<benchmark-target> cargo build --release --locked --bin symeraseme-rust",
+      "rust_run": "<artifact> version --json",
+      "rust_binary": "symeraseme-rust",
       "metrics": ["binary_size_bytes", "startup_p95_ms", "peak_rss_median_bytes", "clean_build_ms", "warm_build_ms"]
     }
   ]

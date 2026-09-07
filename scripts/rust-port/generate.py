@@ -341,6 +341,15 @@ def compare_trees(expected: Path, actual: Path) -> None:
             raise RuntimeError(f"fixture drift: {rel}; run python3 scripts/rust-port/generate.py")
 
 
+def compare_tree_subset(expected: Path, actual: Path) -> None:
+    """Compare this generator's files without deleting another slice's fixtures."""
+    for relative in sorted(path.relative_to(expected) for path in expected.rglob("*") if path.is_file()):
+        left = (expected / relative).read_bytes().replace(b"\r\n", b"\n")
+        target = actual / relative
+        if not target.is_file() or left != target.read_bytes().replace(b"\r\n", b"\n"):
+            raise RuntimeError(f"fixture drift: {relative}; run python3 scripts/rust-port/generate.py")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--check", action="store_true", help="compare generated fixtures with committed files")
@@ -355,7 +364,7 @@ def main() -> int:
             with tempfile.TemporaryDirectory(prefix="corekit-fixtures-") as raw:
                 generated = Path(raw) / "fixtures"
                 index = generate_tree(generated)
-                compare_trees(generated, FIXTURES)
+                compare_tree_subset(generated, FIXTURES)
                 compare_trees(generated / "foundation", LOCAL_FOUNDATION)
             target = index["public_api"]["targets"]
             print(f"PASS fixtures (6 OS/architecture targets, {target['darwin-arm64']['packages']} packages, {target['darwin-arm64']['exported_surface_entries']} Darwin/arm64 API entries)")

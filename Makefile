@@ -1,4 +1,4 @@
-.PHONY: build test lint fmt-check clean consumer-drift golangci-lint rust-port-validate port-fixture-source-check port-oracle-selftest port-contract rust-lint rust-test rust-foundation-contract rust-fs-secret-contract rust-mcp-contract mcp-differential mcp-fuzz-smoke
+.PHONY: build test lint fmt-check clean consumer-drift golangci-lint rust-port-validate port-fixture-source-check port-oracle-selftest port-contract rust-lint rust-test rust-foundation-contract rust-fs-secret-contract rust-mcp-contract mcp-differential mcp-fuzz-smoke port-consumer-smoke
 
 build:
 	CGO_ENABLED=0 go build ./...
@@ -7,7 +7,19 @@ consumer-drift:
 	./scripts/consumer-drift.sh
 
 rust-port-validate:
+	python3 scripts/rust-port/adoption.py --self-test
+	python3 scripts/rust-port/bench.py --self-test
 	python3 docs/rust-port/validate.py
+	@set +e; \
+	python3 scripts/rust-port/adoption.py --check --min-consumers 2; adoption_status=$$?; \
+	python3 scripts/rust-port/bench.py --suite foundation --runs 50 --build-runs 10 --check; bench_status=$$?; \
+	if [ $$adoption_status -ne 0 ] || [ $$bench_status -ne 0 ]; then \
+		echo "RUST-005 validation failed (adoption=$$adoption_status benchmark=$$bench_status)" >&2; \
+		exit 1; \
+	fi
+
+port-consumer-smoke:
+	python3 scripts/rust-port/bench.py --suite foundation --smoke
 
 port-fixture-source-check:
 	python3 scripts/rust-port/generate.py --check-source

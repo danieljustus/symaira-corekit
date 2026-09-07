@@ -1735,7 +1735,7 @@
         "windows"
       ],
       "rust_test": "CI Go gate",
-      "status": "todo"
+      "status": "parity"
     },
     {
       "id": "REL-002",
@@ -1809,8 +1809,8 @@
         "linux",
         "windows"
       ],
-      "rust_test": "port/consumer/verify.py",
-      "status": "todo"
+      "rust_test": "testdata/rust-port/adoption/report.json",
+      "status": "parity"
     },
     {
       "id": "PERF-001",
@@ -1824,14 +1824,14 @@
         "linux",
         "windows"
       ],
-      "rust_test": "port/bench/foundation.json",
-      "status": "todo"
+      "rust_test": "testdata/rust-port/benchmarks/foundation.json",
+      "status": "parity"
     },
     {
       "id": "PERF-002",
       "seam": "consumer compile tax",
       "fixture": "clean and warm builds for two adopters",
-      "go_oracle": "scripts/rust-port/bench.py --suite consumers --runs 10",
+      "go_oracle": "scripts/rust-port/bench.py --suite foundation --runs 50 --build-runs 10",
       "expected": "timings reported; no unbounded feature/dependency fan-out",
       "comparison": "benchmark",
       "platforms": [
@@ -1839,8 +1839,8 @@
         "linux",
         "windows"
       ],
-      "rust_test": "port/bench/consumers.json",
-      "status": "todo"
+      "rust_test": "testdata/rust-port/benchmarks/foundation.json",
+      "status": "parity"
     },
     {
       "id": "PERF-003",
@@ -1861,7 +1861,7 @@
       "id": "PERF-004",
       "seam": "adoption/duplication value",
       "fixture": "source inventory in active Rust consumers",
-      "go_oracle": "scripts/rust-port/adoption.py --check",
+      "go_oracle": "scripts/rust-port/adoption.py --check --min-consumers 2",
       "expected": "each released crate has two adopters or two-language SSOT and reduces/avoids duplicate implementation",
       "comparison": "manual-gate",
       "platforms": [
@@ -1869,8 +1869,8 @@
         "linux",
         "windows"
       ],
-      "rust_test": "port/adoption/report.json",
-      "status": "todo"
+      "rust_test": "testdata/rust-port/adoption/report.json",
+      "status": "parity"
     }
   ]
 }

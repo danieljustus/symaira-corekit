@@ -7,7 +7,7 @@
     "source_files": 63
   },
   "harness": {
-    "input_digest_sha256": "9b1f256fd64625c1ed621179913d6c2e933629e41078811259e8150f9662ab4b",
+    "input_digest_sha256": "88db5092015bc86edbce71b4e16ccd39487847f3d0b4a20c256e1fb381ede37e",
     "input_files": [
       "docs/rust-port/validate.py",
       "scripts/rust-port/diff.py",
