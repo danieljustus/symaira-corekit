@@ -9,7 +9,7 @@ import re
 import shlex
 import subprocess
 import sys
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import NoReturn
 
 ROOT = Path(__file__).resolve().parent
@@ -103,7 +103,7 @@ def oracle_package_paths(commit: str) -> set[str]:
         text=True,
     ).splitlines()
     return {
-        str(Path(path).parent)
+        str(PurePosixPath(path).parent)
         for path in tracked
         if path.endswith(".go") and not path.endswith("_test.go")
     }
@@ -185,7 +185,7 @@ def validate_go_oracles(commit: str, contracts: list[dict]) -> int:
             ["git", "show", f"{commit}:{path}"],
             cwd=REPO,
         )
-        parent = str(Path(path).parent)
+        parent = str(PurePosixPath(path).parent)
         package = "." if parent == "." else f"./{parent}"
         names = {match.decode("ascii") for match in function_pattern.findall(content)}
         test_names.setdefault(package, set()).update(names)
