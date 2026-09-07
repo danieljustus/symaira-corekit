@@ -1,0 +1,16 @@
+{
+  "codes": {
+    "config": 9,
+    "conflict": 6,
+    "data": 8,
+    "forbidden": 4,
+    "generic": 1,
+    "interrupted": 10,
+    "no_auth": 3,
+    "no_input": 2,
+    "not_found": 5,
+    "ok": 0,
+    "software": 7
+  },
+  "invalid": 255
+}

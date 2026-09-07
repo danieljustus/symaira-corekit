@@ -16,6 +16,7 @@ symaira-corekit
 vendor/
 __pycache__/
 *.py[cod]
+target/
 
 # IDE
 .idea/

@@ -1,0 +1,19 @@
+[package]
+name = "symaira-core-foundation"
+version = "0.0.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+publish = false
+
+[dependencies]
+symaira-contract-fixtures = { path = "../symaira-contract-fixtures", version = "=0.0.0" }
+symaira-core-config = { path = "../../symaira-core-config", version = "=0.0.0" }
+symaira-core-env = { path = "../../symaira-core-env", version = "=0.0.0" }
+symaira-core-exit = { path = "../../symaira-core-exit", version = "=0.0.0" }
+symaira-core-log = { path = "../../symaira-core-log", version = "=0.0.0" }
+symaira-core-version = { path = "../../symaira-core-version", version = "=0.0.0" }
+serde.workspace = true
+serde_json.workspace = true
+tracing.workspace = true

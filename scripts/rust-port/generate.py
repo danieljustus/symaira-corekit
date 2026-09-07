@@ -19,6 +19,7 @@ REPO = Path(__file__).resolve().parents[2]
 PORT = REPO / "scripts" / "rust-port"
 HELPER = PORT / "go-oracle"
 FIXTURES = REPO / "testdata" / "rust-port" / "fixtures"
+LOCAL_FOUNDATION = REPO / "rust" / "test-support" / "symaira-contract-fixtures" / "fixtures" / "foundation"
 ORACLE_COMMIT = "f3d3eb79b9b1f31b4f973d2ed518a8292cedf588"
 ORACLE_RELEASE = "v0.17.0"
 ORACLE_DIGEST = "ab38c1cc4d2f91026e1d6836e1138388fd683a789ab8f104269d019c3caff95c"
@@ -40,6 +41,7 @@ HARNESS_INPUTS = (
     "scripts/rust-port/go-oracle/go.mod",
     "scripts/rust-port/go-oracle/go.sum",
     "scripts/rust-port/go-oracle/cmd/probe/main.go",
+    "scripts/rust-port/go-oracle/cmd/foundation/main.go",
     "scripts/rust-port/go-oracle/cmd/publicapi/main.go",
     "testdata/rust-port/README.md",
     "testdata/rust-port/cases/consumer-canaries.json",
@@ -262,6 +264,24 @@ def generate_tree(target: Path) -> dict[str, Any]:
         probe_value["written_file"] = probe_output.read_text()
         (target / "oracle-probe.json").write_text(json.dumps(probe_value, indent=2, ensure_ascii=False) + "\n")
 
+        foundation = temp / ("foundation.exe" if os.name == "nt" else "foundation")
+        build_helper("foundation", foundation, oracle)
+        foundation_raw = run(str(foundation), cwd=oracle, env=probe_env)
+        foundation_vectors = json.loads(foundation_raw)
+        foundation_dir = target / "foundation"
+        foundation_dir.mkdir()
+        for contract_id in (
+            "VER-001", "VER-002", "EXIT-001", "EXIT-002", "EXIT-003", "EXIT-004",
+            "ENV-001", "ENV-002", "LOG-001", "LOG-002", "LOG-003", "LOG-004",
+            "CFG-001", "CFG-002", "CFG-003", "CFG-004", "CFG-005", "CFG-006", "CFG-007",
+        ):
+            if contract_id not in foundation_vectors:
+                raise RuntimeError(f"foundation oracle omitted {contract_id}")
+            (foundation_dir / f"{contract_id.lower()}.json").write_text(
+                json.dumps(foundation_vectors[contract_id], indent=2, ensure_ascii=False) + "\n",
+                encoding="utf-8",
+            )
+
     contract_dir = target / "contracts"
     contract_dir.mkdir()
     contract_records = []
@@ -324,6 +344,7 @@ def main() -> int:
                 generated = Path(raw) / "fixtures"
                 index = generate_tree(generated)
                 compare_trees(generated, FIXTURES)
+                compare_trees(generated / "foundation", LOCAL_FOUNDATION)
             target = index["public_api"]["targets"]
             print(f"PASS fixtures (6 OS/architecture targets, {target['darwin-arm64']['packages']} packages, {target['darwin-arm64']['exported_surface_entries']} Darwin/arm64 API entries)")
             return 0
@@ -333,6 +354,8 @@ def main() -> int:
             if FIXTURES.exists():
                 shutil.rmtree(FIXTURES)
             shutil.copytree(generated, FIXTURES)
+            LOCAL_FOUNDATION.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copytree(generated / "foundation", LOCAL_FOUNDATION, dirs_exist_ok=True)
         target = index["public_api"]["targets"]
         print(f"WROTE {FIXTURES} (6 OS/architecture targets, {target['darwin-arm64']['packages']} packages, {target['darwin-arm64']['exported_surface_entries']} Darwin/arm64 API entries)")
         return 0
