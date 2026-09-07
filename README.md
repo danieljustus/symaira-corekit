@@ -98,6 +98,7 @@ logger.Info("started", "version", "1.0.0")
 - [`docs/migrations.md`](docs/migrations.md) — migration notes and check items per minor release
 - [`docs/rust-port/README.md`](docs/rust-port/README.md) — contract-first Go→Rust migration handoff and execution gates
 - [`docs/adr/0001-authkit-session-and-biometric-broker.md`](docs/adr/0001-authkit-session-and-biometric-broker.md) — Architecture Decision Record: AuthKit session and biometric broker
+- [`assets/branding/README.md`](assets/branding/README.md) — vendored CoreKit brand-only icon family and checksum guard
 
 ## Versioning
 

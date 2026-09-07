@@ -1,0 +1,71 @@
+{
+  "product": "symaira-corekit",
+  "name": "Symaira CoreKit",
+  "role": "brand-only",
+  "source": "symaira-icons-release/manifest.json",
+  "files": {
+    "AppIcon.iconset/icon_32x32@2x.png": "d8641b494dc6f41093af4d084f5b6a10bc8a57a7aed701b025f4f9c7dd146b90",
+    "AppIcon.iconset/icon_128x128.png": "b9811fdcf2a47abfffdfc5d0e79455d33d732ba0ef1641f7ee03c675e505a289",
+    "AppIcon.iconset/icon_256x256@2x.png": "9a4bd194d660da431fc8c0a576c8a3711da74f74fd5d85f1721ec649c28e7618",
+    "AppIcon.iconset/icon_32x32.png": "949377de3792ad831f5d725f469a4f8c45324d547f4914249411f83524b647ac",
+    "AppIcon.iconset/icon_512x512.png": "9a4bd194d660da431fc8c0a576c8a3711da74f74fd5d85f1721ec649c28e7618",
+    "AppIcon.iconset/icon_16x16.png": "3c55b62f00aff43ecade752177d05f3191f1cbaf98bcaf251c4b545f20f30294",
+    "AppIcon.iconset/icon_16x16@2x.png": "949377de3792ad831f5d725f469a4f8c45324d547f4914249411f83524b647ac",
+    "AppIcon.iconset/icon_128x128@2x.png": "ceba7b4b666b49360223ab768fac0231cb3590c6657e3454374b920f53a016bf",
+    "AppIcon.iconset/icon_512x512@2x.png": "533db4a42a87588b47aa8a8e0a02d0e1486d59682cdfe7ec7a18da35f24ff014",
+    "AppIcon.iconset/icon_256x256.png": "ceba7b4b666b49360223ab768fac0231cb3590c6657e3454374b920f53a016bf",
+    "source/Symaira-original.png": "829b29edbb38cfec7448bd08c2d54e64de2b49b760773affddb457e2857de987",
+    "source/signet.svg": "dcade4e6ad14d453d28191621314d27f092418526c5c92871231bfaf5f69f001",
+    "source/S-original-A3.png": "55fc4288d340f972acbbd22f2a11c4ba1c1c19f7faf16891b478f06b2ab26ab3",
+    "source/occlusion-mask.png": "c2c71318cf814f8a2fc1db2b7339c344c8938e3d38e9465d1d932fd955fe11cd",
+    "exports/ios-1024-opaque.png": "c57a262f184add03f24a93525432b7728f27e41a28e2190cb2acd190ef831d34",
+    "exports/AppIcon.icns": "4b67ef231106f9026a8d09c3547a00a0893f5fce680854f0328fae19f6ac0882",
+    "exports/iOS-Default.png": "360f9c707e54df6b7c8f398ff749ab7604e2084dabf134cfb7ee00d67ce2c78a",
+    "exports/iOS-Dark.png": "d9b33f3e0ff3057a29db4c42fa3b41716fdbd0e8bba5319a00e59883403acf8a",
+    "exports/macOS-TintedDark.png": "d6420a83ce5fd53a676bf43ec3c53134489ae450e40d043f762fa7cb279cc3e9",
+    "exports/macOS-Default.png": "360f9c707e54df6b7c8f398ff749ab7604e2084dabf134cfb7ee00d67ce2c78a",
+    "exports/iOS-TintedDark.png": "d6420a83ce5fd53a676bf43ec3c53134489ae450e40d043f762fa7cb279cc3e9",
+    "exports/macOS-Dark.png": "d9b33f3e0ff3057a29db4c42fa3b41716fdbd0e8bba5319a00e59883403acf8a",
+    "AppIcon.icon/icon.json": "6fc64f46007a90b435a7f6d9339bfe79d60d8993a4c7572de5f6a03c460c6f67",
+    "AppIcon.icon/Assets/signet.png": "2b92a653528537491a369d627c9a56536419ac71f638075ff9b22ac7e65cd686",
+    "AppIcon.icon/Assets/S.png": "5f9a5e7d8d1c30349769ebfd34c8e157019cda7fc663e261b3a553856ce67b49"
+  },
+  "renders": [
+    {
+      "platform": "macOS",
+      "mode": "Default",
+      "path": "/Users/daniel/workspace/symaira-icons-release/symaira-corekit/exports/macOS-Default.png",
+      "sha256": "360f9c707e54df6b7c8f398ff749ab7604e2084dabf134cfb7ee00d67ce2c78a"
+    },
+    {
+      "platform": "macOS",
+      "mode": "Dark",
+      "path": "/Users/daniel/workspace/symaira-icons-release/symaira-corekit/exports/macOS-Dark.png",
+      "sha256": "d9b33f3e0ff3057a29db4c42fa3b41716fdbd0e8bba5319a00e59883403acf8a"
+    },
+    {
+      "platform": "macOS",
+      "mode": "TintedDark",
+      "path": "/Users/daniel/workspace/symaira-icons-release/symaira-corekit/exports/macOS-TintedDark.png",
+      "sha256": "d6420a83ce5fd53a676bf43ec3c53134489ae450e40d043f762fa7cb279cc3e9"
+    },
+    {
+      "platform": "iOS",
+      "mode": "Default",
+      "path": "/Users/daniel/workspace/symaira-icons-release/symaira-corekit/exports/iOS-Default.png",
+      "sha256": "360f9c707e54df6b7c8f398ff749ab7604e2084dabf134cfb7ee00d67ce2c78a"
+    },
+    {
+      "platform": "iOS",
+      "mode": "Dark",
+      "path": "/Users/daniel/workspace/symaira-icons-release/symaira-corekit/exports/iOS-Dark.png",
+      "sha256": "d9b33f3e0ff3057a29db4c42fa3b41716fdbd0e8bba5319a00e59883403acf8a"
+    },
+    {
+      "platform": "iOS",
+      "mode": "TintedDark",
+      "path": "/Users/daniel/workspace/symaira-icons-release/symaira-corekit/exports/iOS-TintedDark.png",
+      "sha256": "d6420a83ce5fd53a676bf43ec3c53134489ae450e40d043f762fa7cb279cc3e9"
+    }
+  ]
+}
