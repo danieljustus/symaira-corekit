@@ -2,6 +2,7 @@
 package main
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
@@ -133,6 +134,7 @@ func verifyOracleSource(root string) error {
 		if err != nil {
 			return err
 		}
+		content = bytes.ReplaceAll(content, []byte("\r\n"), []byte("\n"))
 		_, _ = digest.Write([]byte(relative))
 		_, _ = digest.Write([]byte{0})
 		_, _ = digest.Write(content)
