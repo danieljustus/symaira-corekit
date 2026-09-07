@@ -48,7 +48,7 @@ func TestDefaultPath(t *testing.T) {
 	if !strings.HasSuffix(path, filepath.Join(".config", "symfetch", "config.toml")) {
 		t.Errorf("DefaultPath = %q, want suffix .config/symfetch/config.toml", path)
 	}
-	if !strings.HasPrefix(path, "/") {
+	if !filepath.IsAbs(path) {
 		t.Errorf("DefaultPath = %q, want absolute path", path)
 	}
 }
@@ -827,6 +827,7 @@ func TestLoaderUsesXDGConfigHomeAndLegacyOptOut(t *testing.T) {
 	home := t.TempDir()
 	xdg := t.TempDir()
 	t.Setenv("HOME", home)
+	t.Setenv("USERPROFILE", home)
 	t.Setenv("XDG_CONFIG_HOME", xdg)
 
 	app := "configkit-xdg-test"
