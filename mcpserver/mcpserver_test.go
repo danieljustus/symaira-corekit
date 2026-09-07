@@ -5,10 +5,24 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
 	"strings"
 	"testing"
+	"time"
 )
+
+type blockingReader struct {
+	started chan<- struct{}
+	release <-chan struct{}
+}
+
+func (r blockingReader) Read(_ []byte) (int, error) {
+	close(r.started)
+	<-r.release
+	return 0, io.EOF
+}
 
 func frameRequest(t *testing.T, method string, params any, id any) []byte {
 	t.Helper()
@@ -425,8 +439,8 @@ func TestToolsCallInvalidParams(t *testing.T) {
 		t.Fatal("expected error response")
 	}
 	errObj := resp.Error.(map[string]any)
-	if errObj["code"] != float64(CodeInvalidParams) {
-		t.Errorf("error code = %v, want %v", errObj["code"], CodeInvalidParams)
+	if errObj["code"] != float64(CodeInvalidRequest) {
+		t.Errorf("error code = %v, want %v", errObj["code"], CodeInvalidRequest)
 	}
 }
 
@@ -892,4 +906,67 @@ func TestServeIORejectsOversizedLine(t *testing.T) {
 	if !strings.Contains(err.Error(), "exceeds") {
 		t.Errorf("expected size-limit error, got %v", err)
 	}
+}
+
+func TestServeIONormalEOFKeepsInFlightHandlerAlive(t *testing.T) {
+	srv := New("test", "1.0")
+	started := make(chan struct{})
+	release := make(chan struct{})
+	srv.RegisterTool(&Tool{
+		Name: "wait",
+		Handler: func(ctx context.Context, _ json.RawMessage) (any, error) {
+			close(started)
+			<-release
+			if err := ctx.Err(); err != nil {
+				return nil, err
+			}
+			return map[string]any{"completed": true}, nil
+		},
+	})
+
+	request := frameRequest(t, "tools/call", map[string]any{
+		"name":      "wait",
+		"arguments": map[string]any{},
+	}, 1)
+	var output bytes.Buffer
+	done := make(chan error, 1)
+	go func() {
+		done <- srv.ServeIO(context.Background(), bytes.NewReader(request), &output)
+	}()
+
+	<-started
+	close(release)
+	if err := <-done; err != nil {
+		t.Fatalf("ServeIO: %v", err)
+	}
+	response := readResponse(t, &output)
+	if response.Error != nil {
+		t.Fatalf("in-flight handler failed after normal EOF: %v", response.Error)
+	}
+}
+
+func TestServeIOCancellationDoesNotWaitForNonClosableReader(t *testing.T) {
+	started := make(chan struct{})
+	release := make(chan struct{})
+	reader := blockingReader{started: started, release: release}
+	ctx, cancel := context.WithCancel(context.Background())
+	done := make(chan error, 1)
+	go func() {
+		done <- New("test", "1.0").ServeIO(ctx, reader, io.Discard)
+	}()
+
+	<-started
+	cancel()
+	deadline, stop := context.WithTimeout(context.Background(), time.Second)
+	defer stop()
+	select {
+	case err := <-done:
+		if !errors.Is(err, context.Canceled) {
+			t.Fatalf("ServeIO error = %v, want context.Canceled", err)
+		}
+	case <-deadline.Done():
+		close(release)
+		t.Fatal("ServeIO blocked on a non-closable reader after cancellation")
+	}
+	close(release)
 }
