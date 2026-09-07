@@ -261,7 +261,8 @@ def validate_rust001_artifacts(baseline: dict) -> None:
         path = REPO / relative
         if not path.is_file():
             fail(f"RUST-001: missing harness input {relative}")
-        harness_digest.update(relative.encode("utf-8") + b"\0" + path.read_bytes() + b"\0")
+        content = path.read_bytes().replace(b"\r\n", b"\n")
+        harness_digest.update(relative.encode("utf-8") + b"\0" + content + b"\0")
     if harness_digest.hexdigest() != harness.get("input_digest_sha256"):
         fail("RUST-001: harness input digest drift; regenerate fixtures")
     inventory = baseline["owned_go_inventory"]
@@ -340,9 +341,10 @@ def validate_rust001_artifacts(baseline: dict) -> None:
         if not source.is_file() or not fixture.is_file():
             fail(f"RUST-001: missing contract source or fixture {relative}")
         source_bytes = source.read_bytes()
-        if fixture.read_bytes() != source_bytes:
+        canonical_bytes = source_bytes.replace(b"\r\n", b"\n")
+        if fixture.read_bytes().replace(b"\r\n", b"\n") != canonical_bytes:
             fail(f"RUST-001: contract fixture drift {relative}")
-        if hashlib.sha256(source_bytes).hexdigest() != record.get("sha256"):
+        if hashlib.sha256(canonical_bytes).hexdigest() != record.get("sha256"):
             fail(f"RUST-001: contract digest drift {relative}")
 
     suite = json.loads((case_root / "oracle-selftest.json").read_text(encoding="utf-8"))

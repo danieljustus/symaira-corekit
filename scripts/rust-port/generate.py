@@ -107,7 +107,7 @@ def assert_source() -> int:
 def path_digest(paths: tuple[str, ...]) -> str:
     digest = hashlib.sha256()
     for relative in sorted(paths):
-        content = (REPO / relative).read_bytes()
+        content = (REPO / relative).read_bytes().replace(b"\r\n", b"\n")
         digest.update(relative.encode() + b"\0" + content + b"\0")
     return digest.hexdigest()
 
@@ -267,7 +267,7 @@ def generate_tree(target: Path) -> dict[str, Any]:
     contract_records = []
     for name in CONTRACTS:
         source = REPO / "contracts" / name
-        content = source.read_bytes()
+        content = source.read_bytes().replace(b"\r\n", b"\n")
         (contract_dir / name).write_bytes(content)
         contract_records.append({"path": f"contracts/{name}", "sha256": hashlib.sha256(content).hexdigest()})
 
@@ -305,7 +305,7 @@ def compare_trees(expected: Path, actual: Path) -> None:
         raise RuntimeError(f"fixture file set drift: generated={expected_files}, committed={actual_files}")
     for rel in expected_files:
         left, right = (expected / rel).read_bytes(), (actual / rel).read_bytes()
-        if left != right:
+        if left.replace(b"\r\n", b"\n") != right.replace(b"\r\n", b"\n"):
             raise RuntimeError(f"fixture drift: {rel}; run python3 scripts/rust-port/generate.py")
 
 
