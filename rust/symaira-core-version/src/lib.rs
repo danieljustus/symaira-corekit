@@ -5,7 +5,6 @@
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::io::{self, Write};
-use thiserror::Error;
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub struct Info {
@@ -22,12 +21,40 @@ pub fn new(tool: impl Into<String>, version: impl Into<String>, schema_version: 
     }
 }
 
-#[derive(Debug, Error)]
+#[derive(Debug)]
 pub enum WriteError {
-    #[error("encode version payload: {0}")]
-    Encode(#[from] serde_json::Error),
-    #[error("write version payload: {0}")]
-    Io(#[from] io::Error),
+    Encode(serde_json::Error),
+    Io(io::Error),
+}
+
+impl fmt::Display for WriteError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Encode(error) => write!(f, "encode version payload: {error}"),
+            Self::Io(error) => write!(f, "write version payload: {error}"),
+        }
+    }
+}
+
+impl std::error::Error for WriteError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            Self::Encode(error) => Some(error),
+            Self::Io(error) => Some(error),
+        }
+    }
+}
+
+impl From<serde_json::Error> for WriteError {
+    fn from(error: serde_json::Error) -> Self {
+        Self::Encode(error)
+    }
+}
+
+impl From<io::Error> for WriteError {
+    fn from(error: io::Error) -> Self {
+        Self::Io(error)
+    }
 }
 
 impl Info {
