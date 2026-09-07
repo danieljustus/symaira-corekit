@@ -1,0 +1,21 @@
+[package]
+name = "symaira-core-mcp"
+version = "0.0.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+publish = false
+
+description = "Owned, zero-pollution MCP JSON-RPC stdio adapter for Symaira CoreKit"
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+schemars.workspace = true
+serde_ignored.workspace = true
+thiserror.workspace = true
+
+[[bin]]
+name = "symaira-mcp-fixture"
+path = "src/bin/fixture.rs"

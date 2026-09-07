@@ -1,0 +1,21 @@
+[workspace]
+
+[package]
+name = "symaira-core-mcp-fuzz"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "=0.4.9"
+symaira-core-mcp = { path = "../rust/symaira-core-mcp" }
+
+[[bin]]
+name = "mcp-frame"
+path = "fuzz_targets/mcp_frame.rs"
+test = false
+doc = false
+bench = false

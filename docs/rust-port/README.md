@@ -1,6 +1,6 @@
 # Go→Rust migration handoff
 
-Status: **RUST-001 and RUST-002 complete; RUST-003 and RUST-004 ready; no cutover approval**.
+Status: **RUST-001, RUST-002 and RUST-004 complete; RUST-003 ready; no cutover approval**.
 
 This directory freezes the starting point for a contract-first Rust implementation of `symaira-corekit`. The Go implementation remains supported, buildable and the executable oracle while Go consumers exist. Rust crates are added beside it and are adopted package by package; this is not a flag-day repository rewrite.
 
@@ -14,6 +14,10 @@ This directory freezes the starting point for a contract-first Rust implementati
 - Production/fixture digest: `ab38c1cc4d2f91026e1d6836e1138388fd683a789ab8f104269d019c3caff95c`
 
 The oracle is five commits after `v0.17.0`. Every generated fixture must name the exact commit and verify the tracked Go/JSON/SQL input digest. Later Go changes require an explicit contract classification and regenerated fixture before the corresponding Rust parity status can remain green.
+
+MCP provenance is layered: the repository-wide RUST-001 inventory remains pinned to `f3d3eb79b9b1f31b4f973d2ed518a8292cedf588`, while each MCP-001 through MCP-012 row and the executable MCP corpus pins the merged MCP slice oracle `ff0e10ede1071f0a3137fd2774bd89d53f60cc9d`. The MCP CI checkout uses full history so that per-slice commit can be archived and executed.
+
+Cancellation is also an explicit safe-Rust boundary: Go receives `context.Context`, while Rust handlers receive a cooperative `CancellationToken`. The transport-level Rust test proves prompt return without joining an unclosable reader; normal EOF still joins in-flight handlers. Go's nil/duplicate/empty registration panics remain an accepted language difference, represented by Rust `RegistrationError` and executable rejection tests rather than fake panic parity.
 
 ## Resolved prerequisite defect
 

@@ -658,7 +658,8 @@
         "windows"
       ],
       "rust_test": "symaira-core-mcp/tests/raw_frames.rs",
-      "status": "todo"
+      "status": "parity",
+      "oracle_commit": "ff0e10ede1071f0a3137fd2774bd89d53f60cc9d"
     },
     {
       "id": "MCP-002",
@@ -673,7 +674,8 @@
         "windows"
       ],
       "rust_test": "symaira-core-mcp/tests/raw_frames.rs",
-      "status": "todo"
+      "status": "parity",
+      "oracle_commit": "ff0e10ede1071f0a3137fd2774bd89d53f60cc9d"
     },
     {
       "id": "MCP-003",
@@ -688,7 +690,8 @@
         "windows"
       ],
       "rust_test": "symaira-core-mcp/tests/raw_frames.rs",
-      "status": "todo"
+      "status": "parity",
+      "oracle_commit": "ff0e10ede1071f0a3137fd2774bd89d53f60cc9d"
     },
     {
       "id": "MCP-004",
@@ -703,7 +706,8 @@
         "windows"
       ],
       "rust_test": "symaira-core-mcp/tests/raw_frames.rs",
-      "status": "todo"
+      "status": "parity",
+      "oracle_commit": "ff0e10ede1071f0a3137fd2774bd89d53f60cc9d"
     },
     {
       "id": "MCP-005",
@@ -718,7 +722,8 @@
         "windows"
       ],
       "rust_test": "symaira-core-mcp/tests/raw_frames.rs",
-      "status": "todo"
+      "status": "parity",
+      "oracle_commit": "ff0e10ede1071f0a3137fd2774bd89d53f60cc9d"
     },
     {
       "id": "MCP-006",
@@ -733,7 +738,8 @@
         "windows"
       ],
       "rust_test": "symaira-core-mcp/tests/raw_frames.rs",
-      "status": "todo"
+      "status": "parity",
+      "oracle_commit": "ff0e10ede1071f0a3137fd2774bd89d53f60cc9d"
     },
     {
       "id": "MCP-007",
@@ -748,7 +754,8 @@
         "windows"
       ],
       "rust_test": "symaira-core-mcp/tests/raw_frames.rs",
-      "status": "todo"
+      "status": "parity",
+      "oracle_commit": "ff0e10ede1071f0a3137fd2774bd89d53f60cc9d"
     },
     {
       "id": "MCP-008",
@@ -763,7 +770,8 @@
         "windows"
       ],
       "rust_test": "symaira-core-mcp/tests/raw_frames.rs",
-      "status": "todo"
+      "status": "parity",
+      "oracle_commit": "ff0e10ede1071f0a3137fd2774bd89d53f60cc9d"
     },
     {
       "id": "MCP-009",
@@ -778,7 +786,8 @@
         "windows"
       ],
       "rust_test": "symaira-core-mcp/tests/raw_frames.rs",
-      "status": "todo"
+      "status": "parity",
+      "oracle_commit": "ff0e10ede1071f0a3137fd2774bd89d53f60cc9d"
     },
     {
       "id": "MCP-010",
@@ -793,7 +802,8 @@
         "windows"
       ],
       "rust_test": "symaira-core-mcp/tests/raw_frames.rs",
-      "status": "todo"
+      "status": "parity",
+      "oracle_commit": "ff0e10ede1071f0a3137fd2774bd89d53f60cc9d"
     },
     {
       "id": "MCP-011",
@@ -808,7 +818,8 @@
         "windows"
       ],
       "rust_test": "symaira-core-mcp/tests/raw_frames.rs",
-      "status": "todo"
+      "status": "parity",
+      "oracle_commit": "ff0e10ede1071f0a3137fd2774bd89d53f60cc9d"
     },
     {
       "id": "MCP-012",
@@ -823,7 +834,8 @@
         "windows"
       ],
       "rust_test": "symaira-core-mcp/tests/raw_frames.rs",
-      "status": "todo"
+      "status": "parity",
+      "oracle_commit": "ff0e10ede1071f0a3137fd2774bd89d53f60cc9d"
     },
     {
       "id": "MCFG-001",
