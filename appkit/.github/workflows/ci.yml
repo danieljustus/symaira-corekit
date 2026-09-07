@@ -44,6 +44,8 @@ jobs:
           DEVELOPER_DIR="$XCODE/Contents/Developer" xcodebuild -version | grep -F 'Xcode 27.0'
       - name: Swift version
         run: swift --version
+      - name: Verify approved icon family
+        run: python3 scripts/verify-approved-icon.py
       - name: Build
         # Scale parallelism by RAM: Mini (8GB) needs -j2, MacBook (24GB) can do more
         run: |

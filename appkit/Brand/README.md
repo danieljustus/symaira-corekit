@@ -19,41 +19,30 @@ installer artwork, store artwork, and future app-icon catalogs. Do not shrink
 the complete lockup into small toolbar or status icons; those surfaces keep
 using purpose-built symbols.
 
-## App icons
+## Approved Icon Composer families
 
-Symaira app icons use one shared shell:
+`AppIcon/SymairaAppKit/` is the canonical, complete approved family for this
+library's brand identity. It vendors the unchanged Icon Composer package,
+approved source inputs, the six macOS/iOS appearance exports, and
+`exports/AppIcon.icns`. `icon-manifest.json` records the release manifest
+checksums; `scripts/verify-approved-icon.py` is the CI guard for drift.
 
-- warm-black instrument-panel canvas
-- champagne-gold Symaira rim and orbital strokes
-- a restrained technical grid
-- one clear, tool-specific line glyph
-- one semantic accent from the Symaira palette
+The approved high-contrast A3 artwork is the source of truth. Do not redraw,
+recolor, or regenerate the artwork with the historical shell renderer. The
+older shell files in `Brand/AppIcon/` remain available for historical assets,
+but they are not inputs for new icon families.
 
-The tool glyph remains in the owning tool repository. This keeps
-`symaira-appkit` free of tool-specific product assets while still making the
-shell, sizing, safe zones, and exports reproducible.
-
-Render an icon with:
+To refresh the canonical family from the approved release directory, run:
 
 ```bash
-python3 scripts/render-app-icon.py \
-  --glyph /path/to/app-icon-glyph.svg \
-  --output /path/to/Assets.xcassets/AppIcon.appiconset \
-  --master /path/to/assets/branding/app-icon.svg \
-  --platforms macos,ios \
-  --accent '#71D9F0'
+python3 scripts/vendor-approved-icon.py \
+  --release-root /path/to/symaira-icons-release
+python3 scripts/verify-approved-icon.py
 ```
 
-Rendering requires macOS Quick Look (`qlmanage`) and ImageMagick (`magick`);
-both are build-time tools only and are not linked into an app.
-
-The glyph SVG must use a `0 0 512 512` view box. Use `currentColor` for its
-primary stroke or fill and `#F7E0A8` for deliberate gold details.
-
-Xcode projects consume the generated asset catalog directly. Manually
-assembled bundles should vendor an `actool`-compiled `AppIcon.icns` next to the
-sources and copy it during packaging; release builds must not depend on
-`iconutil` converting PNGs at runtime.
+Keep all layered Icon Composer inputs and rendered outputs together. Consumers
+that need a product icon should vendor the matching family into their own
+repository rather than depending on a neighbouring AppKit checkout.
 
 ## App names
 
