@@ -58,6 +58,16 @@ def replace(value: str, roots: dict[str, str]) -> str:
     return value
 
 
+def replace_json_strings(value: Any, roots: dict[str, str]) -> Any:
+    if isinstance(value, str):
+        return replace(value, roots)
+    if isinstance(value, list):
+        return [replace_json_strings(item, roots) for item in value]
+    if isinstance(value, dict):
+        return {key: replace_json_strings(item, roots) for key, item in value.items()}
+    return value
+
+
 def decode_bytes(container: dict[str, Any], prefix: str, roots: dict[str, str]) -> bytes:
     fields = [name for name in (f"{prefix}_utf8", f"{prefix}_base64", f"{prefix}_json") if name in container]
     if len(fields) > 1:
@@ -79,8 +89,8 @@ def decode_bytes(container: dict[str, Any], prefix: str, roots: dict[str, str]) 
         if not isinstance(value, str):
             raise ValueError(f"{field} must be a UTF-8 string")
         return replace(value, roots).encode("utf-8")
-    serialized = json.dumps(value, separators=(",", ":"), ensure_ascii=False)
-    return replace(serialized, roots).encode("utf-8")
+    replaced = replace_json_strings(value, roots)
+    return json.dumps(replaced, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
 
 
 def isolated_env(roots: dict[str, str], extra: dict[str, str], clock: str, seed: str) -> dict[str, str]:
@@ -362,6 +372,13 @@ def self_test() -> None:
         compare(binary_case, binary_left, binary_right)
         if binary_left.stdout != b"\x00\xff\r\n":
             raise AssertionError("base64 stdin was not preserved byte-for-byte")
+        windows_json = decode_bytes(
+            {"stdin_json": {"path": "${WORKSPACE}/fixture"}},
+            "stdin",
+            {"${WORKSPACE}": r"C:\port\workspace"},
+        )
+        if json.loads(windows_json)["path"] != r"C:\port\workspace/fixture":
+            raise AssertionError("JSON path replacement did not preserve Windows backslashes")
 
         pid_file = temp / "descendant.pid"
         helper_case = {
