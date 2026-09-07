@@ -1,0 +1,87 @@
+{
+  "schema_version": 1,
+  "gate_id": "RUST-005",
+  "minimum_consumers": 2,
+  "corekit": {
+    "repository": "danieljustus/symaira-corekit",
+    "url": "https://github.com/danieljustus/symaira-corekit",
+    "package": "symaira-core-version",
+    "revision": "27177f25f551cecefa7bd6c4524abf175b3a75c7"
+  },
+  "consumers": [
+    {
+      "repository": "danieljustus/symaira-vault",
+      "checkout": "symaira-vault/.worktrees/corekit-rust-foundation",
+      "pr_number": 1000,
+      "pre_adoption_commit": "555f7c6f24af9acf29fd8a68d582702166d3e40b",
+      "adoption_commit": "772165a2b3a8efc6aebed7f904f38edeac45458a",
+      "merged_commit": "b39d1c2de59d205a91c01e584776d568c3877d7e",
+      "crate": "symaira-core-version",
+      "manifest_paths": [
+        "Cargo.toml",
+        "crates/symvault-cli/Cargo.toml",
+        "crates/symvault-core/Cargo.toml"
+      ],
+      "standalone_commands": [
+        "<artifact>/symvault version --json",
+        "<artifact>/symvault version"
+      ],
+      "duplicate": {
+        "source_paths": [
+          "crates/symvault-core/src/lib.rs"
+        ],
+        "before_markers": [
+          "VersionDocument",
+          "serde_json::to_string"
+        ],
+        "after_forbidden_markers": [
+          "VersionDocument"
+        ],
+        "corekit_loc_added": 0,
+        "adapter_loc_added": 4,
+        "duplicate_loc_removed": 13,
+        "measured_removed_loc": 13,
+        "measured_added_loc": 4
+      }
+    },
+    {
+      "repository": "danieljustus/symaira-eraseme",
+      "checkout": "symaira-eraseme/.worktrees/corekit-rust-foundation",
+      "pr_number": 866,
+      "pre_adoption_commit": "c5ea58d32ab71b342bb7e4aa430e13dd28deca49",
+      "adoption_commit": "27a3f790c59771e53636fa9b6b13e5687c689f3a",
+      "merged_commit": "eb628050d136a2b2009250a8c6f21eb718d853fc",
+      "crate": "symaira-core-version",
+      "manifest_paths": [
+        "Cargo.toml",
+        "crates/symeraseme-core/Cargo.toml"
+      ],
+      "standalone_commands": [
+        "<artifact>/symeraseme-rust version --json",
+        "<artifact>/symeraseme-rust version"
+      ],
+      "duplicate": {
+        "source_paths": [
+          "crates/symeraseme-core/src/version.rs"
+        ],
+        "before_markers": [
+          "pub struct VersionInfo",
+          "serde_json::to_vec"
+        ],
+        "after_forbidden_markers": [
+          "pub struct VersionInfo"
+        ],
+        "corekit_loc_added": 0,
+        "adapter_loc_added": 20,
+        "duplicate_loc_removed": 32,
+        "measured_removed_loc": 32,
+        "measured_added_loc": 18
+      }
+    }
+  ],
+  "honesty": {
+    "merge_state": "Both adoption PRs are merged; merged_commit values were read back from GitHub.",
+    "benchmark_state": "Pending regeneration: no tracked foundation report is accepted until the raw 50-launch/10-build evidence and digest manifest are produced by bench.py.",
+    "parent_action": "Run bench.py once to capture real raw evidence, then refresh foundation.json and the value-gate integrity digest before marking RUST-005 passed."
+  }
+}

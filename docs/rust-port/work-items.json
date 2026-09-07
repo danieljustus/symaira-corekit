@@ -152,11 +152,11 @@
         "PERF-002",
         "PERF-004"
       ],
-      "status": "ready",
+      "status": "complete",
       "demand_class": "required",
       "acceptance_commands": [
         "python3 scripts/rust-port/adoption.py --check --min-consumers 2",
-        "python3 scripts/rust-port/bench.py --suite foundation --runs 50",
+        "python3 scripts/rust-port/bench.py --suite foundation --runs 50 --build-runs 10",
         "make port-consumer-smoke",
         "make rust-port-validate"
       ],
@@ -350,7 +350,7 @@
       "contracts": [
         "REL-004"
       ],
-      "status": "blocked",
+      "status": "ready",
       "demand_class": "required",
       "acceptance_commands": [
         "cargo fmt --all --check",

@@ -1,6 +1,6 @@
 # Go→Rust migration handoff
 
-Status: **RUST-001, RUST-002 and RUST-004 complete; RUST-003 ready; no cutover approval**.
+Status: **RUST-001 through RUST-005 complete; Go remains the supported executable oracle and no broad cutover is implied**.
 
 This directory freezes the starting point for a contract-first Rust implementation of `symaira-corekit`. The Go implementation remains supported, buildable and the executable oracle while Go consumers exist. Rust crates are added beside it and are adopted package by package; this is not a flag-day repository rewrite.
 
@@ -92,9 +92,23 @@ Stop and reassess when any of these holds:
 - [`implementation-plan.md`](implementation-plan.md) — ordered vertical slices.
 - [`work-items.json`](work-items.json) — machine-readable acyclic work graph.
 - [`validate.py`](validate.py) — validates schemas, IDs, links, coverage and graph barriers.
-- [`../../testdata/rust-port/`](../../testdata/rust-port/) — generated public API, contract fixtures, neutral cases, isolation limits and paired-consumer canaries.
-- [`../../scripts/rust-port/`](../../scripts/rust-port/) — exact-oracle generator plus Go↔Go differential self-test.
+- [`../../testdata/rust-port/`](../../testdata/rust-port/) — generated public API, contract fixtures, neutral cases, isolation limits, paired-consumer canaries, and RUST-005 adoption evidence/reports.
+- [`../../scripts/rust-port/`](../../scripts/rust-port/) — exact-oracle generator, Go↔Go differential self-test, adoption validator, and real paired value benchmark.
 
 Run `make port-contract`, `make rust-foundation-contract`, `make rust-lint`,
-and `make rust-test`. The filesystem/secret and MCP slices are now the two
-ready work items; the value gate remains blocked on both.
+and `make rust-test`. The required foundation, filesystem/secret, MCP, and
+multi-consumer value slices are complete; later package ports remain demand-driven.
+
+RUST-005 evidence is intentionally live and fail-closed:
+
+- `python3 scripts/rust-port/adoption.py --check --min-consumers 2` checks the
+  two exact consumer revisions, Cargo pins/lock resolution, feature closure,
+  duplicate removal, standalone command shape, and live merged-PR state.
+- `make port-consumer-smoke` builds each adoption revision in a benchmark-owned
+  checkout and runs version commands through absolute artifact paths.
+- `python3 scripts/rust-port/bench.py --suite foundation --runs 50 --build-runs 10` measures
+  real paired startup p95, RSS median, binary size, and 10-run clean/warm build
+  distributions. It records summary/provenance only and deletes all temporary
+  checkouts, caches and targets.
+- `make rust-port-validate` verifies the document, merged-adoption, and tracked
+  real benchmark evidence without rerunning the hour-long measurement.

@@ -1,0 +1,224 @@
+{
+  "checked_at": "2026-09-07T20:36:00.377252+00:00",
+  "claims": {
+    "merged": true
+  },
+  "consumers": [
+    {
+      "checkout": "symaira-vault/.worktrees/corekit-rust-foundation",
+      "commit": "772165a2b3a8efc6aebed7f904f38edeac45458a",
+      "crate": "symaira-core-version",
+      "duplicate": {
+        "adapter_loc_added": 4,
+        "after_forbidden_markers": [
+          "VersionDocument"
+        ],
+        "before_markers": [
+          "VersionDocument",
+          "serde_json::to_string"
+        ],
+        "corekit_loc_added": 0,
+        "duplicate_loc_removed": 13,
+        "measured_added_loc": 4,
+        "measured_removed_loc": 13,
+        "source_paths": [
+          "crates/symvault-core/src/lib.rs"
+        ]
+      },
+      "exact_pin": "27177f25f551cecefa7bd6c4524abf175b3a75c7",
+      "files": {
+        "lock": {
+          "closure": [
+            "itoa",
+            "memchr",
+            "proc-macro2",
+            "quote",
+            "serde",
+            "serde_core",
+            "serde_derive",
+            "serde_json",
+            "symaira-core-version",
+            "syn",
+            "unicode-ident",
+            "zmij"
+          ],
+          "source": "git+https://github.com/danieljustus/symaira-corekit?rev=27177f25f551cecefa7bd6c4524abf175b3a75c7#27177f25f551cecefa7bd6c4524abf175b3a75c7"
+        },
+        "manifests": [
+          "Cargo.toml",
+          "crates/symvault-cli/Cargo.toml",
+          "crates/symvault-core/Cargo.toml",
+          "crates/symvault-crypto/Cargo.toml"
+        ],
+        "pins": [
+          {
+            "manifest": "Cargo.toml",
+            "spec": {
+              "git": "https://github.com/danieljustus/symaira-corekit",
+              "package": "symaira-core-version",
+              "rev": "27177f25f551cecefa7bd6c4524abf175b3a75c7",
+              "version": "=0.0.0"
+            }
+          },
+          {
+            "manifest": "crates/symvault-cli/Cargo.toml",
+            "spec": {
+              "git": "https://github.com/danieljustus/symaira-corekit",
+              "package": "symaira-core-version",
+              "rev": "27177f25f551cecefa7bd6c4524abf175b3a75c7",
+              "version": "=0.0.0"
+            }
+          },
+          {
+            "manifest": "crates/symvault-core/Cargo.toml",
+            "spec": {
+              "git": "https://github.com/danieljustus/symaira-corekit",
+              "package": "symaira-core-version",
+              "rev": "27177f25f551cecefa7bd6c4524abf175b3a75c7",
+              "version": "=0.0.0"
+            }
+          }
+        ]
+      },
+      "pr": {
+        "baseRefOid": "555f7c6f24af9acf29fd8a68d582702166d3e40b",
+        "classification": "merged",
+        "headRefOid": "772165a2b3a8efc6aebed7f904f38edeac45458a",
+        "isDraft": false,
+        "mergeCommit": {
+          "oid": "b39d1c2de59d205a91c01e584776d568c3877d7e"
+        },
+        "mergedAt": "2026-09-07T17:54:03Z",
+        "number": 1000,
+        "pr_number": 1000,
+        "repository": "danieljustus/symaira-vault",
+        "state": "MERGED"
+      },
+      "repository": "danieljustus/symaira-vault"
+    },
+    {
+      "checkout": "symaira-eraseme/.worktrees/corekit-rust-foundation",
+      "commit": "27a3f790c59771e53636fa9b6b13e5687c689f3a",
+      "crate": "symaira-core-version",
+      "duplicate": {
+        "adapter_loc_added": 20,
+        "after_forbidden_markers": [
+          "pub struct VersionInfo"
+        ],
+        "before_markers": [
+          "pub struct VersionInfo",
+          "serde_json::to_vec"
+        ],
+        "corekit_loc_added": 0,
+        "duplicate_loc_removed": 32,
+        "measured_added_loc": 18,
+        "measured_removed_loc": 32,
+        "source_paths": [
+          "crates/symeraseme-core/src/version.rs"
+        ]
+      },
+      "exact_pin": "27177f25f551cecefa7bd6c4524abf175b3a75c7",
+      "files": {
+        "lock": {
+          "closure": [
+            "itoa",
+            "memchr",
+            "proc-macro2",
+            "quote",
+            "serde",
+            "serde_core",
+            "serde_derive",
+            "serde_json",
+            "symaira-core-version",
+            "syn",
+            "unicode-ident",
+            "zmij"
+          ],
+          "source": "git+https://github.com/danieljustus/symaira-corekit?rev=27177f25f551cecefa7bd6c4524abf175b3a75c7#27177f25f551cecefa7bd6c4524abf175b3a75c7"
+        },
+        "manifests": [
+          "Cargo.toml",
+          "crates/symeraseme-cli/Cargo.toml",
+          "crates/symeraseme-core/Cargo.toml",
+          "crates/symeraseme-engine/Cargo.toml",
+          "rust-tests/parity/Cargo.toml"
+        ],
+        "pins": [
+          {
+            "manifest": "Cargo.toml",
+            "spec": {
+              "git": "https://github.com/danieljustus/symaira-corekit",
+              "rev": "27177f25f551cecefa7bd6c4524abf175b3a75c7",
+              "version": "=0.0.0"
+            }
+          },
+          {
+            "manifest": "crates/symeraseme-core/Cargo.toml",
+            "spec": {
+              "git": "https://github.com/danieljustus/symaira-corekit",
+              "rev": "27177f25f551cecefa7bd6c4524abf175b3a75c7",
+              "version": "=0.0.0"
+            }
+          }
+        ]
+      },
+      "pr": {
+        "baseRefOid": "c5ea58d32ab71b342bb7e4aa430e13dd28deca49",
+        "classification": "merged",
+        "headRefOid": "27a3f790c59771e53636fa9b6b13e5687c689f3a",
+        "isDraft": false,
+        "mergeCommit": {
+          "oid": "eb628050d136a2b2009250a8c6f21eb718d853fc"
+        },
+        "mergedAt": "2026-09-07T18:40:47Z",
+        "number": 866,
+        "pr_number": 866,
+        "repository": "danieljustus/symaira-eraseme",
+        "state": "MERGED"
+      },
+      "repository": "danieljustus/symaira-eraseme"
+    }
+  ],
+  "corekit": {
+    "package": "symaira-core-version",
+    "repository": "danieljustus/symaira-corekit",
+    "revision": "27177f25f551cecefa7bd6c4524abf175b3a75c7",
+    "url": "https://github.com/danieljustus/symaira-corekit"
+  },
+  "findings": [],
+  "gate_id": "RUST-005",
+  "honesty": "Open or unverified PRs remain pending; no merged adoption is claimed.",
+  "live_pr": [
+    {
+      "baseRefOid": "555f7c6f24af9acf29fd8a68d582702166d3e40b",
+      "classification": "merged",
+      "headRefOid": "772165a2b3a8efc6aebed7f904f38edeac45458a",
+      "isDraft": false,
+      "mergeCommit": {
+        "oid": "b39d1c2de59d205a91c01e584776d568c3877d7e"
+      },
+      "mergedAt": "2026-09-07T17:54:03Z",
+      "number": 1000,
+      "pr_number": 1000,
+      "repository": "danieljustus/symaira-vault",
+      "state": "MERGED"
+    },
+    {
+      "baseRefOid": "c5ea58d32ab71b342bb7e4aa430e13dd28deca49",
+      "classification": "merged",
+      "headRefOid": "27a3f790c59771e53636fa9b6b13e5687c689f3a",
+      "isDraft": false,
+      "mergeCommit": {
+        "oid": "eb628050d136a2b2009250a8c6f21eb718d853fc"
+      },
+      "mergedAt": "2026-09-07T18:40:47Z",
+      "number": 866,
+      "pr_number": 866,
+      "repository": "danieljustus/symaira-eraseme",
+      "state": "MERGED"
+    }
+  ],
+  "minimum_consumers": 2,
+  "schema_version": 1,
+  "status": "passed"
+}
