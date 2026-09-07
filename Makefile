@@ -1,4 +1,4 @@
-.PHONY: build test lint fmt-check clean consumer-drift golangci-lint rust-port-validate port-fixture-source-check port-oracle-selftest port-contract rust-lint rust-test rust-foundation-contract
+.PHONY: build test lint fmt-check clean consumer-drift golangci-lint rust-port-validate port-fixture-source-check port-oracle-selftest port-contract rust-lint rust-test rust-foundation-contract rust-mcp-contract mcp-differential mcp-fuzz-smoke
 
 build:
 	CGO_ENABLED=0 go build ./...
@@ -31,6 +31,22 @@ rust-foundation-contract:
 	GOTOOLCHAIN=go1.26.6 CGO_ENABLED=0 go test -count=1 ./versionkit ./exitcodes ./envutil ./logkit ./configkit
 	cargo test -p symaira-contract-fixtures --all-features --locked
 	cargo test -p symaira-core-foundation --all-features --locked
+
+rust-mcp-contract:
+	cargo fmt --all --check
+	cargo check -p symaira-core-mcp --all-targets --all-features --locked
+	cargo clippy -p symaira-core-mcp --all-targets --all-features --locked -- -D warnings
+	cargo test -p symaira-core-mcp --all-features --locked
+
+mcp-differential:
+	python3 scripts/rust-port/mcp-differential.py --check
+
+mcp-fuzz-smoke:
+	cargo fuzz --version | grep -F 'cargo-fuzz 0.13.2'
+	@FUZZ_CORPUS=$$(mktemp -d); \
+	trap 'rm -rf "$$FUZZ_CORPUS"' EXIT; \
+	cp fuzz/corpus/mcp_frame/* "$$FUZZ_CORPUS"/; \
+	cd fuzz && cargo +nightly-2026-09-03 fuzz run mcp-frame "$$FUZZ_CORPUS" --sanitizer none -- -runs=100
 
 test:
 	CGO_ENABLED=0 go test -race ./...
