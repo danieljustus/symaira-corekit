@@ -1,0 +1,94 @@
+# Go→Rust migration handoff
+
+Status: **RUST-001 complete; RUST-002 ready; no Rust production crate and no cutover approval**.
+
+This directory freezes the starting point for a contract-first Rust implementation of `symaira-corekit`. The Go implementation remains supported, buildable and the executable oracle while Go consumers exist. Rust crates are added beside it and are adopted package by package; this is not a flag-day repository rewrite.
+
+## Pinned oracle
+
+- Commit: `f3d3eb79b9b1f31b4f973d2ed518a8292cedf588`
+- Stable release: `v0.17.0`
+- Go module: `github.com/danieljustus/symaira-corekit`
+- Go toolchain: `go1.26.6`
+- Oracle gate: `GOTOOLCHAIN=go1.26.6 make build test lint`
+- Production/fixture digest: `ab38c1cc4d2f91026e1d6836e1138388fd683a789ab8f104269d019c3caff95c`
+
+The oracle is five commits after `v0.17.0`. Every generated fixture must name the exact commit and verify the tracked Go/JSON/SQL input digest. Later Go changes require an explicit contract classification and regenerated fixture before the corresponding Rust parity status can remain green.
+
+## Resolved prerequisite defect
+
+`DEFECT-001` recorded a real contract contradiction: the update-check fixture
+and cross-language prose claimed an in-memory/no-disk cache, while the pinned Go
+implementation persists a per-repository cache below the platform cache
+directory. RUST-001 corrected the fixture, prose and Go tests to the pinned Go
+behavior and updated the vendored Swift AppKit fixture plus a cross-instance
+cache test. The row is now `fixture-ready`; Rust must preserve this corrected
+behavior.
+
+## Why now
+
+`symaira-fritz` has completed its Rust migration, while Brain, Browse, Desktop, Vault and EraseMe already contain Rust workspaces. Waiting until they finish would force each repository to invent local versions of shared contracts. Starting with executable contracts now lets proven common code move into CoreKit without designing speculative abstractions.
+
+## Goal and value gates
+
+CoreKit is a library, so a single standalone binary-size target would be fake precision. A Rust crate proceeds beyond its representative slice only when all of these hold:
+
+1. its observable Go↔Rust contracts pass on supported native platforms;
+2. at least **two active Rust consumers** adopt it, or it owns a language-neutral ecosystem contract consumed by at least two languages;
+3. adopted consumers delete or avoid an equivalent local implementation with no net duplicate increase;
+4. representative consumer release binaries regress by no more than **10%** in startup p95, peak-RSS median, operation p95 or binary size unless a documented security gain justifies the cost;
+5. algorithmic crates (`domkit`, `evidencekit`, `vectorkit`) stay within **10%** of Go p95/throughput and preserve exact persisted/wire bytes where specified;
+6. build and test time is measured, reported and does not become an unbounded ecosystem tax.
+
+Failure of the adoption gate means the crate stays demand-driven or is not built. Rust is not counted as a benefit by itself.
+
+## Scope
+
+Included:
+
+- all public Go-package behavior and language-neutral JSON contracts;
+- Rust equivalents for packages demanded by active Rust consumers;
+- exact wire, file, SQLite, archive, logging and error contracts;
+- dual-language CI, SemVer, publishing and consumer-pin policy;
+- a neutral Go↔Rust fixture and differential harness.
+
+Non-goals:
+
+- deleting or breaking Go packages while released Go consumers remain;
+- mirroring every Go package or API mechanically in Rust;
+- forcing one umbrella Rust crate on consumers;
+- creating a cross-repository Cargo workspace;
+- moving product-specific policy into CoreKit;
+- redesigning schemas or fixing Go behavior silently during parity work;
+- porting deprecated `ollamakit` as a new first-class Rust crate.
+
+## Migration and rollback rule
+
+The repository remains dual-language. Go tags and APIs continue under existing SemVer. Rust crates begin at `0.x`, use exact internal versions, and are consumed first by exact Git revision plus `Cargo.lock`. crates.io publishing is allowed only after the public API and multi-consumer adoption gate pass. A Rust crate may be removed before 1.0 if it fails adoption; a Go package may be removed only in a separate major-version decision after repository-wide released-consumer evidence says it is unused.
+
+## Stop rules
+
+Stop and reassess when any of these holds:
+
+- a Rust abstraction has fewer than two real consumers and owns no cross-language SSOT;
+- exact MCP framing, SQLite state, archive safety, audit-chain bytes, vector sidecars or LLM wire behavior cannot be preserved;
+- an upstream crate requires a broad permanent fork, unacceptable native runtime dependency, or unbounded unsafe surface;
+- dependency features make small consumers pull unrelated HTTP, SQLite, DOM or async stacks;
+- dual-language tags cannot express compatible Go and Rust releases without consumer ambiguity;
+- Go is no longer independently testable before its released consumers have migrated;
+- the representative value gate fails.
+
+## Prepared artifacts
+
+- [`baseline.json`](baseline.json) — measured Go starting point and real consumer demand.
+- [`value-gate.json`](value-gate.json) — machine-readable RUST-005 adoption, duplication and regression evidence.
+- [`architecture.md`](architecture.md) — target crates, dependency direction and publishing model.
+- [`upstream-evaluation.md`](upstream-evaluation.md) — reuse/build decisions and mandatory spikes.
+- [`contract-matrix.json`](contract-matrix.json) — stable observable-contract IDs.
+- [`implementation-plan.md`](implementation-plan.md) — ordered vertical slices.
+- [`work-items.json`](work-items.json) — machine-readable acyclic work graph.
+- [`validate.py`](validate.py) — validates schemas, IDs, links, coverage and graph barriers.
+- [`../../testdata/rust-port/`](../../testdata/rust-port/) — generated public API, contract fixtures, neutral cases, isolation limits and paired-consumer canaries.
+- [`../../scripts/rust-port/`](../../scripts/rust-port/) — exact-oracle generator plus Go↔Go differential self-test.
+
+Run `make port-contract`. RUST-001 is complete and RUST-002 is the only ready item; it introduces the pinned Rust workspace and first production crates.

@@ -16,7 +16,10 @@ Bundles domain-free infrastructure that is otherwise duplicated across tools: MC
 go get github.com/danieljustus/symaira-corekit@latest
 ```
 
-Although `corekit` is a Go library, its conventions also guide the non-Go tools (`symcockpit`, `symterminal`, `symeraseme`). See [`docs/cross-language-conventions.md`](docs/cross-language-conventions.md) for the shared contracts that apply across languages.
+Although `corekit` is currently a Go library, its conventions also guide the
+non-Go backends such as `symcockpit` and the Rust migrations. See
+[`docs/cross-language-conventions.md`](docs/cross-language-conventions.md) for
+the shared contracts that apply across languages.
 
 ## Why CoreKit
 
@@ -93,6 +96,7 @@ logger.Info("started", "version", "1.0.0")
 
 - [`docs/cross-language-conventions.md`](docs/cross-language-conventions.md) — shared contracts that apply across Go, Swift, and Python tools
 - [`docs/migrations.md`](docs/migrations.md) — migration notes and check items per minor release
+- [`docs/rust-port/README.md`](docs/rust-port/README.md) — contract-first Go→Rust migration handoff and execution gates
 - [`docs/adr/0001-authkit-session-and-biometric-broker.md`](docs/adr/0001-authkit-session-and-biometric-broker.md) — Architecture Decision Record: AuthKit session and biometric broker
 
 ## Versioning

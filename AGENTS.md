@@ -11,8 +11,8 @@ This repository is the public Apache-2.0 licensed shared library for Symaira pub
 
 ## Repository Role
 
-- Provide domain-free infrastructure packages shared across the Symaira Go products: `symvault`, `symdesk` (incl. its nested `ingest`/`print`/`seek`/`relate`/`room` modules), `symbrain` (incl. its nested `guard` module and the absorbed memory/skills packages), `symbrowse`, `symfritz`, and `symvibe`.
-- Packages: `mcpserver`, `configkit`, `logkit`, `exitcodes`, `fsutil`, `envutil`, `sqlitekit`, `updatecheck`, `ollamakit`, `domkit`, `embedkit`, `evidencekit`, `vectorkit`, `versionkit`, `llmkit` (incl. its nested `gen` generator), `secretref`.
+- Provide domain-free infrastructure packages shared across the remaining Symaira Go backends: `symvault`, `symdesk` (incl. its nested `ingest`/`print`/`seek`/`relate`/`room` modules), `symbrain` (incl. the absorbed memory/skills/guard code), `symbrowse`, and `symeraseme`. `symfritz` is Rust-only and no longer imports the Go module.
+- Packages: `auditkit`, `mcpserver`, `mcpcfgkit`, `configkit`, `logkit`, `exitcodes`, `fsutil`, `envutil`, `sqlitekit`, `updatecheck`, `ollamakit`, `domkit`, `evidencekit`, `vectorkit/turboquant`, `versionkit`, `llmkit` (incl. its nested `gen` generator), and `secretref`.
 - Every package must be independently usable and testable.
 - Preserve standalone-first behavior for every consumer. Corekit may provide reusable helpers and conventions, but it must never make any public tool require another Symaira tool at build time or startup.
 

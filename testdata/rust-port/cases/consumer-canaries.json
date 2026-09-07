@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "purpose": "Repeatable paired-consumer canaries for the RUST-005 value gate; no Rust measurements are claimed by RUST-001.",
+  "runs": {
+    "startup_and_operation": 50,
+    "clean_and_warm_build": 10
+  },
+  "consumers": [
+    {
+      "repository": "symaira-browse",
+      "snapshot_commit": "652453d1595fc302bd69c328e7da8a21dbee28b9",
+      "capability": "version --json",
+      "go_build": "CGO_ENABLED=0 GOTOOLCHAIN=go1.26.6 go build -trimpath -o <out>/symbrowse-go ./cmd/symbrowse",
+      "go_run": "<out>/symbrowse-go version --json",
+      "rust_build": "cargo build --release --locked --bin symbrowse",
+      "rust_run": "target/release/symbrowse version --json",
+      "metrics": ["binary_size_bytes", "startup_p95_ms", "peak_rss_median_bytes", "clean_build_ms", "warm_build_ms"]
+    },
+    {
+      "repository": "symaira-desktop",
+      "snapshot_commit": "ae86331930fdfa2b128b68ae5af7437091b9949a",
+      "capability": "version --json",
+      "go_build": "CGO_ENABLED=0 GOTOOLCHAIN=go1.26.6 go build -trimpath -o <out>/symdesk-go ./cmd/symdesk",
+      "go_run": "<out>/symdesk-go version --json",
+      "rust_build": "cargo build --release --locked --bin symdesk",
+      "rust_run": "target/release/symdesk version --json",
+      "metrics": ["binary_size_bytes", "startup_p95_ms", "peak_rss_median_bytes", "clean_build_ms", "warm_build_ms"]
+    }
+  ]
+}

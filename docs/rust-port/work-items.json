@@ -1,0 +1,409 @@
+{
+  "schema_version": 1,
+  "oracle_commit": "f3d3eb79b9b1f31b4f973d2ed518a8292cedf588",
+  "value_gate_id": "RUST-005",
+  "barrier_applies_to": [
+    "RUST-006",
+    "RUST-007",
+    "RUST-008",
+    "RUST-009",
+    "RUST-010",
+    "RUST-011",
+    "RUST-012",
+    "RUST-013",
+    "RUST-014",
+    "RUST-015"
+  ],
+  "items": [
+    {
+      "id": "RUST-001",
+      "title": "Neutral Go oracle, API inventory and fixture harness",
+      "depends_on": [],
+      "contracts": [
+        "META-001",
+        "META-002",
+        "CON-001",
+        "CON-002",
+        "CON-003",
+        "CON-004",
+        "CON-005",
+        "CON-006",
+        "CON-007",
+        "CON-008",
+        "DEFECT-001"
+      ],
+      "status": "complete",
+      "demand_class": "required",
+      "acceptance_commands": [
+        "python3 docs/rust-port/validate.py",
+        "make port-oracle-selftest",
+        "make port-fixture-source-check"
+      ],
+      "stop_rule": "No Rust production crate until Go↔Go self-equality, source-digest rejection, isolated side effects and a deliberate negative-control failure are proven."
+    },
+    {
+      "id": "RUST-002",
+      "title": "Pinned Rust workspace and contracts/foundation slice",
+      "depends_on": [
+        "RUST-001"
+      ],
+      "contracts": [
+        "VER-001",
+        "VER-002",
+        "EXIT-001",
+        "EXIT-002",
+        "EXIT-003",
+        "EXIT-004",
+        "ENV-001",
+        "ENV-002",
+        "LOG-001",
+        "LOG-002",
+        "LOG-003",
+        "LOG-004",
+        "CFG-001",
+        "CFG-002",
+        "CFG-003",
+        "CFG-004",
+        "CFG-005",
+        "CFG-006",
+        "CFG-007"
+      ],
+      "status": "ready",
+      "demand_class": "required",
+      "acceptance_commands": [
+        "make rust-lint",
+        "make rust-test",
+        "make rust-foundation-contract"
+      ],
+      "stop_rule": "Do not accept changed bytes, paths, errors or defaults because Rust/framework conventions differ."
+    },
+    {
+      "id": "RUST-003",
+      "title": "Filesystem and secret-reference safety slice",
+      "depends_on": [
+        "RUST-002"
+      ],
+      "contracts": [
+        "FS-001",
+        "FS-002",
+        "FS-003",
+        "FS-004",
+        "FS-005",
+        "FS-006",
+        "FS-007",
+        "SEC-001",
+        "SEC-002",
+        "SEC-003",
+        "SEC-004",
+        "SEC-005",
+        "SEC-006"
+      ],
+      "status": "blocked",
+      "demand_class": "required",
+      "acceptance_commands": [
+        "make rust-fs-secret-contract",
+        "cargo +nightly miri test -p symaira-core-fs",
+        "cargo audit && cargo deny check"
+      ],
+      "stop_rule": "Stop on weaker symlink/race/path protection, secret disclosure, extra runtime coupling or owned unsafe code without an approved ADR."
+    },
+    {
+      "id": "RUST-004",
+      "title": "MCP stdio and typed-tool feasibility slice",
+      "depends_on": [
+        "RUST-002"
+      ],
+      "contracts": [
+        "MCP-001",
+        "MCP-002",
+        "MCP-003",
+        "MCP-004",
+        "MCP-005",
+        "MCP-006",
+        "MCP-007",
+        "MCP-008",
+        "MCP-009",
+        "MCP-010",
+        "MCP-011",
+        "MCP-012"
+      ],
+      "status": "blocked",
+      "demand_class": "required",
+      "acceptance_commands": [
+        "make rust-mcp-contract",
+        "make mcp-differential",
+        "cargo +nightly fuzz run mcp_frame -- -runs=10000"
+      ],
+      "stop_rule": "Use an owned raw adapter when rmcp defaults differ; never change framing, tool errors, schema bytes or stdout purity to fit the SDK."
+    },
+    {
+      "id": "RUST-005",
+      "title": "Foundation multi-consumer adoption and value gate",
+      "depends_on": [
+        "RUST-002",
+        "RUST-003",
+        "RUST-004"
+      ],
+      "contracts": [
+        "REL-001",
+        "REL-006",
+        "PERF-001",
+        "PERF-002",
+        "PERF-004"
+      ],
+      "status": "blocked",
+      "demand_class": "required",
+      "acceptance_commands": [
+        "python3 scripts/rust-port/adoption.py --check --min-consumers 2",
+        "python3 scripts/rust-port/bench.py --suite foundation --runs 50",
+        "make port-consumer-smoke",
+        "make rust-port-validate"
+      ],
+      "stop_rule": "Stop or shrink the Rust foundation if it lacks two adopters/two-language ownership, fails to remove duplication, breaks standalone-first or exceeds the 10% representative regression ceiling."
+    },
+    {
+      "id": "RUST-006",
+      "title": "SQLite open, pragma, migration and locking slice",
+      "depends_on": [
+        "RUST-005"
+      ],
+      "contracts": [
+        "SQL-001",
+        "SQL-002",
+        "SQL-003",
+        "SQL-004",
+        "SQL-005",
+        "SQL-006"
+      ],
+      "status": "deferred",
+      "demand_class": "demand_driven",
+      "acceptance_commands": [
+        "make rust-sqlite-contract",
+        "python3 scripts/rust-port/diff.py --suite sqlite --native",
+        "cargo nextest run -p symaira-core-sqlite"
+      ],
+      "stop_rule": "Keep deferred until two Rust consumers need the same SQLite policy. Do not claim parity from SQL text alone; stop on DB bytes/schema/pragmas/locking/rollback drift or unacceptable bundled-SQLite cost."
+    },
+    {
+      "id": "RUST-007",
+      "title": "Update, archive, Cosign and atomic apply slice",
+      "depends_on": [
+        "RUST-005"
+      ],
+      "contracts": [
+        "UPD-001",
+        "UPD-002",
+        "UPD-003",
+        "UPD-004",
+        "UPD-005",
+        "UPD-006",
+        "UPD-007",
+        "UPD-008",
+        "UPD-009",
+        "UPD-010",
+        "UPD-011",
+        "UPD-012"
+      ],
+      "status": "deferred",
+      "demand_class": "demand_driven",
+      "acceptance_commands": [
+        "make rust-update-contract",
+        "python3 scripts/rust-port/diff.py --suite update --native",
+        "cargo nextest run -p symaira-core-update"
+      ],
+      "stop_rule": "Keep deferred until two Rust consumers need the same update pipeline. Stop on redirect/TLS weakening, traversal/symlink writes, checksum-byte drift, broken rollback or replacement of a known-good binary."
+    },
+    {
+      "id": "RUST-008",
+      "title": "Descriptor-driven LLM provider slice",
+      "depends_on": [
+        "RUST-005"
+      ],
+      "contracts": [
+        "LLM-001",
+        "LLM-002",
+        "LLM-003",
+        "LLM-004",
+        "LLM-005",
+        "LLM-006",
+        "LLM-007",
+        "LLM-008",
+        "LLM-009",
+        "LLM-010",
+        "LLM-011",
+        "LLM-012"
+      ],
+      "status": "deferred",
+      "demand_class": "demand_driven",
+      "acceptance_commands": [
+        "make rust-llm-contract",
+        "python3 scripts/rust-port/diff.py --suite llm",
+        "cargo nextest run -p symaira-core-llm"
+      ],
+      "stop_rule": "Keep deferred until two Rust consumers need the same provider layer. Do not create provider-specific consumer code or a Rust ollamakit clone; stop on credential leakage, redirect drift, streaming/tool-wire drift or taxonomy changes."
+    },
+    {
+      "id": "RUST-009",
+      "title": "Audit and grounded-evidence algorithm slices",
+      "depends_on": [
+        "RUST-005"
+      ],
+      "contracts": [
+        "AUD-001",
+        "AUD-002",
+        "AUD-003",
+        "AUD-004",
+        "AUD-005",
+        "EVID-001",
+        "EVID-002",
+        "EVID-003",
+        "EVID-004",
+        "EVID-005"
+      ],
+      "status": "deferred",
+      "demand_class": "demand_driven",
+      "acceptance_commands": [
+        "make rust-audit-evidence-contract",
+        "cargo +nightly miri test -p symaira-core-audit -p symaira-core-evidence",
+        "cargo nextest run -p symaira-core-audit -p symaira-core-evidence"
+      ],
+      "stop_rule": "Keep blocked unless a second adopter or two-language SSOT need is recorded; stop on hash/JSONL/offset/tie-breaking drift."
+    },
+    {
+      "id": "RUST-010",
+      "title": "MCP configuration discovery slice",
+      "depends_on": [
+        "RUST-005"
+      ],
+      "contracts": [
+        "MCFG-001",
+        "MCFG-002",
+        "MCFG-003",
+        "MCFG-004",
+        "MCFG-005"
+      ],
+      "status": "deferred",
+      "demand_class": "demand_driven",
+      "acceptance_commands": [
+        "make rust-mcpcfg-contract",
+        "cargo nextest run -p symaira-core-mcpcfg",
+        "python3 scripts/rust-port/diff.py --suite mcpcfg --native"
+      ],
+      "stop_rule": "Keep blocked until second-consumer demand; do not generalize platform paths or silently normalize malformed client configs."
+    },
+    {
+      "id": "RUST-011",
+      "title": "DOM selection and rendering feasibility slice",
+      "depends_on": [
+        "RUST-005"
+      ],
+      "contracts": [
+        "DOM-001",
+        "DOM-002",
+        "DOM-003",
+        "DOM-004",
+        "DOM-005",
+        "DOM-006",
+        "DOM-007"
+      ],
+      "status": "deferred",
+      "demand_class": "demand_driven",
+      "acceptance_commands": [
+        "make rust-dom-contract",
+        "python3 scripts/rust-port/diff.py --suite dom --comparison bytes",
+        "cargo +nightly fuzz run dom_input -- -runs=10000"
+      ],
+      "stop_rule": "Keep blocked until demand is proven; select no parser/renderer until the full corpus passes and do not normalize unexplained Markdown bytes."
+    },
+    {
+      "id": "RUST-012",
+      "title": "TurboQuant codec and performance slice",
+      "depends_on": [
+        "RUST-005"
+      ],
+      "contracts": [
+        "VEC-001",
+        "VEC-002",
+        "VEC-003",
+        "VEC-004",
+        "VEC-005",
+        "VEC-006",
+        "VEC-007",
+        "PERF-003"
+      ],
+      "status": "deferred",
+      "demand_class": "demand_driven",
+      "acceptance_commands": [
+        "make rust-vector-contract",
+        "cargo bench -p symaira-core-vector",
+        "python3 scripts/rust-port/bench.py --suite vector --runs 10"
+      ],
+      "stop_rule": "Keep blocked until demand is proven; persisted sidecar/bit bytes are immutable and p95/throughput may not regress by more than 10%."
+    },
+    {
+      "id": "RUST-013",
+      "title": "Full dual-language hardening and native CI",
+      "depends_on": [
+        "RUST-005"
+      ],
+      "contracts": [
+        "REL-004"
+      ],
+      "status": "blocked",
+      "demand_class": "required",
+      "acceptance_commands": [
+        "cargo fmt --all --check",
+        "cargo check --workspace --all-targets --all-features",
+        "cargo clippy --workspace --all-targets --all-features -- -D warnings",
+        "cargo nextest run --workspace --all-features",
+        "cargo test --workspace --doc --all-features",
+        "cargo hack check --workspace --each-feature --no-dev-deps",
+        "cargo +nightly miri test --workspace",
+        "cargo audit",
+        "cargo deny check",
+        "make test lint build"
+      ],
+      "stop_rule": "No crate proceeds with untriaged advisories/licenses, missing native runtime proof, unfuzzed untrusted parsers or broken Go gates."
+    },
+    {
+      "id": "RUST-014",
+      "title": "SemVer, publishing manifest and release verification",
+      "depends_on": [
+        "RUST-013"
+      ],
+      "contracts": [
+        "REL-002",
+        "REL-003",
+        "REL-005"
+      ],
+      "status": "blocked",
+      "demand_class": "required",
+      "acceptance_commands": [
+        "cargo semver-checks check-release",
+        "python3 port/release/verify.py --dry-run",
+        "python3 docs/rust-port/validate.py"
+      ],
+      "stop_rule": "Publish only adopted crates with explicit versions/order/provenance; repository tags must remain unambiguous for Go consumers."
+    },
+    {
+      "id": "RUST-015",
+      "title": "Consumer rollout and Go-retention review",
+      "depends_on": [
+        "RUST-014"
+      ],
+      "contracts": [
+        "REL-001",
+        "REL-006",
+        "PERF-004"
+      ],
+      "status": "blocked",
+      "demand_class": "required",
+      "acceptance_commands": [
+        "python3 port/consumer/verify.py --released-consumers",
+        "make consumer-drift",
+        "python3 scripts/rust-port/adoption.py --check"
+      ],
+      "stop_rule": "No Go package removal while a released consumer imports it; retirement is a separate major-version decision with a tested rollback."
+    }
+  ]
+}

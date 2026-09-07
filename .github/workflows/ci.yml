@@ -67,12 +67,48 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
+        with:
+          fetch-depth: 0
       - name: Set up Go
         uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version: "1.26.6"
       - name: Run golangci-lint
         uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
+      - name: Validate Rust migration handoff
+        run: make rust-port-validate
+
+  port-contract:
+    name: port contract (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    env:
+      GOTOOLCHAIN: go1.26.6
+      CGO_ENABLED: 0
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
+        with:
+          fetch-depth: 0
+      - name: Set up Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: "1.26.6"
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: "3.12"
+      - name: Validate fixture metadata
+        run: python docs/rust-port/validate.py
+      - name: Verify oracle provenance and generated fixtures
+        run: python scripts/rust-port/generate.py --check-source && python scripts/rust-port/generate.py --check
+      - name: Run native oracle harness self-test
+        run: python scripts/rust-port/diff.py --self-test
+      - name: Test Go oracle helpers
+        working-directory: scripts/rust-port/go-oracle
+        run: go test ./...
   #
   #  --- DEPRECATED (replaced by golangci-lint above) ---
   #  go vet / gofmt

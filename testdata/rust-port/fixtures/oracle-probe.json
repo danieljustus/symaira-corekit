@@ -1,0 +1,21 @@
+{
+  "version_json": "{\"tool\":\"symfixture\",\"version\":\"v1.2.3\",\"schema_version\":7}",
+  "version_text": "symfixture v1.2.3",
+  "env_value": "fixture-value",
+  "exit_codes": {
+    "config": 9,
+    "conflict": 6,
+    "data": 8,
+    "forbidden": 4,
+    "generic": 1,
+    "interrupted": 10,
+    "no_auth": 3,
+    "no_input": 2,
+    "not_found": 5,
+    "ok": 0,
+    "software": 7
+  },
+  "process_argv": [],
+  "http_transcript": [],
+  "written_file": "{\"tool\":\"symfixture\",\"version\":\"v1.2.3\",\"schema_version\":7}\n"
+}

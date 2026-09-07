@@ -1,0 +1,111 @@
+{
+  "schema_version": 1,
+  "oracle": {
+    "commit": "f3d3eb79b9b1f31b4f973d2ed518a8292cedf588",
+    "release": "v0.17.0",
+    "source_digest_sha256": "ab38c1cc4d2f91026e1d6836e1138388fd683a789ab8f104269d019c3caff95c",
+    "source_files": 63
+  },
+  "harness": {
+    "input_digest_sha256": "ddb9c09ebc09f226b97695a50b594c16b37f91de7ff5f559385a4a0238fa767b",
+    "input_files": [
+      "docs/rust-port/validate.py",
+      "scripts/rust-port/diff.py",
+      "scripts/rust-port/generate.py",
+      "scripts/rust-port/go-oracle/cmd/probe/main.go",
+      "scripts/rust-port/go-oracle/cmd/publicapi/main.go",
+      "scripts/rust-port/go-oracle/go.mod",
+      "scripts/rust-port/go-oracle/go.sum",
+      "testdata/rust-port/README.md",
+      "testdata/rust-port/cases/consumer-canaries.json",
+      "testdata/rust-port/cases/oracle-selftest.json"
+    ]
+  },
+  "public_api": {
+    "targets": {
+      "darwin-amd64": {
+        "packages": 23,
+        "exported_top_level_declarations": 293,
+        "exported_members": 320,
+        "exported_surface_entries": 613,
+        "api_digest_sha256": "eac5ea52d7bd5ddae80788a31694263aed1572950a5a25901bade899e9c2d213"
+      },
+      "darwin-arm64": {
+        "packages": 23,
+        "exported_top_level_declarations": 293,
+        "exported_members": 320,
+        "exported_surface_entries": 613,
+        "api_digest_sha256": "eac5ea52d7bd5ddae80788a31694263aed1572950a5a25901bade899e9c2d213"
+      },
+      "linux-amd64": {
+        "packages": 23,
+        "exported_top_level_declarations": 293,
+        "exported_members": 320,
+        "exported_surface_entries": 613,
+        "api_digest_sha256": "eac5ea52d7bd5ddae80788a31694263aed1572950a5a25901bade899e9c2d213"
+      },
+      "linux-arm64": {
+        "packages": 23,
+        "exported_top_level_declarations": 293,
+        "exported_members": 320,
+        "exported_surface_entries": 613,
+        "api_digest_sha256": "eac5ea52d7bd5ddae80788a31694263aed1572950a5a25901bade899e9c2d213"
+      },
+      "windows-amd64": {
+        "packages": 23,
+        "exported_top_level_declarations": 293,
+        "exported_members": 320,
+        "exported_surface_entries": 613,
+        "api_digest_sha256": "8958e08c1ca42de910d07233b80dab4ca54c19bd39d94d15ab5f2d5d79ce4429"
+      },
+      "windows-arm64": {
+        "packages": 23,
+        "exported_top_level_declarations": 293,
+        "exported_members": 320,
+        "exported_surface_entries": 613,
+        "api_digest_sha256": "8958e08c1ca42de910d07233b80dab4ca54c19bd39d94d15ab5f2d5d79ce4429"
+      }
+    }
+  },
+  "contracts": [
+    {
+      "path": "contracts/config_paths.json",
+      "sha256": "3fca5bc74d3619f8ab6b051aa8b1945ca73b285ae2246c13c9c91e170582022c"
+    },
+    {
+      "path": "contracts/exit_codes.json",
+      "sha256": "1c11bf5a9d8267ff43d658dca67204a08538dd21b5a2859a8316027a52b1ef8b"
+    },
+    {
+      "path": "contracts/json_encoding.json",
+      "sha256": "cd38d81e047bc144f331d4988526f7eb44a5d4d770a03513d69734ba82e1e6e8"
+    },
+    {
+      "path": "contracts/llm_errors.json",
+      "sha256": "4f35dc2fc0b085625a25c4a60b4341b64c2299f7061d58f70b4f5acae553a904"
+    },
+    {
+      "path": "contracts/llm_providers.json",
+      "sha256": "8e34b31bb31ee77dbbafd1e1ae535dd9f3a7621e5e61818e030550d1671d866a"
+    },
+    {
+      "path": "contracts/mcp_tool_annotations.json",
+      "sha256": "2405c9853fe5317bf7f6ad379ede7feef65ea69f61956fb4fba5c436da30b479"
+    },
+    {
+      "path": "contracts/mcp_tool_errors.json",
+      "sha256": "5cf8f84e7e3bb40038191f740bb118675b3959557e6a7cb735fa0bcc8d592ef8"
+    },
+    {
+      "path": "contracts/secret_refs.json",
+      "sha256": "2c52935aa5374941cf19ae767956488d83257ea29b83d116eb6e3a246eb2ba2d"
+    },
+    {
+      "path": "contracts/update_check_invariants.json",
+      "sha256": "ffffeb76584bedf21ba4e4c62596e7339e28bc8475c2246bac91167fdfc39335"
+    }
+  ],
+  "known_contract_corrections": [
+    "DEFECT-001"
+  ]
+}

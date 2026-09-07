@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "oracle": {
+    "commit": "f3d3eb79b9b1f31b4f973d2ed518a8292cedf588",
+    "release": "v0.17.0"
+  },
+  "cases": [
+    {
+      "id": "foundation-go-self-equality",
+      "stage": "RUST-001",
+      "args": [],
+      "stdin_json": {
+        "tool": "symfixture",
+        "version": "v1.2.3",
+        "schema_version": 7,
+        "env_name": "PORT_PRIMARY",
+        "env_aliases": ["PORT_LEGACY"],
+        "output_path": "${WORKSPACE}/version.json"
+      },
+      "env": {
+        "PORT_PRIMARY": "fixture-value"
+      },
+      "env_allowlist": [
+        "PORT_*",
+        "SYMCOREKIT_*",
+        "HTTP_PROXY",
+        "HTTPS_PROXY",
+        "NO_PROXY"
+      ],
+      "working_dir": ".",
+      "clock": "2026-01-01T00:00:00Z",
+      "seed": "1",
+      "timeout_ms": 10000,
+      "stdout_mode": "json",
+      "stderr_mode": "bytes",
+      "compare_files": true,
+      "setup": [],
+      "sqlite_snapshots": [],
+      "http_transcript_path": null,
+      "process_argv_path": null,
+      "normalizers": [],
+      "observations": [
+        "exit_or_signal",
+        "stdout",
+        "stderr",
+        "returned_json_or_error",
+        "recursive_file_manifest",
+        "sqlite_snapshots",
+        "http_transcript",
+        "process_argv"
+      ],
+      "isolation_limits": "HOME/XDG/temp/cwd are isolated and env is allowlisted; this is not an OS sandbox. Network, keychain and subprocess seams require injected fakes in package-family oracle commands."
+    }
+  ]
+}

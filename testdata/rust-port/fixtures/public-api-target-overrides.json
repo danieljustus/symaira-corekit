@@ -1,0 +1,127 @@
+{
+  "schema_version": 1,
+  "oracle_commit": "f3d3eb79b9b1f31b4f973d2ed518a8292cedf588",
+  "canonical_target": "darwin-arm64",
+  "targets": {
+    "darwin-amd64": {
+      "changed_packages": [],
+      "removed_packages": []
+    },
+    "darwin-arm64": {
+      "changed_packages": [],
+      "removed_packages": []
+    },
+    "linux-amd64": {
+      "changed_packages": [],
+      "removed_packages": []
+    },
+    "linux-arm64": {
+      "changed_packages": [],
+      "removed_packages": []
+    },
+    "windows-amd64": {
+      "changed_packages": [
+        {
+          "path": "github.com/danieljustus/symaira-corekit/fsutil",
+          "name": "fsutil",
+          "doc": "Package fsutil provides safe filesystem operations including atomic writes and path validation.",
+          "declarations": [
+            {
+              "kind": "func",
+              "name": "AtomicWriteFile",
+              "signature": "func github.com/danieljustus/symaira-corekit/fsutil.AtomicWriteFile(path string, data []byte, perm os.FileMode) error",
+              "doc": "AtomicWriteFile writes data to a unique temporary file in the same directory,\nfsyncs it, closes it, and then atomically renames it to path. This prevents\npartial writes or crashes from leaving the target file in an inconsistent\nstate and avoids temp file name collisions under concurrency."
+            },
+            {
+              "kind": "var",
+              "name": "ErrInvalidPath",
+              "signature": "var github.com/danieljustus/symaira-corekit/fsutil.ErrInvalidPath error",
+              "doc": "ErrInvalidPath is returned when a path contains invalid characters or patterns."
+            },
+            {
+              "kind": "func",
+              "name": "HasTraversal",
+              "signature": "func github.com/danieljustus/symaira-corekit/fsutil.HasTraversal(path string) bool",
+              "doc": "HasTraversal reports whether path contains an explicit parent-directory segment."
+            },
+            {
+              "kind": "func",
+              "name": "SafeMkdirAll",
+              "signature": "func github.com/danieljustus/symaira-corekit/fsutil.SafeMkdirAll(path string, perm os.FileMode) error",
+              "doc": "SafeMkdirAll creates a directory at path and all necessary parent directories.\nUnlike os.MkdirAll, it walks the path component-by-component so that a\nparent-directory symlink replacement is caught at the next component check."
+            },
+            {
+              "kind": "func",
+              "name": "SafeRemove",
+              "signature": "func github.com/danieljustus/symaira-corekit/fsutil.SafeRemove(path string) error"
+            },
+            {
+              "kind": "func",
+              "name": "SafeWriteFile",
+              "signature": "func github.com/danieljustus/symaira-corekit/fsutil.SafeWriteFile(path string, data []byte, perm os.FileMode) error"
+            },
+            {
+              "kind": "func",
+              "name": "ValidatePath",
+              "signature": "func github.com/danieljustus/symaira-corekit/fsutil.ValidatePath(path string) error",
+              "doc": "ValidatePath validates a file path for safety.\nIt rejects paths containing:\n  - Parent directory traversal (..)\n  - Null bytes (\\x00)\n  - Control characters (< 0x20), including tab and newline\n  - Absolute paths\n  - Empty segments (double slashes)\n\nReturns nil if the path is valid, or an error describing the specific issue."
+            }
+          ]
+        }
+      ],
+      "removed_packages": []
+    },
+    "windows-arm64": {
+      "changed_packages": [
+        {
+          "path": "github.com/danieljustus/symaira-corekit/fsutil",
+          "name": "fsutil",
+          "doc": "Package fsutil provides safe filesystem operations including atomic writes and path validation.",
+          "declarations": [
+            {
+              "kind": "func",
+              "name": "AtomicWriteFile",
+              "signature": "func github.com/danieljustus/symaira-corekit/fsutil.AtomicWriteFile(path string, data []byte, perm os.FileMode) error",
+              "doc": "AtomicWriteFile writes data to a unique temporary file in the same directory,\nfsyncs it, closes it, and then atomically renames it to path. This prevents\npartial writes or crashes from leaving the target file in an inconsistent\nstate and avoids temp file name collisions under concurrency."
+            },
+            {
+              "kind": "var",
+              "name": "ErrInvalidPath",
+              "signature": "var github.com/danieljustus/symaira-corekit/fsutil.ErrInvalidPath error",
+              "doc": "ErrInvalidPath is returned when a path contains invalid characters or patterns."
+            },
+            {
+              "kind": "func",
+              "name": "HasTraversal",
+              "signature": "func github.com/danieljustus/symaira-corekit/fsutil.HasTraversal(path string) bool",
+              "doc": "HasTraversal reports whether path contains an explicit parent-directory segment."
+            },
+            {
+              "kind": "func",
+              "name": "SafeMkdirAll",
+              "signature": "func github.com/danieljustus/symaira-corekit/fsutil.SafeMkdirAll(path string, perm os.FileMode) error",
+              "doc": "SafeMkdirAll creates a directory at path and all necessary parent directories.\nUnlike os.MkdirAll, it walks the path component-by-component so that a\nparent-directory symlink replacement is caught at the next component check."
+            },
+            {
+              "kind": "func",
+              "name": "SafeRemove",
+              "signature": "func github.com/danieljustus/symaira-corekit/fsutil.SafeRemove(path string) error"
+            },
+            {
+              "kind": "func",
+              "name": "SafeWriteFile",
+              "signature": "func github.com/danieljustus/symaira-corekit/fsutil.SafeWriteFile(path string, data []byte, perm os.FileMode) error"
+            },
+            {
+              "kind": "func",
+              "name": "ValidatePath",
+              "signature": "func github.com/danieljustus/symaira-corekit/fsutil.ValidatePath(path string) error",
+              "doc": "ValidatePath validates a file path for safety.\nIt rejects paths containing:\n  - Parent directory traversal (..)\n  - Null bytes (\\x00)\n  - Control characters (< 0x20), including tab and newline\n  - Absolute paths\n  - Empty segments (double slashes)\n\nReturns nil if the path is valid, or an error describing the specific issue."
+            }
+          ]
+        }
+      ],
+      "removed_packages": []
+    }
+  }
+}

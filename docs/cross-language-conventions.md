@@ -8,21 +8,19 @@ captures the shared contracts that keep the ecosystem consistent.
 
 | Tool | Language | Imports corekit | Notes |
 |------|----------|-----------------|-------|
-| `symvault` | Go | yes | Wraps some corekit packages in `internal/` adapters |
-| `symbrain` | Go | yes | Direct consumer (also carries the absorbed memory, skills and guard packages) |
-| `symdesk` | Go | yes | Direct consumer (also carries the absorbed ingest, print, relate, room and seek modules) |
-| `symbrowse` | Go | yes | Direct consumer (also carries the absorbed static fetch engine) |
-| `symfritz` | Go | yes | Direct consumer |
-| `symvibe` | Go | yes | Direct consumer |
+| `symvault` | Go + Rust migration | yes (Go) | Wraps some corekit packages in `internal/` adapters |
+| `symbrain` | Go + Rust migration | yes (Go) | Direct consumer (also carries the absorbed memory, skills and guard packages) |
+| `symdesk` | Go + Rust migration | yes (Go) | Direct consumer (also carries the absorbed ingest, print, relate, room and seek modules) |
+| `symbrowse` | Go + Rust migration | yes (Go) | Direct consumer (also carries the absorbed static fetch engine) |
+| `symeraseme` | Go + Rust migration | yes (Go) | Data-broker removal product |
+| `symfritz` | Rust | no | Rust-only since v0.8.0; v0.7.0 is the immutable Go rollback release |
 | `symcockpit` | Swift | no | macOS: thermals/power, GUI automation, port and MCP inventory |
-| `symterminal` | Swift | no | macOS terminal emulator |
-| `symeraseme` | Python | no | Data-broker removal |
 
 The row per tool is one **repository**, not one binary: the 2026-08 repo
 consolidation folded fourteen tools into four products, so a single consumer
 here now covers what used to be several rows.
 
-The Swift and Python tools cannot import the Go library directly. They follow
+Tools that do not build Go cannot import the Go library directly. They follow
 the conventions documented here so that behavior, diagnostics, and integrations
 feel the same across the ecosystem.
 
@@ -30,22 +28,23 @@ feel the same across the ecosystem.
 
 The canonical CLI exit-code contract is:
 
-| Code | Meaning | Used by |
-|------|---------|---------|
-| `0` | Success (`ExitOK`) | all |
-| `1` | Generic error (`ExitError`) | all |
-| `2` | Usage / invalid arguments (`ExitUsage`) | tune, eraseme |
-| `3` | Permission / authorization (`ExitAuth`) | tune, operate |
-| `4` | Unsupported / not available (`ExitUnsupported`) | tune |
+| Code | Name | Meaning |
+|------|------|---------|
+| `0` | `ExitOK` | Success |
+| `1` | `ExitGeneric` | Generic or unspecified error |
+| `2` | `ExitNoInput` | Required input is missing |
+| `3` | `ExitNoAuth` | Authentication failed |
+| `4` | `ExitForbidden` | Authenticated but not permitted |
+| `5` | `ExitNotFound` | Requested resource was not found |
+| `6` | `ExitConflict` | Current state conflicts with the request |
+| `7` | `ExitSoftware` | Internal software error |
+| `8` | `ExitData` | Invalid data format or content |
+| `9` | `ExitConfig` | Configuration error |
+| `10` | `ExitInterrupted` | Operation was interrupted |
 
-Go tools reuse the typed constants in `corekit/exitcodes`. Non-Go tools should
-map their domain errors to the same numeric values where applicable. Tools with
-additional domain-specific codes (e.g. `symoperate`'s `staleReference=6` or
-`symeraseme`'s `EXIT_NETWORK=3`) should document them alongside the canonical
-subset.
-
-`symterminal` currently uses only `0`/`1`; introducing typed codes aligned with
-the table above is recommended.
+Go tools reuse the typed constants in `corekit/exitcodes`. Non-Go tools map
+equivalent failures to this table. A product-specific numeric mapping is scoped
+to that product's own protocol and must not be presented as a CoreKit code.
 
 ## Environment Variables
 
@@ -80,9 +79,6 @@ Honor `XDG_CONFIG_HOME`, `XDG_CACHE_HOME`, and `XDG_DATA_HOME` when set.
   (the per-family config paths and `SYMTUNE_*`/`SYMOPERATE_*`/`SYMSCOPE_*`
   env prefixes survived the merge into `symcockpit`).
 - `symeraseme` follows it for config and data directories.
-- `symterminal` uses `~/Library/Application Support/Symaira Terminal/` on macOS,
-  which is acceptable for a macOS-native app, plus per-workspace
-  `.symaira/config.json`.
 - `symoperate` has no persistent config file by design.
 
 ### Config File Format
@@ -98,8 +94,7 @@ use JSON for machine-generated workspace-local state.
   `warn`, `error`.
 - Go tools use `corekit/logkit`, which reads `SYM<NAME>_LOG_LEVEL` and
   `SYM<NAME>_LOG_FORMAT` (`text` or `json`).
-- `symeraseme` uses Python's standard `logging` module configured via `-v`/`-vv`
-  CLI flags.
+- `symeraseme` keeps diagnostics on stderr while its Go-to-Rust migration is in progress.
 - Swift tools currently log warnings/errors ad-hoc to `stderr`. Adopting a
   structured log format (at least for the MCP/server surface) is recommended.
 
@@ -113,8 +108,6 @@ Content-Length: <n>\r\n\r\n<json-rpc-body>
 ```
 
 - The `operate` and `tune` families of `symcockpit` use this framing.
-- `symterminal` additionally supports a Unix-domain-socket transport and a
-  newline-delimited stdio transport for specific integration surfaces.
 - `symeraseme` uses HTTP (`127.0.0.1:8000`) for its MCP server, which is a
   documented divergence.
 
@@ -127,9 +120,9 @@ alike.
 
 ### JSON Key Encoding
 
-Use `snake_case` for JSON keys in JSON-RPC payloads and tool results. `symtune`
-already follows this convention. `symoperate` and `symterminal` use `camelCase`
-for historical reasons; new tools should prefer `snake_case`.
+Use `snake_case` for tool-defined JSON payloads and results. MCP envelope and
+annotation fields keep the casing required by the protocol. Historical
+product-specific divergences must be documented; new fields use `snake_case`.
 
 ### Tool Error Metadata
 
@@ -176,11 +169,11 @@ ensure consistent behavior regardless of implementation language.
 
 | Property | Contract |
 |----------|----------|
-| **Cache TTL** | 24 hours (`DefaultCacheTTL`). In-memory per-process cache; no disk cache. |
+| **Cache TTL** | 24 hours (`DefaultCacheTTL`). Results persist per repository in the platform cache directory and are reusable across processes. Go uses `$XDG_CACHE_HOME/symaira/updatecheck/<sha256(owner NUL repo)>.json`, falling back to `$HOME/.cache` when `XDG_CACHE_HOME` is not absolute. Setting `Checker.CachePath` to an empty string disables Go persistence; a forced check bypasses every cache layer. |
 | **SemVer parsing** | Only strict `v?MAJOR.MINOR.PATCH` without pre-release or build-metadata suffixes. Versions containing `-` or `+` are silently ignored (treated as dev/unparseable). |
 | **Dev / pre-release builds** | Skipped silently. `parseStableVersion` rejects anything non-stable; pre-release tags and dev version strings produce `nil` (no update offered). |
-| **Non-blocking guarantee** | The *check* phase must never block startup or critical paths. A network timeout (default 3s) or failure produces a silent skip — the user never sees an error from the check itself. |
-| **Error behavior** | Check failures (HTTP error, timeout, TLS error) are silently swallowed. The apply phase (download+verify+replace) returns all errors to the caller — here the user must be informed. |
+| **Invocation** | A check can wait until the API timeout (default 3s). Consumers must run background checks off startup and other critical paths; the library itself does not hide latency. |
+| **Error behavior** | Check failures (HTTP error, timeout, TLS error, malformed/draft/prerelease response) are returned or thrown to the caller. A consumer may silently ignore them for an optional background check. Apply failures are likewise surfaced and should be shown to the user. |
 | **V0-major gap** | When `current.major == 0` and `latest.major > 0`, the update is suppressed. This prevents a pre-v1.0 tool from suddenly advertising a v1.0+ release before the ecosystem is ready. |
 | **Opt-out** | `SYM<NAME>_CHECK_UPDATES=false` environment variable or `[general] check_updates = false` config key. |
 | **Apply hardening** | The apply phase (download, verify, swap) is composable: SHA-256 checksum verification (always), optional Cosign keyless signature verification (via `updatecheck/cosign`), optional archive extraction (via `updatecheck/extract`), and optional install-method detection that rejects Homebrew in-place replacement (via `updatecheck/installmethod`). |
