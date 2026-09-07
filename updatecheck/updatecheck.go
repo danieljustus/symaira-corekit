@@ -140,7 +140,7 @@ func (c *Checker) Check(ctx context.Context, currentVersion string) (*Release, e
 	return c.CheckWithForce(ctx, currentVersion, false)
 }
 
-// CheckWithForce forces a check, bypassing the in-memory cache when force is true.
+// CheckWithForce forces a check, bypassing both in-memory and persistent caches when force is true.
 func (c *Checker) CheckWithForce(ctx context.Context, currentVersion string, force bool) (*Release, error) {
 	current, ok := parseStableVersion(currentVersion)
 	if !ok {

@@ -1,0 +1,97 @@
+{
+  "schema_version": 1,
+  "captured_at": "2026-09-06T17:27:50+02:00",
+  "oracle": {
+    "commit": "f3d3eb79b9b1f31b4f973d2ed518a8292cedf588",
+    "stable_release": "v0.17.0",
+    "module": "github.com/danieljustus/symaira-corekit",
+    "tracked_input_digest_sha256": "ab38c1cc4d2f91026e1d6836e1138388fd683a789ab8f104269d019c3caff95c",
+    "tracked_input_files": 63,
+    "digest_scope": "tracked non-test .go production files, contracts/*.json, and tracked .json/.sql testdata, path and bytes in lexical order"
+  },
+  "toolchains": {
+    "go": "go version go1.26.6 darwin/arm64",
+    "go_mod_language_version": "1.26.4",
+    "ci_go_version": "1.26.6",
+    "rust_candidate_host": "rustc 1.98.0 (88d9e12ae 2026-08-18)",
+    "cargo_candidate_host": "cargo 1.98.0 (797e8a9bc 2026-08-05)"
+  },
+  "host": {
+    "os": "macOS 27.0 darwin/arm64",
+    "kernel": "Darwin 27.0.0",
+    "cpu": "Apple M4 Pro",
+    "memory_bytes": 25769803776
+  },
+  "owned_go_inventory": {
+    "files_total": 116,
+    "files_production": 51,
+    "files_test": 65,
+    "lines_total": 24484,
+    "lines_production": 9674,
+    "lines_test": 14810,
+    "packages": 23,
+    "public_declarations_rough_count": 208,
+    "public_api_snapshot_targets": ["darwin-amd64", "darwin-arm64", "linux-amd64", "linux-arm64", "windows-amd64", "windows-arm64"],
+    "public_api_snapshot_packages": 23,
+    "public_api_snapshot_exported_top_level_declarations": 293,
+    "public_api_snapshot_exported_members": 320,
+    "public_api_snapshot_exported_surface_entries": 613,
+    "direct_modules": 4,
+    "transitive_modules": 9
+  },
+  "consumer_snapshots": [
+    {"repo":"symaira-brain","commit":"4b6be3b0e55212af630bb5cc57637a2ea6e31e62","branch":"feat/rust-migration","dirty_worktree_at_capture":true,"tracked_head_go_import_files":{"auditkit":3,"configkit":5,"evidencekit":12,"exitcodes":68,"fsutil":7,"llmkit":2,"logkit":2,"mcpcfgkit":2,"mcpserver":13,"secretref":1,"sqlitekit":3,"updatecheck":2,"versionkit":2}},
+    {"repo":"symaira-browse","commit":"652453d1595fc302bd69c328e7da8a21dbee28b9","branch":"docs/rust-migration-prep","dirty_worktree_at_capture":true,"tracked_head_go_import_files":{"domkit":3,"exitcodes":2,"fsutil":3,"logkit":1,"mcpserver":2,"updatecheck":3,"versionkit":1}},
+    {"repo":"symaira-desktop","commit":"ae86331930fdfa2b128b68ae5af7437091b9949a","branch":"docs/rust-migration-preparation","dirty_worktree_at_capture":true,"tracked_head_go_import_files":{"configkit":6,"exitcodes":23,"fsutil":5,"llmkit":6,"logkit":1,"mcpserver":4,"secretref":3,"sqlitekit":9,"vectorkit":3,"versionkit":3}},
+    {"repo":"symaira-vault","commit":"d68ed5a74216eeb4003e8143b120a4e28fb0a0a0","branch":"main","dirty_worktree_at_capture":false,"tracked_head_go_import_files":{"exitcodes":2,"fsutil":1,"logkit":1,"updatecheck":5,"versionkit":1}},
+    {"repo":"symaira-eraseme","commit":"5cdba4bfeffb58179f5c5586cc49d246564de0ea","branch":"main","dirty_worktree_at_capture":false,"tracked_head_go_import_files":{"envutil":1,"llmkit":1,"logkit":1,"secretref":1,"versionkit":2}},
+    {"repo":"symaira-fritz","commit":"94d53649258f0b826168004fb1539d618f164c59","branch":"fix/live-box-defects","dirty_worktree_at_capture":false,"tracked_head_go_import_files":{}}
+  ],
+  "consumer_demand": [
+    {"package_family":"exitcodes","package_paths":["exitcodes"],"consumers":["symaira-brain","symaira-browse","symaira-desktop","symaira-vault"],"go_files":95,"priority":"foundation"},
+    {"package_family":"versionkit","package_paths":["versionkit"],"consumers":["symaira-brain","symaira-browse","symaira-desktop","symaira-vault","symaira-eraseme"],"go_files":9,"priority":"foundation"},
+    {"package_family":"fsutil","package_paths":["fsutil"],"consumers":["symaira-brain","symaira-browse","symaira-desktop","symaira-vault"],"go_files":16,"priority":"foundation"},
+    {"package_family":"logkit","package_paths":["logkit"],"consumers":["symaira-brain","symaira-browse","symaira-desktop","symaira-vault","symaira-eraseme"],"go_files":6,"priority":"foundation"},
+    {"package_family":"configkit","package_paths":["configkit"],"consumers":["symaira-brain","symaira-desktop"],"go_files":11,"priority":"foundation"},
+    {"package_family":"secretref","package_paths":["secretref"],"consumers":["symaira-brain","symaira-desktop","symaira-eraseme"],"go_files":5,"priority":"foundation"},
+    {"package_family":"mcpserver","package_paths":["mcpserver"],"consumers":["symaira-brain","symaira-browse","symaira-desktop"],"go_files":19,"priority":"protocol"},
+    {"package_family":"sqlitekit","package_paths":["sqlitekit"],"consumers":["symaira-brain","symaira-desktop"],"go_files":12,"priority":"persistence"},
+    {"package_family":"llmkit","package_paths":["llmkit"],"consumers":["symaira-brain","symaira-desktop","symaira-eraseme"],"go_files":9,"priority":"provider"},
+    {"package_family":"updatecheck","package_paths":["updatecheck","updatecheck/cosign","updatecheck/extract","updatecheck/installmethod","updatecheck/updateapply"],"consumers":["symaira-brain","symaira-browse","symaira-vault"],"go_files":10,"priority":"distribution"},
+    {"package_family":"evidencekit","package_paths":["evidencekit"],"consumers":["symaira-brain"],"go_files":12,"priority":"demand_driven"},
+    {"package_family":"auditkit","package_paths":["auditkit"],"consumers":["symaira-brain"],"go_files":3,"priority":"demand_driven"},
+    {"package_family":"mcpcfgkit","package_paths":["mcpcfgkit"],"consumers":["symaira-brain"],"go_files":2,"priority":"demand_driven"},
+    {"package_family":"domkit","package_paths":["domkit"],"consumers":["symaira-browse"],"go_files":3,"priority":"demand_driven"},
+    {"package_family":"vectorkit","package_paths":["vectorkit/turboquant"],"consumers":["symaira-desktop"],"go_files":3,"priority":"demand_driven"},
+    {"package_family":"envutil","package_paths":["envutil"],"consumers":["symaira-eraseme"],"go_files":1,"priority":"fold_into_foundation"}
+  ],
+  "measurements": {
+    "cold_build": {"command":"GOTOOLCHAIN=go1.26.6 CGO_ENABLED=0 make build after go clean -cache -testcache","runs":1,"elapsed_ms":4809.415},
+    "warm_build": {"command":"GOTOOLCHAIN=go1.26.6 CGO_ENABLED=0 make build","runs":3,"samples_ms":[252.620,261.663,251.446],"median_ms":252.620},
+    "race_test": {"command":"GOTOOLCHAIN=go1.26.6 make test","runs":1,"elapsed_ms":24711.931,"exit_code":0},
+    "coverage": {"command":"GOTOOLCHAIN=go1.26.6 CGO_ENABLED=0 go test -p 1 -count=1 -coverprofile=/tmp/corekit-cover.out ./...","runs":1,"statements_percent":90.1,"exit_code":0},
+    "turboquant_benchmarks": {
+      "command":"GOTOOLCHAIN=go1.26.6 CGO_ENABLED=0 go test -run=^$ -bench=. -benchmem -count=3 ./vectorkit/turboquant",
+      "runs_each":3,
+      "median": {
+        "encode_2bit":{"ns_per_op":25522,"bytes_per_op":14640,"allocs_per_op":4},
+        "encode_3bit":{"ns_per_op":32387,"bytes_per_op":14768,"allocs_per_op":4},
+        "encode_4bit":{"ns_per_op":17983,"bytes_per_op":14896,"allocs_per_op":4},
+        "score_2bit":{"ns_per_op":12505,"bytes_per_op":14336,"allocs_per_op":2},
+        "score_3bit":{"ns_per_op":14552,"bytes_per_op":14336,"allocs_per_op":2},
+        "score_4bit":{"ns_per_op":14299,"bytes_per_op":14336,"allocs_per_op":2},
+        "decode_2bit":{"ns_per_op":14602,"bytes_per_op":19456,"allocs_per_op":3},
+        "decode_3bit":{"ns_per_op":23586,"bytes_per_op":19456,"allocs_per_op":3},
+        "decode_4bit":{"ns_per_op":18222,"bytes_per_op":19456,"allocs_per_op":3}
+      }
+    }
+  },
+  "limitations": [
+    "Build, test, coverage and benchmark timings were measured on one Apple M4 Pro host.",
+    "The cold build and race-test durations are single samples, not distributions.",
+    "CoreKit ships no executable, so no standalone release binary size, startup or RSS value exists.",
+    "Consumer import counts use git-tracked Go files from each canonical local checkout, exclude worktrees/untracked files, and include tracked tests where they import CoreKit.",
+    "The rough declaration count is retained as preparation history; RUST-001 supersedes it with the generated go/packages/go/types snapshot of 23 packages, 293 exported top-level declarations and 320 exported methods/fields.",
+    "RUST-001 defines repeatable Browse and Desktop paired-consumer canaries; measured Rust distributions remain intentionally empty until the implementations exist and RUST-005 runs."
+  ]
+}

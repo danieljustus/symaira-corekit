@@ -1,10 +1,23 @@
-.PHONY: build test lint fmt-check clean consumer-drift golangci-lint
+.PHONY: build test lint fmt-check clean consumer-drift golangci-lint rust-port-validate port-fixture-source-check port-oracle-selftest port-contract
 
 build:
 	CGO_ENABLED=0 go build ./...
 
 consumer-drift:
 	./scripts/consumer-drift.sh
+
+rust-port-validate:
+	python3 docs/rust-port/validate.py
+
+port-fixture-source-check:
+	python3 scripts/rust-port/generate.py --check-source
+	python3 scripts/rust-port/generate.py --check
+
+port-oracle-selftest:
+	python3 scripts/rust-port/diff.py --self-test
+
+port-contract: rust-port-validate port-fixture-source-check port-oracle-selftest
+	cd scripts/rust-port/go-oracle && GOTOOLCHAIN=go1.26.6 go test ./...
 
 test:
 	CGO_ENABLED=0 go test -race ./...

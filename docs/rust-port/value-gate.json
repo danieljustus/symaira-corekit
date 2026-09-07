@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "gate_id": "RUST-005",
+  "status": "pending",
+  "decision": null,
+  "evaluated_at": null,
+  "requirements": {
+    "minimum_independent_adopters_or_languages": 2,
+    "maximum_regression_ratio": 1.1,
+    "duplication_rule": "duplicate_loc_removed >= corekit_loc_added + adapter_loc_added",
+    "standalone_smoke_required_per_adopter": true
+  },
+  "evidence": {
+    "basis": null,
+    "adopters": [],
+    "cross_language_ssot_languages": [],
+    "duplication": {
+      "corekit_loc_added": null,
+      "adapter_loc_added": null,
+      "duplicate_loc_removed": null,
+      "measured_from_commits": []
+    },
+    "consumer_metrics": [],
+    "standalone_smokes": [],
+    "security_exception": null
+  },
+  "notes": [
+    "RUST-005 may not be marked complete while this document is pending or failed.",
+    "Each adopter record must identify repository, commit, crate and exact pin.",
+    "Each metric record must identify workload, baseline/candidate commits, run count and maximum observed regression ratio.",
+    "A security exception needs a public tracking issue and does not waive contract parity, standalone-first or duplicate-removal evidence."
+  ]
+}

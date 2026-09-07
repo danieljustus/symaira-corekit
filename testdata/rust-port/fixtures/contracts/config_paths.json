@@ -1,0 +1,8 @@
+{
+  "config_path_pattern": "$XDG_CONFIG_HOME/<app>/config.toml (fallback ~/.config/<app>/config.toml)",
+  "cache_path_pattern": "~/.cache/<app>/",
+  "data_path_pattern": "~/.local/share/<app>/",
+  "config_file_format": "toml",
+  "workspace_local_state_format": "json",
+  "note": "corekit/configkit.DefaultPath honors an absolute XDG_CONFIG_HOME and falls back to ~/.config. configkit.Options.UseLegacyConfigPath provides an explicit migration opt-out for consumers that still need the legacy location."
+}

@@ -1,0 +1,1864 @@
+{
+  "schema_version": 1,
+  "oracle_commit": "f3d3eb79b9b1f31b4f973d2ed518a8292cedf588",
+  "contracts": [
+    {
+      "id": "META-001",
+      "seam": "public Go API",
+      "fixture": "go/types snapshot of every non-internal package",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test ./... plus RUST-001 api generator",
+      "expected": "exported names, signatures, docs and package list are pinned as migration inventory",
+      "comparison": "api-shape",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "port/contracts/meta_public_api.rs",
+      "status": "fixture-ready"
+    },
+    {
+      "id": "META-002",
+      "seam": "oracle provenance",
+      "fixture": "tracked .go/.json/.sql input digest",
+      "go_oracle": "python3 scripts/rust-port/generate.py --check-source",
+      "expected": "commit and path+byte digest match the pinned oracle before fixture generation",
+      "comparison": "source-digest",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "port/contracts/meta_provenance.rs",
+      "status": "fixture-ready"
+    },
+    {
+      "id": "CON-001",
+      "seam": "language-neutral contract SSOT",
+      "fixture": "contracts/exit_codes.json",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./exitcodes -run TestExitCodesMatchContractFixture",
+      "expected": "numeric/name table exact",
+      "comparison": "bytes",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-contract-fixtures/tests/con_001.rs",
+      "status": "fixture-ready"
+    },
+    {
+      "id": "CON-002",
+      "seam": "language-neutral contract SSOT",
+      "fixture": "contracts/config_paths.json",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./configkit -run TestDefaultPathMatchesContractFixture",
+      "expected": "XDG and legacy path semantics exact",
+      "comparison": "bytes",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-contract-fixtures/tests/con_002.rs",
+      "status": "fixture-ready"
+    },
+    {
+      "id": "CON-003",
+      "seam": "language-neutral contract SSOT",
+      "fixture": "contracts/json_encoding.json",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./mcpserver -run \"TestInitialize|TestToolsList|TestServeStdio\"",
+      "expected": "JSON key/framing/stdout rules preserved",
+      "comparison": "bytes",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-contract-fixtures/tests/con_003.rs",
+      "status": "fixture-ready"
+    },
+    {
+      "id": "CON-004",
+      "seam": "language-neutral contract SSOT",
+      "fixture": "contracts/secret_refs.json",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./contracts -run TestSecretRef",
+      "expected": "forms, order and timeout exact",
+      "comparison": "bytes",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-contract-fixtures/tests/con_004.rs",
+      "status": "fixture-ready"
+    },
+    {
+      "id": "CON-005",
+      "seam": "language-neutral contract SSOT",
+      "fixture": "contracts/update_check_invariants.json",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./updatecheck -run Contract",
+      "expected": "TTL/SemVer/failure invariants exact",
+      "comparison": "bytes",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-contract-fixtures/tests/con_005.rs",
+      "status": "fixture-ready"
+    },
+    {
+      "id": "CON-006",
+      "seam": "language-neutral contract SSOT",
+      "fixture": "contracts/mcp_tool_annotations.json",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./contracts -run TestMCPToolAnnotations",
+      "expected": "wire hint names and explicit readOnly rule exact",
+      "comparison": "bytes",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-contract-fixtures/tests/con_006.rs",
+      "status": "fixture-ready"
+    },
+    {
+      "id": "CON-007",
+      "seam": "language-neutral contract SSOT",
+      "fixture": "contracts/mcp_tool_errors.json",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./contracts -run TestMCPToolErrors",
+      "expected": "tool-error metadata schema and omission exact",
+      "comparison": "bytes",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-contract-fixtures/tests/con_007.rs",
+      "status": "fixture-ready"
+    },
+    {
+      "id": "CON-008",
+      "seam": "language-neutral contract SSOT",
+      "fixture": "contracts/llm_providers.json + llm_errors.json",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./contracts -run TestLLM",
+      "expected": "provider registry and error taxonomy exact",
+      "comparison": "bytes",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-contract-fixtures/tests/con_008.rs",
+      "status": "fixture-ready"
+    },
+    {
+      "id": "DEFECT-001",
+      "seam": "update-cache contract drift",
+      "fixture": "corrected contracts/update_check_invariants.json plus Go and Swift persistent-cache tests",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./updatecheck -run \"TestPersistentCacheMatchesContractFixture|TestCheckPersistsCacheAcrossCheckerInstances|TestDefaultCachePathUsesXDGCacheHome|TestCacheTTLMatchesContractFixture\"",
+      "expected": "contract, prose, Go tests and the vendored Swift consumer fixture agree on persistent per-repository platform-cache behavior",
+      "comparison": "manual-gate",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "RUST-001 decision record and corrected cross-language drift test",
+      "status": "fixture-ready"
+    },
+    {
+      "id": "VER-001",
+      "seam": "version payload",
+      "fixture": "Info{tool:\"symx\",version:\"v1.2.3\",schema_version:7}",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./versionkit -run TestJSONFieldNamesAreTheContract",
+      "expected": "JSON field names/order and values match",
+      "comparison": "bytes",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-foundation/tests/version.rs",
+      "status": "todo"
+    },
+    {
+      "id": "VER-002",
+      "seam": "version text/write",
+      "fixture": "same Info through String and Write",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./versionkit -run \"TestString|TestWrite\"",
+      "expected": "text is symx v1.2.3 and Write emits one newline",
+      "comparison": "bytes",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-foundation/tests/version.rs",
+      "status": "todo"
+    },
+    {
+      "id": "EXIT-001",
+      "seam": "exit/error contract",
+      "fixture": "all exported numeric codes",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./exitcodes -run \"TestExitCodeValues|TestExitCodeType\"",
+      "expected": "codes 0..10 and u8 domain exact",
+      "comparison": "bytes",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-foundation/tests/exitcodes.rs",
+      "status": "todo"
+    },
+    {
+      "id": "EXIT-002",
+      "seam": "exit/error contract",
+      "fixture": "CLIError with cause/hint/wrapping",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./exitcodes -run \"TestCLIError|TestWrap\"",
+      "expected": "error chain and message formatting exact",
+      "comparison": "bytes",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-foundation/tests/exitcodes.rs",
+      "status": "todo"
+    },
+    {
+      "id": "EXIT-003",
+      "seam": "exit/error contract",
+      "fixture": "nil/plain/wrapped/classified errors",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./exitcodes -run \"TestExitCodeFromError\"",
+      "expected": "classification and generic fallback exact",
+      "comparison": "bytes",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-foundation/tests/exitcodes.rs",
+      "status": "todo"
+    },
+    {
+      "id": "EXIT-004",
+      "seam": "exit/error contract",
+      "fixture": "nil/plain/hinted/cause CLI formatting",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./exitcodes -run \"TestFormatCLIError\"",
+      "expected": "human text and hint placement exact",
+      "comparison": "bytes",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-foundation/tests/exitcodes.rs",
+      "status": "todo"
+    },
+    {
+      "id": "ENV-001",
+      "seam": "environment aliases",
+      "fixture": "primary set/missing and ordered legacy aliases",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./envutil -run TestGetenv",
+      "expected": "primary wins; first present alias is returned; missing is distinguishable",
+      "comparison": "json-semantic",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-foundation/tests/env.rs",
+      "status": "todo"
+    },
+    {
+      "id": "ENV-002",
+      "seam": "environment deletion",
+      "fixture": "set then Unsetenv",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./envutil",
+      "expected": "requested variable is absent; unrelated values unchanged",
+      "comparison": "process",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-foundation/tests/env.rs",
+      "status": "todo"
+    },
+    {
+      "id": "LOG-001",
+      "seam": "logging",
+      "fixture": "debug/info/warn/warning/error/unknown/empty levels",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./logkit -run \"TestParseLevel\"",
+      "expected": "case-insensitive mapping; unknown/empty default warn",
+      "comparison": "bytes",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-foundation/tests/log.rs",
+      "status": "todo"
+    },
+    {
+      "id": "LOG-002",
+      "seam": "logging",
+      "fixture": "text logger below/at level",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./logkit -run \"TestNew_TextFormat|TestNew_Filter\"",
+      "expected": "stderr text bytes and filtering match",
+      "comparison": "bytes",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-foundation/tests/log.rs",
+      "status": "todo"
+    },
+    {
+      "id": "LOG-003",
+      "seam": "logging",
+      "fixture": "JSON logger",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./logkit -run \"TestNew_JSONFormat\"",
+      "expected": "JSON fields, level/message/time policy match",
+      "comparison": "bytes",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-foundation/tests/log.rs",
+      "status": "todo"
+    },
+    {
+      "id": "LOG-004",
+      "seam": "logging",
+      "fixture": "app-prefixed env/default replacement",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./logkit -run \"TestNewFromEnv|TestInitDefault|TestReplaceLogger\"",
+      "expected": "env names, default warn/text and replacement semantics match",
+      "comparison": "bytes",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-foundation/tests/log.rs",
+      "status": "todo"
+    },
+    {
+      "id": "CFG-001",
+      "seam": "configuration",
+      "fixture": "HOME/XDG_CONFIG_HOME absolute/relative/missing",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./configkit -run \"TestDefaultPath\"",
+      "expected": "exact default path and explicit legacy opt-out",
+      "comparison": "filesystem",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-foundation/tests/config.rs",
+      "status": "todo"
+    },
+    {
+      "id": "CFG-002",
+      "seam": "configuration",
+      "fixture": "defaults + missing files",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./configkit -run \"TestLoadDefaults|TestMissingFileSkipped\"",
+      "expected": "defaults retained and missing optional config skipped",
+      "comparison": "json-semantic",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-foundation/tests/config.rs",
+      "status": "todo"
+    },
+    {
+      "id": "CFG-003",
+      "seam": "configuration",
+      "fixture": "global TOML + project override + env",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./configkit -run \"TestLoadFromTOML|TestProjectOverride|TestEnvOverridesTOML\"",
+      "expected": "precedence defaults < global < project < env",
+      "comparison": "json-semantic",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-foundation/tests/config.rs",
+      "status": "todo"
+    },
+    {
+      "id": "CFG-004",
+      "seam": "configuration",
+      "fixture": "string/bool/int/float/duration/slice/pointer fields",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./configkit -run \"TestParity|TestSlice|TestPointer\"",
+      "expected": "TOML/env decoding and type results exact",
+      "comparison": "json-semantic",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-foundation/tests/config.rs",
+      "status": "todo"
+    },
+    {
+      "id": "CFG-005",
+      "seam": "configuration",
+      "fixture": "zero defaults and nested/json tags",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./configkit -run \"TestZeroValues|TestTOMLDoesNotOverride|TestEnvOverrideNested|TestJsonTag\"",
+      "expected": "zero-value preservation and tag traversal exact",
+      "comparison": "json-semantic",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-foundation/tests/config.rs",
+      "status": "todo"
+    },
+    {
+      "id": "CFG-006",
+      "seam": "configuration",
+      "fixture": "bad TOML/type mismatch/map/unsupported values",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./configkit -run \"TestBadTOML|TestType|TestMapField|TestSetFieldValueErrors\"",
+      "expected": "typed errors and no partial silent acceptance",
+      "comparison": "bytes",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-foundation/tests/config.rs",
+      "status": "todo"
+    },
+    {
+      "id": "CFG-007",
+      "seam": "configuration",
+      "fixture": "cache/reload/reset/concurrent loads",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./configkit -run \"TestReload|TestLoaderConcurrent\"",
+      "expected": "cached identity, explicit refresh and race-free behavior match",
+      "comparison": "process",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-foundation/tests/config.rs",
+      "status": "todo"
+    },
+    {
+      "id": "FS-001",
+      "seam": "filesystem safety",
+      "fixture": "valid/empty/absolute/traversal/control/NUL/double-slash paths",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./fsutil -run \"TestValidatePath\"",
+      "expected": "accept/reject classification and wrappable sentinel exact",
+      "comparison": "json-semantic",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-fs/tests/parity.rs",
+      "status": "todo"
+    },
+    {
+      "id": "FS-002",
+      "seam": "filesystem safety",
+      "fixture": "slash and Windows backslash traversal corpus",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./fsutil -run \"TestHasTraversal|TestValidatePath_Windows\"",
+      "expected": "cross-separator traversal detection exact",
+      "comparison": "json-semantic",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-fs/tests/parity.rs",
+      "status": "todo"
+    },
+    {
+      "id": "FS-003",
+      "seam": "filesystem safety",
+      "fixture": "new/overwrite atomic write with modes",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./fsutil -run \"TestAtomicWriteFile\"",
+      "expected": "content, mode and replacement exact",
+      "comparison": "filesystem",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-fs/tests/parity.rs",
+      "status": "todo"
+    },
+    {
+      "id": "FS-004",
+      "seam": "filesystem safety",
+      "fixture": "temp creation/rename/directory failures",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./fsutil -run \"TestWriteTempThenRename|TestAtomicWriteFile_Rename\"",
+      "expected": "error leaves no partial target/temp artifact",
+      "comparison": "filesystem",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-fs/tests/parity.rs",
+      "status": "todo"
+    },
+    {
+      "id": "FS-005",
+      "seam": "filesystem safety",
+      "fixture": "SafeWrite regular/nonregular/missing/read-only targets",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./fsutil -run \"TestSafeWriteFile\"",
+      "expected": "descriptor validation and fail-closed replacement exact",
+      "comparison": "filesystem",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-fs/tests/parity.rs",
+      "status": "todo"
+    },
+    {
+      "id": "FS-006",
+      "seam": "filesystem safety",
+      "fixture": "SafeRemove regular/missing/nonregular and close faults",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./fsutil -run \"TestSafeRemove\"",
+      "expected": "only validated regular file removed; descriptor closed once",
+      "comparison": "filesystem",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-fs/tests/parity.rs",
+      "status": "todo"
+    },
+    {
+      "id": "FS-007",
+      "seam": "filesystem safety",
+      "fixture": "SafeMkdirAll existing/parent-file/read-only/symlink",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./fsutil -run \"TestSafeMkdirAll\"",
+      "expected": "directories/modes exact; unsafe symlink rejected",
+      "comparison": "filesystem",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-fs/tests/parity.rs",
+      "status": "todo"
+    },
+    {
+      "id": "SEC-001",
+      "seam": "secret reference",
+      "fixture": "env:// and bare env references",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./secretref -run \"TestResolveEnvPrecedence|TestResolveValidation\"",
+      "expected": "form matching/order and validation exact",
+      "comparison": "json-semantic",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-secret/tests/parity.rs",
+      "status": "todo"
+    },
+    {
+      "id": "SEC-002",
+      "seam": "secret reference",
+      "fixture": "symvault valid path and argv helper",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./secretref -run \"TestResolveSymvaultExecSuccess|TestHelperResolveSymvault\"",
+      "expected": "argv is symvault get -- <path> --print and output trimming matches",
+      "comparison": "process",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-secret/tests/parity.rs",
+      "status": "todo"
+    },
+    {
+      "id": "SEC-003",
+      "seam": "secret reference",
+      "fixture": "symvault missing/failure/invalid path",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./secretref -run \"TestResolveSymvaultNotOnPath|TestResolveSymvaultExecFailure|TestResolveSymvaultPathValidation\"",
+      "expected": "distinguishable, redacted errors; validation precedes exec",
+      "comparison": "process",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-secret/tests/parity.rs",
+      "status": "todo"
+    },
+    {
+      "id": "SEC-004",
+      "seam": "secret reference",
+      "fixture": "caller deadline and default timeout",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./secretref -run \"TestResolveSymvaultDefaultTimeout|TestResolveSymvaultTimeout\"",
+      "expected": "caller deadline wins; default 5s; timeout distinguishable",
+      "comparison": "process",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-secret/tests/parity.rs",
+      "status": "todo"
+    },
+    {
+      "id": "SEC-005",
+      "seam": "secret reference",
+      "fixture": "keychain service/account reference",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./secretref -run \"TestResolveKeychainExecSuccess|TestResolveInvalidKeychain\"",
+      "expected": "security CLI argv/output and validation exact",
+      "comparison": "process",
+      "platforms": [
+        "darwin"
+      ],
+      "rust_test": "symaira-core-secret/tests/parity.rs",
+      "status": "todo"
+    },
+    {
+      "id": "SEC-006",
+      "seam": "secret reference",
+      "fixture": "keychain failure and unsupported platform",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./secretref -run \"TestResolveKeychainExecFailure|TestResolveKeychainUnsupported\"",
+      "expected": "redacted exec error on macOS; typed unsupported elsewhere",
+      "comparison": "process",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-secret/tests/parity.rs",
+      "status": "todo"
+    },
+    {
+      "id": "MCP-001",
+      "seam": "MCP stdio",
+      "fixture": "initialize in Content-Length and newline modes",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./mcpserver -run \"TestInitialize|TestInitializeFrom\"",
+      "expected": "protocol version 2024-11-05, capabilities, server info and framing exact",
+      "comparison": "bytes",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-mcp/tests/raw_frames.rs",
+      "status": "todo"
+    },
+    {
+      "id": "MCP-002",
+      "seam": "MCP stdio",
+      "fixture": "initialized/unknown notifications",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./mcpserver -run \"TestNotificationsInitialized|TestUnknownNotification\"",
+      "expected": "no response for notifications in both modes",
+      "comparison": "bytes",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-mcp/tests/raw_frames.rs",
+      "status": "todo"
+    },
+    {
+      "id": "MCP-003",
+      "seam": "MCP stdio",
+      "fixture": "ping and unknown method",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./mcpserver -run \"TestPingReturns|TestUnknownMethod\"",
+      "expected": "empty result vs JSON-RPC method-not-found exact",
+      "comparison": "bytes",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-mcp/tests/raw_frames.rs",
+      "status": "todo"
+    },
+    {
+      "id": "MCP-004",
+      "seam": "MCP stdio",
+      "fixture": "tool registration nil/empty/duplicate",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./mcpserver -run \"TestRegisterTool\"",
+      "expected": "same panic/rejection boundary before serve",
+      "comparison": "process",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-mcp/tests/raw_frames.rs",
+      "status": "todo"
+    },
+    {
+      "id": "MCP-005",
+      "seam": "MCP stdio",
+      "fixture": "tools/list plain and all annotation hints",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./mcpserver -run \"TestToolsList\"",
+      "expected": "ordering, schemas, camelCase hints and omission exact",
+      "comparison": "bytes",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-mcp/tests/raw_frames.rs",
+      "status": "todo"
+    },
+    {
+      "id": "MCP-006",
+      "seam": "MCP stdio",
+      "fixture": "tools/call scalar/bool/struct/raw results",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./mcpserver -run \"TestToolsCallDispatch|TestToolsCallScalar|TestToolsCallBoolean|TestToolsCallStructured\"",
+      "expected": "content blocks, structuredContent and JSON bytes match",
+      "comparison": "bytes",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-mcp/tests/raw_frames.rs",
+      "status": "todo"
+    },
+    {
+      "id": "MCP-007",
+      "seam": "MCP stdio",
+      "fixture": "tool errors plain/structured/wrapped",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./mcpserver -run \"TestToolsCallHandlerError|TestToolsCallErrorCarries|TestToolErrorData\"",
+      "expected": "isError result and namespaced _meta fields/omissions exact",
+      "comparison": "bytes",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-mcp/tests/raw_frames.rs",
+      "status": "todo"
+    },
+    {
+      "id": "MCP-008",
+      "seam": "MCP stdio",
+      "fixture": "typed schema derivation",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./mcpserver -run \"TestRegisterTyped_SchemaDerivation\"",
+      "expected": "JSON Schema names, required fields, arrays, pointers and tags exact",
+      "comparison": "bytes",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-mcp/tests/raw_frames.rs",
+      "status": "todo"
+    },
+    {
+      "id": "MCP-009",
+      "seam": "MCP stdio",
+      "fixture": "typed bad/unknown/wrong input and unsupported kinds",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./mcpserver -run \"TestRegisterTyped_BadJSON|TestRegisterTyped_Unknown|TestRegisterTyped_Wrong|TestRegisterTyped_Unsupported\"",
+      "expected": "strict decode and construction failures exact",
+      "comparison": "process",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-mcp/tests/raw_frames.rs",
+      "status": "todo"
+    },
+    {
+      "id": "MCP-010",
+      "seam": "MCP stdio",
+      "fixture": "parse errors, oversized lines, malformed headers",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./mcpserver -run \"TestParseError|TestServeIORejectsOversized|TestUnmarshalJSONErrorPaths\"",
+      "expected": "1 MiB limit and JSON-RPC parse/invalid-request errors exact",
+      "comparison": "bytes",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-mcp/tests/raw_frames.rs",
+      "status": "todo"
+    },
+    {
+      "id": "MCP-011",
+      "seam": "MCP stdio",
+      "fixture": "multiple frames, EOF, cancellation and panic",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./mcpserver -run \"TestMultipleRequests|TestEOF|TestContextCancellation|TestPanicRecovery\"",
+      "expected": "ordering, clean EOF/cancel and recovered tool failure exact",
+      "comparison": "process",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-mcp/tests/raw_frames.rs",
+      "status": "todo"
+    },
+    {
+      "id": "MCP-012",
+      "seam": "MCP stdio",
+      "fixture": "ServeStdio plus the RUST-001 logging-enabled stderr probe",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./mcpserver -run TestServeStdio",
+      "expected": "stdout contains protocol frames only; diagnostics on stderr",
+      "comparison": "process",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-mcp/tests/raw_frames.rs",
+      "status": "todo"
+    },
+    {
+      "id": "MCFG-001",
+      "seam": "MCP config discovery",
+      "fixture": "JSON/JSONC/YAML configs",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./mcpcfgkit -run \"TestDiscoverJSON|TestDiscoverYAML|TestJSONC\"",
+      "expected": "comments stripped only outside strings; entries exact",
+      "comparison": "json-semantic",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-mcpcfg/tests/parity.rs",
+      "status": "todo"
+    },
+    {
+      "id": "MCFG-002",
+      "seam": "MCP config discovery",
+      "fixture": "known client default sources per platform",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./mcpcfgkit -run \"TestDefaultSourcesContainKnownClients\"",
+      "expected": "client names, paths, glob and root keys exact",
+      "comparison": "json-semantic",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-mcpcfg/tests/parity.rs",
+      "status": "todo"
+    },
+    {
+      "id": "MCFG-003",
+      "seam": "MCP config discovery",
+      "fixture": "stdio/http entries and merged env",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./mcpcfgkit -run \"TestDiscoverHTTPServer|TestEntryTransportValue\"",
+      "expected": "transport, command/url/args/env normalization exact",
+      "comparison": "json-semantic",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-mcpcfg/tests/parity.rs",
+      "status": "todo"
+    },
+    {
+      "id": "MCFG-004",
+      "seam": "MCP config discovery",
+      "fixture": "glob/missing/invalid configs",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./mcpcfgkit -run \"TestDiscoverGlob|TestDiscoverMissing|TestDiscoverInvalid\"",
+      "expected": "stable findings and tolerant discovery behavior exact",
+      "comparison": "filesystem",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-mcpcfg/tests/parity.rs",
+      "status": "todo"
+    },
+    {
+      "id": "MCFG-005",
+      "seam": "MCP config discovery",
+      "fixture": "OpenCode local/remote/unknown/empty entries",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./mcpcfgkit -run \"TestScanAll\"",
+      "expected": "status, approximation and messages exact",
+      "comparison": "json-semantic",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-mcpcfg/tests/parity.rs",
+      "status": "todo"
+    },
+    {
+      "id": "SQL-001",
+      "seam": "SQLite",
+      "fixture": "new database path/parent/mode",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./sqlitekit -run \"TestOpen|TestOpen_CreatesParentDir\"",
+      "expected": "parent creation, open and ping semantics exact",
+      "comparison": "filesystem",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-sqlite/tests/parity.rs",
+      "status": "todo"
+    },
+    {
+      "id": "SQL-002",
+      "seam": "SQLite",
+      "fixture": "multiple pooled connections",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./sqlitekit -run \"TestOpen_PragmasOnEveryConnection\"",
+      "expected": "busy timeout, foreign keys and other DSN pragmas apply to every connection",
+      "comparison": "sqlite",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-sqlite/tests/parity.rs",
+      "status": "todo"
+    },
+    {
+      "id": "SQL-003",
+      "seam": "SQLite",
+      "fixture": "ordered embedded SQL migrations",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./sqlitekit -run \"TestMigrate$\"",
+      "expected": "schema_migrations bytes and user schema exact",
+      "comparison": "sqlite",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-sqlite/tests/parity.rs",
+      "status": "todo"
+    },
+    {
+      "id": "SQL-004",
+      "seam": "SQLite",
+      "fixture": "repeat migration",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./sqlitekit -run \"TestMigrate_Idempotent\"",
+      "expected": "already-applied versions are not rerun",
+      "comparison": "sqlite",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-sqlite/tests/parity.rs",
+      "status": "todo"
+    },
+    {
+      "id": "SQL-005",
+      "seam": "SQLite",
+      "fixture": "exec/insert failures",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./sqlitekit -run \"TestMigrate_ExecFailure|TestMigrate_InsertFailure\"",
+      "expected": "per-migration transaction rolls back fully",
+      "comparison": "sqlite",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-sqlite/tests/parity.rs",
+      "status": "todo"
+    },
+    {
+      "id": "SQL-006",
+      "seam": "SQLite",
+      "fixture": "read/query/create failures and in-memory DB",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./sqlitekit -run \"TestMigrate_Read|TestMigrate_Version|TestMigrate_Create|TestMigrate_InMemory\"",
+      "expected": "typed surfaced errors and in-memory behavior match",
+      "comparison": "sqlite",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-sqlite/tests/parity.rs",
+      "status": "todo"
+    },
+    {
+      "id": "UPD-001",
+      "seam": "update and self-update",
+      "fixture": "stable/prerelease/build/dev versions",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./updatecheck -run \"TestParseStableVersion|TestCheckFiltersHistorical\"",
+      "expected": "strict stable parser and v0 major-gap rule exact",
+      "comparison": "json-semantic",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-update/tests/parity.rs",
+      "status": "todo"
+    },
+    {
+      "id": "UPD-002",
+      "seam": "update and self-update",
+      "fixture": "available/up-to-date/draft/prerelease release responses",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./updatecheck -run \"TestCheckReports|TestCheckRejects\"",
+      "expected": "decision and returned release/assets exact",
+      "comparison": "json-semantic",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-update/tests/parity.rs",
+      "status": "todo"
+    },
+    {
+      "id": "UPD-003",
+      "seam": "update and self-update",
+      "fixture": "cache use/force/expiry/across instances",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./updatecheck -run \"TestCheckCache|TestCheckUses|TestCheckForce|TestCheckPersists\"",
+      "expected": "24h persistent cache semantics and force behavior exact",
+      "comparison": "filesystem",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-update/tests/parity.rs",
+      "status": "todo"
+    },
+    {
+      "id": "UPD-004",
+      "seam": "update and self-update",
+      "fixture": "headers, URL trim, 404/429/decode/network/timeout/cancel",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./updatecheck -run \"TestCheckSets|TestCheckURL|TestCheckReturns|TestCheckRate|TestCheckRespects\"",
+      "expected": "request and surfaced library errors exact",
+      "comparison": "network",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-update/tests/parity.rs",
+      "status": "todo"
+    },
+    {
+      "id": "UPD-005",
+      "seam": "update and self-update",
+      "fixture": "secure client TLS and redirects",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./updatecheck -run \"TestSecureClient\"",
+      "expected": "TLS minimum, GitHub-only redirect and cap exact",
+      "comparison": "network",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-update/tests/parity.rs",
+      "status": "todo"
+    },
+    {
+      "id": "UPD-006",
+      "seam": "update and self-update",
+      "fixture": "tar.gz and zip success/modes/large binary",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./updatecheck/extract -run \"TestExtractTarGz_Success|TestExtractZip_Success|TestExtractTarGz_Preserves|TestExtract.*Large\"",
+      "expected": "file bytes/modes and selected binary exact",
+      "comparison": "filesystem",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-update/tests/parity.rs",
+      "status": "todo"
+    },
+    {
+      "id": "UPD-007",
+      "seam": "update and self-update",
+      "fixture": "absolute/traversal/symlink/invalid/empty archives",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./updatecheck/extract -run \"TestExtract.*PathTraversal|TestExtractTarGz_SkipsSymlinks|TestExtract.*Invalid|TestExtract.*Empty\"",
+      "expected": "unsafe entries rejected before writes; symlinks skipped",
+      "comparison": "filesystem",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-update/tests/parity.rs",
+      "status": "todo"
+    },
+    {
+      "id": "UPD-008",
+      "seam": "update and self-update",
+      "fixture": "brew/go/package/direct/source path/env corpus",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./updatecheck/installmethod -run \"TestDetect\"",
+      "expected": "install classification and guidance exact",
+      "comparison": "json-semantic",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-update/tests/parity.rs",
+      "status": "todo"
+    },
+    {
+      "id": "UPD-009",
+      "seam": "update and self-update",
+      "fixture": "artifact URLs/body bounds/identity/argv/failures",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./updatecheck/cosign -run \"TestFetch|TestIdentity|TestVerifySignature\"",
+      "expected": "exact artifact names/checksum bytes/cosign argv and identity regex",
+      "comparison": "process",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-update/tests/parity.rs",
+      "status": "todo"
+    },
+    {
+      "id": "UPD-010",
+      "seam": "update and self-update",
+      "fixture": "asset select/download/checksum/install/validation",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./updatecheck/updateapply -run \"TestApplyInstalls|TestApplyValidates|TestApplyAborts|TestApplyVerifies\"",
+      "expected": "matching asset installed only after checksum/cosign and validation",
+      "comparison": "filesystem",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-update/tests/parity.rs",
+      "status": "todo"
+    },
+    {
+      "id": "UPD-011",
+      "seam": "update and self-update",
+      "fixture": "archive dispatch and traversal",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./updatecheck/updateapply -run \"TestApplyExtract|TestExtractFromArchive|TestExtractZipAsset\"",
+      "expected": "format probing/dispatch exact; unsafe result path rejected",
+      "comparison": "filesystem",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-update/tests/parity.rs",
+      "status": "todo"
+    },
+    {
+      "id": "UPD-012",
+      "seam": "update and self-update",
+      "fixture": "unwritable/failure cleanup/atomic rollback/staging",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./updatecheck/updateapply -run \"TestApplyFails|TestApplyCleans|TestApplyRolls|TestAtomicSwap|TestStagingDir\"",
+      "expected": "no partial binary; prior binary restored; staging cleaned",
+      "comparison": "filesystem",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-update/tests/parity.rs",
+      "status": "todo"
+    },
+    {
+      "id": "LLM-001",
+      "seam": "LLM provider layer",
+      "fixture": "provider registry and validation",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./llmkit -run \"TestLookupRegistry|TestDescriptorValidate|TestConformanceRegistry\"",
+      "expected": "descriptor set/order/defaults/capabilities exact",
+      "comparison": "json-semantic",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-llm/tests/parity.rs",
+      "status": "todo"
+    },
+    {
+      "id": "LLM-002",
+      "seam": "LLM provider layer",
+      "fixture": "base URL and credential resolution",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./llmkit -run \"TestNewClientBaseURL|TestResolveCredential|TestConformanceBaseURL\"",
+      "expected": "override/security rules and secret refs exact",
+      "comparison": "network",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-llm/tests/parity.rs",
+      "status": "todo"
+    },
+    {
+      "id": "LLM-003",
+      "seam": "LLM provider layer",
+      "fixture": "auth headers and redirect behavior",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./llmkit -run \"TestAuthHeader|TestDoFollowsNoRedirects\"",
+      "expected": "dialect-specific headers; redirects refused",
+      "comparison": "network",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-llm/tests/parity.rs",
+      "status": "todo"
+    },
+    {
+      "id": "LLM-004",
+      "seam": "LLM provider layer",
+      "fixture": "OpenAI chat messages/tools/response-format",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./llmkit -run \"TestChatOpenAIWire|TestChatOpenAIToolUse|TestChatSendsResponseFormat\"",
+      "expected": "request JSON and response/tool mapping exact",
+      "comparison": "bytes",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-llm/tests/parity.rs",
+      "status": "todo"
+    },
+    {
+      "id": "LLM-005",
+      "seam": "LLM provider layer",
+      "fixture": "Anthropic chat dialect",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./llmkit -run \"TestBuildAnthropicRequest|TestChatAnthropicDialect\"",
+      "expected": "system/messages/tools/header translation exact",
+      "comparison": "bytes",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-llm/tests/parity.rs",
+      "status": "todo"
+    },
+    {
+      "id": "LLM-006",
+      "seam": "LLM provider layer",
+      "fixture": "OpenAI SSE streaming variants",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./llmkit -run \"TestStreamOpenAI|TestStreamSSE\"",
+      "expected": "chunk ordering, finish reason and malformed-stream errors exact",
+      "comparison": "bytes",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-llm/tests/parity.rs",
+      "status": "todo"
+    },
+    {
+      "id": "LLM-007",
+      "seam": "LLM provider layer",
+      "fixture": "Anthropic streaming",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./llmkit -run \"TestStreamAnthropicDialect\"",
+      "expected": "event translation/callback ordering exact",
+      "comparison": "bytes",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-llm/tests/parity.rs",
+      "status": "todo"
+    },
+    {
+      "id": "LLM-008",
+      "seam": "LLM provider layer",
+      "fixture": "embeddings/model discovery/native Ollama",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./llmkit -run \"TestEmbeddings|TestEmbedWithDimensions|TestListModels|TestNativeOllama\"",
+      "expected": "capability gates, wire requests and model mapping exact",
+      "comparison": "bytes",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-llm/tests/parity.rs",
+      "status": "todo"
+    },
+    {
+      "id": "LLM-009",
+      "seam": "LLM provider layer",
+      "fixture": "generate/native NDJSON/chat options",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./llmkit -run \"TestGenerateOptionsOnWire|TestNativeOllamaSurface|TestStreamNDJSON\"",
+      "expected": "wire shape, callback and scanner failures exact",
+      "comparison": "bytes",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-llm/tests/parity.rs",
+      "status": "todo"
+    },
+    {
+      "id": "LLM-010",
+      "seam": "LLM provider layer",
+      "fixture": "provider/transport error taxonomy",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./llmkit -run \"TestErrorClassification|TestErrorExitCodes|TestChat.*Failures|TestRetryAfter\"",
+      "expected": "codes, retryability, exit mapping, body truncation and retry-after exact",
+      "comparison": "json-semantic",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-llm/tests/parity.rs",
+      "status": "todo"
+    },
+    {
+      "id": "LLM-011",
+      "seam": "LLM provider layer",
+      "fixture": "llmkit/providers.json and contracts/llm_providers.json",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./llmkit/gen -run TestGenerateMatchesEmbeddedRegistry",
+      "expected": "generated provider registry equals SSOT bytes",
+      "comparison": "bytes",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-llm/tests/generator.rs",
+      "status": "todo"
+    },
+    {
+      "id": "LLM-012",
+      "seam": "deprecated LLM compatibility",
+      "fixture": "all ollamakit compatibility tests",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./ollamakit",
+      "expected": "Go shim stays compatible; no independent Rust ollamakit crate is created",
+      "comparison": "manual-gate",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "no Rust crate; compatibility retention gate",
+      "status": "todo"
+    },
+    {
+      "id": "AUD-001",
+      "seam": "audit hash chain",
+      "fixture": "entry bytes and deterministic SHA-256 chain",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./auditkit -run \"TestHashEntryDeterministic|TestVerifyChain\"",
+      "expected": "hash input/canonical hex and verification exact",
+      "comparison": "bytes",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-audit/tests/parity.rs",
+      "status": "todo"
+    },
+    {
+      "id": "AUD-002",
+      "seam": "audit hash chain",
+      "fixture": "append/recover/count/head",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./auditkit -run \"TestSinkAppendAndRecover\"",
+      "expected": "JSONL bytes and recovered state exact",
+      "comparison": "filesystem",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-audit/tests/parity.rs",
+      "status": "todo"
+    },
+    {
+      "id": "AUD-003",
+      "seam": "audit hash chain",
+      "fixture": "tamper/multiline/closed/degraded failures",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./auditkit -run \"TestSinkRejects|TestVerifyChainDetects\"",
+      "expected": "fail-closed classifications exact",
+      "comparison": "filesystem",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-audit/tests/parity.rs",
+      "status": "todo"
+    },
+    {
+      "id": "AUD-004",
+      "seam": "audit hash chain",
+      "fixture": "rotation boundary",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./auditkit -run \"TestSinkRotation\"",
+      "expected": "archive names/content and continued chain exact",
+      "comparison": "filesystem",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-audit/tests/parity.rs",
+      "status": "todo"
+    },
+    {
+      "id": "AUD-005",
+      "seam": "audit hash chain",
+      "fixture": "checkpoint/anchor roundtrip and same-size tamper",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./auditkit -run \"TestCheckpoint|TestSinkVerifyWithAnchor|TestVerifyAnchor\"",
+      "expected": "checkpoint JSON/mode/fingerprint and verification exact",
+      "comparison": "filesystem",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-audit/tests/parity.rs",
+      "status": "todo"
+    },
+    {
+      "id": "EVID-001",
+      "seam": "grounded evidence",
+      "fixture": "exact/normalized/unmatched Unicode corpus",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./evidencekit -run \"TestAlignExact|TestAlignNormalized|TestAlignUnmatched\"",
+      "expected": "status and byte offsets exact",
+      "comparison": "json-semantic",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-evidence/tests/parity.rs",
+      "status": "todo"
+    },
+    {
+      "id": "EVID-002",
+      "seam": "grounded evidence",
+      "fixture": "fuzzy typo/dropped-token/threshold corpus",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./evidencekit -run \"TestAlignFuzzy|TestPlantedSpanCorpus\"",
+      "expected": "tie-breaking, score and offsets exact",
+      "comparison": "json-semantic",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-evidence/tests/parity.rs",
+      "status": "todo"
+    },
+    {
+      "id": "EVID-003",
+      "seam": "grounded evidence",
+      "fixture": "alignment strategy priority",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./evidencekit -run \"TestAlignPrefers\"",
+      "expected": "exact > normalized > fuzzy selection exact",
+      "comparison": "json-semantic",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-evidence/tests/parity.rs",
+      "status": "todo"
+    },
+    {
+      "id": "EVID-004",
+      "seam": "grounded evidence",
+      "fixture": "grounded/unmatched/fuzzy/invalid validation",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./evidencekit -run \"TestValidate\"",
+      "expected": "sentinel identity/classification and options exact",
+      "comparison": "json-semantic",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-evidence/tests/parity.rs",
+      "status": "todo"
+    },
+    {
+      "id": "EVID-005",
+      "seam": "grounded evidence",
+      "fixture": "JSONL roundtrip/blank/invalid",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./evidencekit -run \"TestJSONL\"",
+      "expected": "field names, line bytes, blank handling and decode errors exact",
+      "comparison": "bytes",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-evidence/tests/parity.rs",
+      "status": "todo"
+    },
+    {
+      "id": "DOM-001",
+      "seam": "DOM/rendering",
+      "fixture": "static HTML markdown/outline/lang",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./domkit -run \"TestMarkdownRendersStaticPage|TestOutlineReturns|TestLangFromHTML\"",
+      "expected": "Markdown bytes, heading order and language exact",
+      "comparison": "bytes",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-dom/tests/parity.rs",
+      "status": "todo"
+    },
+    {
+      "id": "DOM-002",
+      "seam": "DOM/rendering",
+      "fixture": "Render raw/markdown/outline/frontmatter",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./domkit -run \"TestRenderRaw|TestRenderMarkdown|TestRenderOutline|TestEmittedFrontmatter\"",
+      "expected": "document JSON/frontmatter/boundary bytes exact",
+      "comparison": "bytes",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-dom/tests/parity.rs",
+      "status": "todo"
+    },
+    {
+      "id": "DOM-003",
+      "seam": "DOM/rendering",
+      "fixture": "selector grammar corpus",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./domkit -run \"TestMatchesSelector|TestRenderSelector\"",
+      "expected": "tag/id/class/attribute/quotes/combination semantics exact",
+      "comparison": "json-semantic",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-dom/tests/parity.rs",
+      "status": "todo"
+    },
+    {
+      "id": "DOM-004",
+      "seam": "DOM/rendering",
+      "fixture": "filter/subtree/no-match/error",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./domkit -run \"TestRenderFilter|TestSelectSource\"",
+      "expected": "selection/removal/error behavior exact",
+      "comparison": "bytes",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-dom/tests/parity.rs",
+      "status": "todo"
+    },
+    {
+      "id": "DOM-005",
+      "seam": "DOM/rendering",
+      "fixture": "JSON-LD schema type corpus",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./domkit -run \"TestSchemaType\"",
+      "expected": "first valid type/fallback/malformed behavior exact",
+      "comparison": "json-semantic",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-dom/tests/parity.rs",
+      "status": "todo"
+    },
+    {
+      "id": "DOM-006",
+      "seam": "DOM/rendering",
+      "fixture": "base64 image stripping",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./domkit -run \"TestStripBase64Images|TestMarkdownRendersImage\"",
+      "expected": "data URI removal and real URL/image rendering exact",
+      "comparison": "bytes",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-dom/tests/parity.rs",
+      "status": "todo"
+    },
+    {
+      "id": "DOM-007",
+      "seam": "DOM/rendering",
+      "fixture": "UTF-8 truncation budgets",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./domkit -run \"TestTruncate\"",
+      "expected": "head/tail marker, rune counts and untouched cases exact",
+      "comparison": "bytes",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-dom/tests/parity.rs",
+      "status": "todo"
+    },
+    {
+      "id": "VEC-001",
+      "seam": "TurboQuant vector codec",
+      "fixture": "Hadamard and seeded random rotation",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./vectorkit/turboquant -run \"TestHadamard|TestRandomRotation|TestRotationPreserves\"",
+      "expected": "float results, seed determinism and norms within declared tolerance",
+      "comparison": "json-semantic",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-vector/tests/parity.rs",
+      "status": "todo"
+    },
+    {
+      "id": "VEC-002",
+      "seam": "TurboQuant vector codec",
+      "fixture": "2/3/4-bit deterministic encode/decode",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./vectorkit/turboquant -run \"TestDeterministicEncoding|TestRoundtrip\"",
+      "expected": "packed bytes exact; decoded tolerances declared",
+      "comparison": "bytes",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-vector/tests/parity.rs",
+      "status": "todo"
+    },
+    {
+      "id": "VEC-003",
+      "seam": "TurboQuant vector codec",
+      "fixture": "bit packing at offsets and byte lengths",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./vectorkit/turboquant -run \"TestPackUnpack|TestPackedBytesConsistency\"",
+      "expected": "bit layout exact",
+      "comparison": "bytes",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-vector/tests/parity.rs",
+      "status": "todo"
+    },
+    {
+      "id": "VEC-004",
+      "seam": "TurboQuant vector codec",
+      "fixture": "score/cosine/rank corpus",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./vectorkit/turboquant -run \"TestScore|TestScoringRank\"",
+      "expected": "scores/tie order within fixed tolerance",
+      "comparison": "json-semantic",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-vector/tests/parity.rs",
+      "status": "todo"
+    },
+    {
+      "id": "VEC-005",
+      "seam": "TurboQuant vector codec",
+      "fixture": "metadata JSON and reconstruction",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./vectorkit/turboquant -run \"TestMetadata|TestInvalidMetadata|TestCodecFrom\"",
+      "expected": "schema, validation and reconstructed codec exact",
+      "comparison": "bytes",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-vector/tests/parity.rs",
+      "status": "todo"
+    },
+    {
+      "id": "VEC-006",
+      "seam": "TurboQuant vector codec",
+      "fixture": "sidecar bytes/meta/short/mismatch",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./vectorkit/turboquant -run \"TestSidecar|TestUnpackSidecar\"",
+      "expected": "persisted blob and metadata compatibility exact",
+      "comparison": "bytes",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-vector/tests/parity.rs",
+      "status": "todo"
+    },
+    {
+      "id": "VEC-007",
+      "seam": "TurboQuant vector codec",
+      "fixture": "deterministic recall fixture/report",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./vectorkit/turboquant -run \"TestBenchmark|TestRecallOnDeterministic|TestRealisticFixture\"",
+      "expected": "fixture generation, recall and report fields exact",
+      "comparison": "json-semantic",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-vector/tests/parity.rs",
+      "status": "todo"
+    },
+    {
+      "id": "REL-001",
+      "seam": "dual-language repository build",
+      "fixture": "clean checkout",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 make build test lint",
+      "expected": "Go remains green after every Rust change",
+      "comparison": "manual-gate",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "CI Go gate",
+      "status": "todo"
+    },
+    {
+      "id": "REL-002",
+      "seam": "Go SemVer/API compatibility",
+      "fixture": "origin/main API snapshot",
+      "go_oracle": "apidiff -m -incompatible base.api .",
+      "expected": "no unannounced incompatible Go API change",
+      "comparison": "api-shape",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "CI apidiff gate",
+      "status": "todo"
+    },
+    {
+      "id": "REL-003",
+      "seam": "Rust package SemVer",
+      "fixture": "previous published crate API",
+      "go_oracle": "cargo semver-checks check-release",
+      "expected": "no incompatible Rust API change without required version bump",
+      "comparison": "api-shape",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "CI cargo-semver-checks",
+      "status": "todo"
+    },
+    {
+      "id": "REL-004",
+      "seam": "Rust dependency/license/advisory policy",
+      "fixture": "Cargo.lock and deny.toml",
+      "go_oracle": "cargo audit && cargo deny check",
+      "expected": "no untriaged advisory, forbidden license/source or duplicate policy breach",
+      "comparison": "manual-gate",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "CI supply-chain gate",
+      "status": "todo"
+    },
+    {
+      "id": "REL-005",
+      "seam": "tag/release manifest and publish order",
+      "fixture": "v* tag plus crate release manifest",
+      "go_oracle": "release workflow dry-run and crates.io owner/readback",
+      "expected": "Go tag and each crate/version mapping explicit; release read back after publish",
+      "comparison": "manual-gate",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "port/release/verify.py",
+      "status": "todo"
+    },
+    {
+      "id": "REL-006",
+      "seam": "consumer pins and standalone-first",
+      "fixture": "consumer go.mod/Cargo.toml/Cargo.lock inventory",
+      "go_oracle": "make consumer-drift plus Rust pin checker",
+      "expected": "exact pins, no sibling build/start dependency, Go consumers remain supported",
+      "comparison": "manual-gate",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "port/consumer/verify.py",
+      "status": "todo"
+    },
+    {
+      "id": "PERF-001",
+      "seam": "foundation consumer canary",
+      "fixture": "paired Go/Rust canary using version/exit/config/log/fs/mcp",
+      "go_oracle": "scripts/rust-port/bench.py --suite foundation --runs 50",
+      "expected": "startup p95, RSS median and binary size each <=110% of Go or exception approved",
+      "comparison": "benchmark",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "port/bench/foundation.json",
+      "status": "todo"
+    },
+    {
+      "id": "PERF-002",
+      "seam": "consumer compile tax",
+      "fixture": "clean and warm builds for two adopters",
+      "go_oracle": "scripts/rust-port/bench.py --suite consumers --runs 10",
+      "expected": "timings reported; no unbounded feature/dependency fan-out",
+      "comparison": "benchmark",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "port/bench/consumers.json",
+      "status": "todo"
+    },
+    {
+      "id": "PERF-003",
+      "seam": "TurboQuant performance",
+      "fixture": "existing 2/3/4-bit benchmark corpus",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -run=^$ -bench=. -benchmem -count=10 ./vectorkit/turboquant",
+      "expected": "Rust p95/throughput within 10% and allocations/memory reported",
+      "comparison": "benchmark",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-vector/benches/parity.rs",
+      "status": "todo"
+    },
+    {
+      "id": "PERF-004",
+      "seam": "adoption/duplication value",
+      "fixture": "source inventory in active Rust consumers",
+      "go_oracle": "scripts/rust-port/adoption.py --check",
+      "expected": "each released crate has two adopters or two-language SSOT and reduces/avoids duplicate implementation",
+      "comparison": "manual-gate",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "port/adoption/report.json",
+      "status": "todo"
+    }
+  ]
+}
