@@ -1,0 +1,498 @@
+{
+  "schema_version": 1,
+  "oracle_commit": "ff0e10ede1071f0a3137fd2774bd89d53f60cc9d",
+  "cases": [
+    {
+      "id": "MCP-001-line",
+      "mode": "line",
+      "request": {
+        "jsonrpc": "2.0",
+        "id": 1,
+        "method": "initialize",
+        "params": {
+          "protocolVersion": "2024-11-05",
+          "capabilities": {},
+          "clientInfo": {
+            "name": "client",
+            "version": "1"
+          }
+        }
+      }
+    },
+    {
+      "id": "MCP-001-framed",
+      "mode": "framed",
+      "request": {
+        "jsonrpc": "2.0",
+        "id": 1,
+        "method": "initialize"
+      }
+    },
+    {
+      "id": "MCP-002",
+      "mode": "line",
+      "requests": [
+        {
+          "jsonrpc": "2.0",
+          "method": "notifications/initialized"
+        },
+        {
+          "jsonrpc": "2.0",
+          "method": "notifications/progress"
+        }
+      ]
+    },
+    {
+      "id": "MCP-003",
+      "mode": "line",
+      "requests": [
+        {
+          "jsonrpc": "2.0",
+          "id": "ping",
+          "method": "ping"
+        },
+        {
+          "jsonrpc": "2.0",
+          "id": 2,
+          "method": "unknown/method"
+        }
+      ]
+    },
+    {
+      "id": "MCP-004",
+      "mode": "line",
+      "request": {
+        "jsonrpc": "2.0",
+        "id": 1,
+        "method": "tools/list"
+      }
+    },
+    {
+      "id": "MCP-005",
+      "mode": "framed",
+      "request": {
+        "jsonrpc": "2.0",
+        "id": 2,
+        "method": "tools/list"
+      }
+    },
+    {
+      "id": "MCP-006",
+      "mode": "line",
+      "request": {
+        "jsonrpc": "2.0",
+        "id": 5,
+        "method": "tools/call",
+        "params": {
+          "name": "rich",
+          "arguments": {}
+        }
+      }
+    },
+    {
+      "id": "MCP-006-scalar",
+      "mode": "line",
+      "request": {
+        "jsonrpc": "2.0",
+        "id": 3,
+        "method": "tools/call",
+        "params": {
+          "name": "echo",
+          "arguments": {
+            "message": "hello"
+          }
+        }
+      }
+    },
+    {
+      "id": "MCP-006-structured",
+      "mode": "line",
+      "request": {
+        "jsonrpc": "2.0",
+        "id": 4,
+        "method": "tools/call",
+        "params": {
+          "name": "number",
+          "arguments": {}
+        }
+      }
+    },
+    {
+      "id": "MCP-007",
+      "mode": "framed",
+      "request": {
+        "jsonrpc": "2.0",
+        "id": 6,
+        "method": "tools/call",
+        "params": {
+          "name": "fail",
+          "arguments": {}
+        }
+      }
+    },
+    {
+      "id": "MCP-008",
+      "mode": "line",
+      "request": {
+        "jsonrpc": "2.0",
+        "id": 7,
+        "method": "tools/call",
+        "params": {
+          "name": "typed",
+          "arguments": {
+            "query": "typed"
+          }
+        }
+      }
+    },
+    {
+      "id": "MCP-009",
+      "mode": "line",
+      "request": {
+        "jsonrpc": "2.0",
+        "id": 8,
+        "method": "tools/call",
+        "params": {
+          "name": "typed",
+          "arguments": {
+            "query": "typed",
+            "unknown": true
+          }
+        }
+      }
+    },
+    {
+      "id": "MCP-009-array",
+      "mode": "line",
+      "request": {
+        "jsonrpc": "2.0",
+        "id": 14,
+        "method": "tools/call",
+        "params": {
+          "name": "typed",
+          "arguments": []
+        }
+      }
+    },
+    {
+      "id": "MCP-009-string",
+      "mode": "line",
+      "request": {
+        "jsonrpc": "2.0",
+        "id": 15,
+        "method": "tools/call",
+        "params": {
+          "name": "typed",
+          "arguments": "x"
+        }
+      }
+    },
+    {
+      "id": "MCP-009-null",
+      "mode": "line",
+      "request": {
+        "jsonrpc": "2.0",
+        "id": 16,
+        "method": "tools/call",
+        "params": {
+          "name": "typed",
+          "arguments": null
+        }
+      }
+    },
+    {
+      "id": "MCP-009-wrong-type",
+      "mode": "line",
+      "request": {
+        "jsonrpc": "2.0",
+        "id": 17,
+        "method": "tools/call",
+        "params": {
+          "name": "typed",
+          "arguments": {
+            "query": 1
+          }
+        }
+      }
+    },
+    {
+      "id": "MCP-009-missing",
+      "mode": "line",
+      "request": {
+        "jsonrpc": "2.0",
+        "id": 18,
+        "method": "tools/call",
+        "params": {
+          "name": "typed",
+          "arguments": {}
+        }
+      }
+    },
+    {
+      "id": "MCP-006-echo-array",
+      "mode": "line",
+      "request": {
+        "jsonrpc": "2.0",
+        "id": 19,
+        "method": "tools/call",
+        "params": {
+          "name": "echo",
+          "arguments": []
+        }
+      }
+    },
+    {
+      "id": "MCP-006-echo-string",
+      "mode": "line",
+      "request": {
+        "jsonrpc": "2.0",
+        "id": 20,
+        "method": "tools/call",
+        "params": {
+          "name": "echo",
+          "arguments": "x"
+        }
+      }
+    },
+    {
+      "id": "MCP-010-array-params",
+      "mode": "line",
+      "request": {
+        "jsonrpc": "2.0",
+        "id": 13,
+        "method": "tools/call",
+        "params": []
+      }
+    },
+    {
+      "id": "MCP-010",
+      "mode": "framed",
+      "request_raw": "{bad}"
+    },
+    {
+      "id": "MCP-010-invalid-header",
+      "mode": "framed",
+      "stdin_raw": "Content-Length: nope\r\n\r\n{}"
+    },
+    {
+      "id": "MCP-011",
+      "mode": "line",
+      "requests": [
+        {
+          "jsonrpc": "2.0",
+          "id": 9,
+          "method": "ping"
+        },
+        {
+          "jsonrpc": "2.0",
+          "id": 10,
+          "method": "tools/call",
+          "params": {
+            "name": "panic",
+            "arguments": {}
+          }
+        },
+        {
+          "jsonrpc": "2.0",
+          "id": 11,
+          "method": "ping"
+        }
+      ],
+      "stderr": "ignore"
+    },
+    {
+      "id": "MCP-012",
+      "mode": "line",
+      "request": {
+        "jsonrpc": "2.0",
+        "id": 12,
+        "method": "ping"
+      },
+      "stderr": "ignore"
+    },
+    {
+      "id": "MCP-002-framed",
+      "mode": "framed",
+      "request": {
+        "jsonrpc": "2.0",
+        "method": "notifications/initialized"
+      }
+    },
+    {
+      "id": "MCP-003-framed",
+      "mode": "framed",
+      "requests": [
+        {
+          "jsonrpc": "2.0",
+          "id": "ping",
+          "method": "ping"
+        },
+        {
+          "jsonrpc": "2.0",
+          "id": 2,
+          "method": "unknown/method"
+        }
+      ]
+    },
+    {
+      "id": "MCP-006-bool-framed",
+      "mode": "framed",
+      "request": {
+        "jsonrpc": "2.0",
+        "id": 21,
+        "method": "tools/call",
+        "params": {
+          "name": "bool",
+          "arguments": {}
+        }
+      }
+    },
+    {
+      "id": "MCP-007-plain",
+      "mode": "line",
+      "request": {
+        "jsonrpc": "2.0",
+        "id": 22,
+        "method": "tools/call",
+        "params": {
+          "name": "plain",
+          "arguments": {}
+        }
+      }
+    },
+    {
+      "id": "MCP-007-wrapped",
+      "mode": "framed",
+      "request": {
+        "jsonrpc": "2.0",
+        "id": 23,
+        "method": "tools/call",
+        "params": {
+          "name": "wrapped",
+          "arguments": {}
+        }
+      }
+    },
+    {
+      "id": "MCP-010-oversized-line",
+      "mode": "line",
+      "oversized_line_bytes": 1048587
+    },
+    {
+      "id": "MCP-012-logging-enabled",
+      "mode": "line",
+      "request": {
+        "jsonrpc": "2.0",
+        "id": 24,
+        "method": "tools/call",
+        "params": {
+          "name": "panic",
+          "arguments": {}
+        }
+      },
+      "stderr": "nonempty",
+      "env": {
+        "SYMAIRA_MCP_LOG": "debug"
+      }
+    },
+    {
+      "id": "MCP-006-echo-null",
+      "mode": "line",
+      "request": {
+        "jsonrpc": "2.0",
+        "id": 25,
+        "method": "tools/call",
+        "params": {
+          "name": "echo",
+          "arguments": null
+        }
+      }
+    },
+    {
+      "id": "MCP-006-special",
+      "mode": "line",
+      "request": {
+        "jsonrpc": "2.0",
+        "id": 26,
+        "method": "tools/call",
+        "params": {
+          "name": "special",
+          "arguments": {}
+        }
+      }
+    },
+    {
+      "id": "MCP-006-special-structured",
+      "mode": "framed",
+      "request": {
+        "jsonrpc": "2.0",
+        "id": 27,
+        "method": "tools/call",
+        "params": {
+          "name": "special-structured",
+          "arguments": {}
+        }
+      }
+    },
+    {
+      "id": "MCP-010-malformed-nonjson",
+      "mode": "line",
+      "request_raw": "not-json"
+    },
+    {
+      "id": "MCP-010-truncated-header",
+      "mode": "framed",
+      "stdin_raw": "Content-Length: 5\r\n"
+    },
+    {
+      "id": "MCP-010-top-level-null",
+      "mode": "line",
+      "request": null
+    },
+    {
+      "id": "MCP-010-top-level-array",
+      "mode": "line",
+      "request": []
+    },
+    {
+      "id": "MCP-010-top-level-number",
+      "mode": "line",
+      "request": 1
+    },
+    {
+      "id": "MCP-010-top-level-string",
+      "mode": "line",
+      "request": "x"
+    },
+    {
+      "id": "MCP-010-top-level-bool",
+      "mode": "line",
+      "request": true
+    },
+    {
+      "id": "MCP-010-framed-top-level-null",
+      "mode": "framed",
+      "request": null
+    },
+    {
+      "id": "MCP-010-framed-top-level-array",
+      "mode": "framed",
+      "request": []
+    },
+    {
+      "id": "MCP-010-framed-top-level-number",
+      "mode": "framed",
+      "request": 1
+    },
+    {
+      "id": "MCP-010-framed-top-level-string",
+      "mode": "framed",
+      "request": "x"
+    },
+    {
+      "id": "MCP-010-framed-top-level-bool",
+      "mode": "framed",
+      "request": true
+    }
+  ]
+}

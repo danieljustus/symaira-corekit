@@ -127,14 +127,15 @@
         "MCP-011",
         "MCP-012"
       ],
-      "status": "ready",
+      "status": "complete",
       "demand_class": "required",
       "acceptance_commands": [
         "make rust-mcp-contract",
         "make mcp-differential",
-        "cargo +nightly fuzz run mcp_frame -- -runs=10000"
+        "make mcp-fuzz-smoke"
       ],
-      "stop_rule": "Use an owned raw adapter when rmcp defaults differ; never change framing, tool errors, schema bytes or stdout purity to fit the SDK."
+      "stop_rule": "Use an owned raw adapter when rmcp defaults differ; never change framing, tool errors, schema bytes or stdout purity to fit the SDK.",
+      "oracle_commit": "ff0e10ede1071f0a3137fd2774bd89d53f60cc9d"
     },
     {
       "id": "RUST-005",
