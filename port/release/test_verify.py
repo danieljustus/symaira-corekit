@@ -8,6 +8,7 @@ import importlib.util
 import json
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -43,6 +44,17 @@ class ManifestShapeTests(unittest.TestCase):
         manifest["release"]["publish"] = True
         with self.assertRaisesRegex(verify.VerificationError, "publish must remain false"):
             verify.validate_manifest_shape(manifest)
+
+    def test_dirty_source_is_rejected(self) -> None:
+        for status in (" M tracked.py\n", "?? untracked.txt\n"):
+            with self.subTest(status=status), patch.object(verify, "run", return_value=status):
+                with self.assertRaisesRegex(verify.VerificationError, "clean source checkout"):
+                    verify.validate_clean_source()
+
+    def test_clean_source_is_accepted(self) -> None:
+        with patch.object(verify, "run", return_value=""):
+            verify.validate_clean_source()
+
     def test_non_publishable_crate_requires_explicit_publish_empty_list(self) -> None:
         metadata = copy.deepcopy(verify.cargo_metadata())
         package = next(item for item in metadata["packages"] if item["name"] == "symaira-core-exit")
