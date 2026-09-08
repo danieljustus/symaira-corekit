@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Verify released CoreKit consumer pins without network or optimistic claims.
 
-The verifier is deliberately read-only.  It checks every record in
+The verifier is deliberately read-only. It checks every record in
 ``docs/consumers.json`` and reports blockers when a checkout or an evidence
-artifact is missing.  It never treats a Git revision as a registry release,
+artifact is missing. It never treats a Git revision as a registry release,
 a Cargo.toml declaration as a resolved lockfile, or a command description as
 standalone/rollback proof.
 """
@@ -24,12 +24,20 @@ MANIFEST = ROOT / "docs" / "consumers.json"
 COREKIT_MODULE = "github.com/danieljustus/symaira-corekit"
 COREKIT_URL = "https://github.com/danieljustus/symaira-corekit"
 COREKIT_PACKAGE = "symaira-core-version"
+CRATES_IO_SOURCE = "registry+https://github.com/rust-lang/crates.io-index"
 REVISION_RE = re.compile(r"^[0-9a-f]{40}$")
 GO_VERSION_RE = re.compile(
     r"^v(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)"
     r"(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$"
 )
 GO_REQUIRE_RE = re.compile(r"^\s*" + re.escape(COREKIT_MODULE) + r"\s+(\S+)")
+SEMVER_RE = re.compile(
+    r"^(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)"
+    r"(?:-(?:0|[1-9][0-9]*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*)"
+    r"(?:\.(?:0|[1-9][0-9]*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*))*)?"
+    r"(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$"
+)
+EXACT_CARGO_RE = re.compile(r"^=(.+)$")
 
 
 @dataclass(frozen=True)
@@ -114,6 +122,16 @@ def _cargo_version(value: Any) -> str | None:
     return None
 
 
+def _exact_cargo_version(value: Any) -> str | None:
+    """Return the semantic version from a syntactically exact Cargo pin."""
+    if not isinstance(value, str):
+        return None
+    match = EXACT_CARGO_RE.fullmatch(value)
+    if not match or not SEMVER_RE.fullmatch(match.group(1)):
+        return None
+    return match.group(1)
+
+
 def _expected_rust(record: dict[str, Any]) -> dict[str, Any] | None:
     rust = record.get("rust")
     if not isinstance(rust, dict) or rust.get("status") in (None, "not_adopted"):
@@ -121,7 +139,13 @@ def _expected_rust(record: dict[str, Any]) -> dict[str, Any] | None:
     return rust
 
 
-def _check_evidence(record: dict[str, Any], findings: list[Finding]) -> None:
+def _evidence_error(
+    findings: list[Finding], repository: str, name: str, suffix: str, message: str,
+) -> None:
+    _add(findings, repository, f"evidence.{name}.{suffix}", message)
+
+
+def _check_evidence(record: dict[str, Any], checkout: Path, findings: list[Finding]) -> None:
     repository = str(record.get("repo", "unknown"))
     rust = _expected_rust(record)
     if rust is None:
@@ -130,12 +154,66 @@ def _check_evidence(record: dict[str, Any], findings: list[Finding]) -> None:
     if not isinstance(evidence, dict):
         _add(findings, repository, "evidence.missing", "Rust adoption has no standalone/rollback evidence record")
         return
+    release = rust.get("release")
+    release_tag = release.get("tag") if isinstance(release, dict) else None
+    release_commit = release.get("commit") if isinstance(release, dict) else None
     for name in ("standalone", "rollback"):
         item = evidence.get(name)
         if not isinstance(item, dict) or item.get("status") != "verified":
             _add(findings, repository, f"evidence.{name}", f"{name} evidence is not verified")
-        elif not isinstance(item.get("command"), str) or not item["command"].strip():
-            _add(findings, repository, f"evidence.{name}.command", f"{name} evidence has no executable command")
+            continue
+        report_relative = item.get("report")
+        artifact_relative = item.get("artifact")
+        command = item.get("command")
+        result = item.get("result")
+        if not isinstance(report_relative, str) or not report_relative.strip():
+            _evidence_error(findings, repository, name, "report", f"{name} evidence needs a committed structured report path")
+            continue
+        if not isinstance(artifact_relative, str) or not artifact_relative.strip():
+            _evidence_error(findings, repository, name, "artifact", f"{name} evidence needs an artifact path")
+        if not isinstance(command, str) or not command.strip() or command.strip() in ("true", "/bin/true"):
+            _evidence_error(findings, repository, name, "command", f"{name} evidence needs a non-fabricated observed command")
+        if not isinstance(result, dict) or set(result) != {"exit_code", "stdout", "stderr"} or result.get("exit_code") != 0 or not isinstance(result.get("stdout"), str) or not isinstance(result.get("stderr"), str):
+            _evidence_error(findings, repository, name, "result", f"{name} evidence needs an observed successful command result")
+        try:
+            report_path = _safe_child(checkout, report_relative)
+        except (TypeError, ValueError):
+            _evidence_error(findings, repository, name, "report", f"{name} report path escapes the consumer checkout")
+            continue
+        if not report_path.is_file():
+            _evidence_error(findings, repository, name, "report", f"{name} report is unavailable locally: {report_relative}")
+            continue
+        code, tracked, _ = _git(["ls-files", "--error-unmatch", "--", report_relative], checkout)
+        if code or tracked != report_relative:
+            _evidence_error(findings, repository, name, "report", f"{name} report is not a tracked committed artifact: {report_relative}")
+            continue
+        code, _, _ = _git(["diff", "--quiet", "--", report_relative], checkout)
+        if code:
+            _evidence_error(findings, repository, name, "report", f"{name} report has uncommitted changes: {report_relative}")
+            continue
+        try:
+            report = json.loads(report_path.read_text(encoding="utf-8"))
+        except (OSError, UnicodeDecodeError, json.JSONDecodeError) as error:
+            _evidence_error(findings, repository, name, "report", f"{name} report is not valid JSON: {error}")
+            continue
+        if not isinstance(report, dict):
+            _evidence_error(findings, repository, name, "report", f"{name} report must contain an object")
+            continue
+        if report.get("tag") != release_tag or report.get("commit") != release_commit:
+            _evidence_error(findings, repository, name, "release", f"{name} report does not contain the exact release tag and commit")
+        if report.get("artifact") != artifact_relative:
+            _evidence_error(findings, repository, name, "artifact", f"{name} report artifact does not match the evidence record")
+        observed = report.get("observed")
+        expected_observed = {"command": command, **result} if isinstance(command, str) and isinstance(result, dict) else None
+        if observed != expected_observed:
+            _evidence_error(findings, repository, name, "result", f"{name} report does not contain the exact observed command result")
+        if isinstance(artifact_relative, str):
+            try:
+                artifact_path = _safe_child(checkout, artifact_relative)
+            except (TypeError, ValueError):
+                artifact_path = None
+            if artifact_path is None or not artifact_path.is_file():
+                _evidence_error(findings, repository, name, "artifact", f"{name} artifact is unavailable locally: {artifact_relative}")
 
 
 def _check_release_ancestry(
@@ -150,23 +228,34 @@ def _check_release_ancestry(
         return
     tag = release.get("tag")
     commit = release.get("commit")
-    revision = rust.get("revision")
+    status = rust.get("status")
     if not isinstance(tag, str) or not tag or not isinstance(commit, str) or not REVISION_RE.fullmatch(commit):
         _add(findings, repository, "release.shape", "release evidence needs a tag and 40-hex commit")
         return
-    code, resolved, error = _git(["rev-parse", f"{tag}^{{commit}}"], corekit_root)
+    code, resolved, _ = _git(["rev-parse", f"{tag}^{{commit}}"], corekit_root)
     if code or resolved != commit:
         _add(findings, repository, "release.tag", f"release tag {tag} does not resolve to recorded commit")
-    if isinstance(revision, str) and REVISION_RE.fullmatch(revision):
-        code, _, _ = _git(["cat-file", "-e", f"{revision}^{{commit}}"], corekit_root)
-        if code:
-            _add(findings, repository, "rust.revision", f"Git pin revision {revision} is not present in CoreKit")
-        else:
-            code, _, _ = _git(["merge-base", "--is-ancestor", revision, commit], corekit_root)
-            if code:
-                _add(findings, repository, "release.ancestry", f"Git pin {revision} is not an ancestor of release {tag} ({commit})")
-    elif rust.get("status") == "git":
-        _add(findings, repository, "rust.revision", "Git adoption needs a 40-hex revision")
+
+    candidate_key = "revision" if status == "git" else "release_candidate"
+    candidate = rust.get(candidate_key)
+    if status != "git" and candidate is None:
+        candidate = rust.get("revision")
+    if candidate is None:
+        if status == "git":
+            _add(findings, repository, "rust.revision", "Git adoption needs a 40-hex revision")
+        return
+    if not isinstance(candidate, str) or not REVISION_RE.fullmatch(candidate):
+        _add(findings, repository, "rust.revision", "adoption/release-candidate revision must be a 40-hex commit")
+        return
+    code, _, _ = _git(["cat-file", "-e", f"{candidate}^{{commit}}"], corekit_root)
+    if code:
+        _add(findings, repository, "rust.revision", f"adoption revision {candidate} is not present in CoreKit")
+        return
+    # Adoption commits may be made after a release. The release must be in
+    # their history; checking the inverse rejects legitimate post-release pins.
+    code, _, _ = _git(["merge-base", "--is-ancestor", commit, candidate], corekit_root)
+    if code:
+        _add(findings, repository, "release.ancestry", f"release {tag} ({commit}) is not an ancestor of adoption/release candidate {candidate}")
 
 
 def _check_rust(
@@ -218,56 +307,203 @@ def _check_rust(
     if not pins:
         _add(findings, repository, "rust.pin.missing", f"no {expected_package} dependency found in declared manifests")
     status = rust.get("status")
+    recorded_version = expected_version if status == "git" else rust.get("registry_version")
+    if not isinstance(recorded_version, str) or not SEMVER_RE.fullmatch(recorded_version):
+        _add(findings, repository, "rust.version.shape", "recorded Rust dependency version is not valid SemVer")
     for path, spec in pins:
         relative = path.relative_to(checkout).as_posix()
         if not isinstance(spec, dict):
             _add(findings, repository, "rust.pin.shape", f"{relative}: dependency must be a table with an exact version")
             continue
-        version = _cargo_version(spec)
-        if not isinstance(version, str) or not version.startswith("="):
-            _add(findings, repository, "rust.pin.exact", f"{relative}: Rust dependency must use an exact =version")
+        version = _exact_cargo_version(_cargo_version(spec))
+        if version is None:
+            _add(findings, repository, "rust.pin.exact", f"{relative}: Rust dependency must use an exact =MAJOR.MINOR.PATCH version")
+        elif version != recorded_version:
+            _add(findings, repository, "rust.pin.version", f"{relative}: dependency version {version!r} != recorded {recorded_version!r}")
         if status == "git":
             if spec.get("git") != COREKIT_URL or spec.get("rev") != expected_revision:
                 _add(findings, repository, "rust.pin.git", f"{relative}: Git URL/revision does not match recorded adoption")
             if "path" in spec:
                 _add(findings, repository, "rust.pin.path", f"{relative}: sibling CoreKit path dependency is forbidden")
         elif status == "registry":
-            if "git" in spec or "path" in spec:
-                _add(findings, repository, "rust.pin.registry", f"{relative}: registry adoption cannot retain git/path fields")
+            if "git" in spec or "path" in spec or spec.get("registry") not in (None, "crates-io"):
+                _add(findings, repository, "rust.pin.registry", f"{relative}: registry adoption must use crates.io without git/path fields")
             registry_version = rust.get("registry_version")
-            if version != f"={registry_version}":
+            if version is not None and version != registry_version:
                 _add(findings, repository, "rust.pin.registry_version", f"{relative}: registry version {version!r} != ={registry_version}")
     lock_path = checkout / "Cargo.lock"
     if not lock_path.is_file():
         _add(findings, repository, "rust.lock.missing", "Cargo.lock is required to prove the resolved Rust pin")
+        _check_release_ancestry(repository, rust, corekit_root, findings)
         return
     try:
         lock = tomllib.loads(lock_path.read_text(encoding="utf-8"))
     except (OSError, tomllib.TOMLDecodeError) as error:
         _add(findings, repository, "rust.lock.invalid", f"Cargo.lock is invalid: {error}")
+        _check_release_ancestry(repository, rust, corekit_root, findings)
         return
-    packages = [package for package in lock.get("package", []) if package.get("name") == expected_package]
-    if len(packages) != 1:
-        _add(findings, repository, "rust.lock.unique", f"Cargo.lock must contain exactly one {expected_package}, found {len(packages)}")
+    packages = [package for package in lock.get("package", []) if isinstance(package, dict) and package.get("name") == expected_package]
+    if not packages:
+        _add(findings, repository, "rust.lock.unique", f"Cargo.lock must contain {expected_package}")
+        _check_release_ancestry(repository, rust, corekit_root, findings)
         return
     package = packages[0]
     if status == "git":
         expected_source = f"git+{COREKIT_URL}?rev={expected_revision}#{expected_revision}"
+        matching = [item for item in packages if item.get("source") == expected_source]
+        if matching:
+            package = matching[0]
         if package.get("source") != expected_source:
             _add(findings, repository, "rust.lock.source", f"Cargo.lock source {package.get('source')!r} != {expected_source!r}")
         if "checksum" in package:
             _add(findings, repository, "rust.lock.checksum", "Git-sourced Cargo.lock package must not claim a registry checksum")
     elif status == "registry":
-        if not str(package.get("source", "")).startswith("registry+"):
-            _add(findings, repository, "rust.lock.registry_source", "registry adoption must resolve from a Cargo registry")
+        matching = [item for item in packages if item.get("source") == CRATES_IO_SOURCE]
+        if matching:
+            package = matching[0]
+        if package.get("source") != CRATES_IO_SOURCE:
+            _add(findings, repository, "rust.lock.registry_source", "registry adoption must resolve from the crates.io registry source")
         if not isinstance(package.get("checksum"), str) or not re.fullmatch(r"[0-9a-f]{64}", package["checksum"]):
             _add(findings, repository, "rust.lock.checksum", "registry adoption requires a 64-hex Cargo.lock checksum")
+    else:
+        matching = packages
+    if len(matching) != 1:
+        _add(findings, repository, "rust.lock.unique", f"Cargo.lock must contain exactly one matching {expected_package} package, found {len(matching)}")
+    else:
+        resolved_version = matching[0].get("version")
+        if resolved_version != recorded_version:
+            _add(findings, repository, "rust.lock.version", f"Cargo.lock resolves {expected_package} to {resolved_version!r}, recorded pin is {recorded_version!r}")
+        for path, spec in pins:
+            declared = _exact_cargo_version(_cargo_version(spec))
+            if declared is not None and declared != resolved_version:
+                _add(findings, repository, "rust.lock.version", f"Cargo.lock version {resolved_version!r} does not match manifest pin {declared!r}")
     _check_release_ancestry(repository, rust, corekit_root, findings)
     registry = rust.get("registry")
     if status == "registry" and (not isinstance(registry, dict) or registry.get("status") != "published"):
         _add(findings, repository, "registry.status", "registry pin is claimed without published/read-back registry evidence")
     if status == "git" and isinstance(registry, dict) and registry.get("status") == "published":
         _add(findings, repository, "registry.mismatch", "Git pin cannot be reported as a registry release")
+
+
+def _skip_go_ignored(text: str, index: int) -> int:
+    while index < len(text):
+        if text[index].isspace():
+            index += 1
+        elif text.startswith("//", index):
+            newline = text.find("\n", index + 2)
+            index = len(text) if newline < 0 else newline + 1
+        elif text.startswith("/*", index):
+            end = text.find("*/", index + 2)
+            index = len(text) if end < 0 else end + 2
+        else:
+            break
+    return index
+
+
+def _skip_go_string(text: str, index: int) -> int:
+    quote = text[index]
+    index += 1
+    while index < len(text):
+        if quote != "`" and text[index] == "\\":
+            index += 2
+        elif text[index] == quote:
+            return index + 1
+        else:
+            index += 1
+    return len(text)
+
+
+def _go_import_string(text: str, index: int) -> tuple[str | None, int]:
+    if index >= len(text) or text[index] != '"':
+        return None, index
+    end = index + 1
+    while end < len(text):
+        if text[end] == "\\":
+            return None, _skip_go_string(text, index)
+        if text[end] == '"':
+            return text[index + 1:end], end + 1
+        end += 1
+    return None, len(text)
+
+
+def go_imports(text: str) -> list[str]:
+    """Parse Go import declarations while ignoring comments and literals."""
+    imports: list[str] = []
+    index = 0
+    while index < len(text):
+        if text.startswith("//", index) or text.startswith("/*", index):
+            index = _skip_go_ignored(text, index)
+            continue
+        if text[index] in ('"', "'", "`"):
+            index = _skip_go_string(text, index)
+            continue
+        if text[index].isalpha() or text[index] == "_":
+            start = index
+            index += 1
+            while index < len(text) and (text[index].isalnum() or text[index] == "_"):
+                index += 1
+            if text[start:index] != "import":
+                continue
+            index = _skip_go_ignored(text, index)
+            if index < len(text) and text[index] == "(":
+                index += 1
+                while index < len(text):
+                    index = _skip_go_ignored(text, index)
+                    if index >= len(text) or text[index] == ")":
+                        index += 1
+                        break
+                    if text[index] in (".", "_") or text[index].isalpha():
+                        index += 1
+                        while index < len(text) and (text[index].isalnum() or text[index] == "_"):
+                            index += 1
+                        index = _skip_go_ignored(text, index)
+                    imported, index_after = _go_import_string(text, index)
+                    if imported is not None:
+                        imports.append(imported)
+                    index = index_after if index_after > index else index + 1
+            else:
+                # A single import may have an optional alias: import _ "path".
+                if index < len(text) and text[index] != '"':
+                    while index < len(text) and (text[index].isalnum() or text[index] in "._"):
+                        index += 1
+                    index = _skip_go_ignored(text, index)
+                imported, index_after = _go_import_string(text, index)
+                if imported is not None:
+                    imports.append(imported)
+                index = index_after if index_after > index else index + 1
+        else:
+            index += 1
+    return imports
+
+
+def _tracked_go_files(checkout: Path) -> tuple[bool, list[Path]]:
+    code, output, _ = _git(["ls-files", "-z", "--", "*.go"], checkout)
+    if code:
+        return False, []
+    paths: list[Path] = []
+    for relative in output.split("\0"):
+        if not relative:
+            continue
+        parts = Path(relative).parts
+        if any(part in (".git", ".worktrees", "vendor") for part in parts):
+            continue
+        paths.append(checkout / relative)
+    return True, paths
+
+
+def tracked_go_imports(checkout: Path) -> list[str]:
+    available, paths = _tracked_go_files(checkout)
+    if not available:
+        return []
+    imports: list[str] = []
+    for path in paths:
+        try:
+            text = path.read_text(encoding="utf-8")
+        except OSError:
+            continue
+        if any(imported == COREKIT_MODULE or imported.startswith(COREKIT_MODULE + "/") for imported in go_imports(text)):
+            imports.append(path.relative_to(checkout).as_posix())
+    return imports
 
 
 def _check_go(record: dict[str, Any], checkout: Path, findings: list[Finding]) -> None:
@@ -281,7 +517,11 @@ def _check_go(record: dict[str, Any], checkout: Path, findings: list[Finding]) -
         if not isinstance(relative, str):
             _add(findings, repository, "go.manifest.path", "Go pin path must be a string")
             continue
-        path = _safe_child(checkout, relative)
+        try:
+            path = _safe_child(checkout, relative)
+        except ValueError:
+            _add(findings, repository, "go.manifest.path", f"Go manifest path escapes checkout: {relative}")
+            continue
         if not path.is_file():
             _add(findings, repository, "go.manifest.missing", f"missing declared Go manifest: {relative}")
             continue
@@ -292,17 +532,11 @@ def _check_go(record: dict[str, Any], checkout: Path, findings: list[Finding]) -
             found.append(pin)
     if found and len(set(found)) != 1:
         _add(findings, repository, "go.pin.inconsistent", f"declared Go manifests disagree: {sorted(set(found))}")
-    imports = []
-    for path in checkout.rglob("*.go"):
-        if ".git" in path.parts or "vendor" in path.parts:
-            continue
-        try:
-            text = path.read_text(encoding="utf-8")
-        except OSError:
-            continue
-        if COREKIT_MODULE in text:
-            imports.append(path.relative_to(checkout).as_posix())
-    if not imports:
+    available, _ = _tracked_go_files(checkout)
+    imports = tracked_go_imports(checkout)
+    if not available:
+        _add(findings, repository, "go.imports.unavailable", "cannot inspect the selected repository's tracked Go files")
+    elif not imports:
         _add(findings, repository, "go.imports.missing", "no tracked Go import of the CoreKit module was found")
 
 
@@ -353,7 +587,7 @@ def verify_manifest(
             continue
         _check_go(record, checkout, findings)
         _check_rust(record, checkout, corekit_root, findings)
-        _check_evidence(record, findings)
+        _check_evidence(record, checkout, findings)
     return {
         "schema_version": 1,
         "status": "passed" if not findings else "blocked",
