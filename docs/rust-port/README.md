@@ -102,13 +102,12 @@ filesystem/secret, MCP, multi-consumer value and release-manifest slices are
 complete; later package ports remain demand-driven.
 
 RUST-014's local release gate is intentionally non-publishing:
-`cargo semver-checks check-release --package symaira-core-version --baseline-rev HEAD^`
-plus `python3 port/release/verify.py --dry-run` and
-`cargo publish --dry-run --locked -p symaira-core-version` validate the adopted
-crate's `0.1.0` public metadata, package archive, provenance inputs and
-Cargo-metadata SBOM evidence. The crates.io ownership/public-byte read-back gate
-remains open until a separately approved release performs publication. Go tags
-remain unambiguous module releases and Go consumers remain supported.
+`cargo semver-checks check-release` and `python3 port/release/verify.py --dry-run`
+validate the adopted-crate order, all workspace package versions, temporary
+`.crate` archives, provenance inputs and Cargo metadata SBOM evidence. The
+crates.io ownership/public-byte read-back gate remains open until a separately
+approved release performs publication. Go tags remain unambiguous module
+releases and Go consumers remain supported.
 
 RUST-005 evidence is intentionally live and fail-closed:
 

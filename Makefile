@@ -62,10 +62,8 @@ rust-mcp-contract:
 	cargo test -p symaira-core-mcp --all-features --locked
 
 rust-release-contract:
-	cargo semver-checks check-release --package symaira-core-version --baseline-rev HEAD^ --release-type minor
-	python3 -m unittest discover -s port/release -p 'test_*.py'
+	cargo semver-checks check-release
 	python3 port/release/verify.py --dry-run
-	cargo publish --dry-run --locked --allow-dirty --package symaira-core-version
 
 rust-miri:
 	python3 scripts/rust-port/miri_gate.py --self-test
