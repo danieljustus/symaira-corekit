@@ -200,6 +200,8 @@ All RUST-006+ work depends transitively on this graph barrier.
 
 **Steps:** Add native macOS/Linux/Windows Rust jobs, MSRV, feature isolation, coverage, audit, deny, Miri and fuzz schedules. Verify all Go tests/lint/build/apidiff remain required. Inventory every transitive unsafe source and ensure contract edits trigger both language suites.
 
+**Miri gate:** `scripts/rust-port/miri_gate.py` derives the expected package set from Cargo metadata and rejects overlaps or omissions. It runs pure/core packages with Miri's default isolation, then runs filesystem/process/environment boundary packages in a separate invocation with `MIRIFLAGS=-Zmiri-disable-isolation`. The negative probe executes the real `CON-001` fixture under default isolation and must observe Miri's isolated `open` rejection; a successful probe is a gate failure, not a reason to silently broaden the non-isolated set. The deterministic 10,000-iteration MCP smoke test is explicitly skipped in both Miri invocations because it is covered by the dedicated fuzz gate and otherwise dominates runtime; all other selected tests and doctests still run. Native filesystem safety remains covered by the RUST-003 matrix; this split only makes the Miri trust boundary explicit and bounded.
+
 ## RUST-014: SemVer, publishing manifest and release verification
 
 **Objective:** Publish only adopted crates without confusing Go module tags.

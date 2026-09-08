@@ -1,4 +1,4 @@
-.PHONY: build test lint fmt-check clean consumer-drift golangci-lint rust-port-validate port-fixture-source-check port-oracle-selftest port-contract rust-lint rust-test rust-foundation-contract rust-fs-secret-contract rust-mcp-contract mcp-differential mcp-fuzz-smoke port-consumer-smoke
+.PHONY: build test lint fmt-check clean consumer-drift golangci-lint rust-port-validate port-fixture-source-check port-oracle-selftest port-contract rust-lint rust-test rust-foundation-contract rust-fs-secret-contract rust-mcp-contract rust-miri mcp-differential mcp-fuzz-smoke port-consumer-smoke
 
 build:
 	CGO_ENABLED=0 go build ./...
@@ -60,6 +60,11 @@ rust-mcp-contract:
 	cargo check -p symaira-core-mcp --all-targets --all-features --locked
 	cargo clippy -p symaira-core-mcp --all-targets --all-features --locked -- -D warnings
 	cargo test -p symaira-core-mcp --all-features --locked
+
+rust-miri:
+	python3 scripts/rust-port/miri_gate.py --self-test
+	python3 scripts/rust-port/miri_gate.py --negative-test
+	python3 scripts/rust-port/miri_gate.py --run
 
 mcp-differential:
 	python3 scripts/rust-port/mcp-differential.py --check

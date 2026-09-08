@@ -359,7 +359,9 @@
         "cargo nextest run --workspace --all-features",
         "cargo test --workspace --doc --all-features",
         "cargo hack check --workspace --each-feature --no-dev-deps",
-        "cargo +nightly miri test --workspace",
+        "python3 scripts/rust-port/miri_gate.py --self-test",
+        "python3 scripts/rust-port/miri_gate.py --negative-test",
+        "python3 scripts/rust-port/miri_gate.py --run",
         "cargo audit",
         "cargo deny check",
         "make test lint build"
