@@ -1750,7 +1750,7 @@
         "windows"
       ],
       "rust_test": "CI apidiff gate",
-      "status": "todo"
+      "status": "parity"
     },
     {
       "id": "REL-003",
@@ -1765,7 +1765,7 @@
         "windows"
       ],
       "rust_test": "CI cargo-semver-checks",
-      "status": "todo"
+      "status": "fixture-ready"
     },
     {
       "id": "REL-004",
@@ -1795,7 +1795,7 @@
         "windows"
       ],
       "rust_test": "port/release/verify.py",
-      "status": "todo"
+      "status": "fixture-ready"
     },
     {
       "id": "REL-006",
