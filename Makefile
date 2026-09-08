@@ -1,4 +1,4 @@
-.PHONY: build test lint fmt-check clean consumer-drift golangci-lint rust-port-validate port-fixture-source-check port-oracle-selftest port-contract rust-lint rust-test rust-foundation-contract rust-fs-secret-contract rust-mcp-contract rust-miri mcp-differential mcp-fuzz-smoke port-consumer-smoke
+.PHONY: build test lint fmt-check clean consumer-drift golangci-lint rust-port-validate port-fixture-source-check port-oracle-selftest port-contract rust-lint rust-test rust-foundation-contract rust-fs-secret-contract rust-mcp-contract rust-miri rust-hardening mcp-differential mcp-fuzz-smoke port-consumer-smoke
 
 build:
 	CGO_ENABLED=0 go build ./...
@@ -65,6 +65,21 @@ rust-miri:
 	python3 scripts/rust-port/miri_gate.py --self-test
 	python3 scripts/rust-port/miri_gate.py --negative-test
 	python3 scripts/rust-port/miri_gate.py --run
+
+rust-hardening:
+	cargo fmt --all --check
+	cargo check --workspace --all-targets --all-features --locked
+	cargo clippy --workspace --all-targets --all-features --locked -- -D warnings
+	cargo nextest run --workspace --all-features --locked
+	cargo test --workspace --doc --all-features --locked
+	# cargo-hack --no-dev-deps rewrites manifests temporarily and must refresh its lock view.
+	cargo hack check --workspace --each-feature --no-dev-deps
+	cargo llvm-cov --workspace --all-features --no-report
+	cargo audit
+	cargo deny check
+	python3 docs/rust-port/validate.py
+	make build
+	make test lint
 
 mcp-differential:
 	python3 scripts/rust-port/mcp-differential.py --check
