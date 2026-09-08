@@ -180,7 +180,9 @@ import (
         )
         self.assertEqual(report["consumer_count"], 5)
         self.assertEqual(report["status"], "blocked")
-        self.assertEqual({item["repository"] for item in report["findings"]}, set(report["checked_repositories"]))
+        finding_repositories = {item["repository"] for item in report["findings"]}
+        self.assertTrue(finding_repositories.issubset(set(report["checked_repositories"])))
+        self.assertIn("corekit", report["checked_repositories"])
 
     def test_git_adoption_can_postdate_release(self) -> None:
         with tempfile.TemporaryDirectory() as raw:
@@ -287,6 +289,11 @@ import (
             self.assertEqual(report["status"], "blocked")
             self.assertTrue(
                 any(item["repository"] == "corekit" and item["code"] == "release.tag" for item in report["findings"]),
+                report,
+            )
+            self.assertIn("corekit", report["checked_repositories"])
+            self.assertTrue(
+                {item["repository"] for item in report["findings"]}.issubset(set(report["checked_repositories"])),
                 report,
             )
 

@@ -610,6 +610,9 @@ def verify_manifest(
     if corekit_root is None:
         corekit_root = canonical_checkout(ROOT)
 
+    # CoreKit is a checked subject, not a consumer record. Keep it explicit
+    # so findings from the top-level release evidence satisfy the output contract.
+    repositories.add("corekit")
     release_tag = corekit.get("release_tag")
     release_commit = corekit.get("release_commit")
     if not isinstance(release_tag, str) or not RELEASE_TAG_RE.fullmatch(release_tag):
