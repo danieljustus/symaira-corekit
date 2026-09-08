@@ -43,6 +43,19 @@ class ManifestShapeTests(unittest.TestCase):
         manifest["release"]["publish"] = True
         with self.assertRaisesRegex(verify.VerificationError, "publish must remain false"):
             verify.validate_manifest_shape(manifest)
+    def test_non_publishable_crate_requires_explicit_publish_empty_list(self) -> None:
+        metadata = copy.deepcopy(verify.cargo_metadata())
+        package = next(item for item in metadata["packages"] if item["name"] == "symaira-core-exit")
+        package.pop("publish", None)
+        with self.assertRaisesRegex(verify.VerificationError, "publish=\\[\\]"):
+            verify.validate_workspace(self.manifest["release"], metadata)
+
+    def test_declared_crate_manifest_rejects_forbidden_path(self) -> None:
+        metadata = verify.cargo_metadata()
+        manifest = copy.deepcopy(self.manifest)
+        manifest["release"]["crates"][0]["manifest"] = "vendor/Cargo.toml"
+        with self.assertRaisesRegex(verify.VerificationError, "forbidden"):
+            verify.validate_workspace(manifest["release"], metadata)
 
 
 if __name__ == "__main__":

@@ -1,10 +1,16 @@
-.PHONY: build test lint fmt-check clean consumer-drift golangci-lint rust-port-validate port-fixture-source-check port-oracle-selftest port-contract rust-lint rust-test rust-foundation-contract rust-fs-secret-contract rust-mcp-contract rust-release-contract rust-miri rust-hardening mcp-differential mcp-fuzz-smoke port-consumer-smoke
+.PHONY: build test lint fmt-check clean consumer-drift port-consumer-verify consumer-pin-regression golangci-lint rust-port-validate port-fixture-source-check port-oracle-selftest port-contract rust-lint rust-test rust-foundation-contract rust-fs-secret-contract rust-mcp-contract rust-release-contract rust-miri rust-hardening mcp-differential mcp-fuzz-smoke port-consumer-smoke
 
 build:
 	CGO_ENABLED=0 go build ./...
 
 consumer-drift:
 	./scripts/consumer-drift.sh
+
+port-consumer-verify:
+	python3 port/consumer/verify.py --released-consumers
+
+consumer-pin-regression:
+	./scripts/test-check-consumer-pins.sh
 
 rust-port-validate:
 	python3 scripts/rust-port/adoption.py --self-test
@@ -61,8 +67,10 @@ rust-mcp-contract:
 	cargo clippy -p symaira-core-mcp --all-targets --all-features --locked -- -D warnings
 	cargo test -p symaira-core-mcp --all-features --locked
 
-rust-release-contract:
+rust-release-contract: consumer-pin-regression
 	cargo semver-checks check-release
+	python3 -m unittest discover -s port/release -p 'test_*.py'
+	python3 -m unittest discover -s port/consumer -p 'test_*.py'
 	python3 port/release/verify.py --dry-run
 
 rust-miri:

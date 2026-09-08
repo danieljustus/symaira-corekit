@@ -1,6 +1,6 @@
 # Symaira CoreKit Go→Rust implementation plan
 
-> **Execution rule:** implement one work item per reviewed PR. Keep Go green and released. Begin only with the first `ready` item in [`work-items.json`](work-items.json); update statuses only after every acceptance command really passes.
+> **Execution rule:** implement one work item per reviewed PR. Keep Go green and released. Rust crates remain Git-pinned and non-publishing until the full migration, consumer rollout, and external registry-evidence gates are complete. Begin only with the first `ready` item in [`work-items.json`](work-items.json); update statuses only after every acceptance command really passes.
 
 **Goal:** Add adopted, idiomatic Rust CoreKit crates beside the stable Go module, preserving all observable contracts and removing duplicate foundations from active Rust consumers without a flag-day rewrite.
 
@@ -97,7 +97,7 @@ quality review passed.
 6. Enable tracing and prove stdout remains protocol-only.
 7. Fuzz copied seed corpora; never let libFuzzer mutate tracked seeds.
 
-## RUST-005: Foundation multi-consumer adoption and value gate
+## RUST-005: Foundation multi-consumer adoption and value gate — IN PROGRESS (offline revalidation pending)
 
 **Objective:** Prove the shared Rust foundation has real ecosystem value before expensive package ports.
 
@@ -109,6 +109,12 @@ quality review passed.
 4. Measure 50-run startup p95/RSS median/binary size canaries and 10-run clean/warm consumer build distributions.
 5. Record deleted/avoided duplicate source and dependency-feature closure.
 6. Stop, split or abandon crates that lack two adopters/two-language SSOT or exceed the 10% regression ceiling without an approved security exception.
+
+The tracked evidence is intentionally pending after regeneration with
+`python3 scripts/rust-port/adoption.py --check --min-consumers 2 --offline`:
+offline mode cannot verify the merged PR state for the exact Git pins. The
+negative gate exits 1 and records blockers; that is the honest current result,
+not a permission to claim registry availability.
 
 All RUST-006+ work depends transitively on this graph barrier.
 
@@ -194,7 +200,7 @@ All RUST-006+ work depends transitively on this graph barrier.
 
 **Steps:** Generate deterministic rotation/2–4-bit/metadata/sidecar/ranking fixtures through Go; implement safe scalar Rust first; require exact packed/persisted bytes; then benchmark ten paired runs. Add SIMD only as a separate reviewed optimization after parity.
 
-## RUST-013: Full dual-language hardening and native CI
+## RUST-013: Full dual-language hardening and native CI — IN PROGRESS (revalidation)
 
 **Objective:** Turn the foundation and every optional slice activated so far into a sustainable repository gate. Deferred, unbuilt crates do not block a foundation release.
 
@@ -204,11 +210,11 @@ All RUST-006+ work depends transitively on this graph barrier.
 
 **Hardening execution:** `make rust-hardening` is the executable RUST-013 aggregate. It runs pinned-toolchain format/check/Clippy, nextest, doctests, every-feature validation, LLVM coverage instrumentation, cargo-audit, cargo-deny, Rust-port metadata validation, and the complete Go build/test/lint gates. The `cargo hack --no-dev-deps` invocation deliberately omits `--locked` because cargo-hack temporarily rewrites manifests and must refresh its lock view; all other lock-sensitive commands remain locked. CI additionally runs full Rust workspace tests and doctests natively on Linux, macOS, and Windows.
 
-**Acceptance evidence:** The gate was merged through PR #246 at exact head `b3f189f6ac4c78986c48be510805663906cce876`; GitHub reports all 29 PR checks successful, including native Rust, Miri, hardening, port-contract and cross-platform Go checks. The merge commit is `e5cdac6883f5fec098c35516207deff773f63a05`, and post-merge main CI run `34194811021` completed successfully at that exact head. The Go oracle remains unchanged; no cutover or Go-oracle removal occurred.
+**Acceptance evidence:** The historical hardening gate was merged through PR #246 at exact head `b3f189f6ac4c78986c48be510805663906cce876`; GitHub reports the `Rust RUST-013 hardening` job successful in run `34193678917` (job `101956734067`). Its log contains successful `cargo audit` and `cargo deny check` commands, which is the bound evidence for `REL-004` parity. RUST-013 remains `in_progress` while the RUST-005 value gate is revalidated; no crate publication, Go cutover or Go-oracle removal occurred.
 
-## RUST-014: SemVer, publishing manifest and release verification — IN PROGRESS (local gate complete)
+## RUST-014: SemVer, publishing manifest and release verification — IN PROGRESS (non-publishing local gate)
 
-**Objective:** Publish only adopted crates without confusing Go module tags.
+**Objective:** Keep the release contract executable without publishing. No crates.io publication is permitted until the full migration and consumer rollout are complete, followed by separately approved external registry evidence.
 
 **Create:** `port/release/manifest.json`, `port/release/verify.py`, and focused
 stdlib-only verifier tests. The manifest classifies every workspace package,
@@ -240,9 +246,11 @@ crates.io ownership, public-byte readback, or external OIDC/publishing evidence
 exists while every crate stays `publish = false`. Go build/test/lint and exact
 Git-revision consumer support remain unchanged.
 
-## RUST-015: Consumer rollout and Go-retention review
+## RUST-015: Consumer rollout and Go-retention review — BLOCKED (verifier implemented)
 
 **Objective:** Finish adoption without pretending Rust crate availability removes the Go API.
+
+**Executable gate:** `python3 port/consumer/verify.py --released-consumers` checks every `docs/consumers.json` record. It distinguishes released Git revisions from registry pins, exact Cargo.toml versions, Cargo.lock source/checksum, release-tag ancestry, Go imports, and explicit standalone/rollback evidence. The current run is expected to exit 1 with blockers; `make consumer-drift` runs the same verifier from the canonical checkout even when invoked from a registered worktree.
 
 **Steps:** Track every released Go and Rust consumer, exact pin and package use; migrate consumer by consumer with its own suite; retain Go releases while any released consumer imports a package. Any Go removal is a later, separate major-version proposal with rollback evidence.
 

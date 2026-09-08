@@ -1,6 +1,6 @@
 {
-  "decision": "continue",
-  "evaluated_at": "2026-09-07T20:08:26.539588+00:00",
+  "decision": "hold",
+  "evaluated_at": "2026-09-08T09:58:02.505261+00:00",
   "evidence": {
     "adopters": [
       {
@@ -86,14 +86,15 @@
       },
       {
         "path": "docs/rust-port/validate.py",
-        "sha256": "22236d6004cc3ab12b674bcbce797e21658b356dfa06e1b9d7ee7f99b4670515"
+        "sha256": "8609c507790a5044016a23d46ac83f13916557fce2fbb2aac62db986882e721f"
       }
     ]
   },
   "notes": [
+    "Offline adoption validation was regenerated on 2026-09-08. It intentionally reports pending because the Git-pin adoption PR state is not available in deterministic offline mode; no merged or registry adoption is inferred.",
     "The 10% PERF-001 ceiling applies to startup p95, RSS median, and binary size; PERF-002 build distributions are required and reported separately.",
     "Go remains supported while released Go consumers exist.",
-    "Gate passed from tracked raw 50-launch and 10 clean/warm-build samples for both merged consumers; validators recompute every summary and verify semantic output parity."
+    "The prior live benchmark samples remain retained as historical input, but the value gate is on hold until current merged-PR evidence is read back again."
   ],
   "requirements": {
     "duplication_rule": "duplicate_loc_removed >= corekit_loc_added + adapter_loc_added",
@@ -102,5 +103,5 @@
     "standalone_smoke_required_per_adopter": true
   },
   "schema_version": 1,
-  "status": "passed"
+  "status": "pending"
 }
