@@ -560,5 +560,58 @@ import (
             self.assertTrue(any(item["code"] == "rust.pin.exact" for item in report["findings"]), report)
 
 
+    def test_ignored_declared_go_manifest_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            root = Path(raw)
+            manifest, corekit, consumer, _, _ = make_fixture(root)
+            (consumer / ".gitignore").write_text("alt/go.mod\n", encoding="utf-8")
+            (consumer / "alt").mkdir()
+            (consumer / "alt/go.mod").write_text(
+                "module example.invalid/alt\n\n"
+                "require github.com/danieljustus/symaira-corekit v0.17.0\n",
+                encoding="utf-8",
+            )
+            subprocess.run(["git", "-C", str(consumer), "add", ".gitignore"], check=True)
+            subprocess.run(["git", "-C", str(consumer), "commit", "-qm", "ignore-alt-module"], check=True)
+            document = json.loads(manifest.read_text(encoding="utf-8"))
+            document["consumers"][0]["checkout_commit"] = git(consumer, "rev-parse", "HEAD")
+            document["consumers"][0]["pins"].append("alt/go.mod")
+            manifest.write_text(json.dumps(document), encoding="utf-8")
+
+            report = verify.verify_manifest(manifest, workspace_root=root, corekit_root=corekit)
+            codes = {item["code"] for item in report["findings"]}
+            self.assertIn("go.manifest.untracked", codes, report)
+            self.assertIn("checkout.untracked_source", codes, report)
+
+    def test_evidence_artifact_rejects_ignored_binlink_directory(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            root = Path(raw)
+            manifest, corekit, consumer, _, _ = make_fixture(root)
+            (consumer / ".gitignore").write_text("binlink\n", encoding="utf-8")
+            os.symlink("bin", consumer / "binlink")
+            subprocess.run(["git", "-C", str(consumer), "add", ".gitignore"], check=True)
+            subprocess.run(["git", "-C", str(consumer), "commit", "-qm", "ignore-binlink"], check=True)
+            document = json.loads(manifest.read_text(encoding="utf-8"))
+            for name in ("standalone", "rollback"):
+                evidence = document["consumers"][0]["rust"]["evidence"][name]
+                evidence["artifact"] = "binlink/fixture"
+                report_path = consumer / evidence["report"]
+                report_document = json.loads(report_path.read_text(encoding="utf-8"))
+                report_document["artifact"] = "binlink/fixture"
+                report_path.write_text(json.dumps(report_document), encoding="utf-8")
+            subprocess.run(["git", "-C", str(consumer), "add", "evidence"], check=True)
+            subprocess.run(["git", "-C", str(consumer), "commit", "-qm", "binlink-evidence"], check=True)
+            document["consumers"][0]["checkout_commit"] = git(consumer, "rev-parse", "HEAD")
+            manifest.write_text(json.dumps(document), encoding="utf-8")
+
+            report = verify.verify_manifest(manifest, workspace_root=root, corekit_root=corekit)
+            artifact_findings = [
+                item for item in report["findings"]
+                if item["code"] in {"evidence.standalone.artifact", "evidence.rollback.artifact"}
+            ]
+            self.assertEqual({item["repository"] for item in artifact_findings}, {"example/fixture"}, report)
+            self.assertEqual(len(artifact_findings), 2, report)
+
+
 if __name__ == "__main__":
     unittest.main()

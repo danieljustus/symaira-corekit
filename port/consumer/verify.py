@@ -119,11 +119,22 @@ def _safe_child(root: Path, relative: str) -> Path:
 
 
 def _safe_non_symlink_child(root: Path, relative: str) -> Path:
+    if not isinstance(relative, str) or not relative.strip() or Path(relative).is_absolute():
+        raise ValueError("path must be a non-empty relative path")
     root_resolved = root.resolve()
-    lexical = root_resolved / relative
-    if lexical.is_symlink():
-        raise ValueError("path must not be a symlink")
-    return _safe_child(root_resolved, relative)
+    current = root_resolved
+    for component in Path(relative).parts:
+        if component in ("", "."):
+            continue
+        if component == "..":
+            raise ValueError("path must remain below checkout root")
+        current = current / component
+        try:
+            if stat.S_ISLNK(current.lstat().st_mode):
+                raise ValueError("path must not contain a symlink segment")
+        except FileNotFoundError:
+            break
+    return root_resolved / relative
 
 
 def _regular_non_symlink(path: Path) -> bool:
@@ -155,7 +166,7 @@ def _check_checkout_snapshot(
 
     # Git status omits ignored files. Scan source-shaped files as well so an
     # ignored untracked Go/Rust source file cannot alter the verified input.
-    source_names = {"Cargo.toml", "Cargo.lock"}
+    source_names = {"go.mod", "Cargo.toml", "Cargo.lock"}
     source_suffixes = {".go", ".rs"}
     for directory, directories, files in os.walk(checkout, followlinks=False):
         directories[:] = [name for name in directories if name not in {".git", ".worktrees", "target", "vendor"}]
@@ -687,6 +698,10 @@ def _check_go(record: dict[str, Any], checkout: Path, findings: list[Finding]) -
             continue
         if not path.is_file():
             _add(findings, repository, "go.manifest.missing", f"missing declared Go manifest: {relative}")
+            continue
+        code, tracked, _ = _git(["ls-files", "--error-unmatch", "--", relative], checkout)
+        if code or tracked != relative:
+            _add(findings, repository, "go.manifest.untracked", f"declared Go manifest is not tracked at checkout_commit: {relative}")
             continue
         try:
             text = path.read_text(encoding="utf-8")
