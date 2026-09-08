@@ -38,4 +38,10 @@ grep -F 'STALE danieljustus/symaira-browse:go.mod — v0.16.9-0.20260908091500-0
 grep -F 'OK    danieljustus/symaira-desktop:go.mod — v0.17.1-0.20260908091500-0123456789ab (pseudoversion-newer)' <<<"$output" >/dev/null
 grep -F 'AHEAD danieljustus/symaira-eraseme:go.mod — v0.17.1 (tagged-release-newer)' <<<"$output" >/dev/null
 grep -F 'WARN  danieljustus/symaira-vault:go.mod — unsupported CoreKit version v0.17.0-20260908091500-0123456789ab' <<<"$output" >/dev/null
+
+parser="$ROOT/scripts/parse-go-pin.py"
+[[ "$(printf '%s\n' '// require github.com/danieljustus/symaira-corekit v9.9.9' | python3 "$parser")" = missing ]]
+[[ "$(printf '%s\n' 'require github.com/danieljustus/symaira-corekit' | python3 "$parser")" = invalid ]]
+[[ "$(printf '%s\n' 'require github.com/danieljustus/symaira-corekit v0.17.0' 'require github.com/danieljustus/symaira-corekit v0.17.0' | python3 "$parser")" = duplicate ]]
+[[ "$(printf '%s\n' 'require github.com/danieljustus/symaira-corekit v0.17.0' 'require github.com/danieljustus/symaira-corekit v0.18.0' | python3 "$parser")" = inconsistent ]]
 printf '%s\n' 'consumer pin classification regression: ok'

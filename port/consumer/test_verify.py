@@ -146,6 +146,34 @@ def make_fixture(root: Path, *, status: str = "git") -> tuple[Path, Path, Path, 
     return manifest_path, corekit, consumer, release_commit, adoption_commit
 
 
+def release_registry(manifest: Path, consumer: Path) -> None:
+    """Add a complete deterministic registry readback to a fixture."""
+    checksum = "0123456789abcdef" * 4
+    lock_path = consumer / "Cargo.lock"
+    lock_path.write_text(
+        lock_path.read_text(encoding="utf-8").replace("a" * 64, checksum),
+        encoding="utf-8",
+    )
+    subprocess.run(["git", "-C", str(consumer), "add", "Cargo.lock"], check=True)
+    subprocess.run(["git", "-C", str(consumer), "commit", "-qm", "registry-lock"], check=True)
+    document = json.loads(manifest.read_text(encoding="utf-8"))
+    document["corekit"]["rust_registry"] = {
+        "package": verify.COREKIT_PACKAGE,
+        "status": "released",
+        "readback": {
+            "package": verify.COREKIT_PACKAGE,
+            "version": "0.0.0",
+            "owners": ["danieljustus", "crates-io:verified-owner"],
+            "index": "https://index.crates.io/2/s/symaira-core-version",
+            "public_bytes": checksum,
+            "checksum": checksum,
+            "source": f"https://crates.io/api/v1/crates/{verify.COREKIT_PACKAGE}/0.0.0",
+        },
+    }
+    document["consumers"][0]["checkout_commit"] = git(consumer, "rev-parse", "HEAD")
+    manifest.write_text(json.dumps(document), encoding="utf-8")
+
+
 class ConsumerVerifierTests(unittest.TestCase):
     def test_pseudoversion_is_preserved_exactly(self) -> None:
         text = "module example.invalid/tool\n\nrequire (\n\tgithub.com/danieljustus/symaira-corekit v0.0.0-20260908091500-0123456789ab\n)\n"
@@ -306,6 +334,7 @@ import (
         with tempfile.TemporaryDirectory() as raw:
             root = Path(raw)
             manifest, corekit, consumer, _, _ = make_fixture(root, status="registry")
+            release_registry(manifest, consumer)
             report = verify.verify_manifest(manifest, workspace_root=root, corekit_root=corekit)
             self.assertEqual(report["status"], "passed", report)
             lock = (consumer / "Cargo.lock").read_text(encoding="utf-8").replace(
@@ -541,6 +570,7 @@ import (
             (consumer / "Cargo.toml").write_text(cargo, encoding="utf-8")
             subprocess.run(["git", "-C", str(consumer), "add", "Cargo.toml"], check=True)
             subprocess.run(["git", "-C", str(consumer), "commit", "-qm", "string-pin"], check=True)
+            release_registry(manifest, consumer)
             document = json.loads(manifest.read_text(encoding="utf-8"))
             document["consumers"][0]["checkout_commit"] = git(consumer, "rev-parse", "HEAD")
             manifest.write_text(json.dumps(document), encoding="utf-8")
@@ -611,6 +641,95 @@ import (
             ]
             self.assertEqual({item["repository"] for item in artifact_findings}, {"example/fixture"}, report)
             self.assertEqual(len(artifact_findings), 2, report)
+    def test_not_adopted_scans_tracked_cargo_manifests_and_locks(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            root = Path(raw)
+            manifest, corekit, consumer, _, _ = make_fixture(root)
+            document = json.loads(manifest.read_text(encoding="utf-8"))
+            document["consumers"][0]["rust"] = {"status": "not_adopted"}
+            manifest.write_text(json.dumps(document), encoding="utf-8")
+            report = verify.verify_manifest(manifest, workspace_root=root, corekit_root=corekit)
+            present = [item for item in report["findings"] if item["code"] == "rust.not_adopted.present"]
+            self.assertEqual({item["message"].rsplit(" ", 1)[-1] for item in present}, {"Cargo.toml", "Cargo.lock"}, report)
+
+    def test_declared_cargo_paths_reject_forbidden_components_and_symlinks(self) -> None:
+        for relative in ("vendor/Cargo.toml", "target/Cargo.toml", ".worktrees/Cargo.toml"):
+            with self.subTest(relative=relative), tempfile.TemporaryDirectory() as raw:
+                root = Path(raw)
+                manifest, corekit, _, _, _ = make_fixture(root)
+                document = json.loads(manifest.read_text(encoding="utf-8"))
+                document["consumers"][0]["rust"]["manifest_paths"] = [relative]
+                manifest.write_text(json.dumps(document), encoding="utf-8")
+                report = verify.verify_manifest(manifest, workspace_root=root, corekit_root=corekit)
+                self.assertTrue(any(item["code"] == "rust.manifest.path" for item in report["findings"]), report)
+
+        with tempfile.TemporaryDirectory() as raw:
+            root = Path(raw)
+            manifest, corekit, consumer, _, _ = make_fixture(root)
+            (consumer / "real").mkdir()
+            os.symlink("real", consumer / "rustlink")
+            document = json.loads(manifest.read_text(encoding="utf-8"))
+            document["consumers"][0]["rust"]["manifest_paths"] = ["rustlink/Cargo.toml"]
+            manifest.write_text(json.dumps(document), encoding="utf-8")
+            report = verify.verify_manifest(manifest, workspace_root=root, corekit_root=corekit)
+            self.assertTrue(any(item["code"] == "rust.manifest.path" for item in report["findings"]), report)
+
+    def test_ignored_symlink_directory_cannot_hide_cargo_source(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            root = Path(raw)
+            manifest, corekit, consumer, _, _ = make_fixture(root)
+            hidden = root / "hidden-rust"
+            hidden.mkdir()
+            (hidden / "Cargo.toml").write_text(
+                '[package]\nname = "symaira-core-version"\nversion = "0.0.0"\n', encoding="utf-8"
+            )
+            (consumer / ".gitignore").write_text("rustlink\n", encoding="utf-8")
+            os.symlink(hidden, consumer / "rustlink")
+            subprocess.run(["git", "-C", str(consumer), "add", ".gitignore"], check=True)
+            subprocess.run(["git", "-C", str(consumer), "commit", "-qm", "ignore-rustlink"], check=True)
+            document = json.loads(manifest.read_text(encoding="utf-8"))
+            document["consumers"][0]["checkout_commit"] = git(consumer, "rev-parse", "HEAD")
+            manifest.write_text(json.dumps(document), encoding="utf-8")
+            report = verify.verify_manifest(manifest, workspace_root=root, corekit_root=corekit)
+            self.assertTrue(any(item["code"] == "checkout.path" for item in report["findings"]), report)
+
+    def test_registry_adoption_is_blocked_until_top_level_release(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            root = Path(raw)
+            manifest, corekit, consumer, _, _ = make_fixture(root, status="registry")
+            report = verify.verify_manifest(manifest, workspace_root=root, corekit_root=corekit)
+            self.assertTrue(any(item["code"] == "registry.status" for item in report["findings"]), report)
+            self.assertNotEqual(report["status"], "passed")
+
+    def test_registry_readback_rejects_fake_checksum(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            root = Path(raw)
+            manifest, corekit, consumer, _, _ = make_fixture(root, status="registry")
+            release_registry(manifest, consumer)
+            document = json.loads(manifest.read_text(encoding="utf-8"))
+            document["corekit"]["rust_registry"]["readback"]["checksum"] = "a" * 64
+            manifest.write_text(json.dumps(document), encoding="utf-8")
+            report = verify.verify_manifest(manifest, workspace_root=root, corekit_root=corekit)
+            self.assertTrue(any(item["code"] == "registry.checksum" for item in report["findings"]), report)
+
+    def test_go_mod_and_work_replace_directives_are_forbidden(self) -> None:
+        for filename, replacement in (
+            ("go.mod", "replace github.com/danieljustus/symaira-corekit => ../local-corekit\n"),
+            ("go.work", "go 1.26.0\n\nuse .\n\nreplace github.com/danieljustus/symaira-corekit => ../local-corekit\n"),
+        ):
+            with self.subTest(filename=filename), tempfile.TemporaryDirectory() as raw:
+                root = Path(raw)
+                manifest, corekit, consumer, _, _ = make_fixture(root)
+                path = consumer / filename
+                existing = path.read_text(encoding="utf-8") if path.exists() else ""
+                path.write_text(existing + replacement, encoding="utf-8")
+                subprocess.run(["git", "-C", str(consumer), "add", filename], check=True)
+                subprocess.run(["git", "-C", str(consumer), "commit", "-qm", "forbidden-replace"], check=True)
+                document = json.loads(manifest.read_text(encoding="utf-8"))
+                document["consumers"][0]["checkout_commit"] = git(consumer, "rev-parse", "HEAD")
+                manifest.write_text(json.dumps(document), encoding="utf-8")
+                report = verify.verify_manifest(manifest, workspace_root=root, corekit_root=corekit)
+                self.assertTrue(any(item["code"] == "go.replace.forbidden" for item in report["findings"]), report)
 
 
 if __name__ == "__main__":

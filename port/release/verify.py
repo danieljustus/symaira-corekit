@@ -24,6 +24,7 @@ MANIFEST_PATH = Path(__file__).with_name("manifest.json")
 SEMVER = re.compile(r"^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$")
 TAG = re.compile(r"^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$")
 SHA = re.compile(r"^[0-9a-f]{40}$")
+FORBIDDEN_PATH_PARTS = frozenset({".worktrees", "target", "vendor"})
 
 
 class VerificationError(ValueError):
@@ -59,6 +60,23 @@ def sha256(path: Path) -> str:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+def safe_repository_path(relative: object) -> Path:
+    if not isinstance(relative, str) or not relative.strip() or Path(relative).is_absolute():
+        fail("repository path must be a non-empty relative path")
+    parts = tuple(part for part in Path(relative).parts if part not in ("", "."))
+    if ".." in parts:
+        fail(f"repository path escapes repository: {relative}")
+    forbidden = sorted(set(parts) & FORBIDDEN_PATH_PARTS)
+    if forbidden:
+        fail(f"repository path contains forbidden component: {forbidden[0]}")
+    current = ROOT
+    for part in parts:
+        current /= part
+        if current.is_symlink():
+            fail(f"repository path contains symlink component: {relative}")
+    return ROOT.joinpath(*parts)
 
 
 def validate_tag(value: object) -> str:
@@ -179,7 +197,8 @@ def validate_workspace(release: dict[str, Any], metadata: dict[str, Any]) -> dic
         )
     for name, crate in manifest_crates.items():
         package = packages[name]
-        expected_manifest = (ROOT / crate["manifest"]).resolve()
+        expected_manifest = safe_repository_path(crate["manifest"])
+        expected_manifest = expected_manifest.resolve()
         try:
             expected_manifest.relative_to(ROOT.resolve())
         except ValueError:
@@ -193,8 +212,8 @@ def validate_workspace(release: dict[str, Any], metadata: dict[str, Any]) -> dic
             publish = package.get("publish")
             if publish == []:
                 fail(f"{name}: release marks crate publishable but Cargo marks it publish=false")
-        elif package.get("publish") not in ([], None):
-            fail(f"{name}: unexpected Cargo publish allow-list for a non-publishable plan")
+        elif package.get("publish") != []:
+            fail(f"{name}: Cargo metadata must explicitly mark every non-publishable crate with publish=[]")
         if not expected_manifest.is_file():
             fail(f"{name}: manifest does not exist")
     return manifest_crates
@@ -278,11 +297,7 @@ def main(argv: list[str] | None = None) -> int:
     validate_adoption(release)
     resolved_revision = validate_git_provenance(release, args.tag)
     for relative in release["provenance"]["input_files"]:
-        path = (ROOT / relative).resolve()
-        try:
-            path.relative_to(ROOT.resolve())
-        except ValueError:
-            fail(f"provenance input escapes repository: {relative}")
+        path = safe_repository_path(relative)
         if not path.is_file():
             fail(f"missing provenance input: {relative}")
     candidates = package_candidates(release)

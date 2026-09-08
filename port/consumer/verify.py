@@ -31,6 +31,7 @@ CRATES_IO_SOURCE = "registry+https://github.com/rust-lang/crates.io-index"
 REVISION_RE = re.compile(r"^[0-9a-f]{40}$")
 RELEASE_TAG_RE = re.compile(r"^v(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)$")
 RUST_STATUSES = frozenset({"not_adopted", "git", "registry"})
+REGISTRY_STATUSES = frozenset({"not_released", "released"})
 GO_VERSION_RE = re.compile(
     r"^v(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)"
     r"(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$"
@@ -86,6 +87,46 @@ def parse_go_requirements(text: str) -> list[str | None]:
     return requirements
 
 
+def go_corekit_replacements(text: str) -> list[str]:
+    """Return CoreKit modules mentioned by anchored Go replace directives."""
+    replacements: list[str] = []
+    in_block = False
+    for raw_line in text.splitlines():
+        line = raw_line.split("//", 1)[0].strip()
+        if not line:
+            continue
+        if not in_block and line == "replace (":
+            in_block = True
+            continue
+        if in_block and line == ")":
+            in_block = False
+            continue
+        if not in_block and not line.startswith("replace "):
+            continue
+        declaration = line[len("replace "):].strip() if line.startswith("replace ") else line
+        fields = declaration.split()
+        if "=>" not in fields:
+            if COREKIT_MODULE in declaration:
+                replacements.append(COREKIT_MODULE)
+            continue
+        arrow = fields.index("=>")
+        old = fields[:arrow]
+        new = fields[arrow + 1:]
+        if not old or not new or len(old) > 2 or len(new) > 2:
+            if COREKIT_MODULE in declaration:
+                replacements.append(COREKIT_MODULE)
+            continue
+        for field in (old[0], new[0]):
+            if field == COREKIT_MODULE or field.startswith(COREKIT_MODULE + "/"):
+                replacements.append(field)
+    if in_block:
+        # An unterminated replace block is malformed. Preserve a CoreKit
+        # mention as a finding rather than letting it disappear at EOF.
+        if COREKIT_MODULE in text:
+            replacements.append(COREKIT_MODULE)
+    return replacements
+
+
 def parse_go_pins(text: str) -> list[str]:
     """Return all syntactically valid CoreKit Go pins in declaration order."""
     return [version for version in parse_go_requirements(text) if version is not None]
@@ -109,9 +150,25 @@ def _add(findings: list[Finding], repository: str, code: str, message: str) -> N
     findings.append(Finding(repository, code, message))
 
 
-def _safe_child(root: Path, relative: str) -> Path:
+FORBIDDEN_PATH_PARTS = frozenset({".worktrees", "target", "vendor"})
+
+
+def _validate_relative_path(relative: str) -> tuple[str, ...]:
     if not isinstance(relative, str) or not relative.strip() or Path(relative).is_absolute():
         raise ValueError("path must be a non-empty relative path")
+    parts = Path(relative).parts
+    if any(part in ("", ".") for part in parts):
+        parts = tuple(part for part in parts if part not in ("", "."))
+    if ".." in parts:
+        raise ValueError("path must remain below checkout root")
+    forbidden = sorted(set(parts) & FORBIDDEN_PATH_PARTS)
+    if forbidden:
+        raise ValueError(f"path contains forbidden component: {forbidden[0]}")
+    return parts
+
+
+def _safe_child(root: Path, relative: str) -> Path:
+    _validate_relative_path(relative)
     root_resolved = root.resolve()
     candidate = (root_resolved / relative).resolve()
     candidate.relative_to(root_resolved)
@@ -119,22 +176,17 @@ def _safe_child(root: Path, relative: str) -> Path:
 
 
 def _safe_non_symlink_child(root: Path, relative: str) -> Path:
-    if not isinstance(relative, str) or not relative.strip() or Path(relative).is_absolute():
-        raise ValueError("path must be a non-empty relative path")
+    parts = _validate_relative_path(relative)
     root_resolved = root.resolve()
     current = root_resolved
-    for component in Path(relative).parts:
-        if component in ("", "."):
-            continue
-        if component == "..":
-            raise ValueError("path must remain below checkout root")
+    for component in parts:
         current = current / component
         try:
             if stat.S_ISLNK(current.lstat().st_mode):
                 raise ValueError("path must not contain a symlink segment")
         except FileNotFoundError:
             break
-    return root_resolved / relative
+    return root_resolved.joinpath(*parts)
 
 
 def _regular_non_symlink(path: Path) -> bool:
@@ -166,10 +218,25 @@ def _check_checkout_snapshot(
 
     # Git status omits ignored files. Scan source-shaped files as well so an
     # ignored untracked Go/Rust source file cannot alter the verified input.
-    source_names = {"go.mod", "Cargo.toml", "Cargo.lock"}
+    source_names = {"go.mod", "go.work", "Cargo.toml", "Cargo.lock"}
     source_suffixes = {".go", ".rs"}
     for directory, directories, files in os.walk(checkout, followlinks=False):
-        directories[:] = [name for name in directories if name not in {".git", ".worktrees", "target", "vendor"}]
+        kept_directories: list[str] = []
+        for name in directories:
+            path = Path(directory) / name
+            if name == ".git":
+                continue
+            try:
+                is_symlink = stat.S_ISLNK(path.lstat().st_mode)
+            except OSError:
+                is_symlink = False
+            if is_symlink:
+                _add(findings, repository, "checkout.path", f"checkout contains a symlink directory: {path.relative_to(checkout).as_posix()}")
+                continue
+            if name in FORBIDDEN_PATH_PARTS:
+                continue
+            kept_directories.append(name)
+        directories[:] = kept_directories
         for filename in files:
             path = Path(directory) / filename
             if filename not in source_names and path.suffix not in source_suffixes:
@@ -188,12 +255,9 @@ def _check_checkout_snapshot(
         return
     for relative in (item for item in output.split("\0") if item):
         try:
-            path = _safe_child(checkout, relative)
+            path = _safe_non_symlink_child(checkout, relative)
         except (OSError, ValueError):
-            _add(findings, repository, "checkout.path", f"tracked path escapes checkout: {relative}")
-            continue
-        if (checkout.resolve() / relative).is_symlink():
-            _add(findings, repository, "checkout.path", f"tracked path is a symlink: {relative}")
+            _add(findings, repository, "checkout.path", f"tracked path is unsafe or forbidden: {relative}")
             continue
         if not _regular_non_symlink(path):
             _add(findings, repository, "checkout.path", f"tracked path is not a regular non-symlink file: {relative}")
@@ -225,6 +289,53 @@ def cargo_specs(manifest: Path) -> list[tuple[str, Any]]:
     for table in _dependency_tables(document):
         result.extend(table.items())
     return result
+
+
+def _tracked_cargo_files(checkout: Path) -> tuple[bool, list[Path]]:
+    code, output, _ = _git(["ls-files", "-z"], checkout)
+    if code:
+        return False, []
+    paths: list[Path] = []
+    for relative in (item for item in output.split("\0") if item):
+        if Path(relative).name in {"Cargo.toml", "Cargo.lock"}:
+            paths.append(checkout / relative)
+    return True, paths
+
+
+def _cargo_contains_package(document: Any, package: str) -> bool:
+    if isinstance(document, dict):
+        if package in document or document.get("name") == package:
+            return True
+        return any(_cargo_contains_package(value, package) for value in document.values())
+    if isinstance(document, list):
+        return any(_cargo_contains_package(value, package) for value in document)
+    return False
+
+
+def _check_not_adopted_rust(
+    record: dict[str, Any], checkout: Path, findings: list[Finding],
+) -> None:
+    """A not-adopted declaration must not hide a tracked Cargo dependency."""
+    repository = str(record.get("repo", "unknown"))
+    available, paths = _tracked_cargo_files(checkout)
+    if not available:
+        _add(findings, repository, "rust.manifests.unavailable", "cannot inspect tracked Cargo manifests and locks")
+        return
+    for path in paths:
+        relative = path.relative_to(checkout).as_posix()
+        try:
+            _safe_non_symlink_child(checkout, relative)
+            document = tomllib.loads(path.read_text(encoding="utf-8"))
+        except (OSError, UnicodeDecodeError, ValueError, tomllib.TOMLDecodeError) as error:
+            _add(findings, repository, "rust.manifest.read", f"cannot inspect tracked {relative}: {error}")
+            continue
+        if _cargo_contains_package(document, COREKIT_PACKAGE):
+            _add(
+                findings,
+                repository,
+                "rust.not_adopted.present",
+                f"not_adopted Rust status cannot coexist with {COREKIT_PACKAGE} in tracked {relative}",
+            )
 
 
 def _cargo_version(value: Any) -> str | None:
@@ -424,13 +535,72 @@ def _check_release_ancestry(
         _add(findings, repository, "release.ancestry", f"release {tag} ({commit}) is not an ancestor of adoption/release candidate {candidate}")
 
 
+def _registry_readback(registry: dict[str, Any]) -> dict[str, Any] | None:
+    nested = registry.get("readback", registry.get("evidence"))
+    if isinstance(nested, dict):
+        return nested
+    if "version" in registry or "owners" in registry or "checksum" in registry:
+        return registry
+    return None
+
+
+def _check_registry_readback(
+    repository: str,
+    corekit_registry: dict[str, Any],
+    expected_version: Any,
+    lock_checksum: Any,
+    findings: list[Finding],
+) -> None:
+    """Require immutable, independently recorded crates.io read-back facts."""
+    if corekit_registry.get("status") != "released":
+        _add(findings, repository, "registry.status", "registry adoption is blocked until top-level CoreKit registry status is released")
+        return
+    readback = _registry_readback(corekit_registry)
+    if not isinstance(readback, dict):
+        _add(findings, repository, "registry.evidence", "released registry adoption needs an independent readback record")
+        return
+    package = readback.get("package")
+    version = readback.get("version")
+    if package != COREKIT_PACKAGE or version != expected_version:
+        _add(findings, repository, "registry.identity", "registry readback package/version does not match the exact CoreKit pin")
+    owners = readback.get("owners")
+    if not isinstance(owners, list) or not owners or any(
+        not isinstance(owner, str) or not owner.strip() for owner in owners
+    ) or len(set(owners)) != len(owners):
+        _add(findings, repository, "registry.owners", "registry readback needs a non-empty independent owners list")
+    index = readback.get("index")
+    if not isinstance(index, str) or not re.fullmatch(
+        r"https://index\.crates\.io/[A-Za-z0-9._/-]+", index
+    ):
+        _add(findings, repository, "registry.index", "registry readback needs a stable crates.io index URL")
+    source = readback.get("source", readback.get("evidence_source"))
+    expected_source = f"https://crates.io/api/v1/crates/{COREKIT_PACKAGE}/{expected_version}"
+    if source != expected_source:
+        _add(findings, repository, "registry.source", "registry readback source must be the exact stable crates.io package endpoint")
+    checksum = readback.get("checksum")
+    public_bytes = readback.get("public_bytes", readback.get("public_bytes_sha256"))
+    digest_values: list[Any] = [checksum, public_bytes, lock_checksum]
+    if any(not isinstance(value, str) or not re.fullmatch(r"[0-9a-f]{64}", value) for value in digest_values):
+        _add(findings, repository, "registry.checksum", "registry readback and Cargo.lock need 64-hex checksums")
+        return
+    if any(len(set(value)) == 1 for value in digest_values):
+        _add(findings, repository, "registry.checksum", "registry readback contains a degenerate fabricated checksum")
+        return
+    if checksum != lock_checksum or public_bytes != checksum:
+        _add(findings, repository, "registry.checksum", "registry checksum, public-byte digest, and Cargo.lock checksum differ")
+
+
 def _check_rust(
     record: dict[str, Any],
     checkout: Path,
     corekit_root: Path,
     findings: list[Finding],
+    corekit_registry: dict[str, Any],
 ) -> None:
     repository = str(record.get("repo", "unknown"))
+    rust_record = record.get("rust")
+    if isinstance(rust_record, dict) and rust_record.get("status") == "not_adopted":
+        _check_not_adopted_rust(record, checkout, findings)
     rust = _expected_rust(record)
     if rust is None:
         return
@@ -455,9 +625,13 @@ def _check_rust(
             _add(findings, repository, "rust.manifest.path", f"invalid Cargo.toml path: {relative!r}")
             continue
         try:
-            path = _safe_child(checkout, relative)
+            path = _safe_non_symlink_child(checkout, relative)
+        except ValueError as error:
+            _add(findings, repository, "rust.manifest.path", f"unsafe or forbidden Cargo.toml path {relative}: {error}")
+            continue
+        try:
             document = tomllib.loads(path.read_text(encoding="utf-8"))
-        except (OSError, ValueError, tomllib.TOMLDecodeError) as error:
+        except (OSError, UnicodeDecodeError, tomllib.TOMLDecodeError) as error:
             _add(findings, repository, "rust.manifest.read", f"cannot read {relative}: {error}")
             continue
         package = document.get("package")
@@ -505,8 +679,13 @@ def _check_rust(
             registry_version = rust.get("registry_version")
             if version is not None and version != registry_version:
                 _add(findings, repository, "rust.pin.registry_version", f"{relative}: registry version {version!r} != ={registry_version}")
-    lock_path = checkout / "Cargo.lock"
-    if not lock_path.is_file():
+    try:
+        lock_path = _safe_non_symlink_child(checkout, "Cargo.lock")
+    except ValueError:
+        _add(findings, repository, "rust.lock.path", "Cargo.lock path is unsafe or forbidden")
+        _check_release_ancestry(repository, rust, corekit_root, findings)
+        return
+    if not _regular_non_symlink(lock_path):
         _add(findings, repository, "rust.lock.missing", "Cargo.lock is required to prove the resolved Rust pin")
         _check_release_ancestry(repository, rust, corekit_root, findings)
         return
@@ -551,6 +730,14 @@ def _check_rust(
             declared = _exact_cargo_version(_cargo_version(spec))
             if declared is not None and declared != resolved_version:
                 _add(findings, repository, "rust.lock.version", f"Cargo.lock version {resolved_version!r} does not match manifest pin {declared!r}")
+        if status == "registry":
+            _check_registry_readback(
+                repository,
+                corekit_registry,
+                resolved_version,
+                matching[0].get("checksum"),
+                findings,
+            )
     _check_release_ancestry(repository, rust, corekit_root, findings)
     registry = rust.get("registry")
     if status == "registry" and (not isinstance(registry, dict) or registry.get("status") != "published"):
@@ -665,6 +852,43 @@ def _tracked_go_files(checkout: Path) -> tuple[bool, list[Path]]:
     return True, paths
 
 
+def _tracked_go_module_files(checkout: Path) -> tuple[bool, list[Path]]:
+    code, output, _ = _git(["ls-files", "-z"], checkout)
+    if code:
+        return False, []
+    paths: list[Path] = []
+    for relative in (item for item in output.split("\0") if item):
+        if Path(relative).name in {"go.mod", "go.work"}:
+            paths.append(checkout / relative)
+    return True, paths
+
+
+def _check_go_replacements(
+    record: dict[str, Any], checkout: Path, findings: list[Finding],
+) -> None:
+    repository = str(record.get("repo", "unknown"))
+    available, paths = _tracked_go_module_files(checkout)
+    if not available:
+        _add(findings, repository, "go.manifests.unavailable", "cannot inspect tracked go.mod/go.work files")
+        return
+    for path in paths:
+        relative = path.relative_to(checkout).as_posix()
+        try:
+            _safe_non_symlink_child(checkout, relative)
+            text = path.read_text(encoding="utf-8")
+        except (OSError, UnicodeDecodeError, ValueError) as error:
+            _add(findings, repository, "go.manifest.read", f"cannot inspect {relative}: {error}")
+            continue
+        replacements = go_corekit_replacements(text)
+        if replacements:
+            _add(
+                findings,
+                repository,
+                "go.replace.forbidden",
+                f"{relative} contains a CoreKit replace directive ({replacements[0]})",
+            )
+
+
 def tracked_go_imports(checkout: Path) -> list[str]:
     available, paths = _tracked_go_files(checkout)
     if not available:
@@ -682,6 +906,7 @@ def tracked_go_imports(checkout: Path) -> list[str]:
 
 def _check_go(record: dict[str, Any], checkout: Path, findings: list[Finding]) -> None:
     repository = str(record.get("repo", "unknown"))
+    _check_go_replacements(record, checkout, findings)
     pins = record.get("pins")
     if not isinstance(pins, list) or not pins:
         _add(findings, repository, "go.manifests", "consumer record needs a non-empty pins array")
@@ -692,11 +917,11 @@ def _check_go(record: dict[str, Any], checkout: Path, findings: list[Finding]) -
             _add(findings, repository, "go.manifest.path", "Go pin path must be a string")
             continue
         try:
-            path = _safe_child(checkout, relative)
+            path = _safe_non_symlink_child(checkout, relative)
         except ValueError:
-            _add(findings, repository, "go.manifest.path", f"Go manifest path escapes checkout: {relative}")
+            _add(findings, repository, "go.manifest.path", f"Go manifest path is unsafe or forbidden: {relative}")
             continue
-        if not path.is_file():
+        if not _regular_non_symlink(path):
             _add(findings, repository, "go.manifest.missing", f"missing declared Go manifest: {relative}")
             continue
         code, tracked, _ = _git(["ls-files", "--error-unmatch", "--", relative], checkout)
@@ -749,8 +974,8 @@ def verify_manifest(
     if not isinstance(corekit, dict) or corekit.get("repository") != "danieljustus/symaira-corekit" or corekit.get("go_module") != COREKIT_MODULE:
         raise ValueError("docs/consumers.json corekit repository/module is invalid")
     registry = corekit.get("rust_registry")
-    if not isinstance(registry, dict) or registry.get("package") != COREKIT_PACKAGE or registry.get("status") != "not_released":
-        raise ValueError("docs/consumers.json must keep Rust registry status not_released")
+    if not isinstance(registry, dict) or registry.get("package") != COREKIT_PACKAGE or registry.get("status") not in REGISTRY_STATUSES:
+        raise ValueError("docs/consumers.json Rust registry status must be not_released or released")
     if not isinstance(records, list) or not records:
         raise ValueError("docs/consumers.json must contain a non-empty consumers array")
     repositories: set[str] = set()
@@ -762,6 +987,11 @@ def verify_manifest(
     # CoreKit is a checked subject, not a consumer record. Keep it explicit
     # so findings from the top-level release evidence satisfy the output contract.
     repositories.add("corekit")
+    if registry.get("status") == "released":
+        readback = _registry_readback(registry)
+        expected_version = readback.get("version") if isinstance(readback, dict) else None
+        lock_checksum = readback.get("checksum") if isinstance(readback, dict) else None
+        _check_registry_readback("corekit", registry, expected_version, lock_checksum, findings)
     release_tag = corekit.get("release_tag")
     release_commit = corekit.get("release_commit")
     if not isinstance(release_tag, str) or not RELEASE_TAG_RE.fullmatch(release_tag):
@@ -802,7 +1032,7 @@ def verify_manifest(
             continue
         _check_checkout_snapshot(record, checkout, findings)
         _check_go(record, checkout, findings)
-        _check_rust(record, checkout, corekit_root, findings)
+        _check_rust(record, checkout, corekit_root, findings, registry)
         _check_evidence(record, checkout, findings)
     return {
         "schema_version": 1,

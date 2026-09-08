@@ -68,11 +68,24 @@ while IFS=$'\t' read -r repo pin; do
     continue
   fi
 
-  version=$(printf '%s\n' "$content" | grep -oE 'github\.com/danieljustus/symaira-corekit v[^[:space:]]+' | awk 'NR == 1 { print $2 }' || true)
-  if [ -z "$version" ]; then
-    echo "WARN  $repo:$pin — no symaira-corekit require line found"
-    continue
-  fi
+  parsed=$(printf '%s\n' "$content" | python3 "$SCRIPT_DIR/parse-go-pin.py")
+  case "$parsed" in
+    v*)
+      version=$parsed
+      ;;
+    missing)
+      echo "WARN  $repo:$pin — no anchored symaira-corekit require declaration found"
+      continue
+      ;;
+    invalid|duplicate|inconsistent)
+      echo "WARN  $repo:$pin — $parsed symaira-corekit require declarations"
+      continue
+      ;;
+    *)
+      echo "WARN  $repo:$pin — malformed CoreKit pin parser result"
+      continue
+      ;;
+  esac
 
   classification=$(classify_pin "$version")
   case "$classification" in
