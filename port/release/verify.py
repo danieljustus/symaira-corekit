@@ -250,6 +250,13 @@ def validate_git_provenance(release: dict[str, Any], selected_tag: str | None) -
     return resolved
 
 
+def validate_clean_source() -> None:
+    """Reject source that cannot be identified by the recorded Git revision."""
+    status = run(["git", "status", "--porcelain=v1", "--untracked-files=all"]).strip()
+    if status:
+        fail("release verification requires a clean source checkout")
+
+
 def package_candidates(release: dict[str, Any]) -> list[dict[str, Any]]:
     return [crate for crate in release["crates"] if crate["name"] in release["planned_publish_order"]]
 
@@ -268,7 +275,6 @@ def dry_run_packages(candidates: list[dict[str, Any]]) -> list[tuple[str, str]]:
                     str(target),
                     "--package",
                     crate["name"],
-                    "--allow-dirty",
                 ]
             )
             archive = target / "package" / f"{crate['name']}-{crate['version']}.crate"
@@ -296,6 +302,7 @@ def main(argv: list[str] | None = None) -> int:
     validate_workspace(release, metadata)
     validate_adoption(release)
     resolved_revision = validate_git_provenance(release, args.tag)
+    validate_clean_source()
     for relative in release["provenance"]["input_files"]:
         path = safe_repository_path(relative)
         if not path.is_file():
