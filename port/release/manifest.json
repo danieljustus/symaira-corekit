@@ -11,7 +11,7 @@
     "publish": false,
     "publication_status": "not-run",
     "registry": "https://crates.io",
-    "publish_order": [
+    "planned_publish_order": [
       "symaira-core-version"
     ],
     "crates": [

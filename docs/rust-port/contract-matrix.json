@@ -1765,7 +1765,7 @@
         "windows"
       ],
       "rust_test": "CI cargo-semver-checks",
-      "status": "parity"
+      "status": "fixture-ready"
     },
     {
       "id": "REL-004",

@@ -218,25 +218,27 @@ separate external release approval.
 
 **Steps completed:**
 
-1. Added `cargo semver-checks` as a pinned CI/release gate; it runs independently
-   of the existing Go `apidiff` gate.
+1. Added `cargo semver-checks` as a pinned CI tool/bootstrap gate, independent
+   of the existing Go `apidiff` gate. It does not establish public Rust SemVer
+   compatibility until a publishable crate has an immutable registry baseline.
 2. Added a checked-in release plan mapping the stable Go `v0.17.0` namespace to
    explicit Rust package paths/versions. Rust-specific repository tags are
    rejected; the Go `vMAJOR.MINOR.PATCH` tag remains the only release namespace.
 3. Added a fail-closed dry-run verifier that checks locked Cargo metadata,
    workspace coverage, adoption evidence, package order and temporary `.crate`
    archives, and emits source/input digest plus Cargo-metadata SBOM evidence.
-4. Wired the verifier and SemVer check into `ci.yml`, `release.yml`, and the
-   `rust-release-contract` Make target. No publish or tag command exists in the
-   verifier.
+4. Wired the verifier and SemVer tool into `ci.yml` and the
+   `rust-release-contract` Make target. The Go-only tag workflow deliberately
+   does not run a Rust publication plan; no publish or tag command exists in
+   the verifier.
 
 **Evidence:** `cargo semver-checks check-release`,
 `python3 port/release/verify.py --dry-run`, and the focused Python tests pass on
-macOS. Contract rows `REL-002` and `REL-003` are locally verified; `REL-005` is
-`fixture-ready` because crates.io ownership, public-byte readback, and external
-OIDC/publishing evidence cannot be produced without performing the prohibited
-external release. Go build/test/lint and exact Git-revision consumer support
-remain unchanged.
+macOS. `REL-002` is locally verified by the existing Go `apidiff` gate.
+`REL-003` and `REL-005` are `fixture-ready`: no public Rust API baseline,
+crates.io ownership, public-byte readback, or external OIDC/publishing evidence
+exists while every crate stays `publish = false`. Go build/test/lint and exact
+Git-revision consumer support remain unchanged.
 
 ## RUST-015: Consumer rollout and Go-retention review
 

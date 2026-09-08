@@ -90,8 +90,8 @@ def validate_manifest_shape(manifest: dict[str, Any]) -> dict[str, Any]:
         fail("release.publication_status must be not-run until external publication is verified")
     if release.get("registry") != "https://crates.io":
         fail("release.registry must be crates.io")
-    if not isinstance(release.get("publish_order"), list):
-        fail("release.publish_order must be an array")
+    if not isinstance(release.get("planned_publish_order"), list):
+        fail("release.planned_publish_order must be an array")
     crates = release.get("crates")
     if not isinstance(crates, list) or not crates:
         fail("release.crates must be a non-empty array")
@@ -125,14 +125,14 @@ def validate_manifest_shape(manifest: dict[str, Any]) -> dict[str, Any]:
             fail(f"{name}: adopted crates need at least two independent adopters")
         if not crate["adopted"] and crate["adopters"]:
             fail(f"{name}: non-adopted crates must have no adopters")
-    order = release["publish_order"]
+    order = release["planned_publish_order"]
     if len(order) != len(set(order)):
-        fail("release.publish_order contains duplicates")
+        fail("release.planned_publish_order contains duplicates")
     if set(order) - names:
-        fail(f"release.publish_order references unknown crates: {sorted(set(order) - names)}")
+        fail(f"release.planned_publish_order references unknown crates: {sorted(set(order) - names)}")
     adopted = {crate["name"] for crate in crates if crate["adopted"]}
     if set(order) != adopted:
-        fail("release.publish_order must contain every adopted crate and no other crate")
+        fail("release.planned_publish_order must contain every adopted crate and no other crate")
     provenance = release.get("provenance")
     if not isinstance(provenance, dict):
         fail("release.provenance must be an object")
@@ -232,7 +232,7 @@ def validate_git_provenance(release: dict[str, Any], selected_tag: str | None) -
 
 
 def package_candidates(release: dict[str, Any]) -> list[dict[str, Any]]:
-    return [crate for crate in release["crates"] if crate["name"] in release["publish_order"]]
+    return [crate for crate in release["crates"] if crate["name"] in release["planned_publish_order"]]
 
 
 def dry_run_packages(candidates: list[dict[str, Any]]) -> list[tuple[str, str]]:
@@ -287,7 +287,7 @@ def main(argv: list[str] | None = None) -> int:
             fail(f"missing provenance input: {relative}")
     candidates = package_candidates(release)
     if not candidates:
-        fail("release.publish_order has no candidates")
+        fail("release.planned_publish_order has no candidates")
     package_results = dry_run_packages(candidates)
     input_digests = [f"{path}={sha256((ROOT / path).resolve())}" for path in release["provenance"]["input_files"]]
     print(f"ok: dry-run tag={args.tag or release['tag']} source_revision={resolved_revision}")

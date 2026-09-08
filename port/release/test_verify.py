@@ -24,7 +24,7 @@ class ManifestShapeTests(unittest.TestCase):
 
     def test_checked_in_manifest_is_valid(self) -> None:
         release = verify.validate_manifest_shape(self.manifest)
-        self.assertEqual(release["publish_order"], ["symaira-core-version"])
+        self.assertEqual(release["planned_publish_order"], ["symaira-core-version"])
         self.assertFalse(release["publish"])
 
     def test_tag_requires_plain_stable_repository_tag(self) -> None:
@@ -34,8 +34,8 @@ class ManifestShapeTests(unittest.TestCase):
 
     def test_publish_order_cannot_include_unadopted_crate(self) -> None:
         manifest = copy.deepcopy(self.manifest)
-        manifest["release"]["publish_order"].append("symaira-core-exit")
-        with self.assertRaisesRegex(verify.VerificationError, "publish_order"):
+        manifest["release"]["planned_publish_order"].append("symaira-core-exit")
+        with self.assertRaisesRegex(verify.VerificationError, "planned_publish_order"):
             verify.validate_manifest_shape(manifest)
 
     def test_publish_is_fail_closed(self) -> None:
