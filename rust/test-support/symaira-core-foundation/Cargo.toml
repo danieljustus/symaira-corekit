@@ -19,7 +19,7 @@ symaira-core-exit = { path = "../../symaira-core-exit", version = "=0.0.0" }
 symaira-core-fs = { path = "../../symaira-core-fs", version = "=0.0.0" }
 symaira-core-log = { path = "../../symaira-core-log", version = "=0.0.0" }
 symaira-core-secretref = { path = "../../symaira-core-secretref", version = "=0.0.0" }
-symaira-core-version = { path = "../../symaira-core-version", version = "=0.0.0" }
+symaira-core-version = { path = "../../symaira-core-version", version = "=0.1.0" }
 serde.workspace = true
 serde_json.workspace = true
 sha2 = "=0.11.0"
