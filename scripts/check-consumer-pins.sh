@@ -29,7 +29,7 @@ while IFS=$'\t' read -r repo pin; do
     continue
   fi
 
-  version=$(echo "$content" | grep -oE 'github\.com/danieljustus/symaira-corekit v[0-9]+\.[0-9]+\.[0-9]+' | head -1 | awk '{print $2}')
+  version=$(echo "$content" | grep -oE 'github\.com/danieljustus/symaira-corekit v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?' | awk '{print $2}' | head -1)
   if [ -z "$version" ]; then
     echo "WARN  $repo:$pin — no symaira-corekit require line found"
     continue

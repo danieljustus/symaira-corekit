@@ -91,7 +91,7 @@ A consumer-local implementation is compared first. Extraction must delete/avoid 
 - Repository tags remain `vMAJOR.MINOR.PATCH` and continue to version the Go module.
 - During migration, Rust workspace package versions remain `0.x` and are exact across internal edges.
 - First adopters pin `git = "https://github.com/danieljustus/symaira-corekit", rev = "<40-hex>"` and commit `Cargo.lock`; tags are not treated as proof that every crate changed.
-- crates.io publication starts only after API review, `cargo semver-checks`, provenance/SBOM setup and at least two real adopters.
+- crates.io publication is prohibited before the full migration and consumer rollout. After those gates, a separately approved release must add API review, `cargo semver-checks`, provenance/SBOM setup and external registry ownership/read-back evidence.
 - If crates are published, one release manifest maps the repository tag to each crate/version and verifies publish order. The checked-in RUST-014 manifest is [`port/release/manifest.json`](../../port/release/manifest.json); its verifier is deliberately dry-run-only until external registry evidence is available. Independent crate versions are allowed; fake lockstep releases are not required.
 - Released Symaira binaries pin each published CoreKit crate exactly (`=x.y.z`) and commit `Cargo.lock`; compatible ranges are not used to smuggle unreviewed shared-library updates into a product release.
 - Go `apidiff` and Rust `cargo semver-checks` run independently. A breaking Go or Rust API change follows its own major-version policy and migration note.

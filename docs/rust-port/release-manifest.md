@@ -5,7 +5,7 @@ RUST-014 adds a release plan at [`../../port/release/manifest.json`](../../port/
 ## Tag and version rules
 
 - Repository `vMAJOR.MINOR.PATCH` tags continue to mean Go module releases.
-- Rust crates do not receive a second repository tag. The manifest's `planned_publish_order` records the only permitted future Rust publication ordering; it is not a tag namespace or an authorization to publish.
+- Rust crates do not receive a second repository tag. The manifest's `planned_publish_order` records a future ordering only; it is not a tag namespace or an authorization to publish. No crates.io publication is allowed before the full migration, consumer rollout and external registry-evidence gates are complete.
 - Every workspace package is classified in the manifest. Only adopted crates may appear in `planned_publish_order`; private test-support crates and non-adopted crates remain non-publishable.
 - The manifest records the exact Cargo manifest path and version for every workspace package and checks both against `cargo metadata`.
 
@@ -19,6 +19,8 @@ Run:
 cargo semver-checks check-release
 python3 port/release/verify.py --dry-run
 python3 -m unittest discover -s port/release -p 'test_*.py'
+python3 -m unittest discover -s port/consumer -p 'test_*.py'
+python3 port/consumer/verify.py --released-consumers  # expected blocked until evidence exists
 ```
 
 The verifier performs all local checks without `cargo publish` or tag writes:

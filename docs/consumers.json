@@ -1,10 +1,21 @@
 {
-  "$schema_note": "Consumers of github.com/danieljustus/symaira-corekit and where each one pins it. Read by scripts/check-consumer-pins.sh and .github/workflows/consumer-pin-drift.yml. Update this file whenever a consumer repo is added, renamed, archived, or its go.mod moves.",
+  "$schema_note": "Consumers of github.com/danieljustus/symaira-corekit. Every record is checked by port/consumer/verify.py; pins are exact and evidence is never inferred from a prose claim.",
+  "schema_version": 2,
+  "corekit": {
+    "repository": "danieljustus/symaira-corekit",
+    "go_module": "github.com/danieljustus/symaira-corekit",
+    "release_tag": "v0.17.0",
+    "release_commit": "0c2c7769ac6074264e1c02fcdf903188b4f3fa08",
+    "rust_registry": {
+      "package": "symaira-core-version",
+      "status": "not_released"
+    }
+  },
   "consumers": [
-    { "repo": "danieljustus/symaira-brain", "pins": ["go.mod"] },
-    { "repo": "danieljustus/symaira-browse", "pins": ["go.mod"] },
-    { "repo": "danieljustus/symaira-desktop", "pins": ["go.mod"] },
-    { "repo": "danieljustus/symaira-eraseme", "pins": ["go.mod"] },
-    { "repo": "danieljustus/symaira-vault", "pins": ["go.mod"] }
+    { "repo": "danieljustus/symaira-brain", "pins": ["go.mod"], "rust": { "status": "not_adopted" } },
+    { "repo": "danieljustus/symaira-browse", "pins": ["go.mod"], "rust": { "status": "not_adopted" } },
+    { "repo": "danieljustus/symaira-desktop", "pins": ["go.mod"], "rust": { "status": "not_adopted" } },
+    { "repo": "danieljustus/symaira-eraseme", "pins": ["go.mod"], "rust": { "status": "git", "package": "symaira-core-version", "version": "0.0.0", "revision": "27177f25f551cecefa7bd6c4524abf175b3a75c7", "manifest_paths": ["Cargo.toml", "crates/symeraseme-core/Cargo.toml"], "release": { "tag": "v0.17.0", "commit": "0c2c7769ac6074264e1c02fcdf903188b4f3fa08" }, "registry": { "status": "not_released" }, "evidence": { "standalone": { "status": "missing", "command": "" }, "rollback": { "status": "missing", "command": "" } } } },
+    { "repo": "danieljustus/symaira-vault", "pins": ["go.mod"], "rust": { "status": "git", "package": "symaira-core-version", "version": "0.0.0", "revision": "27177f25f551cecefa7bd6c4524abf175b3a75c7", "manifest_paths": ["Cargo.toml", "crates/symvault-cli/Cargo.toml", "crates/symvault-core/Cargo.toml"], "release": { "tag": "v0.17.0", "commit": "0c2c7769ac6074264e1c02fcdf903188b4f3fa08" }, "registry": { "status": "not_released" }, "evidence": { "standalone": { "status": "missing", "command": "" }, "rollback": { "status": "missing", "command": "" } } } }
   ]
 }

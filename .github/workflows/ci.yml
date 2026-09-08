@@ -386,5 +386,9 @@ jobs:
         run: cargo install cargo-semver-checks --version 0.50.0 --locked
       - name: Check Rust API compatibility
         run: cargo semver-checks check-release
+      - name: Run non-publishing governance verifier tests
+        run: |
+          python3 -m unittest discover -s port/release -p 'test_*.py'
+          python3 -m unittest discover -s port/consumer -p 'test_*.py'
       - name: Verify release manifest, packages, provenance and SBOM
         run: python3 port/release/verify.py --dry-run
