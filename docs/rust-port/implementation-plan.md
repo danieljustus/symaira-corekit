@@ -224,21 +224,17 @@ separate external release approval.
 2. Added a checked-in release plan mapping the stable Go `v0.17.0` namespace to
    explicit Rust package paths/versions. Rust-specific repository tags are
    rejected; the Go `vMAJOR.MINOR.PATCH` tag remains the only release namespace.
-3. Added a fail-closed dry-run verifier that checks locked Cargo metadata,
+3. Made the adopted `symaira-core-version` package ready for its first public
+   release as `0.1.0`, including crates.io metadata and a crate-local README.
+   Every non-adopted workspace package remains explicitly private.
+4. Added a fail-closed dry-run verifier that checks locked Cargo metadata,
    workspace coverage, adoption evidence, package order and temporary `.crate`
    archives, and emits source/input digest plus Cargo-metadata SBOM evidence.
-4. Wired the verifier and SemVer tool into `ci.yml` and the
-   `rust-release-contract` Make target. The Go-only tag workflow deliberately
-   does not run a Rust publication plan; no publish or tag command exists in
-   the verifier.
+5. Wired the verifier, SemVer tool and `cargo publish --dry-run` package gate
+   into CI and the `rust-release-contract` Make target. The Go tag workflow does
+   not publish Rust crates or create Rust-specific tags.
 
-**Evidence:** `cargo semver-checks check-release`,
-`python3 port/release/verify.py --dry-run`, and the focused Python tests pass on
-macOS. `REL-002` is locally verified by the existing Go `apidiff` gate.
-`REL-003` and `REL-005` are `fixture-ready`: no public Rust API baseline,
-crates.io ownership, public-byte readback, or external OIDC/publishing evidence
-exists while every crate stays `publish = false`. Go build/test/lint and exact
-Git-revision consumer support remain unchanged.
+**Evidence:** The local release-preparation gates cover `cargo semver-checks check-release`, `python3 port/release/verify.py --dry-run`, `cargo publish --dry-run --locked -p symaira-core-version`, and the focused Python tests on macOS. `REL-002` is locally verified by the existing Go `apidiff` gate. `REL-003` and `REL-005` remain external release-time gates: no crates.io ownership, public-byte readback, or external OIDC/publishing evidence exists until a separately approved publication. Go build/test/lint and exact Git-revision consumer support remain unchanged.
 
 ## RUST-015: Consumer rollout and Go-retention review
 

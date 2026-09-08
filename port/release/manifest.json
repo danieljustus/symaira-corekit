@@ -18,14 +18,20 @@
       {
         "name": "symaira-core-version",
         "manifest": "rust/symaira-core-version/Cargo.toml",
-        "version": "0.0.0",
+        "version": "0.1.0",
         "adopted": true,
-        "publishable": false,
+        "publishable": true,
         "adopters": [
           "danieljustus/symaira-vault",
           "danieljustus/symaira-eraseme"
         ],
-        "reason": "RUST-014 prepares the publish path; external crates.io publication and public-byte readback are deliberately not performed."
+        "public_metadata": {
+          "description": "Version handshake payload and writers for Symaira command-line tools",
+          "readme": "README.md",
+          "keywords": ["cli", "symaira", "version"],
+          "categories": ["command-line-utilities", "development-tools"]
+        },
+        "reason": "Adopted by two released Rust consumers; package metadata and the non-publishing dry-run are ready for a separately approved crates.io publication."
       },
       {
         "name": "symaira-core-exit",
