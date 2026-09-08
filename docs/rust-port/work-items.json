@@ -364,6 +364,7 @@
         "python3 scripts/rust-port/miri_gate.py --run",
         "cargo audit",
         "cargo deny check",
+        "make rust-hardening",
         "make test lint build"
       ],
       "stop_rule": "No crate proceeds with untriaged advisories/licenses, missing native runtime proof, unfuzzed untrusted parsers or broken Go gates."
