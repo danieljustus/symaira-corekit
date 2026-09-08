@@ -16,7 +16,7 @@ if [[ "$*" == *"release view"* ]]; then
 fi
 case "$*" in
   *symaira-brain*) version='v0.17.0' ;;
-  *symaira-browse*) version='v0.16.9' ;;
+  *symaira-browse*) version='v0.16.9-0.20260908091500-0123456789ab' ;;
   *symaira-desktop*) version='v0.17.1-0.20260908091500-0123456789ab' ;;
   *symaira-eraseme*) version='v0.17.1' ;;
   *symaira-vault*) version='v0.17.0-20260908091500-0123456789ab' ;;
@@ -34,8 +34,8 @@ set -e
 
 [[ "$status" -eq 1 ]]
 grep -F 'OK    danieljustus/symaira-brain:go.mod — v0.17.0 (tagged-release)' <<<"$output" >/dev/null
-grep -F 'STALE danieljustus/symaira-browse:go.mod — v0.16.9 (older than latest)' <<<"$output" >/dev/null
+grep -F 'STALE danieljustus/symaira-browse:go.mod — v0.16.9-0.20260908091500-0123456789ab (pseudoversion-older than latest)' <<<"$output" >/dev/null
 grep -F 'OK    danieljustus/symaira-desktop:go.mod — v0.17.1-0.20260908091500-0123456789ab (pseudoversion-newer)' <<<"$output" >/dev/null
 grep -F 'AHEAD danieljustus/symaira-eraseme:go.mod — v0.17.1 (tagged-release-newer)' <<<"$output" >/dev/null
-grep -F 'STALE danieljustus/symaira-vault:go.mod — v0.17.0-20260908091500-0123456789ab (pseudoversion-older than latest)' <<<"$output" >/dev/null
+grep -F 'WARN  danieljustus/symaira-vault:go.mod — unsupported CoreKit version v0.17.0-20260908091500-0123456789ab' <<<"$output" >/dev/null
 printf '%s\n' 'consumer pin classification regression: ok'

@@ -2,6 +2,7 @@
 """Regression tests for the fail-closed consumer verifier."""
 from __future__ import annotations
 
+import copy
 import importlib.util
 import json
 from pathlib import Path
@@ -33,6 +34,9 @@ def make_fixture(root: Path, *, status: str = "git") -> tuple[Path, Path, Path, 
     corekit.mkdir()
     consumer.mkdir()
     init_git(corekit)
+    (corekit / "marker").write_text("pre-release\n", encoding="utf-8")
+    subprocess.run(["git", "-C", str(corekit), "add", "marker"], check=True)
+    subprocess.run(["git", "-C", str(corekit), "commit", "-qm", "pre-release"], check=True)
     (corekit / "marker").write_text("release\n", encoding="utf-8")
     subprocess.run(["git", "-C", str(corekit), "add", "marker"], check=True)
     subprocess.run(["git", "-C", str(corekit), "commit", "-qm", "release"], check=True)
@@ -185,6 +189,33 @@ import (
             report = verify.verify_manifest(manifest, workspace_root=Path(raw), corekit_root=corekit)
             self.assertEqual(report["status"], "passed", report)
 
+    def test_git_adoption_before_or_unrelated_to_release_is_blocked(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            root = Path(raw)
+            manifest, corekit, consumer, release_commit, adoption_commit = make_fixture(root, status="git")
+            before_release = git(corekit, "rev-list", "--max-parents=0", "HEAD")
+            empty_tree = subprocess.run(
+                ["git", "-C", str(corekit), "mktree"], input="", text=True,
+                stdout=subprocess.PIPE, check=True,
+            ).stdout.strip()
+            unrelated = subprocess.run(
+                ["git", "-C", str(corekit), "commit-tree", empty_tree, "-m", "unrelated"],
+                text=True, stdout=subprocess.PIPE, check=True,
+            ).stdout.strip()
+            original_manifest = json.loads(manifest.read_text(encoding="utf-8"))
+            original_cargo = (consumer / "Cargo.toml").read_text(encoding="utf-8")
+            original_lock = (consumer / "Cargo.lock").read_text(encoding="utf-8")
+            for candidate in (before_release, unrelated):
+                with self.subTest(candidate=candidate):
+                    document = copy.deepcopy(original_manifest)
+                    document["consumers"][0]["rust"]["revision"] = candidate
+                    manifest.write_text(json.dumps(document), encoding="utf-8")
+                    (consumer / "Cargo.toml").write_text(original_cargo.replace(adoption_commit, candidate), encoding="utf-8")
+                    (consumer / "Cargo.lock").write_text(original_lock.replace(adoption_commit, candidate), encoding="utf-8")
+                    report = verify.verify_manifest(manifest, workspace_root=root, corekit_root=corekit)
+                    self.assertTrue(any(item["code"] == "release.ancestry" for item in report["findings"]), report)
+            self.assertEqual(release_commit, original_manifest["consumers"][0]["rust"]["release"]["commit"])
+
     def test_git_pin_requires_matching_lock_source_and_version(self) -> None:
         with tempfile.TemporaryDirectory() as raw:
             root = Path(raw)
@@ -216,6 +247,18 @@ import (
             report = verify.verify_manifest(manifest, workspace_root=root, corekit_root=corekit)
             self.assertTrue(any(item["code"] == "rust.pin.exact" for item in report["findings"]))
 
+    def test_registry_lock_version_must_match_recorded_pin(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            root = Path(raw)
+            manifest, corekit, consumer, _, _ = make_fixture(root, status="registry")
+            lock = (consumer / "Cargo.lock").read_text(encoding="utf-8").replace(
+                'name = "symaira-core-version"\nversion = "0.0.0"',
+                'name = "symaira-core-version"\nversion = "0.1.0"',
+            )
+            (consumer / "Cargo.lock").write_text(lock, encoding="utf-8")
+            report = verify.verify_manifest(manifest, workspace_root=root, corekit_root=corekit)
+            self.assertTrue(any(item["code"] == "rust.lock.version" for item in report["findings"]), report)
+
     def test_registry_checksum_is_required(self) -> None:
         with tempfile.TemporaryDirectory() as raw:
             root = Path(raw)
@@ -236,6 +279,33 @@ import (
             manifest.write_text(json.dumps(document), encoding="utf-8")
             report = verify.verify_manifest(manifest, workspace_root=root, corekit_root=corekit)
             self.assertTrue(any(item["code"].startswith("evidence.standalone") for item in report["findings"]))
+
+    def test_report_content_tampering_is_blocked(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            root = Path(raw)
+            manifest, corekit, consumer, _, _ = make_fixture(root, status="git")
+            report_path = consumer / "evidence/standalone.json"
+            report = json.loads(report_path.read_text(encoding="utf-8"))
+            report["observed"]["stdout"] = "tampered\n"
+            report_path.write_text(json.dumps(report), encoding="utf-8")
+            subprocess.run(["git", "-C", str(consumer), "add", "evidence/standalone.json"], check=True)
+            subprocess.run(["git", "-C", str(consumer), "commit", "-qm", "tamper-report"], check=True)
+            blocked = verify.verify_manifest(manifest, workspace_root=root, corekit_root=corekit)
+            self.assertTrue(any(item["code"] == "evidence.standalone.result" for item in blocked["findings"]), blocked)
+
+    def test_staged_evidence_report_is_blocked_until_committed(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            root = Path(raw)
+            manifest, corekit, consumer, _, _ = make_fixture(root, status="git")
+            report_path = consumer / "evidence/standalone.json"
+            report = json.loads(report_path.read_text(encoding="utf-8"))
+            report["observed"]["stdout"] = "staged-only\n"
+            report_path.write_text(json.dumps(report), encoding="utf-8")
+            subprocess.run(["git", "-C", str(consumer), "add", "evidence/standalone.json"], check=True)
+            blocked = verify.verify_manifest(manifest, workspace_root=root, corekit_root=corekit)
+            findings = [item for item in blocked["findings"] if item["code"] == "evidence.standalone.report"]
+            self.assertTrue(findings, blocked)
+            self.assertIn("staged but uncommitted", findings[0]["message"])
 
     def test_tracked_source_without_real_import_is_blocked(self) -> None:
         with tempfile.TemporaryDirectory() as raw:

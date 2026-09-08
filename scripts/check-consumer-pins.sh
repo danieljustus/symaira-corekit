@@ -31,7 +31,10 @@ import sys
 
 pin, latest = sys.argv[1:]
 tag = re.compile(r"^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$")
-pseudo = re.compile(r"^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)-(?:0\.)?[0-9]{14}-[0-9a-f]{12}$")
+pseudo = re.compile(
+    r"^v(?P<major>0|[1-9][0-9]*)\.(?P<minor>0|[1-9][0-9]*)\.(?P<patch>0|[1-9][0-9]*)-"
+    r"(?P<zero>0\.)?(?P<timestamp>[0-9]{14})-(?P<hash>[0-9a-f]{12})$"
+)
 
 latest_match = tag.fullmatch(latest)
 pin_tag = tag.fullmatch(pin)
@@ -44,7 +47,11 @@ if pin == latest:
     print("tagged-release")
     raise SystemExit(0)
 if pin_pseudo:
-    pin_version = tuple(int(part) for part in pin_pseudo.groups())
+    pin_version = tuple(int(pin_pseudo.group(part)) for part in ("major", "minor", "patch"))
+    # The no-0. form is valid only for the initial vX.0.0 pseudo-version.
+    if pin_pseudo.group("zero") is None and pin_version[1:] != (0, 0):
+        print("invalid")
+        raise SystemExit(0)
     print("pseudoversion-newer" if pin_version > latest_version else "pseudoversion-older")
 else:
     pin_version = tuple(int(part) for part in pin_tag.groups())

@@ -187,9 +187,17 @@ def _check_evidence(record: dict[str, Any], checkout: Path, findings: list[Findi
         if code or tracked != report_relative:
             _evidence_error(findings, repository, name, "report", f"{name} report is not a tracked committed artifact: {report_relative}")
             continue
+        code, _, _ = _git(["diff", "--cached", "--quiet"], checkout)
+        if code:
+            _evidence_error(findings, repository, name, "report", f"{name} report cannot be accepted while the checkout has staged but uncommitted changes")
+            continue
         code, _, _ = _git(["diff", "--quiet", "--", report_relative], checkout)
         if code:
             _evidence_error(findings, repository, name, "report", f"{name} report has uncommitted changes: {report_relative}")
+            continue
+        code, _, _ = _git(["diff", "--quiet", "HEAD", "--", report_relative], checkout)
+        if code:
+            _evidence_error(findings, repository, name, "report", f"{name} report does not match the committed HEAD: {report_relative}")
             continue
         try:
             report = json.loads(report_path.read_text(encoding="utf-8"))
