@@ -1,7 +1,7 @@
 {
-  "checked_at": "2026-09-08T10:13:32.460317+00:00",
+  "checked_at": "2026-09-08T16:07:24.495754+00:00",
   "claims": {
-    "merged": false
+    "merged": true
   },
   "consumers": [
     {
@@ -81,11 +81,18 @@
         ]
       },
       "pr": {
-        "classification": "pending",
-        "error": "offline mode has no offline_pr_state",
+        "baseRefOid": "555f7c6f24af9acf29fd8a68d582702166d3e40b",
+        "classification": "merged",
+        "headRefOid": "772165a2b3a8efc6aebed7f904f38edeac45458a",
+        "isDraft": false,
+        "mergeCommit": {
+          "oid": "b39d1c2de59d205a91c01e584776d568c3877d7e"
+        },
+        "mergedAt": "2026-09-07T17:54:03Z",
+        "number": 1000,
         "pr_number": 1000,
         "repository": "danieljustus/symaira-vault",
-        "state": "unknown"
+        "state": "MERGED"
       },
       "repository": "danieljustus/symaira-vault"
     },
@@ -156,11 +163,18 @@
         ]
       },
       "pr": {
-        "classification": "pending",
-        "error": "offline mode has no offline_pr_state",
+        "baseRefOid": "c5ea58d32ab71b342bb7e4aa430e13dd28deca49",
+        "classification": "merged",
+        "headRefOid": "27a3f790c59771e53636fa9b6b13e5687c689f3a",
+        "isDraft": false,
+        "mergeCommit": {
+          "oid": "eb628050d136a2b2009250a8c6f21eb718d853fc"
+        },
+        "mergedAt": "2026-09-07T18:40:47Z",
+        "number": 866,
         "pr_number": 866,
         "repository": "danieljustus/symaira-eraseme",
-        "state": "unknown"
+        "state": "MERGED"
       },
       "repository": "danieljustus/symaira-eraseme"
     }
@@ -171,37 +185,40 @@
     "revision": "27177f25f551cecefa7bd6c4524abf175b3a75c7",
     "url": "https://github.com/danieljustus/symaira-corekit"
   },
-  "findings": [
-    {
-      "blocking": true,
-      "consumer": "danieljustus/symaira-vault",
-      "message": "PR #1000 live state is UNKNOWN: merged evidence is unavailable"
-    },
-    {
-      "blocking": true,
-      "consumer": "danieljustus/symaira-eraseme",
-      "message": "PR #866 live state is UNKNOWN: merged evidence is unavailable"
-    }
-  ],
+  "findings": [],
   "gate_id": "RUST-005",
   "honesty": "Open or unverified PRs remain pending; no merged adoption is claimed.",
   "live_pr": [
     {
-      "classification": "pending",
-      "error": "offline mode has no offline_pr_state",
+      "baseRefOid": "555f7c6f24af9acf29fd8a68d582702166d3e40b",
+      "classification": "merged",
+      "headRefOid": "772165a2b3a8efc6aebed7f904f38edeac45458a",
+      "isDraft": false,
+      "mergeCommit": {
+        "oid": "b39d1c2de59d205a91c01e584776d568c3877d7e"
+      },
+      "mergedAt": "2026-09-07T17:54:03Z",
+      "number": 1000,
       "pr_number": 1000,
       "repository": "danieljustus/symaira-vault",
-      "state": "unknown"
+      "state": "MERGED"
     },
     {
-      "classification": "pending",
-      "error": "offline mode has no offline_pr_state",
+      "baseRefOid": "c5ea58d32ab71b342bb7e4aa430e13dd28deca49",
+      "classification": "merged",
+      "headRefOid": "27a3f790c59771e53636fa9b6b13e5687c689f3a",
+      "isDraft": false,
+      "mergeCommit": {
+        "oid": "eb628050d136a2b2009250a8c6f21eb718d853fc"
+      },
+      "mergedAt": "2026-09-07T18:40:47Z",
+      "number": 866,
       "pr_number": 866,
       "repository": "danieljustus/symaira-eraseme",
-      "state": "unknown"
+      "state": "MERGED"
     }
   ],
   "minimum_consumers": 2,
   "schema_version": 1,
-  "status": "pending"
+  "status": "passed"
 }
