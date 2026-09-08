@@ -8,6 +8,9 @@ RUST-014 adds a release plan at [`../../port/release/manifest.json`](../../port/
 - Rust crates do not receive a second repository tag. The manifest's `planned_publish_order` records a future ordering only; it is not a tag namespace or an authorization to publish. No crates.io publication is allowed before the full migration, consumer rollout and external registry-evidence gates are complete.
 - Every workspace package is classified in the manifest. Only adopted crates may appear in `planned_publish_order`; private test-support crates and non-adopted crates remain non-publishable.
 - The manifest records the exact Cargo manifest path and version for every workspace package and checks both against `cargo metadata`.
+- Every repository release reference in `docs/consumers.json` uses the immutable stable tag form `^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$`; `HEAD`, branches, and `refs/*` are never accepted. Its `release.commit` must resolve from `refs/tags/<tag>` in CoreKit, and `release_source: "corekit"` makes that namespace mapping explicit.
+- Each consumer record also freezes `checkout_commit` to a 40-hex commit. Verification requires that exact checkout HEAD, a clean tracked/untracked worktree, and non-escaping regular source/evidence paths.
+- Verified standalone/rollback reports must include `artifact_sha256`, a lowercase 64-hex SHA-256 of the existing regular non-symlink artifact named by the report. The verifier hashes the bytes again; missing, modified, symlinked, nonregular, or mismatched artifacts block the gate.
 
 The checked-in plan maps the current stable repository release (`v0.17.0`) to the adopted `symaira-core-version` crate. Its Cargo version remains `0.0.0` and `publish = false` while exact Git-revision consumption is the supported path. This is intentional: RUST-014 prepares the publication contract without changing consumer pins or pretending that a registry release exists.
 

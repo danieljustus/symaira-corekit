@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import copy
+import hashlib
 import importlib.util
 import json
+import os
 from pathlib import Path
 import subprocess
 import tempfile
@@ -93,6 +95,7 @@ def make_fixture(root: Path, *, status: str = "git") -> tuple[Path, Path, Path, 
                 "tag": "v0.17.0",
                 "commit": release_commit,
                 "artifact": "bin/fixture",
+                "artifact_sha256": hashlib.sha256((consumer / "bin/fixture").read_bytes()).hexdigest(),
                 "observed": {"command": command, **result},
             }),
             encoding="utf-8",
@@ -111,6 +114,7 @@ def make_fixture(root: Path, *, status: str = "git") -> tuple[Path, Path, Path, 
         "version": "0.0.0",
         "manifest_paths": ["Cargo.toml"],
         "release": {"tag": "v0.17.0", "commit": release_commit},
+        "release_source": "corekit",
         "registry": {"status": "published" if status == "registry" else "not_released"},
         "evidence": {
             "standalone": evidence("standalone", "./bin/fixture version"),
@@ -133,11 +137,12 @@ def make_fixture(root: Path, *, status: str = "git") -> tuple[Path, Path, Path, 
         "consumers": [{"repo": "example/fixture", "pins": ["go.mod"], "rust": rust}],
     }
     manifest_path = root / "consumers.json"
-    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
 
     init_git(consumer)
     subprocess.run(["git", "-C", str(consumer), "add", "."], check=True)
     subprocess.run(["git", "-C", str(consumer), "commit", "-qm", "fixture"], check=True)
+    manifest["consumers"][0]["checkout_commit"] = git(consumer, "rev-parse", "HEAD")
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
     return manifest_path, corekit, consumer, release_commit, adoption_commit
 
 
@@ -397,6 +402,162 @@ import (
             )
             self.assertEqual(result.returncode, 1)
             self.assertIn('"status": "blocked"', result.stdout)
+
+
+    def test_checkout_head_must_match_recorded_snapshot(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            root = Path(raw)
+            manifest, corekit, consumer, _, _ = make_fixture(root)
+            document = json.loads(manifest.read_text(encoding="utf-8"))
+            document["consumers"][0]["checkout_commit"] = "0" * 40
+            manifest.write_text(json.dumps(document), encoding="utf-8")
+            report = verify.verify_manifest(manifest, workspace_root=root, corekit_root=corekit)
+            self.assertTrue(any(item["code"] == "checkout.commit" for item in report["findings"]), report)
+
+    def test_tracked_and_untracked_source_changes_block_snapshot(self) -> None:
+        for untracked in (False, True):
+            with self.subTest(untracked=untracked), tempfile.TemporaryDirectory() as raw:
+                root = Path(raw)
+                manifest, corekit, consumer, _, _ = make_fixture(root)
+                if untracked:
+                    (consumer / "cmd" / "extra.go").write_text("package main\n", encoding="utf-8")
+                else:
+                    (consumer / "cmd" / "main.go").write_text("package main\n", encoding="utf-8")
+                report = verify.verify_manifest(manifest, workspace_root=root, corekit_root=corekit)
+                self.assertTrue(any(item["code"] == "checkout.dirty" for item in report["findings"]), report)
+
+    def test_selected_checkout_symlink_cannot_escape_workspace(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            root = Path(raw)
+            manifest, corekit, consumer, _, _ = make_fixture(root)
+            moved = root / "outside-consumer"
+            consumer.rename(moved)
+            os.symlink(moved, root / "fixture")
+            report = verify.verify_manifest(manifest, workspace_root=root, corekit_root=corekit)
+            self.assertTrue(any(item["code"] == "checkout.path" for item in report["findings"]), report)
+
+    def test_evidence_paths_cannot_escape_through_symlinks(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            root = Path(raw)
+            manifest, corekit, consumer, _, _ = make_fixture(root)
+            report_path = consumer / "evidence/standalone.json"
+            outside = root / "outside-report.json"
+            report_path.rename(outside)
+            os.symlink(outside, report_path)
+            report = verify.verify_manifest(manifest, workspace_root=root, corekit_root=corekit)
+            self.assertTrue(any(item["code"] == "evidence.standalone.report" for item in report["findings"]), report)
+
+    def test_artifact_tampering_and_wrong_digest_are_blocked(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            root = Path(raw)
+            manifest, corekit, consumer, _, _ = make_fixture(root)
+            (consumer / "bin/fixture").write_text("tampered\n", encoding="utf-8")
+            report = verify.verify_manifest(manifest, workspace_root=root, corekit_root=corekit)
+            self.assertTrue(any(item["code"] == "evidence.standalone.artifact.sha256" for item in report["findings"]), report)
+
+            # Commit a report with a wrong digest and move the recorded snapshot
+            # with it, so the digest check is isolated from dirty-state checks.
+            report_path = consumer / "evidence/standalone.json"
+            report_document = json.loads(report_path.read_text(encoding="utf-8"))
+            report_document["artifact_sha256"] = "0" * 64
+            report_path.write_text(json.dumps(report_document), encoding="utf-8")
+            subprocess.run(["git", "-C", str(consumer), "add", "."], check=True)
+            subprocess.run(["git", "-C", str(consumer), "commit", "-qm", "wrong-digest"], check=True)
+            document = json.loads(manifest.read_text(encoding="utf-8"))
+            document["consumers"][0]["checkout_commit"] = git(consumer, "rev-parse", "HEAD")
+            manifest.write_text(json.dumps(document), encoding="utf-8")
+            blocked = verify.verify_manifest(manifest, workspace_root=root, corekit_root=corekit)
+            self.assertTrue(any(item["code"] == "evidence.standalone.artifact.sha256" for item in blocked["findings"]), blocked)
+
+    def test_symlink_and_nonregular_artifacts_are_blocked(self) -> None:
+        for kind in ("symlink", "directory"):
+            with self.subTest(kind=kind), tempfile.TemporaryDirectory() as raw:
+                root = Path(raw)
+                manifest, corekit, consumer, _, _ = make_fixture(root)
+                artifact = consumer / "bin/fixture"
+                artifact.unlink()
+                if kind == "symlink":
+                    outside = root / "outside-artifact"
+                    outside.write_text("artifact\n", encoding="utf-8")
+                    os.symlink(outside, artifact)
+                else:
+                    artifact.mkdir()
+                report = verify.verify_manifest(manifest, workspace_root=root, corekit_root=corekit)
+                self.assertTrue(any(item["code"] == "evidence.standalone.artifact" for item in report["findings"]), report)
+
+    def test_consumer_release_reference_requires_tagged_semver(self) -> None:
+        for reference in ("HEAD", "main", "refs/heads/main", "refs/tags/v0.17.0"):
+            with self.subTest(reference=reference), tempfile.TemporaryDirectory() as raw:
+                root = Path(raw)
+                manifest, corekit, _, _, _ = make_fixture(root)
+                document = json.loads(manifest.read_text(encoding="utf-8"))
+                document["consumers"][0]["rust"]["release"]["tag"] = reference
+                manifest.write_text(json.dumps(document), encoding="utf-8")
+                report = verify.verify_manifest(manifest, workspace_root=root, corekit_root=corekit)
+                self.assertTrue(any(item["code"] == "release.shape" for item in report["findings"]), report)
+
+    def test_consumer_release_tag_must_resolve_to_recorded_commit(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            root = Path(raw)
+            manifest, corekit, _, _, _ = make_fixture(root)
+            document = json.loads(manifest.read_text(encoding="utf-8"))
+            document["consumers"][0]["rust"]["release"]["tag"] = "v9.9.9"
+            manifest.write_text(json.dumps(document), encoding="utf-8")
+            report = verify.verify_manifest(manifest, workspace_root=root, corekit_root=corekit)
+            self.assertTrue(any(item["code"] == "release.tag" for item in report["findings"]), report)
+
+    def test_release_namespace_mapping_is_explicit(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            root = Path(raw)
+            manifest, corekit, _, _, _ = make_fixture(root)
+            document = json.loads(manifest.read_text(encoding="utf-8"))
+            del document["consumers"][0]["rust"]["release_source"]
+            manifest.write_text(json.dumps(document), encoding="utf-8")
+            report = verify.verify_manifest(manifest, workspace_root=root, corekit_root=corekit)
+            self.assertTrue(any(item["code"] == "release.namespace" for item in report["findings"]), report)
+
+    def test_all_duplicate_go_pins_are_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            root = Path(raw)
+            manifest, corekit, consumer, _, _ = make_fixture(root)
+            (consumer / "go.mod").write_text(
+                "module example.invalid/consumer\n\nrequire github.com/danieljustus/symaira-corekit v0.17.0\n\n"
+                "require (\n  github.com/danieljustus/symaira-corekit v0.18.0\n)\n",
+                encoding="utf-8",
+            )
+            report = verify.verify_manifest(manifest, workspace_root=root, corekit_root=corekit)
+            codes = {item["code"] for item in report["findings"]}
+            self.assertIn("go.pin.duplicate", codes)
+            self.assertIn("go.pin.inconsistent", codes)
+
+    def test_registry_accepts_exact_string_cargo_form(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            root = Path(raw)
+            manifest, corekit, consumer, _, _ = make_fixture(root, status="registry")
+            cargo = (consumer / "Cargo.toml").read_text(encoding="utf-8").replace(
+                'symaira-core-version = { version = "=0.0.0" }',
+                'symaira-core-version = "=0.0.0"',
+            )
+            (consumer / "Cargo.toml").write_text(cargo, encoding="utf-8")
+            subprocess.run(["git", "-C", str(consumer), "add", "Cargo.toml"], check=True)
+            subprocess.run(["git", "-C", str(consumer), "commit", "-qm", "string-pin"], check=True)
+            document = json.loads(manifest.read_text(encoding="utf-8"))
+            document["consumers"][0]["checkout_commit"] = git(consumer, "rev-parse", "HEAD")
+            manifest.write_text(json.dumps(document), encoding="utf-8")
+            report = verify.verify_manifest(manifest, workspace_root=root, corekit_root=corekit)
+            self.assertEqual(report["status"], "passed", report)
+
+    def test_registry_string_cargo_range_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            root = Path(raw)
+            manifest, corekit, consumer, _, _ = make_fixture(root, status="registry")
+            cargo = (consumer / "Cargo.toml").read_text(encoding="utf-8").replace(
+                'symaira-core-version = { version = "=0.0.0" }',
+                'symaira-core-version = ">=0.0.0"',
+            )
+            (consumer / "Cargo.toml").write_text(cargo, encoding="utf-8")
+            report = verify.verify_manifest(manifest, workspace_root=root, corekit_root=corekit)
+            self.assertTrue(any(item["code"] == "rust.pin.exact" for item in report["findings"]), report)
 
 
 if __name__ == "__main__":

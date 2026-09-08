@@ -1,5 +1,5 @@
 {
-  "$schema_note": "Consumers of github.com/danieljustus/symaira-corekit. Every record is checked by port/consumer/verify.py; pins are exact and evidence is never inferred from a prose claim.",
+  "$schema_note": "Consumers of github.com/danieljustus/symaira-corekit. Every record is checked by port/consumer/verify.py; checkout_commit is the immutable consumer snapshot; release_source=corekit explicitly maps Rust adoption evidence to the CoreKit release namespace; pins are exact and evidence is never inferred from a prose claim.",
   "schema_version": 2,
   "corekit": {
     "repository": "danieljustus/symaira-corekit",
@@ -12,10 +12,67 @@
     }
   },
   "consumers": [
-    { "repo": "danieljustus/symaira-brain", "pins": ["go.mod"], "rust": { "status": "not_adopted" } },
-    { "repo": "danieljustus/symaira-browse", "pins": ["go.mod"], "rust": { "status": "not_adopted" } },
-    { "repo": "danieljustus/symaira-desktop", "pins": ["go.mod"], "rust": { "status": "not_adopted" } },
-    { "repo": "danieljustus/symaira-eraseme", "pins": ["go.mod"], "rust": { "status": "git", "package": "symaira-core-version", "version": "0.0.0", "revision": "27177f25f551cecefa7bd6c4524abf175b3a75c7", "manifest_paths": ["Cargo.toml", "crates/symeraseme-core/Cargo.toml"], "release": { "tag": "v0.17.0", "commit": "0c2c7769ac6074264e1c02fcdf903188b4f3fa08" }, "registry": { "status": "not_released" }, "evidence": { "standalone": { "status": "missing", "command": "" }, "rollback": { "status": "missing", "command": "" } } } },
-    { "repo": "danieljustus/symaira-vault", "pins": ["go.mod"], "rust": { "status": "git", "package": "symaira-core-version", "version": "0.0.0", "revision": "27177f25f551cecefa7bd6c4524abf175b3a75c7", "manifest_paths": ["Cargo.toml", "crates/symvault-cli/Cargo.toml", "crates/symvault-core/Cargo.toml"], "release": { "tag": "v0.17.0", "commit": "0c2c7769ac6074264e1c02fcdf903188b4f3fa08" }, "registry": { "status": "not_released" }, "evidence": { "standalone": { "status": "missing", "command": "" }, "rollback": { "status": "missing", "command": "" } } } }
+    {
+      "repo": "danieljustus/symaira-brain",
+      "checkout_commit": "5608965a7ab98fffc8aada5aa68398c56d4da709",
+      "pins": ["go.mod"],
+      "rust": {"status": "not_adopted"}
+    },
+    {
+      "repo": "danieljustus/symaira-browse",
+      "checkout_commit": "5f98dfa78effc790886bd68ba6a8700453938885",
+      "pins": ["go.mod"],
+      "rust": {"status": "not_adopted"}
+    },
+    {
+      "repo": "danieljustus/symaira-desktop",
+      "checkout_commit": "2de1ba0a8a0a7f54000dd64b969482fd9b00849a",
+      "pins": ["go.mod"],
+      "rust": {"status": "not_adopted"}
+    },
+    {
+      "repo": "danieljustus/symaira-eraseme",
+      "checkout_commit": "76b2f6b7d55c88d0c48689099bc7e8598b7568af",
+      "pins": ["go.mod"],
+      "rust": {
+        "status": "git",
+        "package": "symaira-core-version",
+        "version": "0.0.0",
+        "revision": "27177f25f551cecefa7bd6c4524abf175b3a75c7",
+        "manifest_paths": ["Cargo.toml", "crates/symeraseme-core/Cargo.toml"],
+        "release": {
+          "tag": "v0.17.0",
+          "commit": "0c2c7769ac6074264e1c02fcdf903188b4f3fa08"
+        },
+        "release_source": "corekit",
+        "registry": {"status": "not_released"},
+        "evidence": {
+          "standalone": {"status": "missing", "command": ""},
+          "rollback": {"status": "missing", "command": ""}
+        }
+      }
+    },
+    {
+      "repo": "danieljustus/symaira-vault",
+      "checkout_commit": "a57f565a367ebeb9401d81f3d6a1f8348c4d46d3",
+      "pins": ["go.mod"],
+      "rust": {
+        "status": "git",
+        "package": "symaira-core-version",
+        "version": "0.0.0",
+        "revision": "27177f25f551cecefa7bd6c4524abf175b3a75c7",
+        "manifest_paths": ["Cargo.toml", "crates/symvault-cli/Cargo.toml", "crates/symvault-core/Cargo.toml"],
+        "release": {
+          "tag": "v0.17.0",
+          "commit": "0c2c7769ac6074264e1c02fcdf903188b4f3fa08"
+        },
+        "release_source": "corekit",
+        "registry": {"status": "not_released"},
+        "evidence": {
+          "standalone": {"status": "missing", "command": ""},
+          "rollback": {"status": "missing", "command": ""}
+        }
+      }
+    }
   ]
 }

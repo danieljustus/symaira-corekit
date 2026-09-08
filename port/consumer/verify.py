@@ -11,9 +11,12 @@ from __future__ import annotations
 
 import argparse
 from dataclasses import dataclass
+import hashlib
 import json
+import os
 import re
 from pathlib import Path
+import stat
 import subprocess
 import sys
 import tomllib
@@ -32,7 +35,6 @@ GO_VERSION_RE = re.compile(
     r"^v(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)"
     r"(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$"
 )
-GO_REQUIRE_RE = re.compile(r"^\s*" + re.escape(COREKIT_MODULE) + r"\s+(\S+)")
 SEMVER_RE = re.compile(
     r"^(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)"
     r"(?:-(?:0|[1-9][0-9]*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*)"
@@ -52,22 +54,47 @@ class Finding:
         return {"repository": self.repository, "code": self.code, "message": self.message}
 
 
-def parse_go_pin(text: str) -> str | None:
-    """Return the exact CoreKit Go version, including pseudo-versions."""
+def parse_go_requirements(text: str) -> list[str | None]:
+    """Return every CoreKit require declaration, including malformed ones.
+
+    Go permits both single-line and parenthesized require directives. Keeping
+    malformed declarations in the result is intentional: a verifier must not
+    silently accept a valid first declaration while a later duplicate is bad.
+    """
+    requirements: list[str | None] = []
     in_require = False
-    for line in text.splitlines():
-        stripped = line.strip()
-        if stripped.startswith("require ("):
+    for raw_line in text.splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("//"):
+            continue
+        if "//" in line:
+            line = line.split("//", 1)[0].rstrip()
+        if line.startswith("require ("):
             in_require = True
             continue
-        if in_require and stripped == ")":
+        if in_require and line == ")":
             in_require = False
             continue
-        if in_require or stripped.startswith("require "):
-            match = GO_REQUIRE_RE.match(line.removeprefix("require ").lstrip())
-            if match and GO_VERSION_RE.fullmatch(match.group(1)):
-                return match.group(1)
-    return None
+        if not (in_require or line.startswith("require ")):
+            continue
+        declaration = line.removeprefix("require ").strip()
+        fields = declaration.split()
+        if not fields or fields[0] != COREKIT_MODULE:
+            continue
+        version = fields[1] if len(fields) >= 2 else None
+        requirements.append(version if version and GO_VERSION_RE.fullmatch(version) else None)
+    return requirements
+
+
+def parse_go_pins(text: str) -> list[str]:
+    """Return all syntactically valid CoreKit Go pins in declaration order."""
+    return [version for version in parse_go_requirements(text) if version is not None]
+
+
+def parse_go_pin(text: str) -> str | None:
+    """Return a pin only when exactly one valid CoreKit declaration exists."""
+    pins = parse_go_requirements(text)
+    return pins[0] if len(pins) == 1 and pins[0] is not None else None
 
 
 def _git(args: list[str], cwd: Path) -> tuple[int, str, str]:
@@ -83,9 +110,82 @@ def _add(findings: list[Finding], repository: str, code: str, message: str) -> N
 
 
 def _safe_child(root: Path, relative: str) -> Path:
-    candidate = (root / relative).resolve()
-    candidate.relative_to(root.resolve())
+    if not isinstance(relative, str) or not relative.strip() or Path(relative).is_absolute():
+        raise ValueError("path must be a non-empty relative path")
+    root_resolved = root.resolve()
+    candidate = (root_resolved / relative).resolve()
+    candidate.relative_to(root_resolved)
     return candidate
+
+
+def _safe_non_symlink_child(root: Path, relative: str) -> Path:
+    root_resolved = root.resolve()
+    lexical = root_resolved / relative
+    if lexical.is_symlink():
+        raise ValueError("path must not be a symlink")
+    return _safe_child(root_resolved, relative)
+
+
+def _regular_non_symlink(path: Path) -> bool:
+    try:
+        return stat.S_ISREG(path.lstat().st_mode)
+    except OSError:
+        return False
+
+
+def _check_checkout_snapshot(
+    record: dict[str, Any], checkout: Path, findings: list[Finding],
+) -> None:
+    repository = str(record.get("repo", "unknown"))
+    expected = record.get("checkout_commit")
+    if not isinstance(expected, str) or not REVISION_RE.fullmatch(expected):
+        _add(findings, repository, "checkout.commit", "consumer record needs a 40-hex immutable checkout_commit")
+    else:
+        code, actual, error = _git(["rev-parse", "--verify", "HEAD^{commit}"], checkout)
+        if code:
+            _add(findings, repository, "checkout.commit", f"cannot read checkout HEAD: {error or 'git failed'}")
+        elif actual != expected:
+            _add(findings, repository, "checkout.commit", f"checkout HEAD {actual} != recorded checkout_commit {expected}")
+
+    code, status, error = _git(["status", "--porcelain=v1", "--untracked-files=all"], checkout)
+    if code:
+        _add(findings, repository, "checkout.status", f"cannot inspect checkout status: {error or 'git failed'}")
+    elif status:
+        _add(findings, repository, "checkout.dirty", "consumer checkout has tracked or untracked changes")
+
+    # Git status omits ignored files. Scan source-shaped files as well so an
+    # ignored untracked Go/Rust source file cannot alter the verified input.
+    source_names = {"Cargo.toml", "Cargo.lock"}
+    source_suffixes = {".go", ".rs"}
+    for directory, directories, files in os.walk(checkout, followlinks=False):
+        directories[:] = [name for name in directories if name not in {".git", ".worktrees", "target", "vendor"}]
+        for filename in files:
+            path = Path(directory) / filename
+            if filename not in source_names and path.suffix not in source_suffixes:
+                continue
+            relative = path.relative_to(checkout).as_posix()
+            code, _, _ = _git(["ls-files", "--error-unmatch", "--", relative], checkout)
+            if code:
+                _add(findings, repository, "checkout.untracked_source", f"untracked source file is not allowed: {relative}")
+
+    # A tracked symlink can make source parsing read outside the pinned
+    # checkout. Resolve every tracked path and reject symlinked files rather
+    # than allowing a clean Git index to hide that substitution.
+    code, output, error = _git(["ls-files", "-z"], checkout)
+    if code:
+        _add(findings, repository, "checkout.paths", f"cannot inspect tracked checkout paths: {error or 'git failed'}")
+        return
+    for relative in (item for item in output.split("\0") if item):
+        try:
+            path = _safe_child(checkout, relative)
+        except (OSError, ValueError):
+            _add(findings, repository, "checkout.path", f"tracked path escapes checkout: {relative}")
+            continue
+        if (checkout.resolve() / relative).is_symlink():
+            _add(findings, repository, "checkout.path", f"tracked path is a symlink: {relative}")
+            continue
+        if not _regular_non_symlink(path):
+            _add(findings, repository, "checkout.path", f"tracked path is not a regular non-symlink file: {relative}")
 
 
 def _dependency_tables(document: dict[str, Any]) -> list[dict[str, Any]]:
@@ -199,12 +299,12 @@ def _check_evidence(record: dict[str, Any], checkout: Path, findings: list[Findi
         if not isinstance(result, dict) or set(result) != {"exit_code", "stdout", "stderr"} or result.get("exit_code") != 0 or not isinstance(result.get("stdout"), str) or not isinstance(result.get("stderr"), str):
             _evidence_error(findings, repository, name, "result", f"{name} evidence needs an observed successful command result")
         try:
-            report_path = _safe_child(checkout, report_relative)
-        except (TypeError, ValueError):
+            report_path = _safe_non_symlink_child(checkout, report_relative)
+        except (OSError, TypeError, ValueError):
             _evidence_error(findings, repository, name, "report", f"{name} report path escapes the consumer checkout")
             continue
-        if not report_path.is_file():
-            _evidence_error(findings, repository, name, "report", f"{name} report is unavailable locally: {report_relative}")
+        if not _regular_non_symlink(report_path):
+            _evidence_error(findings, repository, name, "report", f"{name} report is not an existing regular non-symlink file: {report_relative}")
             continue
         code, tracked, _ = _git(["ls-files", "--error-unmatch", "--", report_relative], checkout)
         if code or tracked != report_relative:
@@ -238,13 +338,31 @@ def _check_evidence(record: dict[str, Any], checkout: Path, findings: list[Findi
         expected_observed = {"command": command, **result} if isinstance(command, str) and isinstance(result, dict) else None
         if observed != expected_observed:
             _evidence_error(findings, repository, name, "result", f"{name} report does not contain the exact observed command result")
-        if isinstance(artifact_relative, str):
-            try:
-                artifact_path = _safe_child(checkout, artifact_relative)
-            except (TypeError, ValueError):
-                artifact_path = None
-            if artifact_path is None or not artifact_path.is_file():
-                _evidence_error(findings, repository, name, "artifact", f"{name} artifact is unavailable locally: {artifact_relative}")
+
+        if not isinstance(artifact_relative, str) or not artifact_relative.strip():
+            continue
+        try:
+            artifact_path = _safe_non_symlink_child(checkout, artifact_relative)
+        except (OSError, TypeError, ValueError):
+            _evidence_error(findings, repository, name, "artifact", f"{name} artifact path escapes the consumer checkout")
+            continue
+        if not _regular_non_symlink(artifact_path):
+            _evidence_error(findings, repository, name, "artifact", f"{name} artifact is not an existing regular non-symlink file: {artifact_relative}")
+            continue
+        recorded_digest = report.get("artifact_sha256")
+        if not isinstance(recorded_digest, str) or not re.fullmatch(r"[0-9a-f]{64}", recorded_digest):
+            _evidence_error(findings, repository, name, "artifact.sha256", f"{name} report must contain a 64-hex artifact_sha256")
+            continue
+        digest = hashlib.sha256()
+        try:
+            with artifact_path.open("rb") as artifact:
+                for chunk in iter(lambda: artifact.read(1024 * 1024), b""):
+                    digest.update(chunk)
+        except OSError as error:
+            _evidence_error(findings, repository, name, "artifact.sha256", f"{name} artifact cannot be read: {error}")
+            continue
+        if digest.hexdigest() != recorded_digest:
+            _evidence_error(findings, repository, name, "artifact.sha256", f"{name} artifact digest does not match report")
 
 
 def _check_release_ancestry(
@@ -260,12 +378,18 @@ def _check_release_ancestry(
     tag = release.get("tag")
     commit = release.get("commit")
     status = rust.get("status")
-    if not isinstance(tag, str) or not tag or not isinstance(commit, str) or not REVISION_RE.fullmatch(commit):
-        _add(findings, repository, "release.shape", "release evidence needs a tag and 40-hex commit")
+    if rust.get("release_source") != "corekit":
+        _add(findings, repository, "release.namespace", "consumer release evidence must explicitly map to the CoreKit release namespace")
+    if not isinstance(tag, str) or not RELEASE_TAG_RE.fullmatch(tag) or not isinstance(commit, str) or not REVISION_RE.fullmatch(commit):
+        _add(findings, repository, "release.shape", "release evidence needs a stable vMAJOR.MINOR.PATCH tag and 40-hex commit")
         return
-    code, resolved, _ = _git(["rev-parse", f"{tag}^{{commit}}"], corekit_root)
-    if code or resolved != commit:
-        _add(findings, repository, "release.tag", f"release tag {tag} does not resolve to recorded commit")
+    code, _, _ = _git(["show-ref", "--verify", f"refs/tags/{tag}"], corekit_root)
+    if code:
+        _add(findings, repository, "release.tag", f"release reference {tag} is not an existing CoreKit tag")
+    else:
+        code, resolved, _ = _git(["rev-parse", f"refs/tags/{tag}^{{commit}}"], corekit_root)
+        if code or resolved != commit:
+            _add(findings, repository, "release.tag", f"release tag {tag} does not resolve to recorded commit")
 
     candidate_key = "revision" if status == "git" else "release_candidate"
     candidate = rust.get(candidate_key)
@@ -351,8 +475,8 @@ def _check_rust(
         _add(findings, repository, "rust.version.shape", "recorded Rust dependency version is not valid SemVer")
     for path, spec in pins:
         relative = path.relative_to(checkout).as_posix()
-        if not isinstance(spec, dict):
-            _add(findings, repository, "rust.pin.shape", f"{relative}: dependency must be a table with an exact version")
+        if not isinstance(spec, (dict, str)):
+            _add(findings, repository, "rust.pin.shape", f"{relative}: dependency must be a string or table with an exact version")
             continue
         version = _exact_cargo_version(_cargo_version(spec))
         if version is None:
@@ -360,12 +484,12 @@ def _check_rust(
         elif version != recorded_version:
             _add(findings, repository, "rust.pin.version", f"{relative}: dependency version {version!r} != recorded {recorded_version!r}")
         if status == "git":
-            if spec.get("git") != COREKIT_URL or spec.get("rev") != expected_revision:
+            if not isinstance(spec, dict) or spec.get("git") != COREKIT_URL or spec.get("rev") != expected_revision:
                 _add(findings, repository, "rust.pin.git", f"{relative}: Git URL/revision does not match recorded adoption")
-            if "path" in spec:
+            if isinstance(spec, dict) and "path" in spec:
                 _add(findings, repository, "rust.pin.path", f"{relative}: sibling CoreKit path dependency is forbidden")
         elif status == "registry":
-            if "git" in spec or "path" in spec or spec.get("registry") not in (None, "crates-io"):
+            if isinstance(spec, dict) and ("git" in spec or "path" in spec or spec.get("registry") not in (None, "crates-io")):
                 _add(findings, repository, "rust.pin.registry", f"{relative}: registry adoption must use crates.io without git/path fields")
             registry_version = rust.get("registry_version")
             if version is not None and version != registry_version:
@@ -564,11 +688,21 @@ def _check_go(record: dict[str, Any], checkout: Path, findings: list[Finding]) -
         if not path.is_file():
             _add(findings, repository, "go.manifest.missing", f"missing declared Go manifest: {relative}")
             continue
-        pin = parse_go_pin(path.read_text(encoding="utf-8"))
-        if pin is None:
-            _add(findings, repository, "go.pin.missing", f"no exact CoreKit require found in {relative}")
-        else:
-            found.append(pin)
+        try:
+            text = path.read_text(encoding="utf-8")
+        except (OSError, UnicodeDecodeError) as error:
+            _add(findings, repository, "go.manifest.read", f"cannot read {relative}: {error}")
+            continue
+        requirements = parse_go_requirements(text)
+        if not requirements:
+            _add(findings, repository, "go.pin.missing", f"no CoreKit require found in {relative}")
+            continue
+        if len(requirements) > 1:
+            _add(findings, repository, "go.pin.duplicate", f"{relative} declares CoreKit more than once")
+        invalid = sum(version is None for version in requirements)
+        if invalid:
+            _add(findings, repository, "go.pin.invalid", f"{relative} contains an invalid CoreKit version declaration")
+        found.extend(version for version in requirements if version is not None)
     if found and len(set(found)) != 1:
         _add(findings, repository, "go.pin.inconsistent", f"declared Go manifests disagree: {sorted(set(found))}")
     available, _ = _tracked_go_files(checkout)
@@ -620,9 +754,13 @@ def verify_manifest(
     elif not isinstance(release_commit, str) or not REVISION_RE.fullmatch(release_commit):
         _add(findings, "corekit", "release.shape", "CoreKit release commit must be a 40-hex commit")
     else:
-        code, resolved, _ = _git(["rev-parse", f"{release_tag}^{{commit}}"], corekit_root)
-        if code or resolved != release_commit:
-            _add(findings, "corekit", "release.tag", f"release tag {release_tag} does not resolve to recorded commit")
+        code, _, _ = _git(["show-ref", "--verify", f"refs/tags/{release_tag}"], corekit_root)
+        if code:
+            _add(findings, "corekit", "release.tag", f"release reference {release_tag} is not an existing CoreKit tag")
+        else:
+            code, resolved, _ = _git(["rev-parse", f"refs/tags/{release_tag}^{{commit}}"], corekit_root)
+            if code or resolved != release_commit:
+                _add(findings, "corekit", "release.tag", f"release tag {release_tag} does not resolve to recorded commit")
 
     for record in records:
         if not isinstance(record, dict) or not isinstance(record.get("repo"), str) or "/" not in record["repo"]:
@@ -634,10 +772,20 @@ def verify_manifest(
             continue
         repositories.add(repository)
         _validate_rust_status(record, findings)
-        checkout = (workspace_root / repository.rsplit("/", 1)[1]).resolve()
+        checkout_name = repository.rsplit("/", 1)[1]
+        checkout_link = workspace_root / checkout_name
+        if checkout_link.is_symlink():
+            _add(findings, repository, "checkout.path", "selected consumer checkout must not be a symlink")
+            continue
+        try:
+            checkout = _safe_child(workspace_root, checkout_name)
+        except (OSError, ValueError):
+            _add(findings, repository, "checkout.path", f"consumer checkout escapes workspace: {checkout_name}")
+            continue
         if not checkout.is_dir():
             _add(findings, repository, "checkout.missing", f"canonical checkout is missing: {checkout}")
             continue
+        _check_checkout_snapshot(record, checkout, findings)
         _check_go(record, checkout, findings)
         _check_rust(record, checkout, corekit_root, findings)
         _check_evidence(record, checkout, findings)
