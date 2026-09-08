@@ -350,7 +350,7 @@
       "contracts": [
         "REL-004"
       ],
-      "status": "ready",
+      "status": "complete",
       "demand_class": "required",
       "acceptance_commands": [
         "cargo fmt --all --check",
@@ -380,7 +380,7 @@
         "REL-003",
         "REL-005"
       ],
-      "status": "blocked",
+      "status": "ready",
       "demand_class": "required",
       "acceptance_commands": [
         "cargo semver-checks check-release",

@@ -204,6 +204,8 @@ All RUST-006+ work depends transitively on this graph barrier.
 
 **Hardening execution:** `make rust-hardening` is the executable RUST-013 aggregate. It runs pinned-toolchain format/check/Clippy, nextest, doctests, every-feature validation, LLVM coverage instrumentation, cargo-audit, cargo-deny, Rust-port metadata validation, and the complete Go build/test/lint gates. The `cargo hack --no-dev-deps` invocation deliberately omits `--locked` because cargo-hack temporarily rewrites manifests and must refresh its lock view; all other lock-sensitive commands remain locked. CI additionally runs full Rust workspace tests and doctests natively on Linux, macOS, and Windows.
 
+**Acceptance evidence:** The gate was merged through PR #246 at exact head `b3f189f6ac4c78986c48be510805663906cce876`; GitHub reports all 29 PR checks successful, including native Rust, Miri, hardening, port-contract and cross-platform Go checks. The merge commit is `e5cdac6883f5fec098c35516207deff773f63a05`, and post-merge main CI run `34194811021` completed successfully at that exact head. The Go oracle remains unchanged; no cutover or Go-oracle removal occurred.
+
 ## RUST-014: SemVer, publishing manifest and release verification
 
 **Objective:** Publish only adopted crates without confusing Go module tags.
