@@ -92,7 +92,7 @@ mcp-fuzz-smoke:
 	cd fuzz && cargo +nightly-2026-09-03 fuzz run mcp-frame "$$FUZZ_CORPUS" --sanitizer none -- -runs=100
 
 test:
-	CGO_ENABLED=0 go test -race ./...
+	CGO_ENABLED=1 go test -race ./...
 
 golangci-lint:
 	@command -v golangci-lint >/dev/null 2>&1 || { echo "golangci-lint not found; install from https://golangci-lint.run"; exit 1; }
