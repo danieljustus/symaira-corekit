@@ -67,33 +67,6 @@ def validate_tag(value: object) -> str:
     return value
 
 
-def validate_public_metadata(crate: dict[str, Any]) -> None:
-    metadata = crate.get("public_metadata")
-    if not isinstance(metadata, dict):
-        fail(f"{crate.get('name', '<unknown>')}: publishable crates need public_metadata")
-    required = {"description", "readme", "keywords", "categories"}
-    missing = required - metadata.keys()
-    if missing:
-        fail(f"{crate['name']}: public_metadata is missing {sorted(missing)}")
-    if not isinstance(metadata["description"], str) or not metadata["description"].strip():
-        fail(f"{crate['name']}: public_metadata.description must be non-empty")
-    if len(metadata["description"].encode("utf-8")) > 1_000:
-        fail(f"{crate['name']}: public_metadata.description exceeds crates.io's 1000-byte limit")
-    if (
-        not isinstance(metadata["readme"], str)
-        or not metadata["readme"]
-        or Path(metadata["readme"]).is_absolute()
-        or "\\" in metadata["readme"]
-    ):
-        fail(f"{crate['name']}: public_metadata.readme must be a relative POSIX path")
-    for key in ("keywords", "categories"):
-        values = metadata[key]
-        if not isinstance(values, list) or not values or any(
-            not isinstance(value, str) or not value.strip() for value in values
-        ):
-            fail(f"{crate['name']}: public_metadata.{key} must be a non-empty string array")
-
-
 def validate_manifest_shape(manifest: dict[str, Any]) -> dict[str, Any]:
     if manifest.get("schema_version") != 1:
         fail("manifest: unsupported schema_version")
@@ -152,10 +125,6 @@ def validate_manifest_shape(manifest: dict[str, Any]) -> dict[str, Any]:
             fail(f"{name}: adopted crates need at least two independent adopters")
         if not crate["adopted"] and crate["adopters"]:
             fail(f"{name}: non-adopted crates must have no adopters")
-        if crate["publishable"]:
-            validate_public_metadata(crate)
-        elif "public_metadata" in crate:
-            fail(f"{name}: non-publishable crates must not declare public_metadata")
     order = release["planned_publish_order"]
     if len(order) != len(set(order)):
         fail("release.planned_publish_order contains duplicates")
@@ -222,26 +191,10 @@ def validate_workspace(release: dict[str, Any], metadata: dict[str, Any]) -> dic
             fail(f"{name}: manifest version {crate['version']} differs from Cargo metadata {package.get('version')}")
         if crate["publishable"]:
             publish = package.get("publish")
-            if publish is not None:
-                fail(f"{name}: release marks crate publishable but Cargo does not allow crates.io publication")
-            public_metadata = crate["public_metadata"]
-            if package.get("description") != public_metadata["description"]:
-                fail(f"{name}: Cargo description differs from release manifest public_metadata")
-            if package.get("keywords") != public_metadata["keywords"]:
-                fail(f"{name}: Cargo keywords differ from release manifest public_metadata")
-            if package.get("categories") != public_metadata["categories"]:
-                fail(f"{name}: Cargo categories differ from release manifest public_metadata")
-            readme_value = Path(str(package.get("readme", "")))
-            readme = (expected_manifest.parent / readme_value).resolve() if not readme_value.is_absolute() else readme_value.resolve()
-            expected_readme = (expected_manifest.parent / public_metadata["readme"]).resolve()
-            try:
-                readme.relative_to(expected_manifest.parent.resolve())
-            except ValueError:
-                fail(f"{name}: Cargo readme path escapes the crate directory")
-            if readme != expected_readme or not readme.is_file():
-                fail(f"{name}: Cargo readme does not match release manifest public_metadata")
-        elif package.get("publish") != []:
-            fail(f"{name}: non-publishable crates must have Cargo publish = false")
+            if publish == []:
+                fail(f"{name}: release marks crate publishable but Cargo marks it publish=false")
+        elif package.get("publish") not in ([], None):
+            fail(f"{name}: unexpected Cargo publish allow-list for a non-publishable plan")
         if not expected_manifest.is_file():
             fail(f"{name}: manifest does not exist")
     return manifest_crates

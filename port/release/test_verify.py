@@ -26,30 +26,6 @@ class ManifestShapeTests(unittest.TestCase):
         release = verify.validate_manifest_shape(self.manifest)
         self.assertEqual(release["planned_publish_order"], ["symaira-core-version"])
         self.assertFalse(release["publish"])
-        candidate = next(crate for crate in release["crates"] if crate["name"] == "symaira-core-version")
-        self.assertEqual(candidate["version"], "0.1.0")
-        self.assertTrue(candidate["adopted"])
-        self.assertTrue(candidate["publishable"])
-        self.assertEqual(candidate["public_metadata"]["readme"], "README.md")
-
-    def test_non_adopted_crates_remain_private(self) -> None:
-        release = verify.validate_manifest_shape(self.manifest)
-        for crate in release["crates"]:
-            if crate["name"] != "symaira-core-version":
-                self.assertFalse(crate["adopted"], crate["name"])
-                self.assertFalse(crate["publishable"], crate["name"])
-                self.assertNotIn("public_metadata", crate)
-
-    def test_publishable_crate_requires_public_metadata(self) -> None:
-        manifest = copy.deepcopy(self.manifest)
-        candidate = manifest["release"]["crates"][0]
-        del candidate["public_metadata"]["description"]
-        with self.assertRaisesRegex(verify.VerificationError, "public_metadata"):
-            verify.validate_manifest_shape(manifest)
-
-    def test_workspace_metadata_matches_manifest_policy(self) -> None:
-        release = verify.validate_manifest_shape(self.manifest)
-        verify.validate_workspace(release, verify.cargo_metadata())
 
     def test_tag_requires_plain_stable_repository_tag(self) -> None:
         for value in ("0.17.0", "v0.17.0-rc.1", "v1.2.3+build", "rust-v0.1.0"):

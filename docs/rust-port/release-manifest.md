@@ -9,31 +9,25 @@ RUST-014 adds a release plan at [`../../port/release/manifest.json`](../../port/
 - Every workspace package is classified in the manifest. Only adopted crates may appear in `planned_publish_order`; private test-support crates and non-adopted crates remain non-publishable.
 - The manifest records the exact Cargo manifest path and version for every workspace package and checks both against `cargo metadata`.
 
-The checked-in plan maps the current stable repository release (`v0.17.0`) to the adopted `symaira-core-version` crate at `0.1.0`. That crate has public crates.io metadata and `publish = true`, while the release plan's top-level `publish = false` and `publication_status = "not-run"` keep this PR non-publishing. All non-adopted workspace crates, including test-support crates, remain `publish = false`.
+The checked-in plan maps the current stable repository release (`v0.17.0`) to the adopted `symaira-core-version` crate. Its Cargo version remains `0.0.0` and `publish = false` while exact Git-revision consumption is the supported path. This is intentional: RUST-014 prepares the publication contract without changing consumer pins or pretending that a registry release exists.
 
 ## Verification
 
 Run:
 
 ```sh
-cargo semver-checks check-release --package symaira-core-version \
-  --baseline-rev HEAD^ --release-type minor
+cargo semver-checks check-release
 python3 port/release/verify.py --dry-run
-cargo publish --dry-run --locked --allow-dirty --package symaira-core-version
 python3 -m unittest discover -s port/release -p 'test_*.py'
 ```
 
-The verifier performs all local checks without `cargo publish` or tag writes. Its
-focused tests also exercise the fail-closed public/private metadata and release
-state rules:
+The verifier performs all local checks without `cargo publish` or tag writes:
 
 1. validates the stable Go tag namespace and rejects Rust-specific repository tags;
 2. validates manifest schema, adoption evidence, planned publish order and fail-closed publication state;
-3. compares every listed package with locked Cargo metadata, checks public metadata for the publish candidate, and requires every other crate to remain private;
+3. compares every listed package with locked Cargo metadata and checks the pinned workspace;
 4. packages each adopted candidate into a temporary target directory and hashes the resulting `.crate` archive;
 5. records the resolved source revision, input digests and Cargo metadata as dry-run provenance/SBOM evidence.
-
-CI additionally runs `cargo publish --dry-run --locked -p symaira-core-version` as the registry-package validation gate. This command performs no upload.
 
 `source_revision: HEAD` is allowed only for this local dry-run. A future publication change must replace it with the immutable commit being released, set publication state explicitly in a separately reviewed change, and add public crates.io read-back evidence.
 
