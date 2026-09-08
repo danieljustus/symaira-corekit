@@ -226,6 +226,70 @@ import (
             self.assertEqual(report["status"], "blocked")
             self.assertTrue(any(item["code"] == "rust.lock.version" for item in report["findings"]))
 
+    def test_rust_package_must_be_canonical_before_cargo_checks(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            root = Path(raw)
+            manifest, corekit, _, _, _ = make_fixture(root, status="git")
+            document = json.loads(manifest.read_text(encoding="utf-8"))
+            rust = document["consumers"][0]["rust"]
+            rust["package"] = "evil-package"
+            rust["manifest_paths"] = ["missing/Cargo.toml"]
+            manifest.write_text(json.dumps(document), encoding="utf-8")
+
+            report = verify.verify_manifest(manifest, workspace_root=root, corekit_root=corekit)
+            codes = {item["code"] for item in report["findings"]}
+            self.assertEqual(report["status"], "blocked")
+            self.assertIn("rust.package", codes)
+            self.assertNotIn("rust.manifest.read", codes)
+            self.assertNotIn("rust.lock.source", codes)
+
+    def test_rust_adoption_status_is_closed_and_cannot_bypass_lock_checks(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            root = Path(raw)
+            manifest, corekit, consumer, _, _ = make_fixture(root, status="git")
+            document = json.loads(manifest.read_text(encoding="utf-8"))
+            rust = document["consumers"][0]["rust"]
+            rust["status"] = "bogus"
+            rust["registry_version"] = "0.0.0"
+            lock = (consumer / "Cargo.lock").read_text(encoding="utf-8").replace(
+                verify.COREKIT_URL, "https://evil.example/corekit")
+            (consumer / "Cargo.lock").write_text(lock, encoding="utf-8")
+            manifest.write_text(json.dumps(document), encoding="utf-8")
+
+            report = verify.verify_manifest(manifest, workspace_root=root, corekit_root=corekit)
+            self.assertEqual(report["status"], "blocked")
+            self.assertTrue(any(item["code"] == "rust.status" for item in report["findings"]), report)
+
+    def test_missing_rust_adoption_status_is_blocked(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            root = Path(raw)
+            manifest, corekit, _, _, _ = make_fixture(root, status="git")
+            document = json.loads(manifest.read_text(encoding="utf-8"))
+            del document["consumers"][0]["rust"]["status"]
+            manifest.write_text(json.dumps(document), encoding="utf-8")
+
+            report = verify.verify_manifest(manifest, workspace_root=root, corekit_root=corekit)
+            self.assertEqual(report["status"], "blocked")
+            self.assertTrue(any(item["code"] == "rust.status" for item in report["findings"]), report)
+
+    def test_top_level_release_commit_must_match_corekit_tag(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            root = Path(raw)
+            manifest, corekit, _, release_commit, _ = make_fixture(root, status="git")
+            document = json.loads(manifest.read_text(encoding="utf-8"))
+            document["corekit"]["release_commit"] = "f" * 40
+            self.assertNotEqual(document["corekit"]["release_commit"], release_commit)
+            # Keep each consumer's release evidence truthful: the top-level
+            # release record must still be checked independently.
+            manifest.write_text(json.dumps(document), encoding="utf-8")
+
+            report = verify.verify_manifest(manifest, workspace_root=root, corekit_root=corekit)
+            self.assertEqual(report["status"], "blocked")
+            self.assertTrue(
+                any(item["repository"] == "corekit" and item["code"] == "release.tag" for item in report["findings"]),
+                report,
+            )
+
     def test_registry_pin_requires_exact_crates_io_source_and_checksum(self) -> None:
         with tempfile.TemporaryDirectory() as raw:
             root = Path(raw)

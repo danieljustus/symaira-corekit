@@ -26,6 +26,8 @@ COREKIT_URL = "https://github.com/danieljustus/symaira-corekit"
 COREKIT_PACKAGE = "symaira-core-version"
 CRATES_IO_SOURCE = "registry+https://github.com/rust-lang/crates.io-index"
 REVISION_RE = re.compile(r"^[0-9a-f]{40}$")
+RELEASE_TAG_RE = re.compile(r"^v(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)$")
+RUST_STATUSES = frozenset({"not_adopted", "git", "registry"})
 GO_VERSION_RE = re.compile(
     r"^v(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)"
     r"(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$"
@@ -134,9 +136,30 @@ def _exact_cargo_version(value: Any) -> str | None:
 
 def _expected_rust(record: dict[str, Any]) -> dict[str, Any] | None:
     rust = record.get("rust")
-    if not isinstance(rust, dict) or rust.get("status") in (None, "not_adopted"):
+    if not isinstance(rust, dict) or rust.get("status") not in {"git", "registry"}:
         return None
     return rust
+
+
+def _validate_rust_status(record: dict[str, Any], findings: list[Finding]) -> None:
+    """Reject unknown Rust adoption states before any Cargo checks run."""
+    repository = str(record.get("repo", "unknown"))
+    if "rust" not in record:
+        _add(
+            findings,
+            repository,
+            "rust.status",
+            "Rust adoption status is required and must be one of: not_adopted, git, registry",
+        )
+        return
+    rust = record["rust"]
+    if not isinstance(rust, dict) or rust.get("status") not in RUST_STATUSES:
+        _add(
+            findings,
+            repository,
+            "rust.status",
+            "Rust adoption status must be one of: not_adopted, git, registry",
+        )
 
 
 def _evidence_error(
@@ -275,6 +298,14 @@ def _check_rust(
     repository = str(record.get("repo", "unknown"))
     rust = _expected_rust(record)
     if rust is None:
+        return
+    if rust.get("package") != COREKIT_PACKAGE:
+        _add(
+            findings,
+            repository,
+            "rust.package",
+            f"Rust adoption package must be exactly {COREKIT_PACKAGE!r}",
+        )
         return
     manifest_paths = rust.get("manifest_paths")
     if not isinstance(manifest_paths, list) or not manifest_paths:
@@ -568,8 +599,6 @@ def verify_manifest(
     corekit = document.get("corekit") if isinstance(document, dict) else None
     if not isinstance(corekit, dict) or corekit.get("repository") != "danieljustus/symaira-corekit" or corekit.get("go_module") != COREKIT_MODULE:
         raise ValueError("docs/consumers.json corekit repository/module is invalid")
-    if not isinstance(corekit.get("release_tag"), str) or not isinstance(corekit.get("release_commit"), str) or not REVISION_RE.fullmatch(corekit["release_commit"]):
-        raise ValueError("docs/consumers.json corekit release tag/commit evidence is invalid")
     registry = corekit.get("rust_registry")
     if not isinstance(registry, dict) or registry.get("package") != COREKIT_PACKAGE or registry.get("status") != "not_released":
         raise ValueError("docs/consumers.json must keep Rust registry status not_released")
@@ -580,6 +609,18 @@ def verify_manifest(
         workspace_root = canonical_checkout(ROOT).parent
     if corekit_root is None:
         corekit_root = canonical_checkout(ROOT)
+
+    release_tag = corekit.get("release_tag")
+    release_commit = corekit.get("release_commit")
+    if not isinstance(release_tag, str) or not RELEASE_TAG_RE.fullmatch(release_tag):
+        _add(findings, "corekit", "release.shape", "CoreKit release tag must be a stable vMAJOR.MINOR.PATCH tag")
+    elif not isinstance(release_commit, str) or not REVISION_RE.fullmatch(release_commit):
+        _add(findings, "corekit", "release.shape", "CoreKit release commit must be a 40-hex commit")
+    else:
+        code, resolved, _ = _git(["rev-parse", f"{release_tag}^{{commit}}"], corekit_root)
+        if code or resolved != release_commit:
+            _add(findings, "corekit", "release.tag", f"release tag {release_tag} does not resolve to recorded commit")
+
     for record in records:
         if not isinstance(record, dict) or not isinstance(record.get("repo"), str) or "/" not in record["repo"]:
             findings.append(Finding("unknown", "record.shape", "consumer record must contain an owner/name repo"))
@@ -589,6 +630,7 @@ def verify_manifest(
             _add(findings, repository, "record.duplicate", "consumer record is duplicated")
             continue
         repositories.add(repository)
+        _validate_rust_status(record, findings)
         checkout = (workspace_root / repository.rsplit("/", 1)[1]).resolve()
         if not checkout.is_dir():
             _add(findings, repository, "checkout.missing", f"canonical checkout is missing: {checkout}")
