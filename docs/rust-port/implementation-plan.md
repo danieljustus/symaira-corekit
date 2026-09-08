@@ -97,7 +97,7 @@ quality review passed.
 6. Enable tracing and prove stdout remains protocol-only.
 7. Fuzz copied seed corpora; never let libFuzzer mutate tracked seeds.
 
-## RUST-005: Foundation multi-consumer adoption and value gate — IN PROGRESS (offline revalidation pending)
+## RUST-005: Foundation multi-consumer adoption and value gate — COMPLETE (live read-back 2026-09-08)
 
 **Objective:** Prove the shared Rust foundation has real ecosystem value before expensive package ports.
 
@@ -110,11 +110,7 @@ quality review passed.
 5. Record deleted/avoided duplicate source and dependency-feature closure.
 6. Stop, split or abandon crates that lack two adopters/two-language SSOT or exceed the 10% regression ceiling without an approved security exception.
 
-The tracked evidence is intentionally pending after regeneration with
-`python3 scripts/rust-port/adoption.py --check --min-consumers 2 --offline`:
-offline mode cannot verify the merged PR state for the exact Git pins. The
-negative gate exits 1 and records blockers; that is the honest current result,
-not a permission to claim registry availability.
+**Acceptance evidence:** Live `python3 scripts/rust-port/adoption.py --check --min-consumers 2` on 2026-09-08 read back both adoption PRs as merged: danieljustus/symaira-vault PR #1000 (merge commit `b39d1c2de59d205a91c01e584776d568c3877d7e`) and danieljustus/symaira-eraseme PR #866 (merge commit `eb628050d136a2b2009250a8c6f21eb718d853fc`), both exact-pinned to CoreKit revision `27177f25f551cecefa7bd6c4524abf175b3a75c7` with matching `Cargo.lock` resolution. `bench.py --check` validates the tracked 50-run benchmark evidence (maximum regression ratio 0.4755 vault / 0.4430 eraseme, below the 1.1 ceiling), `make port-consumer-smoke` passes, and `value-gate.json` records `status: passed` / `decision: continue`. This is Git-pin adoption evidence, not a registry or release claim.
 
 All RUST-006+ work depends transitively on this graph barrier.
 
@@ -200,7 +196,7 @@ All RUST-006+ work depends transitively on this graph barrier.
 
 **Steps:** Generate deterministic rotation/2–4-bit/metadata/sidecar/ranking fixtures through Go; implement safe scalar Rust first; require exact packed/persisted bytes; then benchmark ten paired runs. Add SIMD only as a separate reviewed optimization after parity.
 
-## RUST-013: Full dual-language hardening and native CI — IN PROGRESS (revalidation)
+## RUST-013: Full dual-language hardening and native CI — COMPLETE (revalidated 2026-09-08)
 
 **Objective:** Turn the foundation and every optional slice activated so far into a sustainable repository gate. Deferred, unbuilt crates do not block a foundation release.
 
@@ -210,7 +206,7 @@ All RUST-006+ work depends transitively on this graph barrier.
 
 **Hardening execution:** `make rust-hardening` is the executable RUST-013 aggregate. It runs pinned-toolchain format/check/Clippy, nextest, doctests, every-feature validation, LLVM coverage instrumentation, cargo-audit, cargo-deny, Rust-port metadata validation, and the complete Go build/test/lint gates. The `cargo hack --no-dev-deps` invocation deliberately omits `--locked` because cargo-hack temporarily rewrites manifests and must refresh its lock view; all other lock-sensitive commands remain locked. CI additionally runs full Rust workspace tests and doctests natively on Linux, macOS, and Windows.
 
-**Acceptance evidence:** The historical hardening gate was merged through PR #246 at exact head `b3f189f6ac4c78986c48be510805663906cce876`; GitHub reports the `Rust RUST-013 hardening` job successful in run `34193678917` (job `101956734067`). Its log contains successful `cargo audit` and `cargo deny check` commands, which is the bound evidence for `REL-004` parity. RUST-013 remains `in_progress` while the RUST-005 value gate is revalidated; no crate publication, Go cutover or Go-oracle removal occurred.
+**Acceptance evidence:** The historical hardening gate was merged through PR #246 at exact head `b3f189f6ac4c78986c48be510805663906cce876`; GitHub reports the `Rust RUST-013 hardening` job successful in run `34193678917` (job `101956734067`). Its log contains successful `cargo audit` and `cargo deny check` commands, which is the bound evidence for `REL-004` parity. Revalidation on 2026-09-08 at `d382b8615ce879bac6f23c7250e13667934e8f93`: the local gate set (`cargo fmt --all --check`, `cargo check/clippy/nextest/doctest --locked`, `cargo hack --each-feature`, `cargo audit`, `cargo deny check`, `miri_gate.py --self-test`) passed on macOS, and native CI run `34231886903` (push to main) for that commit is green on ubuntu-latest, macos-latest and windows-latest including the RUST-013 native, Miri gate and hardening jobs. RUST-013 is complete; no crate publication, Go cutover or Go-oracle removal occurred.
 
 ## RUST-014: SemVer, publishing manifest and release verification — IN PROGRESS (non-publishing local gate)
 

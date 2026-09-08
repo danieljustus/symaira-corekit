@@ -1,0 +1,120 @@
+{
+  "captured_at": "2026-09-08T16:02:15.248348+00:00",
+  "provenance": {
+    "corekit_revision": "27177f25f551cecefa7bd6c4524abf175b3a75c7",
+    "raw_samples_retained": true,
+    "source": "local adoption checkouts",
+    "toolchains": {
+      "cargo": "cargo 1.98.0 (797e8a9bc 2026-08-05)",
+      "go": "go version go1.27.1 darwin/arm64",
+      "rustc": "rustc 1.98.0 (88d9e12ae 2026-08-18)"
+    }
+  },
+  "schema_version": 1,
+  "standalone_smokes": [
+    {
+      "artifact_kind": "benchmark-owned",
+      "build_command": "CARGO_TARGET_DIR=<benchmark-target> CARGO_HOME=<benchmark-cargo-home> cargo build --release --locked --bin symvault",
+      "candidate_commit": "772165a2b3a8efc6aebed7f904f38edeac45458a",
+      "commands": [
+        {
+          "argv": [
+            "/var/folders/7v/7bpq0fjn44lflpxdylsx8qs40000gn/T/rust005-bench-fges_x70/danieljustus-symaira-vault/rust-binary",
+            "version"
+          ]
+        },
+        {
+          "argv": [
+            "/var/folders/7v/7bpq0fjn44lflpxdylsx8qs40000gn/T/rust005-bench-fges_x70/danieljustus-symaira-vault/rust-binary",
+            "version",
+            "--json"
+          ]
+        }
+      ],
+      "passed": true,
+      "repository": "danieljustus/symaira-vault",
+      "results": [
+        {
+          "argv": [
+            "version"
+          ],
+          "exit_code": 0,
+          "semantic": {
+            "text": "symvault dev\n"
+          },
+          "stderr": "",
+          "stdout_base64": "c3ltdmF1bHQgZGV2Cg==",
+          "stdout_sha256": "c7e3d954346512eb9b6b8f15f876e7c2df9646495e3aa3c188ef9bfcb99c7f70"
+        },
+        {
+          "argv": [
+            "version",
+            "--json"
+          ],
+          "exit_code": 0,
+          "semantic": {
+            "schema_version": 1,
+            "tool": "symvault",
+            "version": "dev"
+          },
+          "stderr": "",
+          "stdout_base64": "eyJ0b29sIjoic3ltdmF1bHQiLCJ2ZXJzaW9uIjoiZGV2Iiwic2NoZW1hX3ZlcnNpb24iOjF9Cg==",
+          "stdout_sha256": "041247b3b6c583d88cfe5111dd19c8cdff914eb1cfa1888222943898caf522c1"
+        }
+      ]
+    },
+    {
+      "artifact_kind": "benchmark-owned",
+      "build_command": "CARGO_TARGET_DIR=<benchmark-target> CARGO_HOME=<benchmark-cargo-home> cargo build --release --locked --bin symeraseme-rust",
+      "candidate_commit": "27a3f790c59771e53636fa9b6b13e5687c689f3a",
+      "commands": [
+        {
+          "argv": [
+            "/var/folders/7v/7bpq0fjn44lflpxdylsx8qs40000gn/T/rust005-bench-fges_x70/danieljustus-symaira-eraseme/rust-binary",
+            "version"
+          ]
+        },
+        {
+          "argv": [
+            "/var/folders/7v/7bpq0fjn44lflpxdylsx8qs40000gn/T/rust005-bench-fges_x70/danieljustus-symaira-eraseme/rust-binary",
+            "version",
+            "--json"
+          ]
+        }
+      ],
+      "passed": true,
+      "repository": "danieljustus/symaira-eraseme",
+      "results": [
+        {
+          "argv": [
+            "version"
+          ],
+          "exit_code": 0,
+          "semantic": {
+            "text": "symeraseme 0.13.0\n"
+          },
+          "stderr": "",
+          "stdout_base64": "c3ltZXJhc2VtZSAwLjEzLjAK",
+          "stdout_sha256": "7b36be378769a9a0ead8e6f320aa1543e1ef07194140cb3ecbaa451e348faa41"
+        },
+        {
+          "argv": [
+            "version",
+            "--json"
+          ],
+          "exit_code": 0,
+          "semantic": {
+            "schema_version": 1,
+            "tool": "symeraseme",
+            "version": "0.13.0"
+          },
+          "stderr": "",
+          "stdout_base64": "eyJ0b29sIjoic3ltZXJhc2VtZSIsInZlcnNpb24iOiIwLjEzLjAiLCJzY2hlbWFfdmVyc2lvbiI6MX0K",
+          "stdout_sha256": "ba4e8be4d5757a8e444665710c1ab99f66992073707bac2b28e0ff4256e3f0a7"
+        }
+      ]
+    }
+  ],
+  "status": "passed",
+  "suite": "foundation"
+}

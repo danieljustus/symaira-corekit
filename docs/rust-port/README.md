@@ -1,6 +1,6 @@
 # Go→Rust migration handoff
 
-Status: **RUST-001 through RUST-004 complete; RUST-005 adoption evidence is pending deterministic offline revalidation; RUST-013 hardening is in revalidation; RUST-014 remains in progress because registry evidence does not exist; RUST-015 is blocked. Go remains the supported executable oracle and no broad cutover is implied**.
+Status: **RUST-001 through RUST-005 and RUST-013 complete; RUST-014 remains in progress because registry evidence does not exist; RUST-015 is blocked on released consumer evidence. Go remains the supported executable oracle and no broad cutover is implied**.
 
 This directory freezes the starting point for a contract-first Rust implementation of `symaira-corekit`. The Go implementation remains supported, buildable and the executable oracle while Go consumers exist. Rust crates are added beside it and are adopted package by package; this is not a flag-day repository rewrite.
 
@@ -135,9 +135,9 @@ RUST-005 evidence is intentionally live and fail-closed:
 - `make rust-port-validate` verifies the document, merged-adoption, and tracked
   real benchmark evidence without rerunning the hour-long measurement.
 
-The tracked RUST-005 report was regenerated with:
-`python3 scripts/rust-port/adoption.py --check --min-consumers 2 --offline`.
-It is intentionally `pending`: offline mode cannot read back merged adoption PR
-state, so the value gate is on hold and no Git-pin adopter is promoted to a
-registry or release claim. A non-zero exit from this negative current-state
-gate is expected until live evidence is read back again.
+The tracked RUST-005 report was last regenerated on 2026-09-08 with the live
+(non-offline) `python3 scripts/rust-port/adoption.py --check --min-consumers 2`:
+both adoption PRs (symaira-vault #1000, symaira-eraseme #866) were read back as
+MERGED at the recorded exact Git pin, so `value-gate.json` records
+`status: passed` / `decision: continue`. This remains Git-pin adoption
+evidence only — no registry or release claim is made.

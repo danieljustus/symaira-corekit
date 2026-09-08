@@ -39,7 +39,7 @@
         "make port-oracle-selftest",
         "make port-fixture-source-check"
       ],
-      "stop_rule": "No Rust production crate until Go\u2194Go self-equality, source-digest rejection, isolated side effects and a deliberate negative-control failure are proven."
+      "stop_rule": "No Rust production crate until Go↔Go self-equality, source-digest rejection, isolated side effects and a deliberate negative-control failure are proven."
     },
     {
       "id": "RUST-002",
@@ -152,7 +152,7 @@
         "PERF-002",
         "PERF-004"
       ],
-      "status": "in_progress",
+      "status": "complete",
       "demand_class": "required",
       "acceptance_commands": [
         "python3 scripts/rust-port/adoption.py --check --min-consumers 2",
@@ -350,7 +350,7 @@
       "contracts": [
         "REL-004"
       ],
-      "status": "in_progress",
+      "status": "complete",
       "demand_class": "required",
       "acceptance_commands": [
         "cargo fmt --all --check",
