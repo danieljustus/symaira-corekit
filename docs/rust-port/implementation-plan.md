@@ -206,11 +206,37 @@ All RUST-006+ work depends transitively on this graph barrier.
 
 **Acceptance evidence:** The gate was merged through PR #246 at exact head `b3f189f6ac4c78986c48be510805663906cce876`; GitHub reports all 29 PR checks successful, including native Rust, Miri, hardening, port-contract and cross-platform Go checks. The merge commit is `e5cdac6883f5fec098c35516207deff773f63a05`, and post-merge main CI run `34194811021` completed successfully at that exact head. The Go oracle remains unchanged; no cutover or Go-oracle removal occurred.
 
-## RUST-014: SemVer, publishing manifest and release verification
+## RUST-014: SemVer, publishing manifest and release verification — IN PROGRESS (local gate complete)
 
 **Objective:** Publish only adopted crates without confusing Go module tags.
 
-**Steps:** Add `cargo semver-checks`; define a repository release manifest mapping tag to changed crate versions and publish order; dry-run packaging/provenance/SBOM; verify crates.io ownership and public bytes after publication. Keep exact Git-revision consumption until this gate passes.
+**Create:** `port/release/manifest.json`, `port/release/verify.py`, and focused
+stdlib-only verifier tests. The manifest classifies every workspace package,
+records the two RUST-005 adopters of `symaira-core-version`, freezes the only
+permitted publication order, and keeps all crates non-publishable until a
+separate external release approval.
+
+**Steps completed:**
+
+1. Added `cargo semver-checks` as a pinned CI/release gate; it runs independently
+   of the existing Go `apidiff` gate.
+2. Added a checked-in release plan mapping the stable Go `v0.17.0` namespace to
+   explicit Rust package paths/versions. Rust-specific repository tags are
+   rejected; the Go `vMAJOR.MINOR.PATCH` tag remains the only release namespace.
+3. Added a fail-closed dry-run verifier that checks locked Cargo metadata,
+   workspace coverage, adoption evidence, package order and temporary `.crate`
+   archives, and emits source/input digest plus Cargo-metadata SBOM evidence.
+4. Wired the verifier and SemVer check into `ci.yml`, `release.yml`, and the
+   `rust-release-contract` Make target. No publish or tag command exists in the
+   verifier.
+
+**Evidence:** `cargo semver-checks check-release`,
+`python3 port/release/verify.py --dry-run`, and the focused Python tests pass on
+macOS. Contract rows `REL-002` and `REL-003` are locally verified; `REL-005` is
+`fixture-ready` because crates.io ownership, public-byte readback, and external
+OIDC/publishing evidence cannot be produced without performing the prohibited
+external release. Go build/test/lint and exact Git-revision consumer support
+remain unchanged.
 
 ## RUST-015: Consumer rollout and Go-retention review
 

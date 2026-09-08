@@ -47,6 +47,13 @@ jobs:
           fi
           go vet ./...
 
+      - name: Verify Rust release manifest
+        run: |
+          rustup toolchain install 1.98.0 --profile minimal --component rustfmt,clippy
+          cargo install cargo-semver-checks --version 0.50.0 --locked
+          cargo semver-checks check-release
+          python3 port/release/verify.py --dry-run
+
   release:
     needs: test
     runs-on: ubuntu-latest

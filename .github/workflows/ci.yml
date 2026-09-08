@@ -371,3 +371,20 @@ jobs:
           version: v2.13.2
       - name: Run complete dual-language hardening gate
         run: make rust-hardening
+
+  rust-release-manifest:
+    name: Rust release manifest
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
+        with:
+          fetch-depth: 0
+      - name: Install pinned Rust toolchain
+        shell: bash
+        run: rustup toolchain install 1.98.0 --profile minimal --component rustfmt,clippy
+      - name: Install cargo-semver-checks
+        run: cargo install cargo-semver-checks --version 0.50.0 --locked
+      - name: Check Rust API compatibility
+        run: cargo semver-checks check-release
+      - name: Verify release manifest, packages, provenance and SBOM
+        run: python3 port/release/verify.py --dry-run

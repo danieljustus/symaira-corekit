@@ -1,0 +1,130 @@
+{
+  "schema_version": 1,
+  "repository": {
+    "slug": "danieljustus/symaira-corekit",
+    "url": "https://github.com/danieljustus/symaira-corekit",
+    "go_module": "github.com/danieljustus/symaira-corekit"
+  },
+  "release": {
+    "tag": "v0.17.0",
+    "source_revision": "HEAD",
+    "publish": false,
+    "publication_status": "not-run",
+    "registry": "https://crates.io",
+    "publish_order": [
+      "symaira-core-version"
+    ],
+    "crates": [
+      {
+        "name": "symaira-core-version",
+        "manifest": "rust/symaira-core-version/Cargo.toml",
+        "version": "0.0.0",
+        "adopted": true,
+        "publishable": false,
+        "adopters": [
+          "danieljustus/symaira-vault",
+          "danieljustus/symaira-eraseme"
+        ],
+        "reason": "RUST-014 prepares the publish path; external crates.io publication and public-byte readback are deliberately not performed."
+      },
+      {
+        "name": "symaira-core-exit",
+        "manifest": "rust/symaira-core-exit/Cargo.toml",
+        "version": "0.0.0",
+        "adopted": false,
+        "publishable": false,
+        "adopters": [],
+        "reason": "No released adopter is recorded."
+      },
+      {
+        "name": "symaira-core-env",
+        "manifest": "rust/symaira-core-env/Cargo.toml",
+        "version": "0.0.0",
+        "adopted": false,
+        "publishable": false,
+        "adopters": [],
+        "reason": "No released adopter is recorded."
+      },
+      {
+        "name": "symaira-core-log",
+        "manifest": "rust/symaira-core-log/Cargo.toml",
+        "version": "0.0.0",
+        "adopted": false,
+        "publishable": false,
+        "adopters": [],
+        "reason": "No released adopter is recorded."
+      },
+      {
+        "name": "symaira-core-config",
+        "manifest": "rust/symaira-core-config/Cargo.toml",
+        "version": "0.0.0",
+        "adopted": false,
+        "publishable": false,
+        "adopters": [],
+        "reason": "No released adopter is recorded."
+      },
+      {
+        "name": "symaira-core-mcp",
+        "manifest": "rust/symaira-core-mcp/Cargo.toml",
+        "version": "0.0.0",
+        "adopted": false,
+        "publishable": false,
+        "adopters": [],
+        "reason": "No released adopter is recorded."
+      },
+      {
+        "name": "symaira-core-fs",
+        "manifest": "rust/symaira-core-fs/Cargo.toml",
+        "version": "0.0.0",
+        "adopted": false,
+        "publishable": false,
+        "adopters": [],
+        "reason": "No released adopter is recorded."
+      },
+      {
+        "name": "symaira-core-secretref",
+        "manifest": "rust/symaira-core-secretref/Cargo.toml",
+        "version": "0.0.0",
+        "adopted": false,
+        "publishable": false,
+        "adopters": [],
+        "reason": "No released adopter is recorded."
+      },
+      {
+        "name": "symaira-contract-fixtures",
+        "manifest": "rust/test-support/symaira-contract-fixtures/Cargo.toml",
+        "version": "0.0.0",
+        "adopted": false,
+        "publishable": false,
+        "adopters": [],
+        "private": true,
+        "reason": "Test-support crate; never publish."
+      },
+      {
+        "name": "symaira-core-foundation",
+        "manifest": "rust/test-support/symaira-core-foundation/Cargo.toml",
+        "version": "0.0.0",
+        "adopted": false,
+        "publishable": false,
+        "adopters": [],
+        "private": true,
+        "reason": "Test-support crate; never publish."
+      }
+    ],
+    "provenance": {
+      "oracle_commit": "f3d3eb79b9b1f31b4f973d2ed518a8292cedf588",
+      "source_revision_policy": "HEAD is resolved at verification time for local dry-runs; a future publish manifest must replace it with a 40-hex commit.",
+      "input_files": [
+        "Cargo.toml",
+        "Cargo.lock",
+        "deny.toml",
+        "rust-toolchain.toml"
+      ]
+    },
+    "sbom": {
+      "required": true,
+      "format": "cargo-metadata-json",
+      "command": "cargo metadata --locked --format-version 1"
+    }
+  }
+}

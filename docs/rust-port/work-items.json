@@ -380,7 +380,7 @@
         "REL-003",
         "REL-005"
       ],
-      "status": "ready",
+      "status": "in_progress",
       "demand_class": "required",
       "acceptance_commands": [
         "cargo semver-checks check-release",

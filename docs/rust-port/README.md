@@ -1,6 +1,6 @@
 # Go→Rust migration handoff
 
-Status: **RUST-001 through RUST-005 complete; Go remains the supported executable oracle and no broad cutover is implied**.
+Status: **RUST-001 through RUST-005 and RUST-013 complete; RUST-014 local release tooling is complete but its external publication gate is pending; Go remains the supported executable oracle and no broad cutover is implied**.
 
 This directory freezes the starting point for a contract-first Rust implementation of `symaira-corekit`. The Go implementation remains supported, buildable and the executable oracle while Go consumers exist. Rust crates are added beside it and are adopted package by package; this is not a flag-day repository rewrite.
 
@@ -90,14 +90,24 @@ Stop and reassess when any of these holds:
 - [`upstream-evaluation.md`](upstream-evaluation.md) — reuse/build decisions and mandatory spikes.
 - [`contract-matrix.json`](contract-matrix.json) — stable observable-contract IDs.
 - [`implementation-plan.md`](implementation-plan.md) — ordered vertical slices.
+- [`release-manifest.md`](release-manifest.md) — RUST-014 tag, package, provenance and publication contract.
 - [`work-items.json`](work-items.json) — machine-readable acyclic work graph.
 - [`validate.py`](validate.py) — validates schemas, IDs, links, coverage and graph barriers.
 - [`../../testdata/rust-port/`](../../testdata/rust-port/) — generated public API, contract fixtures, neutral cases, isolation limits, paired-consumer canaries, and RUST-005 adoption evidence/reports.
 - [`../../scripts/rust-port/`](../../scripts/rust-port/) — exact-oracle generator, Go↔Go differential self-test, adoption validator, and real paired value benchmark.
 
 Run `make port-contract`, `make rust-foundation-contract`, `make rust-lint`,
-and `make rust-test`. The required foundation, filesystem/secret, MCP, and
-multi-consumer value slices are complete; later package ports remain demand-driven.
+`make rust-test` and `make rust-release-contract`. The required foundation,
+filesystem/secret, MCP, multi-consumer value and release-manifest slices are
+complete; later package ports remain demand-driven.
+
+RUST-014's local release gate is intentionally non-publishing:
+`cargo semver-checks check-release` and `python3 port/release/verify.py --dry-run`
+validate the adopted-crate order, all workspace package versions, temporary
+`.crate` archives, provenance inputs and Cargo metadata SBOM evidence. The
+crates.io ownership/public-byte read-back gate remains open until a separately
+approved release performs publication. Go tags remain unambiguous module
+releases and Go consumers remain supported.
 
 RUST-005 evidence is intentionally live and fail-closed:
 
