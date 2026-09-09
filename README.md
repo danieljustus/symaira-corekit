@@ -1,5 +1,7 @@
 # Symaira CoreKit
 
+> **Accepted product direction — implementation pending:** CoreKit remains a separate backend-infrastructure library; AppKit remains a separate Swift foundation. Product consolidation does not move credential cryptography, browser engines, native automation or product-domain policy into shared libraries. Shared modules require real consumers and immutable, tested contracts. See [PB-2026-09-09](docs/product-boundaries.md).
+
 [![CI](https://github.com/danieljustus/symaira-corekit/actions/workflows/ci.yml/badge.svg)](https://github.com/danieljustus/symaira-corekit/actions/workflows/ci.yml)
 [![Latest release](https://img.shields.io/github/v/release/danieljustus/symaira-corekit)](https://github.com/danieljustus/symaira-corekit/releases)
 [![License](https://img.shields.io/github/license/danieljustus/symaira-corekit)](LICENSE)

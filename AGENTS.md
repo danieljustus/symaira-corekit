@@ -1,11 +1,15 @@
 # Agent Instructions — symaira-corekit
 
+## Current product contract
+
+Read [PB-2026-09-09](docs/product-boundaries.md) before changing ownership or integration boundaries. It is the accepted target, not a completed migration. CoreKit remains a separate shared backend library; AppKit remains separate. Require two real consumers per shared module. No credential crypto, browser engine, native automation or product-domain policy belongs here merely to enable consolidation. Historical Go-only descriptions below apply to the Go implementation, not to the Rust target.
+
 This repository is the public Apache-2.0 licensed shared library for Symaira public-core tools.
 
 ## Ecosystem Guidance
 
 - Before changing cross-tool integrations, shared conventions, or product
-  boundaries, read `../docs/00-MASTERPLAN.md` and `../ECOSYSTEM.md`.
+  boundaries, read [PB-2026-09-09](docs/product-boundaries.md); it is available in standalone checkouts.
 - Keep the standalone-first contract: this library must not make any consumer
   require another Symaira tool at build time or startup.
 
