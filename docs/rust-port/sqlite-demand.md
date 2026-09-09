@@ -121,9 +121,9 @@ mistake an installed `go1.26.6` for a missing download. The dependency inventory
 has a bounded 300-second allowance for a cold isolated Go cache. The explicit
 candidate-source manifest was regenerated for this change. The fresh macOS arm64
 capture retained in `differential-macos-bound.json` has SHA-256
-`fbbeaccca819d99a2a5a709ffe38a9bdf8a924dca7275f20384d111039c142b7`; its
+`fd80b18fdbe3757d64fca9b375fcbaa34f337e51988991eca47033280d1c248d`; its
 six-group typed differential passed with Go `go1.26.6`, and it measured the
-Rust busy wait at 5.185673791 seconds. This is a real local capture, not a
+Rust busy wait at 5.200130959 seconds. This is a real local capture, not a
 synthetic fixture.
 
 The latest review repair validates the complete Rust observation shape before
@@ -169,6 +169,21 @@ reports do not certify the subsequent repair revision. Local repair validation
 passed the Go race/vet helper, strict Clippy, fresh differential and 46 Python
 tests. Native rerun remains required; the original review does not cover these
 subsequent harness edits.
+
+## Manual native rerun on a2f06fa7
+
+The deliberately dispatched native CI run
+[`34361781764`](https://github.com/danieljustus/symaira-corekit/actions/runs/34361781764)
+ran the otherwise PR-skipped SQLite job on the exact merged PR head. Linux
+passed. macOS retained a raw report and failed correctly: Rust measured
+7.087585583 seconds for the 5000 ms busy-timeout contract, so
+`within_busy_timeout` was false rather than silently widened. Windows failed
+before capture because the isolated Go runner checked `bin/go` instead of the
+actual `bin/go.exe`. This follow-up fixes that Windows lookup and adds a
+platform-specific regression control. A fresh native rerun is still required.
+The macOS timeout overrun remains a real parity/lifecycle blocker: do not relax
+the 4.0–6.0 second contract, mark SQL-002 complete, or treat local macOS success
+as native-CI proof until there is a behavior-preserving root-cause fix.
 
 ## Scope and decision
 
