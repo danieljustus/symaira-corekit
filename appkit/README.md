@@ -1,5 +1,7 @@
 # Symaira AppKit
 
+> **Accepted product direction — implementation pending:** AppKit remains a separate shared Swift foundation. Brain owns the future credential-management UI; domain-specific views stay product-owned, not in AppKit. The optional Browse/Operate and credential UI transfers do not eliminate shared native foundations or change existing dependency pins. See [PB-2026-09-09](docs/product-boundaries.md).
+
 [![CI](https://github.com/danieljustus/symaira-appkit/actions/workflows/ci.yml/badge.svg)](https://github.com/danieljustus/symaira-appkit/actions/workflows/ci.yml) [![Release](https://img.shields.io/github/v/release/danieljustus/symaira-appkit?label=Release)](https://github.com/danieljustus/symaira-appkit/releases/latest) [![Coverage](https://img.shields.io/badge/coverage-not%20published-lightgrey)](https://github.com/danieljustus/symaira-appkit/actions/workflows/ci.yml) [![License](https://img.shields.io/github/license/danieljustus/symaira-appkit)](LICENSE) [![Swift 6](https://img.shields.io/badge/swift-6.0-orange)](https://swift.org)
 
 ![Symaira AppKit social preview](docs/assets/social-preview.png)

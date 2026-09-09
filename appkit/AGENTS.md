@@ -1,5 +1,9 @@
 # Agent Instructions — symaira-appkit
 
+## Current product contract
+
+Read [PB-2026-09-09](docs/product-boundaries.md). AppKit remains a separate shared Swift foundation, not a new application or a home for credential-management views. Brain owns the future credential management UI; the separate credential service owns authorization and keys. Reuse only modules with two genuine consumers. Keep immutable pins and cross-language fixture checks. The UI transfer and removal of the old management app remain gated implementation work.
+
 Shared public Swift library (Apache-2.0) for Symaira macOS clients. GUI counterpart to `symaira-corekit`. Consumed by the per-tool client apps as a pinned SPM dependency.
 
 ## Build & Test
