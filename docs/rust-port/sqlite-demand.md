@@ -109,23 +109,38 @@ are prepared in `ci.yml` for main pushes/manual dispatch, with retained report
 artifacts. They have **not executed**. Exact source/fixture LF checkout rules are
 declared in `.gitattributes`; native checkout/runtime verification is still open.
 
-**Independent local review: PASS.** The complete immutable review bundle is
-retained at `../../testdata/rust-port/sqlite/review-source-bundle.json`, SHA-256
+**Historical independent local review: PASS for the prior source snapshot.**
+The immutable review bundle remains at
+`../../testdata/rust-port/sqlite/review-source-bundle.json`, SHA-256
 `0a9bfee3ad56ee3e49b4ebc88b1d4d57f742c6bf1bda664d172f57dcc81045d0`.
-The reviewer verified all 67 content hashes (60 files plus seven pinned Go
-sources), all 55 frozen candidate entries, seven oracle and 14 helper source
-hashes, native identity, revision validation and the approved typed verdict.
-The source manifest SHA-256 is
-`a839ce425a3ad435090402645c7626445c9bde378fa841e98299007636fc54de`.
-The current tree was checked against every reviewed file before recording this
-verdict: no differences. Final Python regression count is 45; missing, malformed
-and unrelated revisions are now rejected. This is bounded local approval, not
-native Linux/Windows, consumer, cost or release approval.
+It verified the then-frozen candidate, but it cannot approve later source bytes.
 
-**Next action:** commit the reviewed candidate and execute the native
-Linux/Windows, consumer-integration and cost gates. These remain pending. No SQL
-matrix row is promoted; no commit, PR, publication, or Go removal occurred at
-this checkpoint. Existing files and both recovery worktrees are preserved.
+The current candidate repairs local oracle reproducibility: it resolves the
+pinned Go compiler before replacing `HOME`, so the isolated runtime does not
+mistake an installed `go1.26.6` for a missing download. The dependency inventory
+has a bounded 300-second allowance for a cold isolated Go cache. The explicit
+candidate-source manifest was regenerated for this change. The fresh macOS arm64
+capture retained in `differential-macos-bound.json` has SHA-256
+`f13460bab6a189977093095c846d2002729b97508a0cd46bdb49929bc48ecd7e`; its
+six-group typed differential passed with Go `go1.26.6`, and it measured the
+Rust busy wait at 5.195180291 seconds. This is a real local capture, not a
+synthetic fixture.
+
+The latest review repair validates the complete Rust observation shape before
+comparison: connection policy, migrations/schema/data/timestamps, rollback and
+negative corpus must all pass independently of Rust's per-case `success` flag.
+The measured Rust contention duration is now an enforced 4.5–6.0 second contract
+for the configured 5000 ms timeout. Two mutation controls remove a Rust negative
+observation and the timing measurement; both must fail before Go/Rust comparison.
+The local SQLite test suite now has 48 Python controls. These additions resolve
+review findings but still require independent review of the refreshed source
+manifest before becoming acceptance evidence.
+
+**Next action:** independently review the refreshed candidate manifest, then
+execute native Linux/macOS/Windows, consumer-integration and cost gates. These
+remain pending. No SQL matrix row is promoted; no publication or Go removal is
+authorized by this checkpoint. Existing files and both recovery worktrees are
+preserved.
 
 ## Native CI checkpoint on 933cb157
 
