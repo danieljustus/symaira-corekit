@@ -91,6 +91,15 @@
         "reason": "No released adopter is recorded."
       },
       {
+        "name": "symaira-core-sqlite",
+        "manifest": "rust/symaira-core-sqlite/Cargo.toml",
+        "version": "0.0.0",
+        "adopted": false,
+        "publishable": false,
+        "adopters": [],
+        "reason": "SQLite contract crate; no released adopter is recorded and publication remains deferred."
+      },
+      {
         "name": "symaira-contract-fixtures",
         "manifest": "rust/test-support/symaira-contract-fixtures/Cargo.toml",
         "version": "0.0.0",

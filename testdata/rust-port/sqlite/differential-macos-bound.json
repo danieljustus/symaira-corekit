@@ -1,0 +1,909 @@
+{
+  "go": {
+    "capture_interval": [
+      1788961596,
+      1788961602
+    ],
+    "cases": [
+      {
+        "id": "SQL-001",
+        "state": {
+          "database_exists": true,
+          "database_mode": "0600",
+          "native_goarch": "arm64",
+          "native_goos": "darwin",
+          "open_causes": {
+            "missing_directory": {
+              "code": 14,
+              "type": "sqlite"
+            },
+            "parent_file": {
+              "kind": "NotADirectory",
+              "type": "io"
+            }
+          },
+          "open_errors": {
+            "missing_directory": "failed to open sqlite database: unable to open database file (14)",
+            "parent_file": "failed to create database directory: mkdir /private<temp-root>/not-a-directory: not a directory"
+          },
+          "parent_exists": true,
+          "parent_mode": "0700",
+          "ping": true
+        },
+        "success": true
+      },
+      {
+        "id": "SQL-002",
+        "state": {
+          "connections": [
+            {
+              "busy_timeout": 5000,
+              "foreign_keys": 1,
+              "journal_mode": "wal"
+            },
+            {
+              "busy_timeout": 5000,
+              "foreign_keys": 1,
+              "journal_mode": "wal"
+            },
+            {
+              "busy_timeout": 5000,
+              "foreign_keys": 1,
+              "journal_mode": "wal"
+            },
+            {
+              "busy_timeout": 5000,
+              "foreign_keys": 1,
+              "journal_mode": "wal"
+            },
+            {
+              "busy_timeout": 5000,
+              "foreign_keys": 1,
+              "journal_mode": "wal"
+            }
+          ],
+          "contention": {
+            "blocked": true,
+            "observed": true,
+            "reader_succeeded": true,
+            "reader_value": 0,
+            "rollback_succeeded": true,
+            "tx_exec_succeeded": true,
+            "within_busy_timeout": true,
+            "writer_cause": {
+              "code": 5,
+              "type": "sqlite"
+            },
+            "writer_error": "database is locked (5) (SQLITE_BUSY)"
+          }
+        },
+        "success": true
+      },
+      {
+        "id": "SQL-003",
+        "state": {
+          "applied_at": [
+            "2026-09-09T13:46:42Z",
+            "2026-09-09T13:46:42Z"
+          ],
+          "applied_at_utc": true,
+          "data": [
+            {
+              "created_at": "2026-09-09T13:46:42Z",
+              "id": "item-1",
+              "name": "alpha"
+            }
+          ],
+          "large_integer": 9007199254740993,
+          "migration_count": 2,
+          "null_value": null,
+          "repeat": false,
+          "schema": [
+            {
+              "name": "idx_test_items_name",
+              "sql": "CREATE INDEX idx_test_items_name ON test_items(name)",
+              "type": "index"
+            },
+            {
+              "name": "schema_migrations",
+              "sql": "CREATE TABLE schema_migrations (\n\t\tversion TEXT PRIMARY KEY,\n\t\tapplied_at DATETIME DEFAULT CURRENT_TIMESTAMP\n\t)",
+              "type": "table"
+            },
+            {
+              "name": "test_items",
+              "sql": "CREATE TABLE test_items (\n\tid TEXT PRIMARY KEY,\n\tname TEXT NOT NULL,\n\tcreated_at DATETIME DEFAULT CURRENT_TIMESTAMP\n)",
+              "type": "table"
+            }
+          ],
+          "versions": [
+            "001_test",
+            "002_index"
+          ]
+        },
+        "success": true
+      },
+      {
+        "id": "SQL-004",
+        "state": {
+          "applied_at": [
+            "2026-09-09T13:46:42Z",
+            "2026-09-09T13:46:42Z"
+          ],
+          "applied_at_unchanged": true,
+          "applied_at_utc": true,
+          "data": [
+            {
+              "created_at": "2026-09-09T13:46:42Z",
+              "id": "item-1",
+              "name": "alpha"
+            }
+          ],
+          "large_integer": 9007199254740993,
+          "migration_count": 2,
+          "null_value": null,
+          "repeat": true,
+          "replacement_error_nil": true,
+          "replacement_read_attempts": 0,
+          "rows_unchanged": true,
+          "schema": [
+            {
+              "name": "idx_test_items_name",
+              "sql": "CREATE INDEX idx_test_items_name ON test_items(name)",
+              "type": "index"
+            },
+            {
+              "name": "schema_migrations",
+              "sql": "CREATE TABLE schema_migrations (\n\t\tversion TEXT PRIMARY KEY,\n\t\tapplied_at DATETIME DEFAULT CURRENT_TIMESTAMP\n\t)",
+              "type": "table"
+            },
+            {
+              "name": "test_items",
+              "sql": "CREATE TABLE test_items (\n\tid TEXT PRIMARY KEY,\n\tname TEXT NOT NULL,\n\tcreated_at DATETIME DEFAULT CURRENT_TIMESTAMP\n)",
+              "type": "table"
+            }
+          ],
+          "schema_unchanged": true,
+          "versions": [
+            "001_test",
+            "002_index"
+          ],
+          "versions_unchanged": true
+        },
+        "success": true
+      },
+      {
+        "id": "SQL-005",
+        "negative": [
+          {
+            "cause": {
+              "code": 1,
+              "type": "sqlite"
+            },
+            "error": "failed to execute migration 001_partial: SQL logic error: near \"THIS\": syntax error (1)",
+            "error_contains": "failed to execute migration",
+            "name": "exec_failure",
+            "rolled_back": true
+          },
+          {
+            "cause": {
+              "code": 1,
+              "type": "sqlite"
+            },
+            "error": "failed to record migration 001_test: SQL logic error: cannot modify schema_migrations because it is a view (1)",
+            "error_contains": "failed to record migration",
+            "name": "insert_failure",
+            "rolled_back": true
+          }
+        ],
+        "state": {
+          "insert_migration_absent": true,
+          "partial_rerun": {
+            "failed_version_absent": true,
+            "first_data_unchanged": true,
+            "first_table_unchanged": true,
+            "first_version_unchanged": true,
+            "rerun_succeeded": true,
+            "second_rows": 1
+          },
+          "rollback_probe_absent": true
+        },
+        "success": true
+      },
+      {
+        "id": "SQL-006",
+        "negative": [
+          {
+            "cause": {
+              "type": "unclassified"
+            },
+            "error": "failed to create schema_migrations table: sql: database is closed",
+            "error_contains": "failed to create schema_migrations table",
+            "name": "closed_db",
+            "rolled_back": false
+          },
+          {
+            "cause": {
+              "kind": "NotFound",
+              "type": "io"
+            },
+            "error": "failed to read migrations directory: open migrations: file does not exist",
+            "error_contains": "failed to read migrations directory",
+            "name": "missing_directory",
+            "rolled_back": false
+          },
+          {
+            "cause": {
+              "code": 1,
+              "type": "sqlite"
+            },
+            "error": "failed to check migration state for 001_test: SQL logic error: no such table: main.missing_table (1)",
+            "error_contains": "failed to check migration state",
+            "name": "version_query",
+            "rolled_back": false
+          },
+          {
+            "cause": {
+              "kind": "NotFound",
+              "type": "io"
+            },
+            "error": "failed to read migration 001_test.sql: file does not exist",
+            "error_contains": "failed to read migration",
+            "name": "read_file",
+            "rolled_back": false
+          }
+        ],
+        "state": {
+          "closed_error": "failed to create schema_migrations table: sql: database is closed",
+          "in_memory": {
+            "data": [
+              {
+                "id": "memory-1",
+                "name": "in-memory"
+              }
+            ],
+            "schema": [
+              {
+                "name": "idx_test_items_name",
+                "sql": "CREATE INDEX idx_test_items_name ON test_items(name)",
+                "type": "index"
+              },
+              {
+                "name": "schema_migrations",
+                "sql": "CREATE TABLE schema_migrations (\n\t\tversion TEXT PRIMARY KEY,\n\t\tapplied_at DATETIME DEFAULT CURRENT_TIMESTAMP\n\t)",
+                "type": "table"
+              },
+              {
+                "name": "test_items",
+                "sql": "CREATE TABLE test_items (\n\tid TEXT PRIMARY KEY,\n\tname TEXT NOT NULL,\n\tcreated_at DATETIME DEFAULT CURRENT_TIMESTAMP\n)",
+                "type": "table"
+              }
+            ]
+          },
+          "in_memory_success": true,
+          "missing_dir_error": "failed to read migrations directory: open migrations: file does not exist",
+          "read_file_error": "failed to read migration 001_test.sql: file does not exist",
+          "version_query_error": "failed to check migration state for 001_test: SQL logic error: no such table: main.missing_table (1)"
+        },
+        "success": true
+      }
+    ],
+    "oracle": {
+      "artifact_hashes": {
+        "scripts/rust-port/sqlite/candidate.py": "1c1ab5c9c21c34a0332d65f1adc9222384f53122090788b9abf8d8b280e937d1",
+        "scripts/rust-port/sqlite/cause_test.go": "82899fbc9f001a03ffb005aa22330b4615be07b23af84d61f4a841f77a422bc5",
+        "scripts/rust-port/sqlite/diff.py": "4fbfa4f4100d8dbb7e3ae2d305e14b1a863894799ae20e7049b2ac1a3cc07dbc",
+        "scripts/rust-port/sqlite/generate.py": "b657f4b60285e164e4f23b7a0151d159b73c7e4452aa1befdadffb4ddb33bfd4",
+        "scripts/rust-port/sqlite/go.mod": "ca0dac8ac8d3f259ebf6fd50de3178b16f1f82c7d2ac3e9345d3f071615e3b58",
+        "scripts/rust-port/sqlite/go.sum": "9146e7666d70f22e7739e8735d90275a271753977bd21337caf82345fd8f3cd0",
+        "scripts/rust-port/sqlite/main.go": "d255963e150d01af16303fce44a4d48351f6c807159ac0ed728eb71962f51105",
+        "scripts/rust-port/sqlite/main_test.go": "6bead4fe1755c3afb0a0272e2b3ae5d5333072e9d9ef78b11a88fe0b5afed7da",
+        "scripts/rust-port/sqlite/migrations/001_test.sql": "31c01d0b463acd6a9f7b4c6b198fe998b26b3309ee31350ea4efff26efd13f79",
+        "scripts/rust-port/sqlite/migrations/002_index.sql": "d605a1446f538f11e03213209af02a4f0a319ce82cb3720913b1698088d67449",
+        "scripts/rust-port/sqlite/test_acceptance.py": "756b2115685ca26dd0416f42ea449a9ddfb936a073d7ea13a47231d3c736e320",
+        "scripts/rust-port/sqlite/test_diff.py": "06ff33e37b49a6444d23c238cf6b26347e123ed5d026b69feebb74da11729af2",
+        "scripts/rust-port/sqlite/test_failure_capture.py": "e9efec1905f684013a4cc7aa275ec2efe1c4a0de9e38c8d83350704176805d2f",
+        "scripts/rust-port/sqlite/test_generate.py": "3169f7b1718be3bd9c55a96ee46438fe5cc8980ddda67d23e62857b3752d5895",
+        "scripts/rust-port/sqlite/test_typed.py": "c516d8f2e2b01729a55bb9cd7306ae7e1852fa67bfc74b61fe5bb2f7fa1dcc4a",
+        "scripts/rust-port/sqlite/typed_contract.py": "a077fcb72f1ba4114daaea7776c1d98d3773bf20eafb11f55658bd39e8b0382b"
+      },
+      "commit": "f3d3eb79b9b1f31b4f973d2ed518a8292cedf588",
+      "dependencies": {
+        "github.com/BurntSushi/toml": {
+          "Version": "v1.6.0"
+        },
+        "github.com/dustin/go-humanize": {
+          "GoModSum": "h1:Mu1zIs6XwVuF/gI1OepvI0qD18qycQx+mFykh5fBlto=",
+          "Sum": "h1:GzkhY7T5VNhEkwH0PVJgjz+fX1rhBrR7pRT3mDkpeCY=",
+          "Version": "v1.0.1"
+        },
+        "github.com/google/pprof": {
+          "GoModSum": "h1:jl5iWTm0/hd5PjEYEOuwAJ57L/CibdZfrqZ5XA5GrCk=",
+          "Sum": "h1:LMLX+LgTNWpfvCBdFebv6EsYotImrt/Ppc5cXIriCSo=",
+          "Version": "v0.0.0-20260802141513-ef3492d7dac3"
+        },
+        "github.com/google/uuid": {
+          "GoModSum": "h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=",
+          "Sum": "h1:NIvaJDMOsjHA8n1jAhLSgzrAzy1Hgr+hNrb57e+94F0=",
+          "Version": "v1.6.0"
+        },
+        "github.com/hashicorp/golang-lru/v2": {
+          "GoModSum": "h1:QeFd9opnmA6QUJc5vARoKUSoFhyfM2/ZepoAG6RGpeM=",
+          "Sum": "h1:a+bsQ5rvGLjzHuww6tVxozPZFVghXaHOwFs4luLUK2k=",
+          "Version": "v2.0.7"
+        },
+        "github.com/mattn/go-isatty": {
+          "GoModSum": "h1:nMCL3Zebbrt45jsMDgnfIwz6ydEQApk5oEI3HqDio6A=",
+          "Sum": "h1:tGZZoVgT/KiqK1c8ocVLeDS8BSWMRd47J3Lbz7vsReI=",
+          "Version": "v0.0.24"
+        },
+        "github.com/ncruces/go-strftime": {
+          "GoModSum": "h1:Fwc5htZGVVkseilnfgOVb9mKy6w1naJmn9CehxcKcls=",
+          "Sum": "h1:HMFp8mLCTPp341M/ZnA4qaf7ZlsbTc+miZjCLOFAw7w=",
+          "Version": "v1.0.0"
+        },
+        "github.com/remyoudompheng/bigfft": {
+          "GoModSum": "h1:qqbHyh8v60DhA7CoWK5oRCqLrMHRGoxYCSS9EjAz6Eo=",
+          "Sum": "h1:W09IVJc94icq4NjY3clb7Lk8O1qJ8BdBEF8z0ibU0rE=",
+          "Version": "v0.0.0-20230129092748-24d4a6f8daec"
+        },
+        "golang.org/x/mod": {
+          "GoModSum": "h1:m8S8VeM9r4dzDwjrKO0a1sZP3YjeMamRRlD+fmR2Q/0=",
+          "Sum": "h1:vF1DjpVEshcIqoEaauuHebaLk1O1forxjxBaVn884JQ=",
+          "Version": "v0.37.0"
+        },
+        "golang.org/x/net": {
+          "Version": "v0.58.0"
+        },
+        "golang.org/x/sync": {
+          "GoModSum": "h1:9xrNwdLfx4jkKbNva9FpL6vEN7evnE43NNNJQ2LF3+0=",
+          "Sum": "h1:HLII4xRRTtCRkxYp4HNFF0Js/Og6q2i++KXbg0gHCwM=",
+          "Version": "v0.21.0"
+        },
+        "golang.org/x/sys": {
+          "GoModSum": "h1:4GL1E5IUh+htKOUEOaiffhrAeqysfVGipDYzABqnCmw=",
+          "Sum": "h1:o7XGOvZQCADBQQ4Y7VNq2dRWQR7JmOUW8Kxx4ZsNgWs=",
+          "Version": "v0.47.0"
+        },
+        "golang.org/x/tools": {
+          "GoModSum": "h1:dFHnyTvFWY212G+h7ZY4Vsp/K3U4/7W9TyVaAul8uCA=",
+          "Sum": "h1:7Kn5x/d1svx/PzryTsqeoZN4TZwqeH5pGWjefhLi/1Q=",
+          "Version": "v0.47.0"
+        },
+        "gopkg.in/yaml.v3": {
+          "Version": "v3.0.1"
+        },
+        "modernc.org/cc/v4": {
+          "GoModSum": "h1:OnovgIhbbMXMu1aISnJ0wvVD1KnW+cAUJkIrAWh+kVI=",
+          "Sum": "h1:MKgdCV3WykTSPqpVrnxdEDS0HEd2FHpKZDzxzU5LyeI=",
+          "Version": "v4.29.1"
+        },
+        "modernc.org/ccgo/v4": {
+          "GoModSum": "h1:SZ8YcN9NG7XVsQYdm6jYBvi8PQP1qi+kqB6OhjqI3Fk=",
+          "Sum": "h1:sBgfIwyN0TQ9C5hwIeuqyeAKyMWnbvj2fvpF4L11uzU=",
+          "Version": "v4.34.6"
+        },
+        "modernc.org/fileutil": {
+          "GoModSum": "h1:EqdKFDxiByqxLk8ozOxObDSfcVOv/54xDs/DUHdvCUU=",
+          "Sum": "h1:j6ZzNTftVS054gi281TyLjHPp6CPHr2KCxEXjEbD6SM=",
+          "Version": "v1.4.0"
+        },
+        "modernc.org/gc/v2": {
+          "GoModSum": "h1:YgIahr1ypgfe7chRuJi2gD7DBQiKSLMPgBQe9oIiito=",
+          "Sum": "h1:nyqdV8q46KvTpZlsw66kWqwXRHdjIlJOhG6kxiV/9xI=",
+          "Version": "v2.6.5"
+        },
+        "modernc.org/gc/v3": {
+          "GoModSum": "h1:HFK/6AGESC7Ex+EZJhJ2Gni6cTaYpSMmU/cT9RmlfYY=",
+          "Sum": "h1:2g65LGVSmFQrXeITAw97x7hCRvZFcyE1uDP+7Vng7JI=",
+          "Version": "v3.1.4"
+        },
+        "modernc.org/goabi0": {
+          "GoModSum": "h1:CEFRnnJhKvWT1c1JTI3Avm+tgOWbkOu5oPA8eH8LnMI=",
+          "Sum": "h1:HvEowk7LxcPd0eq6mVOAEMai46V+i7Jrj13t4AzuNks=",
+          "Version": "v0.2.0"
+        },
+        "modernc.org/libc": {
+          "GoModSum": "h1:eeQAS9W3sZeKYMFubydxJpII9ybHWshk+7or7bLG9co=",
+          "Sum": "h1:fX1Omw4o2/1C2iRkkIsrQTasJQldLhRmuPreXLoWs9k=",
+          "Version": "v1.74.4"
+        },
+        "modernc.org/mathutil": {
+          "GoModSum": "h1:4p5IwJITfppl0G4sUEDtCr4DthTaT47/N3aT6MhfgJg=",
+          "Sum": "h1:GCZVGXdaN8gTqB1Mf/usp1Y/hSqgI2vAGGP4jZMCxOU=",
+          "Version": "v1.7.1"
+        },
+        "modernc.org/memory": {
+          "GoModSum": "h1:/JP4VbVC+K5sU2wZi9bHoq2MAkCnrt2r98UGeSK7Mjw=",
+          "Sum": "h1:o4QC8aMQzmcwCK3t3Ux/ZHmwFPzE6hf2Y5LbkRs+hbI=",
+          "Version": "v1.11.0"
+        },
+        "modernc.org/opt": {
+          "GoModSum": "h1:03fq9lsNfvkYSfxrfUhZCWPk1lm4cq4N+Bh//bEtgns=",
+          "Sum": "h1:tGyef5ApycA7FSEOMraay9SaTk5zmbx7Tu+cJs4QKZg=",
+          "Version": "v0.2.0"
+        },
+        "modernc.org/sortutil": {
+          "GoModSum": "h1:7ZI3a3REbai7gzCLcotuw9AC4VZVpYMjDzETGsSMqJE=",
+          "Sum": "h1:+xyoGf15mM3NMlPDnFqrteY07klSFxLElE2PVuWIJ7w=",
+          "Version": "v1.2.1"
+        },
+        "modernc.org/sqlite": {
+          "GoModSum": "h1:yCJ2cmAaIkHQ25oXWrF8H4O1lIfPYPR26yCEDj2P3pQ=",
+          "Sum": "h1:qNQP6xnx5M0ISNtlnxoOX0+cD5bJ0/gr9aMmndFczzg=",
+          "Version": "v1.57.0"
+        },
+        "modernc.org/strutil": {
+          "GoModSum": "h1:EHkiggD70koQxjVdSBM3JKM7k6L0FbGE5eymy9i3B9A=",
+          "Sum": "h1:UneZBkQA+DX2Rp35KcM69cSsNES9ly8mQWD71HKlOA0=",
+          "Version": "v1.2.1"
+        },
+        "modernc.org/token": {
+          "GoModSum": "h1:UGzOrNV1mAFSEB63lOFHIpNRUVMvYTc6yu1SMY/XTDM=",
+          "Sum": "h1:Xl7Ap9dKaEs5kLoOQeQmPWevfnk/DM5qcLcYlA8ys6Y=",
+          "Version": "v1.1.0"
+        }
+      },
+      "go_version": "go1.26.6",
+      "implementation": "sqlitekit.Open/Migrate",
+      "isolation": {
+        "locale": "C",
+        "os_sandbox": false,
+        "timezone": "UTC",
+        "umask": "0077"
+      },
+      "source_hashes": {
+        "fsutil/atomicwrite.go": "ea34d7c2ea41119b5f38557f8beec6d27c221938e9d6cd0e4a8f358193938221",
+        "fsutil/pathutil.go": "e8baadddca065b48f13fea532a791a018a4843314bac7e9f9760d6bd45a53932",
+        "fsutil/safewrite.go": "4c180680c793312ce253baefde208b9780691fa3e58b44b1a788db7877e3065d",
+        "fsutil/safewrite_windows.go": "518df3baee81a65fd23fb61783efe3007c9f6185e4fa5dc2dcf8680eb224b0c5",
+        "go.mod": "33953c9c031137a9bad2f2d618fd1039288147233053e52948d37571feaf2412",
+        "go.sum": "8cc94b576fd1645b94c882cef30c6d5da6d80df6527eb6cab02fd6d1a67d33a1",
+        "sqlitekit/sqlitekit.go": "b54e235b355f24681b22344afc3fb1e2d3e0b6690d2f1d8bf3b576217873065d"
+      }
+    }
+  },
+  "rust": {
+    "binary_sha256": "b58c990f7199e6ce1b2a151d0f8e9ad62c496aa59d480a48eaaf5b519aff83cd",
+    "candidate_base": "56b8164e8b82ae7913cd6cc94c0a484eae8a8947",
+    "candidate_manifest_sha256": "bcd1100f1b7d84ee1e3fab08559588c873a680f47ab44cc85ce48b8bd4b63e4b",
+    "candidate_revision": "56b8164e8b82ae7913cd6cc94c0a484eae8a8947",
+    "capture_interval": [
+      1788961748,
+      1788961763
+    ],
+    "cases": [
+      {
+        "id": "SQL-001",
+        "state": {
+          "database_exists": true,
+          "database_mode": "0600",
+          "open_errors": {
+            "directory": {
+              "cause": {
+                "code": 14,
+                "type": "sqlite"
+              },
+              "error": "failed to open sqlite database: unable to open database file: <temp-root>",
+              "kind": "open"
+            },
+            "parent_file": {
+              "cause": {
+                "kind": "NotADirectory",
+                "type": "io"
+              },
+              "error": "failed to create database directory: Not a directory (os error 20)",
+              "kind": "directory"
+            }
+          },
+          "parent_exists": true,
+          "parent_mode": "0700",
+          "ping": true
+        },
+        "success": true
+      },
+      {
+        "id": "SQL-002",
+        "observed_busy_seconds": 5.185673791,
+        "state": {
+          "connections": [
+            {
+              "busy_timeout": 5000,
+              "foreign_keys": 1,
+              "journal_mode": "wal"
+            },
+            {
+              "busy_timeout": 5000,
+              "foreign_keys": 1,
+              "journal_mode": "wal"
+            },
+            {
+              "busy_timeout": 5000,
+              "foreign_keys": 1,
+              "journal_mode": "wal"
+            },
+            {
+              "busy_timeout": 5000,
+              "foreign_keys": 1,
+              "journal_mode": "wal"
+            },
+            {
+              "busy_timeout": 5000,
+              "foreign_keys": 1,
+              "journal_mode": "wal"
+            }
+          ],
+          "contention": {
+            "blocked": true,
+            "observed": true,
+            "reader_succeeded": true,
+            "reader_value": 0,
+            "rollback_succeeded": true,
+            "tx_exec_succeeded": true,
+            "within_busy_timeout": true,
+            "writer_cause": {
+              "code": 5,
+              "type": "sqlite"
+            },
+            "writer_error": "database is locked"
+          }
+        },
+        "success": true
+      },
+      {
+        "id": "SQL-003",
+        "state": {
+          "applied_at": [
+            "2026-09-09T13:49:23Z",
+            "2026-09-09T13:49:23Z"
+          ],
+          "data": [
+            {
+              "created_at": "2026-09-09T13:49:23Z",
+              "id": "item-1",
+              "name": "alpha"
+            }
+          ],
+          "large_integer": 9007199254740993,
+          "migration_count": 2,
+          "null_value": null,
+          "repeat": false,
+          "schema": [
+            {
+              "name": "idx_test_items_name",
+              "sql": "CREATE INDEX idx_test_items_name ON test_items(name)",
+              "type": "index"
+            },
+            {
+              "name": "schema_migrations",
+              "sql": "CREATE TABLE schema_migrations (\n\t\tversion TEXT PRIMARY KEY,\n\t\tapplied_at DATETIME DEFAULT CURRENT_TIMESTAMP\n\t)",
+              "type": "table"
+            },
+            {
+              "name": "test_items",
+              "sql": "CREATE TABLE test_items (\n\tid TEXT PRIMARY KEY,\n\tname TEXT NOT NULL,\n\tcreated_at DATETIME DEFAULT CURRENT_TIMESTAMP\n)",
+              "type": "table"
+            }
+          ],
+          "versions": [
+            "001_test",
+            "002_index"
+          ]
+        },
+        "success": true
+      },
+      {
+        "id": "SQL-004",
+        "state": {
+          "applied_at": [
+            "2026-09-09T13:49:23Z",
+            "2026-09-09T13:49:23Z"
+          ],
+          "applied_at_unchanged": true,
+          "data": [
+            {
+              "created_at": "2026-09-09T13:49:23Z",
+              "id": "item-1",
+              "name": "alpha"
+            }
+          ],
+          "large_integer": 9007199254740993,
+          "migration_count": 2,
+          "null_value": null,
+          "repeat": true,
+          "replacement_error_nil": true,
+          "replacement_read_attempts": 0,
+          "rows_unchanged": true,
+          "schema": [
+            {
+              "name": "idx_test_items_name",
+              "sql": "CREATE INDEX idx_test_items_name ON test_items(name)",
+              "type": "index"
+            },
+            {
+              "name": "schema_migrations",
+              "sql": "CREATE TABLE schema_migrations (\n\t\tversion TEXT PRIMARY KEY,\n\t\tapplied_at DATETIME DEFAULT CURRENT_TIMESTAMP\n\t)",
+              "type": "table"
+            },
+            {
+              "name": "test_items",
+              "sql": "CREATE TABLE test_items (\n\tid TEXT PRIMARY KEY,\n\tname TEXT NOT NULL,\n\tcreated_at DATETIME DEFAULT CURRENT_TIMESTAMP\n)",
+              "type": "table"
+            }
+          ],
+          "schema_unchanged": true,
+          "versions": [
+            "001_test",
+            "002_index"
+          ],
+          "versions_unchanged": true
+        },
+        "success": true
+      },
+      {
+        "errors": {
+          "exec_failure": {
+            "cause": {
+              "code": 1,
+              "type": "sqlite"
+            },
+            "error": "failed to execute migration 001_partial: near \"THIS\": syntax error in \nTHIS IS NOT VALID SQL; at offset 1",
+            "kind": "execute"
+          },
+          "insert_failure": {
+            "cause": {
+              "code": 1,
+              "type": "sqlite"
+            },
+            "error": "failed to record migration 001_test: cannot modify schema_migrations because it is a view",
+            "kind": "record"
+          }
+        },
+        "id": "SQL-005",
+        "state": {
+          "insert_migration_absent": true,
+          "partial_rerun": {
+            "failed_version_absent": true,
+            "first_data_unchanged": true,
+            "first_table_unchanged": true,
+            "first_version_unchanged": true,
+            "rerun_succeeded": true,
+            "second_rows": 1
+          },
+          "rollback_probe_absent": true
+        },
+        "success": true
+      },
+      {
+        "errors": {
+          "missing_directory": {
+            "cause": {
+              "kind": "NotFound",
+              "type": "io"
+            },
+            "error": "failed to read migrations directory: entity not found",
+            "kind": "read_directory"
+          },
+          "read_file": {
+            "cause": {
+              "kind": "NotFound",
+              "type": "io"
+            },
+            "error": "failed to read migration 001_test.sql: entity not found",
+            "kind": "read_migration"
+          },
+          "version_query": {
+            "cause": {
+              "code": 1,
+              "type": "sqlite"
+            },
+            "error": "failed to check migration state for 001_test: no such table: main.missing_table",
+            "kind": "check_state"
+          }
+        },
+        "id": "SQL-006",
+        "state": {
+          "in_memory": {
+            "data": [
+              {
+                "id": "memory-1",
+                "name": "in-memory"
+              }
+            ],
+            "schema": [
+              {
+                "name": "idx_test_items_name",
+                "sql": "CREATE INDEX idx_test_items_name ON test_items(name)",
+                "type": "index"
+              },
+              {
+                "name": "schema_migrations",
+                "sql": "CREATE TABLE schema_migrations (\n\t\tversion TEXT PRIMARY KEY,\n\t\tapplied_at DATETIME DEFAULT CURRENT_TIMESTAMP\n\t)",
+                "type": "table"
+              },
+              {
+                "name": "test_items",
+                "sql": "CREATE TABLE test_items (\n\tid TEXT PRIMARY KEY,\n\tname TEXT NOT NULL,\n\tcreated_at DATETIME DEFAULT CURRENT_TIMESTAMP\n)",
+                "type": "table"
+              }
+            ]
+          },
+          "in_memory_success": true
+        },
+        "success": true,
+        "unsupported": [
+          "closed_db: rusqlite close consumes Connection; no safe closed handle can be passed to migrate"
+        ]
+      }
+    ],
+    "native": {
+      "goarch": "arm64",
+      "goos": "darwin"
+    },
+    "source_hashes": {
+      ".gitattributes": "f5001cfbf0e3c5454e5463cf700f465f79140fbcfaf504a61773799a76d232b2",
+      ".github/workflows/ci.yml": "eab2b63aa1c899ecd84241097b03b09c8e5fc40a1dd3d8f0a38697a8394d98b5",
+      "Cargo.lock": "b20bf5f7744d99b2c3282de0b4c69f5111acc1b203af1151a6d508fb4ca73b2d",
+      "Cargo.toml": "90bea7580de79925a8eca263a3c0f83ff9ba7766cc9dae007bea442630e634d6",
+      "rust-toolchain.toml": "e879701472a698533f43f54989bbf5f3101eb0503472159d32633f3bb8a13fdf",
+      "rust/symaira-core-config/Cargo.toml": "1f405889056892b0c01dcdd3b10a2dd3e90ab1ef7e3bade551b2d826973cd38b",
+      "rust/symaira-core-config/src/lib.rs": "494c9e9d2bad33065881e9c2f7597852ba95984daea9de5d00c661052309879f",
+      "rust/symaira-core-env/Cargo.toml": "335824525d01f5c9917deeb26ee56467ffeee9b6fae56ff5951238fe685a34e8",
+      "rust/symaira-core-env/src/lib.rs": "dc94e67c44c38718c9b3de7a10f0e6fc5b753baac2db6c81df107e372b6f188e",
+      "rust/symaira-core-exit/Cargo.toml": "e6d3b12319406936f73c019e101dbbdff4e1002741b55ea74908666510e21fa9",
+      "rust/symaira-core-exit/src/lib.rs": "330e359ceac948ba133f308e62a3967f386592457e5e7719cf4ce87df80a8e5b",
+      "rust/symaira-core-fs/Cargo.toml": "fc660b64005bf070136c220b5d61d8fd98170c135f99d1db72fc6592215f11b9",
+      "rust/symaira-core-fs/src/lib.rs": "4bd77eaa7fd9e74d6bbc32a9d06cab7818973f70e74071db48f755481a39fd8d",
+      "rust/symaira-core-fs/tests/parity.rs": "3407c21fb39a0b1f414dcb95b7623ddbf2ce5b42833317551193e17825be58ec",
+      "rust/symaira-core-log/Cargo.toml": "4edb56f77cfb704e47613756493811086c172ae95a55ae463823ed955803c724",
+      "rust/symaira-core-log/src/lib.rs": "2f26241eff9d2d51dd843c0c7005cacef80b77196e3073de8d5ff8e7ccd3e493",
+      "rust/symaira-core-mcp/Cargo.toml": "30f0d06c277257fd8d7cadcf42b495dc9450a0c8639f27830a6d57710735d2f1",
+      "rust/symaira-core-mcp/src/bin/fixture.rs": "966c962df6a3f6102ff7072e90f69a9ea001c218301c8503a625475f42920532",
+      "rust/symaira-core-mcp/src/lib.rs": "1308ced23ad46378ad38d3dbfce527a58d057c9b2ac0e6f6755b8dea68aca6bf",
+      "rust/symaira-core-mcp/tests/raw_frames.rs": "ff05be40f6c18a4bfb81c552370c29c426d26e550d3350b2cf3f88ae791c2fea",
+      "rust/symaira-core-secretref/Cargo.toml": "8fbe198e5685ed498c0042127e5d4a015a683b4dce9ec35f37b2135ab49fa723",
+      "rust/symaira-core-secretref/src/lib.rs": "f3d4c6d9aa0ca500552f21a6807662fdebd9422652579fc7745813f463d67b8b",
+      "rust/symaira-core-secretref/tests/parity.rs": "80665d3a6c0cf5543dec10626a1451446318c33df27a80efb86d6bc6410abf85",
+      "rust/symaira-core-sqlite/Cargo.toml": "29c41f09f75ddef6348b8755cc80125957cc370ef610f75f597183cc73f1c799",
+      "rust/symaira-core-sqlite/examples/sqlite-observe.rs": "94ab37b297daa31354e57f253f52d4658b788f02f9e0b8ee09217a02384b55b5",
+      "rust/symaira-core-sqlite/src/lib.rs": "406e8c0cda573f76c779efb7f18271718bdf125ea51448d907462d9e90f49aeb",
+      "rust/symaira-core-sqlite/tests/contracts.rs": "1432adf42c6293a180c06fc7c3c70bc2f011d6171c93af7541705c5b680016b6",
+      "rust/symaira-core-version/Cargo.toml": "105564028bb4d57e8ca02a59873432c5107e3f266831391bab912a511251baf6",
+      "rust/symaira-core-version/src/lib.rs": "77cd98590d6d1d21f99fd812d2464fb0deeccfa052bde555ae077ae853a60b20",
+      "rust/test-support/symaira-contract-fixtures/Cargo.toml": "e2fafe830cd528c7a09606e6caf73794d6a0d29e8e9b7540a0e7b8461ec6d377",
+      "rust/test-support/symaira-contract-fixtures/src/lib.rs": "728e83ceb5772053742f93acf7002a9655fe2a3f16857ffeec43b0914f5ab34b",
+      "rust/test-support/symaira-contract-fixtures/tests/con_001.rs": "578c2113e2b8e700d7797cfe195dbc92875ee40868eea06b8733ea91ed4ee358",
+      "rust/test-support/symaira-contract-fixtures/tests/con_002.rs": "f1dae982e3afb84bd98efb9a028ded56074e3c7fb3c056fe5eacb3bc4a37f161",
+      "rust/test-support/symaira-core-foundation/Cargo.toml": "0a7595a907b1fd6d2407a6bb92dac2ab3ef5243434f9df9d426d1768cbb0d325",
+      "rust/test-support/symaira-core-foundation/src/bin/rust_fs_secret.rs": "e96bae13645cf538ba254ad4239fc0baeb88f818bb4a188a7389150369980718",
+      "rust/test-support/symaira-core-foundation/src/lib.rs": "e07c8b1ccde148466f79d67ad71cebe1efe2a610d8ca194a6aebe1552803a463",
+      "rust/test-support/symaira-core-foundation/tests/config.rs": "9676df334c8fab987bcb07cd6f8b432c4f279ed70fafca6c72634907613b7cad",
+      "rust/test-support/symaira-core-foundation/tests/env.rs": "581a947eea4b0b8c012bb37493ca2ee3cf48a3f5115f2cd8fb9127ec13de8eb3",
+      "rust/test-support/symaira-core-foundation/tests/exitcodes.rs": "52eac5107b6c307549eafdcfcb5e69ddae48c4108f6c806e7206f827868e5deb",
+      "rust/test-support/symaira-core-foundation/tests/log.rs": "64dc9a6e06b4db58f7d6742f95b46efed9a881d2dbdc09151f76c7d1cb51d641",
+      "rust/test-support/symaira-core-foundation/tests/version.rs": "84a4741ba4b90def1415c13d946fdd494ff1fe0088317027d0589d56d3c7df67",
+      "scripts/rust-port/sqlite/candidate.py": "1c1ab5c9c21c34a0332d65f1adc9222384f53122090788b9abf8d8b280e937d1",
+      "scripts/rust-port/sqlite/cause_test.go": "82899fbc9f001a03ffb005aa22330b4615be07b23af84d61f4a841f77a422bc5",
+      "scripts/rust-port/sqlite/diff.py": "4fbfa4f4100d8dbb7e3ae2d305e14b1a863894799ae20e7049b2ac1a3cc07dbc",
+      "scripts/rust-port/sqlite/generate.py": "b657f4b60285e164e4f23b7a0151d159b73c7e4452aa1befdadffb4ddb33bfd4",
+      "scripts/rust-port/sqlite/go.mod": "ca0dac8ac8d3f259ebf6fd50de3178b16f1f82c7d2ac3e9345d3f071615e3b58",
+      "scripts/rust-port/sqlite/go.sum": "9146e7666d70f22e7739e8735d90275a271753977bd21337caf82345fd8f3cd0",
+      "scripts/rust-port/sqlite/main.go": "d255963e150d01af16303fce44a4d48351f6c807159ac0ed728eb71962f51105",
+      "scripts/rust-port/sqlite/main_test.go": "6bead4fe1755c3afb0a0272e2b3ae5d5333072e9d9ef78b11a88fe0b5afed7da",
+      "scripts/rust-port/sqlite/migrations/001_test.sql": "31c01d0b463acd6a9f7b4c6b198fe998b26b3309ee31350ea4efff26efd13f79",
+      "scripts/rust-port/sqlite/migrations/002_index.sql": "d605a1446f538f11e03213209af02a4f0a319ce82cb3720913b1698088d67449",
+      "scripts/rust-port/sqlite/test_acceptance.py": "756b2115685ca26dd0416f42ea449a9ddfb936a073d7ea13a47231d3c736e320",
+      "scripts/rust-port/sqlite/test_diff.py": "06ff33e37b49a6444d23c238cf6b26347e123ed5d026b69feebb74da11729af2",
+      "scripts/rust-port/sqlite/test_failure_capture.py": "e9efec1905f684013a4cc7aa275ec2efe1c4a0de9e38c8d83350704176805d2f",
+      "scripts/rust-port/sqlite/test_generate.py": "3169f7b1718be3bd9c55a96ee46438fe5cc8980ddda67d23e62857b3752d5895",
+      "scripts/rust-port/sqlite/test_typed.py": "c516d8f2e2b01729a55bb9cd7306ae7e1852fa67bfc74b61fe5bb2f7fa1dcc4a",
+      "scripts/rust-port/sqlite/typed_contract.py": "a077fcb72f1ba4114daaea7776c1d98d3773bf20eafb11f55658bd39e8b0382b"
+    }
+  },
+  "verdict": {
+    "accepted_differences": [
+      {
+        "go": "failed to open sqlite database: unable to open database file (14)",
+        "path": "SQL-001/open_errors/missing_directory",
+        "rust": "failed to open sqlite database: unable to open database file: <temp-root>"
+      },
+      {
+        "go": "failed to create database directory: mkdir /private<temp-root>/not-a-directory: not a directory",
+        "path": "SQL-001/open_errors/parent_file",
+        "rust": "failed to create database directory: Not a directory (os error 20)"
+      },
+      {
+        "go": "database is locked (5) (SQLITE_BUSY)",
+        "path": "SQL-002/contention/writer_error",
+        "rust": "database is locked"
+      },
+      {
+        "go": "failed to execute migration 001_partial: SQL logic error: near \"THIS\": syntax error (1)",
+        "path": "SQL-005/errors/exec_failure",
+        "rust": "failed to execute migration 001_partial: near \"THIS\": syntax error in \nTHIS IS NOT VALID SQL; at offset 1"
+      },
+      {
+        "go": "failed to record migration 001_test: SQL logic error: cannot modify schema_migrations because it is a view (1)",
+        "path": "SQL-005/errors/insert_failure",
+        "rust": "failed to record migration 001_test: cannot modify schema_migrations because it is a view"
+      },
+      {
+        "go": "failed to create schema_migrations table: sql: database is closed",
+        "path": "SQL-006/errors/closed_db",
+        "reason": [
+          "closed_db: rusqlite close consumes Connection; no safe closed handle can be passed to migrate"
+        ],
+        "rust": null
+      },
+      {
+        "go": "failed to read migrations directory: open migrations: file does not exist",
+        "path": "SQL-006/errors/missing_directory",
+        "rust": "failed to read migrations directory: entity not found"
+      },
+      {
+        "go": "failed to check migration state for 001_test: SQL logic error: no such table: main.missing_table (1)",
+        "path": "SQL-006/errors/version_query",
+        "rust": "failed to check migration state for 001_test: no such table: main.missing_table"
+      },
+      {
+        "go": "failed to read migration 001_test.sql: file does not exist",
+        "path": "SQL-006/errors/read_file",
+        "rust": "failed to read migration 001_test.sql: entity not found"
+      }
+    ],
+    "case_ids": [
+      "SQL-001",
+      "SQL-002",
+      "SQL-003",
+      "SQL-004",
+      "SQL-005",
+      "SQL-006"
+    ],
+    "checked_fields": [
+      "SQL-001/ping",
+      "SQL-001/database_exists",
+      "SQL-001/parent_exists",
+      "SQL-001/database_mode",
+      "SQL-001/parent_mode",
+      "SQL-002/connections",
+      "SQL-002/contention/blocked",
+      "SQL-002/contention/observed",
+      "SQL-002/contention/reader_succeeded",
+      "SQL-002/contention/reader_value",
+      "SQL-002/contention/rollback_succeeded",
+      "SQL-002/contention/tx_exec_succeeded",
+      "SQL-002/contention/within_busy_timeout",
+      "SQL-002/contention/writer_cause",
+      "SQL-002/contention/writer_error",
+      "SQL-003/migration_count",
+      "SQL-003/versions",
+      "SQL-003/schema",
+      "SQL-003/data",
+      "SQL-003/large_integer",
+      "SQL-003/null_value",
+      "SQL-003/applied_at",
+      "SQL-003/repeat",
+      "SQL-004/migration_count",
+      "SQL-004/versions",
+      "SQL-004/schema",
+      "SQL-004/data",
+      "SQL-004/large_integer",
+      "SQL-004/null_value",
+      "SQL-004/applied_at",
+      "SQL-004/repeat",
+      "SQL-004/rows_unchanged",
+      "SQL-004/versions_unchanged",
+      "SQL-004/schema_unchanged",
+      "SQL-004/applied_at_unchanged",
+      "SQL-004/replacement_read_attempts",
+      "SQL-004/replacement_error_nil",
+      "SQL-005/rollback_probe_absent",
+      "SQL-005/insert_migration_absent",
+      "SQL-005/partial_rerun",
+      "SQL-006/in_memory_success",
+      "SQL-006/in_memory"
+    ],
+    "comparison_contract": "approved-typed-errors-and-consuming-close",
+    "differences": [],
+    "status": "passed"
+  }
+}

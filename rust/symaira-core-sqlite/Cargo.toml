@@ -1,0 +1,17 @@
+[package]
+name = "symaira-core-sqlite"
+version = "0.0.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+publish = false
+
+[dependencies]
+rusqlite = { version = "=0.40.2", default-features = false, features = ["bundled"] }
+symaira-core-fs = { path = "../symaira-core-fs", version = "=0.0.0" }
+thiserror.workspace = true
+
+[dev-dependencies]
+serde_json.workspace = true
+tempfile = "=3.23.0"
