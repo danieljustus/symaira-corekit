@@ -4,7 +4,9 @@
 Miri's default isolation is useful for pure code, but it rejects the real
 filesystem/process operations exercised by the contract and foundation tests.
 Those tests therefore run in a separate, explicitly non-isolated invocation.
-The two package sets are intentionally exhaustive and disjoint.
+Packages that cross a native FFI boundary unsupported by Miri are excluded
+explicitly and covered by their native platform gate instead. The two runnable
+package sets plus those documented exclusions are exhaustive and disjoint.
 """
 
 from __future__ import annotations
@@ -37,6 +39,13 @@ NON_ISOLATED_PACKAGES = (
     "symaira-core-foundation",
 )
 
+# Bundled SQLite crosses native FFI and uses flags that Miri does not model.
+# Keep it in the dedicated native SQLite matrix instead of pretending Miri is
+# evidence for this package.
+MIRI_EXCLUDED_PACKAGES = {
+    "symaira-core-sqlite": "bundled SQLite FFI and unsupported native filesystem flags",
+}
+
 NEGATIVE_PACKAGE = "symaira-contract-fixtures"
 NEGATIVE_TEST = "con_001_exit_fixture_is_valid_and_byte_stable"
 MIRI_EXPENSIVE_TEST = "frame_parser_fuzz_smoke_10000"
@@ -57,12 +66,15 @@ def cargo_packages() -> set[str]:
 def validate_package_partition() -> None:
     pure = set(PURE_PACKAGES)
     non_isolated = set(NON_ISOLATED_PACKAGES)
-    overlap = pure & non_isolated
+    excluded = set(MIRI_EXCLUDED_PACKAGES)
+    overlap = (pure & non_isolated) | (pure & excluded) | (non_isolated & excluded)
     if overlap:
         raise RuntimeError(f"Miri package sets overlap: {sorted(overlap)}")
+    if any(not reason.strip() for reason in MIRI_EXCLUDED_PACKAGES.values()):
+        raise RuntimeError("every Miri exclusion must document its native gate reason")
 
     expected = cargo_packages()
-    actual = pure | non_isolated
+    actual = pure | non_isolated | excluded
     if actual != expected:
         missing = sorted(expected - actual)
         extra = sorted(actual - expected)
