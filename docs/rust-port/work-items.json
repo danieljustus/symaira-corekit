@@ -176,7 +176,8 @@
         "SQL-005",
         "SQL-006"
       ],
-      "status": "deferred",
+      "status": "in_progress",
+      "demand_evidence": "sqlite-demand.md",
       "demand_class": "demand_driven",
       "acceptance_commands": [
         "make rust-sqlite-contract",

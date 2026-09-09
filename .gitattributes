@@ -1,0 +1,11 @@
+# The SQLite differential source manifest hashes exact checkout bytes.
+/Cargo.toml text eol=lf
+/Cargo.lock text eol=lf
+/rust-toolchain.toml text eol=lf
+/.github/workflows/ci.yml text eol=lf
+/.cargo/** text eol=lf
+/rust/**/*.rs text eol=lf
+/rust/**/Cargo.toml text eol=lf
+/scripts/rust-port/sqlite/** text eol=lf
+/testdata/rust-port/sqlite/*.json text eol=lf
+/.gitattributes text eol=lf
