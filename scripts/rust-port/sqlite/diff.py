@@ -61,8 +61,10 @@ def equal(left, right):
 
 def evaluate(go, rust, manifest):
     candidate.verify(rust, manifest)
-    if any(case.get('success') is not True for case in rust['cases']):
-        raise ValueError('Rust case success missing or false')
+    # Rust is an independent observation source. Validate its full acceptance
+    # shape before comparing it with Go, so self-reported case success cannot
+    # hide a missing negative, rollback, schema, or timing observation.
+    generate.validate_observations(rust, require_busy_measurement=True)
     native = rust.get('native', {})
     go_state = go['cases'][0]['state']
     if (native.get('goos') != go_state['native_goos']

@@ -105,9 +105,22 @@ def helper_snapshot() -> dict[str, bytes]:
 
 def isolated_env(root: Path) -> dict[str, str]:
     # Cache paths are shared for downloads only; built artifacts remain isolated.
-    goenv = json.loads(run(["go", "env", "-json", "GOPATH", "GOMODCACHE"], cwd=ROOT))
+    # Resolve the pinned compiler before replacing HOME. With Go's downloader
+    # wrapper still first on PATH, an isolated HOME makes a locally installed
+    # go1.26.6 look absent and turns the oracle into a network-dependent test.
+    # The compiler itself remains pinned; only its lookup happens outside the
+    # disposable runtime root.
+    toolchain_env = os.environ.copy()
+    toolchain_env["GOTOOLCHAIN"] = TOOLCHAIN
+    goroot = Path(run(["go", "env", "GOROOT"], cwd=ROOT, env=toolchain_env).decode().strip())
+    compiler = goroot / "bin"
+    if not (compiler / "go").is_file():
+        raise RuntimeError(f"pinned Go compiler is unavailable: {compiler / 'go'}")
+    goenv = json.loads(run(["go", "env", "-json", "GOPATH", "GOMODCACHE"], cwd=ROOT,
+                           env=toolchain_env))
     env = {k: os.environ[k] for k in ("PATH", "SystemRoot", "WINDIR", "COMSPEC",
                                     "PATHEXT", "SYSTEMDRIVE") if k in os.environ}
+    env["PATH"] = str(compiler) + os.pathsep + env.get("PATH", "")
     env.update({"GOTOOLCHAIN": TOOLCHAIN, "GOWORK": "off", "GOENV": "off",
                 "GOFLAGS": "-mod=readonly", "CGO_ENABLED": "0", "LC_ALL": "C",
                 "LANG": "C", "TZ": "UTC", "GOSUMDB": "sum.golang.org",
@@ -167,7 +180,8 @@ def capture() -> dict:
                 if "Replace" in module or versions.get(path) != module.get("Version", ""):
                     raise RuntimeError(f"oracle dependency differs from pinned graph: {path}")
                 dependencies[path] = {k: module[k] for k in ("Version", "Sum", "GoModSum") if k in module}
-        packages = json_stream(run(["go", "list", "-deps", "-json", "."], cwd=helper, env=env))
+        packages = json_stream(run(["go", "list", "-deps", "-json", "."], cwd=helper,
+                                   env=env, timeout=300))
         for package in packages:
             if package["ImportPath"].startswith(MODULE + "/"):
                 if not Path(package["Dir"]).resolve().is_relative_to(oracle.resolve()):
@@ -192,14 +206,12 @@ def capture() -> dict:
     return report
 
 
-def validate(report: dict) -> None:
+def validate_observations(report: dict, *, require_busy_measurement: bool = False) -> None:
     cases = report.get("cases")
     if not isinstance(cases, list) or [c.get("id") for c in cases] != EXPECTED_IDS:
         raise ValueError("case IDs/order mismatch")
     if not all(c.get("success") is True for c in cases):
         raise ValueError("unsuccessful oracle case")
-    if report.get("oracle", {}).get("go_version") != TOOLCHAIN:
-        raise ValueError("wrong runtime toolchain")
     connections = cases[1]["state"]["connections"]
     if len(connections) != 5 or any(c != {"journal_mode": "wal", "foreign_keys": 1,
                                          "busy_timeout": 5000} for c in connections):
@@ -207,19 +219,38 @@ def validate(report: dict) -> None:
     contention = cases[1]["state"]["contention"]
     if any(contention.get(key) is not True for key in ("observed", "blocked", "within_busy_timeout", "reader_succeeded", "tx_exec_succeeded", "rollback_succeeded")):
         raise ValueError("contention not demonstrated")
+    if require_busy_measurement:
+        observed = cases[1].get("observed_busy_seconds")
+        # A successful SQLITE_BUSY result must be measured, not merely asserted.
+        # The production policy is a 5 s busy timeout; permit scheduler jitter but
+        # reject impossible, unmeasured, and unbounded observations.
+        if type(observed) not in (int, float) or not 4.5 <= observed <= 6.0:
+            raise ValueError("contention timing not measured within busy-timeout contract")
     expected = {"exec_failure": "failed to execute migration", "insert_failure": "failed to record migration",
                 "closed_db": "failed to create schema_migrations table", "missing_directory": "failed to read migrations directory",
                 "version_query": "failed to check migration state", "read_file": "failed to read migration"}
     negatives = [n for c in cases for n in c.get("negative", [])]
-    if len(negatives) != len(expected) or {n["name"] for n in negatives} != set(expected):
+    if negatives:
+        observed = {n.get("name"): n for n in negatives}
+    else:
+        # Rust cannot supply a closed database to migrate because rusqlite's
+        # close consumes Connection. Its remaining error corpus is emitted as
+        # named adapter errors and the unsupported difference is explicit.
+        observed = {name: value for case in cases for name, value in case.get("errors", {}).items()}
+        if not any(str(item).startswith("closed_db:") for case in cases for item in case.get("unsupported", [])):
+            raise ValueError("closed_db difference not declared")
+        expected.pop("closed_db")
+    if set(observed) != set(expected):
         raise ValueError("negative corpus mismatch")
-    for negative in negatives:
-        prefix = expected[negative["name"]]
+    for name, negative in observed.items():
+        prefix = expected[name]
         actual = negative.get("error", "")
         if not actual.startswith(prefix) or ": " not in actual:
             raise ValueError("missing actual error context/cause")
-        if negative["name"] in {"exec_failure", "insert_failure"} and negative.get("rolled_back") is not True:
-            raise ValueError("rollback not demonstrated")
+        if name in {"exec_failure", "insert_failure"}:
+            rollback = cases[4]["state"].get("rollback_probe_absent") if name == "exec_failure" else cases[4]["state"].get("insert_migration_absent")
+            if rollback is not True:
+                raise ValueError("rollback not demonstrated")
     if any(cases[4]["state"].get(key) is not True for key in ("rollback_probe_absent", "insert_migration_absent")):
         raise ValueError("rollback state differs")
     for case in cases[2:4]:
@@ -242,6 +273,12 @@ def validate(report: dict) -> None:
             raise ValueError("partial migration preservation failed")
     if cases[5]["state"].get("in_memory_success") is not True:
         raise ValueError("in-memory migration failed")
+
+
+def validate(report: dict) -> None:
+    if report.get("oracle", {}).get("go_version") != TOOLCHAIN:
+        raise ValueError("wrong runtime toolchain")
+    validate_observations(report)
 
 
 def compare(expected: dict, actual: dict) -> None:

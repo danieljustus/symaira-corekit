@@ -3,6 +3,8 @@ import copy
 import hashlib
 import json
 import unittest
+from unittest.mock import patch
+import candidate
 import diff
 
 CAPTURE = diff.ROOT / 'testdata/rust-port/sqlite/differential-macos-partial.json'
@@ -50,6 +52,24 @@ class DifferentialControls(unittest.TestCase):
     def test_policy_drift_not_hidden_by_existing_differences(self):
         self.rust['cases'][1]['state']['connections'][0]['foreign_keys'] = 0
         self.assert_difference('SQL-002/connections')
+
+    def test_rust_missing_negative_corpus_is_rejected_before_comparison(self):
+        record = json.loads((diff.ROOT / 'testdata/rust-port/sqlite/differential-macos-bound.json').read_text())
+        rust = copy.deepcopy(record['rust'])
+        del rust['cases'][4]['errors']['insert_failure']
+        manifest, _ = candidate.load()
+        with self.assertRaisesRegex(ValueError, 'negative corpus mismatch'):
+            with patch.object(candidate, 'verify'):
+                diff.evaluate(record['go'], rust, manifest)
+
+    def test_rust_missing_busy_measurement_is_rejected_before_comparison(self):
+        record = json.loads((diff.ROOT / 'testdata/rust-port/sqlite/differential-macos-bound.json').read_text())
+        rust = copy.deepcopy(record['rust'])
+        rust['cases'][1]['observed_busy_seconds'] = None
+        manifest, _ = candidate.load()
+        with self.assertRaisesRegex(ValueError, 'contention timing not measured'):
+            with patch.object(candidate, 'verify'):
+                diff.evaluate(record['go'], rust, manifest)
 
 
 if __name__ == '__main__':
