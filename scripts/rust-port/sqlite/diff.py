@@ -132,9 +132,15 @@ def main():
     go = generate.capture()
     rust = rust_capture(manifest)
     rust['candidate_manifest_sha256'] = manifest_sha
-    verdict = evaluate(go, rust, manifest)
-    if args.typed_errors:
-        verdict = typed_contract.apply(go, rust, verdict)
+    try:
+        verdict = evaluate(go, rust, manifest)
+        if args.typed_errors:
+            verdict = typed_contract.apply(go, rust, verdict)
+    except (ValueError, KeyError, TypeError) as error:
+        # Preserve actual observations even when schema/success validation fails.
+        args.output.write_text(json.dumps({'verdict': {'status': 'failed', 'error': str(error)},
+                                          'go': go, 'rust': rust}, indent=2, sort_keys=True) + '\n')
+        raise
     args.output.write_text(json.dumps({"verdict": verdict, "go": go, "rust": rust}, indent=2, sort_keys=True) + "\n")
     print(json.dumps(verdict, indent=2))
     raise SystemExit(0 if verdict["status"] == "passed" else 1)

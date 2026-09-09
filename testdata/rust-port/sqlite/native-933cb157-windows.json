@@ -1,33 +1,32 @@
 {
   "go": {
     "capture_interval": [
-      1788933399,
-      1788933404
+      1788933074,
+      1788933081
     ],
     "cases": [
       {
         "id": "SQL-001",
         "state": {
           "database_exists": true,
-          "database_mode": "0600",
-          "native_goarch": "arm64",
-          "native_goos": "darwin",
+          "database_mode": "0666",
+          "native_goarch": "amd64",
+          "native_goos": "windows",
           "open_causes": {
             "missing_directory": {
               "code": 14,
               "type": "sqlite"
             },
             "parent_file": {
-              "kind": "NotADirectory",
-              "type": "io"
+              "type": "unclassified"
             }
           },
           "open_errors": {
             "missing_directory": "failed to open sqlite database: unable to open database file (14)",
-            "parent_file": "failed to create database directory: mkdir /private<temp-root>/not-a-directory: not a directory"
+            "parent_file": "failed to create database directory: mkdir <temp-root>\\not-a-directory: path is not a regular file"
           },
           "parent_exists": true,
-          "parent_mode": "0700",
+          "parent_mode": "0777",
           "ping": true
         },
         "success": true
@@ -83,13 +82,13 @@
         "id": "SQL-003",
         "state": {
           "applied_at": [
-            "2026-09-09T05:56:44Z",
-            "2026-09-09T05:56:44Z"
+            "2026-09-09T05:51:21Z",
+            "2026-09-09T05:51:21Z"
           ],
           "applied_at_utc": true,
           "data": [
             {
-              "created_at": "2026-09-09T05:56:44Z",
+              "created_at": "2026-09-09T05:51:21Z",
               "id": "item-1",
               "name": "alpha"
             }
@@ -126,14 +125,14 @@
         "id": "SQL-004",
         "state": {
           "applied_at": [
-            "2026-09-09T05:56:44Z",
-            "2026-09-09T05:56:44Z"
+            "2026-09-09T05:51:21Z",
+            "2026-09-09T05:51:21Z"
           ],
           "applied_at_unchanged": true,
           "applied_at_utc": true,
           "data": [
             {
-              "created_at": "2026-09-09T05:56:44Z",
+              "created_at": "2026-09-09T05:51:21Z",
               "id": "item-1",
               "name": "alpha"
             }
@@ -290,18 +289,16 @@
     "oracle": {
       "artifact_hashes": {
         "scripts/rust-port/sqlite/candidate.py": "1c1ab5c9c21c34a0332d65f1adc9222384f53122090788b9abf8d8b280e937d1",
-        "scripts/rust-port/sqlite/cause_test.go": "82899fbc9f001a03ffb005aa22330b4615be07b23af84d61f4a841f77a422bc5",
-        "scripts/rust-port/sqlite/diff.py": "96bf6d427e9511c8ec9cc2946029c267ce121c98dadc6d2e73996d6b7849e464",
+        "scripts/rust-port/sqlite/diff.py": "9f8b9c1e4324b46151200c1ff6cbf691d540449957799a07198c163cc25ef89b",
         "scripts/rust-port/sqlite/generate.py": "741d3f963906f075e5b4b14ffa01636345a0f5df174c2762e5a42a66988c3623",
         "scripts/rust-port/sqlite/go.mod": "ca0dac8ac8d3f259ebf6fd50de3178b16f1f82c7d2ac3e9345d3f071615e3b58",
         "scripts/rust-port/sqlite/go.sum": "9146e7666d70f22e7739e8735d90275a271753977bd21337caf82345fd8f3cd0",
-        "scripts/rust-port/sqlite/main.go": "d255963e150d01af16303fce44a4d48351f6c807159ac0ed728eb71962f51105",
+        "scripts/rust-port/sqlite/main.go": "052fb1c6ed3ae682ed932aee4bfc0b19deb925bab7e96ec66f8eaa822a803113",
         "scripts/rust-port/sqlite/main_test.go": "6bead4fe1755c3afb0a0272e2b3ae5d5333072e9d9ef78b11a88fe0b5afed7da",
         "scripts/rust-port/sqlite/migrations/001_test.sql": "31c01d0b463acd6a9f7b4c6b198fe998b26b3309ee31350ea4efff26efd13f79",
         "scripts/rust-port/sqlite/migrations/002_index.sql": "d605a1446f538f11e03213209af02a4f0a319ce82cb3720913b1698088d67449",
         "scripts/rust-port/sqlite/test_acceptance.py": "756b2115685ca26dd0416f42ea449a9ddfb936a073d7ea13a47231d3c736e320",
         "scripts/rust-port/sqlite/test_diff.py": "e322496a5ae690af5264c6e856bc791995a73fb3b755f8e378db951013a42924",
-        "scripts/rust-port/sqlite/test_failure_capture.py": "e9efec1905f684013a4cc7aa275ec2efe1c4a0de9e38c8d83350704176805d2f",
         "scripts/rust-port/sqlite/test_generate.py": "3169f7b1718be3bd9c55a96ee46438fe5cc8980ddda67d23e62857b3752d5895",
         "scripts/rust-port/sqlite/test_typed.py": "c516d8f2e2b01729a55bb9cd7306ae7e1852fa67bfc74b61fe5bb2f7fa1dcc4a",
         "scripts/rust-port/sqlite/typed_contract.py": "a077fcb72f1ba4114daaea7776c1d98d3773bf20eafb11f55658bd39e8b0382b"
@@ -449,7 +446,7 @@
         "locale": "C",
         "os_sandbox": false,
         "timezone": "UTC",
-        "umask": "0077"
+        "umask": "not-applicable"
       },
       "source_hashes": {
         "fsutil/atomicwrite.go": "ea34d7c2ea41119b5f38557f8beec6d27c221938e9d6cd0e4a8f358193938221",
@@ -463,27 +460,26 @@
     }
   },
   "rust": {
-    "binary_sha256": "32911e514ec542292e0c834891c8e25e9a1a7ad825b8f75210af6c7e705c2c77",
-    "candidate_base": "933cb157914f84683f5a5546766a87f9dd7d34b4",
-    "candidate_manifest_sha256": "6b6cba465a35e8da904468bf675403d918d47cb065cc3303eca2da038c684394",
+    "binary_sha256": "382a976909dcddbf14c762a459e629bd71279732b398e9b6016fe0f87835e9e1",
+    "candidate_base": "7150c0ad4cd20e59958262df34bf8035ba9f1e8b",
+    "candidate_manifest_sha256": "a839ce425a3ad435090402645c7626445c9bde378fa841e98299007636fc54de",
     "candidate_revision": "933cb157914f84683f5a5546766a87f9dd7d34b4",
     "capture_interval": [
-      1788933405,
-      1788933410
+      1788933082,
+      1788933088
     ],
     "cases": [
       {
         "id": "SQL-001",
         "state": {
           "database_exists": true,
-          "database_mode": "0600",
           "open_errors": {
             "directory": {
               "cause": {
                 "code": 14,
                 "type": "sqlite"
               },
-              "error": "failed to open sqlite database: unable to open database file: <temp-root>",
+              "error": "failed to open sqlite database: unable to open database file: C:\\Users\\RUNNER~1\\AppData\\Local\\Temp\\sqlite-rust-diff-y_qgwfs5\\databases",
               "kind": "open"
             },
             "parent_file": {
@@ -491,19 +487,17 @@
                 "kind": "NotADirectory",
                 "type": "io"
               },
-              "error": "failed to create database directory: Not a directory (os error 20)",
+              "error": "failed to create database directory: The directory name is invalid. (os error 267)",
               "kind": "directory"
             }
           },
           "parent_exists": true,
-          "parent_mode": "0700",
           "ping": true
         },
         "success": true
       },
       {
         "id": "SQL-002",
-        "observed_busy_seconds": 5.365018916,
         "state": {
           "connections": [
             {
@@ -553,12 +547,12 @@
         "id": "SQL-003",
         "state": {
           "applied_at": [
-            "2026-09-09T05:56:50Z",
-            "2026-09-09T05:56:50Z"
+            "2026-09-09T05:51:27Z",
+            "2026-09-09T05:51:27Z"
           ],
           "data": [
             {
-              "created_at": "2026-09-09T05:56:50Z",
+              "created_at": "2026-09-09T05:51:27Z",
               "id": "item-1",
               "name": "alpha"
             }
@@ -595,13 +589,13 @@
         "id": "SQL-004",
         "state": {
           "applied_at": [
-            "2026-09-09T05:56:50Z",
-            "2026-09-09T05:56:50Z"
+            "2026-09-09T05:51:27Z",
+            "2026-09-09T05:51:27Z"
           ],
           "applied_at_unchanged": true,
           "data": [
             {
-              "created_at": "2026-09-09T05:56:50Z",
+              "created_at": "2026-09-09T05:51:27Z",
               "id": "item-1",
               "name": "alpha"
             }
@@ -736,8 +730,8 @@
       }
     ],
     "native": {
-      "goarch": "arm64",
-      "goos": "darwin"
+      "goarch": "amd64",
+      "goos": "windows"
     },
     "source_hashes": {
       ".gitattributes": "f5001cfbf0e3c5454e5463cf700f465f79140fbcfaf504a61773799a76d232b2",
@@ -764,7 +758,7 @@
       "rust/symaira-core-secretref/src/lib.rs": "f3d4c6d9aa0ca500552f21a6807662fdebd9422652579fc7745813f463d67b8b",
       "rust/symaira-core-secretref/tests/parity.rs": "80665d3a6c0cf5543dec10626a1451446318c33df27a80efb86d6bc6410abf85",
       "rust/symaira-core-sqlite/Cargo.toml": "29c41f09f75ddef6348b8755cc80125957cc370ef610f75f597183cc73f1c799",
-      "rust/symaira-core-sqlite/examples/sqlite-observe.rs": "94ab37b297daa31354e57f253f52d4658b788f02f9e0b8ee09217a02384b55b5",
+      "rust/symaira-core-sqlite/examples/sqlite-observe.rs": "1d5ff4733c660fd6b6ce0b8259125b37175585951d71c3f13e096226372d2f52",
       "rust/symaira-core-sqlite/src/lib.rs": "406e8c0cda573f76c779efb7f18271718bdf125ea51448d907462d9e90f49aeb",
       "rust/symaira-core-sqlite/tests/contracts.rs": "1432adf42c6293a180c06fc7c3c70bc2f011d6171c93af7541705c5b680016b6",
       "rust/symaira-core-version/Cargo.toml": "105564028bb4d57e8ca02a59873432c5107e3f266831391bab912a511251baf6",
@@ -782,18 +776,16 @@
       "rust/test-support/symaira-core-foundation/tests/log.rs": "64dc9a6e06b4db58f7d6742f95b46efed9a881d2dbdc09151f76c7d1cb51d641",
       "rust/test-support/symaira-core-foundation/tests/version.rs": "84a4741ba4b90def1415c13d946fdd494ff1fe0088317027d0589d56d3c7df67",
       "scripts/rust-port/sqlite/candidate.py": "1c1ab5c9c21c34a0332d65f1adc9222384f53122090788b9abf8d8b280e937d1",
-      "scripts/rust-port/sqlite/cause_test.go": "82899fbc9f001a03ffb005aa22330b4615be07b23af84d61f4a841f77a422bc5",
-      "scripts/rust-port/sqlite/diff.py": "96bf6d427e9511c8ec9cc2946029c267ce121c98dadc6d2e73996d6b7849e464",
+      "scripts/rust-port/sqlite/diff.py": "9f8b9c1e4324b46151200c1ff6cbf691d540449957799a07198c163cc25ef89b",
       "scripts/rust-port/sqlite/generate.py": "741d3f963906f075e5b4b14ffa01636345a0f5df174c2762e5a42a66988c3623",
       "scripts/rust-port/sqlite/go.mod": "ca0dac8ac8d3f259ebf6fd50de3178b16f1f82c7d2ac3e9345d3f071615e3b58",
       "scripts/rust-port/sqlite/go.sum": "9146e7666d70f22e7739e8735d90275a271753977bd21337caf82345fd8f3cd0",
-      "scripts/rust-port/sqlite/main.go": "d255963e150d01af16303fce44a4d48351f6c807159ac0ed728eb71962f51105",
+      "scripts/rust-port/sqlite/main.go": "052fb1c6ed3ae682ed932aee4bfc0b19deb925bab7e96ec66f8eaa822a803113",
       "scripts/rust-port/sqlite/main_test.go": "6bead4fe1755c3afb0a0272e2b3ae5d5333072e9d9ef78b11a88fe0b5afed7da",
       "scripts/rust-port/sqlite/migrations/001_test.sql": "31c01d0b463acd6a9f7b4c6b198fe998b26b3309ee31350ea4efff26efd13f79",
       "scripts/rust-port/sqlite/migrations/002_index.sql": "d605a1446f538f11e03213209af02a4f0a319ce82cb3720913b1698088d67449",
       "scripts/rust-port/sqlite/test_acceptance.py": "756b2115685ca26dd0416f42ea449a9ddfb936a073d7ea13a47231d3c736e320",
       "scripts/rust-port/sqlite/test_diff.py": "e322496a5ae690af5264c6e856bc791995a73fb3b755f8e378db951013a42924",
-      "scripts/rust-port/sqlite/test_failure_capture.py": "e9efec1905f684013a4cc7aa275ec2efe1c4a0de9e38c8d83350704176805d2f",
       "scripts/rust-port/sqlite/test_generate.py": "3169f7b1718be3bd9c55a96ee46438fe5cc8980ddda67d23e62857b3752d5895",
       "scripts/rust-port/sqlite/test_typed.py": "c516d8f2e2b01729a55bb9cd7306ae7e1852fa67bfc74b61fe5bb2f7fa1dcc4a",
       "scripts/rust-port/sqlite/typed_contract.py": "a077fcb72f1ba4114daaea7776c1d98d3773bf20eafb11f55658bd39e8b0382b"
@@ -804,12 +796,7 @@
       {
         "go": "failed to open sqlite database: unable to open database file (14)",
         "path": "SQL-001/open_errors/missing_directory",
-        "rust": "failed to open sqlite database: unable to open database file: <temp-root>"
-      },
-      {
-        "go": "failed to create database directory: mkdir /private<temp-root>/not-a-directory: not a directory",
-        "path": "SQL-001/open_errors/parent_file",
-        "rust": "failed to create database directory: Not a directory (os error 20)"
+        "rust": "failed to open sqlite database: unable to open database file: C:\\Users\\RUNNER~1\\AppData\\Local\\Temp\\sqlite-rust-diff-y_qgwfs5\\databases"
       },
       {
         "go": "database is locked (5) (SQLITE_BUSY)",
@@ -862,8 +849,6 @@
       "SQL-001/ping",
       "SQL-001/database_exists",
       "SQL-001/parent_exists",
-      "SQL-001/database_mode",
-      "SQL-001/parent_mode",
       "SQL-002/connections",
       "SQL-002/contention/blocked",
       "SQL-002/contention/observed",
@@ -903,7 +888,27 @@
       "SQL-006/in_memory"
     ],
     "comparison_contract": "approved-typed-errors-and-consuming-close",
-    "differences": [],
-    "status": "passed"
+    "differences": [
+      {
+        "go": "failed to create database directory: mkdir <temp-root>\\not-a-directory: path is not a regular file",
+        "path": "SQL-001/open_errors/parent_file",
+        "rust": "failed to create database directory: The directory name is invalid. (os error 267)"
+      },
+      {
+        "go": {
+          "type": "unclassified"
+        },
+        "path": "SQL-001/open_errors/parent_file/typed_contract",
+        "rust": {
+          "cause": {
+            "kind": "NotADirectory",
+            "type": "io"
+          },
+          "error": "failed to create database directory: The directory name is invalid. (os error 267)",
+          "kind": "directory"
+        }
+      }
+    ],
+    "status": "partial"
   }
 }

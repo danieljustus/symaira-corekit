@@ -457,6 +457,15 @@ func negativeFrom(name string, err error, contains string, rolledBack bool) nega
 }
 
 func errorCause(err error) map[string]any {
+	// The pinned Windows fsutil implementation wraps its private errUnsafePath
+	// sentinel in PathError. Classify only that exact mkdir failure, and verify
+	// the actual offending object is a regular file (not a guessed OS errno).
+	var pathErr *fs.PathError
+	if errors.As(err, &pathErr) && pathErr.Op == "mkdir" && pathErr.Err.Error() == "path is not a regular file" {
+		if info, statErr := os.Stat(pathErr.Path); statErr == nil && info.Mode().IsRegular() {
+			return map[string]any{"type": "io", "kind": "NotADirectory"}
+		}
+	}
 	var coded interface{ Code() int }
 	if errors.As(err, &coded) {
 		return map[string]any{"type": "sqlite", "code": coded.Code() & 255}

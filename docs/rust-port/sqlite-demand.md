@@ -127,6 +127,34 @@ Linux/Windows, consumer-integration and cost gates. These remain pending. No SQL
 matrix row is promoted; no commit, PR, publication, or Go removal occurred at
 this checkpoint. Existing files and both recovery worktrees are preserved.
 
+## Native CI checkpoint on 933cb157
+
+Candidate `933cb157914f84683f5a5546766a87f9dd7d34b4` is pushed in
+[PR #257](https://github.com/danieljustus/symaira-corekit/pull/257).
+[Native run 34316388944](https://github.com/danieljustus/symaira-corekit/actions/runs/34316388944)
+passed the Linux SQLite lane, failed the Windows lane on an unclassified private
+Go fsutil mkdir sentinel, and failed the macOS lane on a false Rust case-success
+observation. The macOS exception path did not retain its raw report, so the
+specific false predicate is unknown; no timing threshold is relaxed or cause
+assumed. The repair records raw observations on validation failure and retains
+the measured Rust busy duration. The Windows classifier recognizes only the
+exact pinned mkdir sentinel with an independently observed regular-file target.
+
+Linux and Windows reports were downloaded and verified against the reviewed
+manifest and exact candidate revision. Retained files are
+`native-933cb157-linux.json` (SHA-256
+`4c2acf7f79d38df64c3ab900782b029764ed67be00b3a9a22cb6cc4b6f5bf325`)
+and `native-933cb157-windows.json` under `testdata/rust-port/sqlite/`.
+The Windows JSON is an LF-only derivative (SHA-256
+`94c93576a41edd4702312ba317687d71f0612fd04fa23630ece516ccc3074bf7`);
+its complete original bytes are retained as `native-933cb157-windows-original.b64`
+(decoded SHA-256 `5a039ca8ba0925623a58667ea15f2cebeaa98c45ebf33f2e71d25ab162d5f435`).
+Parsed original/derived JSON values were verified identical. These historical
+reports do not certify the subsequent repair revision. Local repair validation
+passed the Go race/vet helper, strict Clippy, fresh differential and 46 Python
+tests. Native rerun remains required; the original review does not cover these
+subsequent harness edits.
+
 ## Scope and decision
 
 The SQLite slice may begin because two real Rust consumers implement the shared connection policy: a 5000 ms busy timeout, foreign-key enforcement and WAL. This establishes demand, not adoption or parity. Consumer schemas and product-specific migrations remain outside CoreKit. In particular, EraseMe's `user_version` schema lifecycle differs from Desktop's per-file transactional migration runner; do not claim those algorithms are identical.

@@ -174,6 +174,7 @@ fn observe(root: &Path, fixture: &Path) -> Result<Value> {
     let started = Instant::now();
     let writer = others[0].execute("INSERT INTO lock_probe VALUES (2)", []);
     let seconds = started.elapsed().as_secs_f64();
+    // Retain the raw duration for failed timing gates, without changing limits.
     let reader = others[1].query_row("SELECT COUNT(*) FROM lock_probe", [], |r| {
         r.get::<_, i64>(0)
     })?;
@@ -284,6 +285,7 @@ fn observe(root: &Path, fixture: &Path) -> Result<Value> {
     failing.fail_read = true;
     let read_error = error_value(migrate(&mut read, &failing).expect_err("read must fail"));
     cases.push(json!({"id":"SQL-006","state":{"in_memory_success":true,"in_memory":{"schema":memory_schema,"data":[data]}},"errors":{"missing_directory":missing,"version_query":query_error,"read_file":read_error},"unsupported":["closed_db: rusqlite close consumes Connection; no safe closed handle can be passed to migrate"]}));
+    cases[1]["observed_busy_seconds"] = json!(seconds);
     for case in &mut cases {
         let state = &case["state"];
         let yes = |key: &str| state[key].as_bool() == Some(true);
