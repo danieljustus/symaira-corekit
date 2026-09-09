@@ -1,8 +1,8 @@
 {
   "go": {
     "capture_interval": [
-      1788960648,
-      1788960654
+      1788961596,
+      1788961602
     ],
     "cases": [
       {
@@ -83,13 +83,13 @@
         "id": "SQL-003",
         "state": {
           "applied_at": [
-            "2026-09-09T13:30:54Z",
-            "2026-09-09T13:30:54Z"
+            "2026-09-09T13:46:42Z",
+            "2026-09-09T13:46:42Z"
           ],
           "applied_at_utc": true,
           "data": [
             {
-              "created_at": "2026-09-09T13:30:54Z",
+              "created_at": "2026-09-09T13:46:42Z",
               "id": "item-1",
               "name": "alpha"
             }
@@ -126,14 +126,14 @@
         "id": "SQL-004",
         "state": {
           "applied_at": [
-            "2026-09-09T13:30:54Z",
-            "2026-09-09T13:30:54Z"
+            "2026-09-09T13:46:42Z",
+            "2026-09-09T13:46:42Z"
           ],
           "applied_at_unchanged": true,
           "applied_at_utc": true,
           "data": [
             {
-              "created_at": "2026-09-09T13:30:54Z",
+              "created_at": "2026-09-09T13:46:42Z",
               "id": "item-1",
               "name": "alpha"
             }
@@ -463,13 +463,13 @@
     }
   },
   "rust": {
-    "binary_sha256": "32911e514ec542292e0c834891c8e25e9a1a7ad825b8f75210af6c7e705c2c77",
-    "candidate_base": "396f73d266bcc4183f3d56bd40734ace7cc062d4",
-    "candidate_manifest_sha256": "5e81f2ebf8caa05af49f7eb458967357f4573fd8554383fb582a3c6896dd598c",
-    "candidate_revision": "396f73d266bcc4183f3d56bd40734ace7cc062d4",
+    "binary_sha256": "b58c990f7199e6ce1b2a151d0f8e9ad62c496aa59d480a48eaaf5b519aff83cd",
+    "candidate_base": "56b8164e8b82ae7913cd6cc94c0a484eae8a8947",
+    "candidate_manifest_sha256": "bcd1100f1b7d84ee1e3fab08559588c873a680f47ab44cc85ce48b8bd4b63e4b",
+    "candidate_revision": "56b8164e8b82ae7913cd6cc94c0a484eae8a8947",
     "capture_interval": [
-      1788960813,
-      1788960822
+      1788961748,
+      1788961763
     ],
     "cases": [
       {
@@ -503,7 +503,7 @@
       },
       {
         "id": "SQL-002",
-        "observed_busy_seconds": 5.195180291,
+        "observed_busy_seconds": 5.185673791,
         "state": {
           "connections": [
             {
@@ -553,12 +553,12 @@
         "id": "SQL-003",
         "state": {
           "applied_at": [
-            "2026-09-09T13:33:42Z",
-            "2026-09-09T13:33:42Z"
+            "2026-09-09T13:49:23Z",
+            "2026-09-09T13:49:23Z"
           ],
           "data": [
             {
-              "created_at": "2026-09-09T13:33:42Z",
+              "created_at": "2026-09-09T13:49:23Z",
               "id": "item-1",
               "name": "alpha"
             }
@@ -595,13 +595,13 @@
         "id": "SQL-004",
         "state": {
           "applied_at": [
-            "2026-09-09T13:33:42Z",
-            "2026-09-09T13:33:42Z"
+            "2026-09-09T13:49:23Z",
+            "2026-09-09T13:49:23Z"
           ],
           "applied_at_unchanged": true,
           "data": [
             {
-              "created_at": "2026-09-09T13:33:42Z",
+              "created_at": "2026-09-09T13:49:23Z",
               "id": "item-1",
               "name": "alpha"
             }

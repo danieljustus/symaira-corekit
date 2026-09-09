@@ -121,9 +121,9 @@ mistake an installed `go1.26.6` for a missing download. The dependency inventory
 has a bounded 300-second allowance for a cold isolated Go cache. The explicit
 candidate-source manifest was regenerated for this change. The fresh macOS arm64
 capture retained in `differential-macos-bound.json` has SHA-256
-`f13460bab6a189977093095c846d2002729b97508a0cd46bdb49929bc48ecd7e`; its
+`fbbeaccca819d99a2a5a709ffe38a9bdf8a924dca7275f20384d111039c142b7`; its
 six-group typed differential passed with Go `go1.26.6`, and it measured the
-Rust busy wait at 5.195180291 seconds. This is a real local capture, not a
+Rust busy wait at 5.185673791 seconds. This is a real local capture, not a
 synthetic fixture.
 
 The latest review repair validates the complete Rust observation shape before
