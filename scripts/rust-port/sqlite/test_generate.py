@@ -74,6 +74,11 @@ class ValidatorTests(unittest.TestCase):
     def test_adjacent_large_integer_is_rejected(self):
         self.rejected(lambda r: r["cases"][2]["state"].update(large_integer=9007199254740992))
 
+    def test_pinned_compiler_uses_windows_executable_name(self):
+        compiler = Path("C:/hostedtoolcache/windows/go/1.26.6/x64/bin")
+        self.assertEqual(generator.compiler_executable(compiler, "nt").name, "go.exe")
+        self.assertEqual(generator.compiler_executable(compiler, "posix").name, "go")
+
 
 class ProcessTests(unittest.TestCase):
     def test_nonzero_exit_is_not_hidden(self):

@@ -103,6 +103,10 @@ def helper_snapshot() -> dict[str, bytes]:
     return result
 
 
+def compiler_executable(directory: Path, platform: str | None = None) -> Path:
+    return directory / ("go.exe" if (platform or os.name) == "nt" else "go")
+
+
 def isolated_env(root: Path) -> dict[str, str]:
     # Cache paths are shared for downloads only; built artifacts remain isolated.
     # Resolve the pinned compiler before replacing HOME. With Go's downloader
@@ -114,8 +118,9 @@ def isolated_env(root: Path) -> dict[str, str]:
     toolchain_env["GOTOOLCHAIN"] = TOOLCHAIN
     goroot = Path(run(["go", "env", "GOROOT"], cwd=ROOT, env=toolchain_env).decode().strip())
     compiler = goroot / "bin"
-    if not (compiler / "go").is_file():
-        raise RuntimeError(f"pinned Go compiler is unavailable: {compiler / 'go'}")
+    executable = compiler_executable(compiler)
+    if not executable.is_file():
+        raise RuntimeError(f"pinned Go compiler is unavailable: {executable}")
     goenv = json.loads(run(["go", "env", "-json", "GOPATH", "GOMODCACHE"], cwd=ROOT,
                            env=toolchain_env))
     env = {k: os.environ[k] for k in ("PATH", "SystemRoot", "WINDIR", "COMSPEC",
