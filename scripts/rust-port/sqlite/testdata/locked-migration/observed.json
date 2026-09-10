@@ -1,0 +1,109 @@
+{
+  "cases": [
+    {
+      "busy_seconds": 5.099893917,
+      "diagnostic": "failed to create schema_migrations table: database is locked (5) (SQLITE_BUSY)",
+      "rollback_seconds": 9.1125e-05,
+      "state": {
+        "connections": [
+          {
+            "busy_timeout": 5000,
+            "foreign_keys": 1,
+            "journal_mode": "wal"
+          },
+          {
+            "busy_timeout": 5000,
+            "foreign_keys": 1,
+            "journal_mode": "wal"
+          },
+          {
+            "busy_timeout": 5000,
+            "foreign_keys": 1,
+            "journal_mode": "wal"
+          }
+        ],
+        "error": {
+          "phase": "create_table",
+          "sqlite_primary_code": 5
+        },
+        "probe_absent": true,
+        "reader_value": 0,
+        "released_writer_value": 2,
+        "retry_probe_count": 1,
+        "retry_version_count": 1,
+        "schema_precreated": false,
+        "tracking_exists": false,
+        "version_absent": true
+      }
+    },
+    {
+      "busy_seconds": 5.105194666,
+      "diagnostic": "failed to execute migration 001_probe: database is locked (5) (SQLITE_BUSY)",
+      "rollback_seconds": 6.9833e-05,
+      "state": {
+        "connections": [
+          {
+            "busy_timeout": 5000,
+            "foreign_keys": 1,
+            "journal_mode": "wal"
+          },
+          {
+            "busy_timeout": 5000,
+            "foreign_keys": 1,
+            "journal_mode": "wal"
+          },
+          {
+            "busy_timeout": 5000,
+            "foreign_keys": 1,
+            "journal_mode": "wal"
+          }
+        ],
+        "error": {
+          "phase": "execute",
+          "sqlite_primary_code": 5
+        },
+        "probe_absent": true,
+        "reader_value": 0,
+        "released_writer_value": 2,
+        "retry_probe_count": 1,
+        "retry_version_count": 1,
+        "schema_precreated": true,
+        "tracking_exists": true,
+        "version_absent": true
+      }
+    }
+  ],
+  "go_version": "go1.26.6",
+  "goarch": "arm64",
+  "goos": "darwin",
+  "helper_hashes": {
+    "scripts/rust-port/sqlite/candidate.py": "1c1ab5c9c21c34a0332d65f1adc9222384f53122090788b9abf8d8b280e937d1",
+    "scripts/rust-port/sqlite/cause_test.go": "82899fbc9f001a03ffb005aa22330b4615be07b23af84d61f4a841f77a422bc5",
+    "scripts/rust-port/sqlite/diff.py": "4fbfa4f4100d8dbb7e3ae2d305e14b1a863894799ae20e7049b2ac1a3cc07dbc",
+    "scripts/rust-port/sqlite/generate.py": "b657f4b60285e164e4f23b7a0151d159b73c7e4452aa1befdadffb4ddb33bfd4",
+    "scripts/rust-port/sqlite/go.mod": "ca0dac8ac8d3f259ebf6fd50de3178b16f1f82c7d2ac3e9345d3f071615e3b58",
+    "scripts/rust-port/sqlite/go.sum": "9146e7666d70f22e7739e8735d90275a271753977bd21337caf82345fd8f3cd0",
+    "scripts/rust-port/sqlite/main.go": "d255963e150d01af16303fce44a4d48351f6c807159ac0ed728eb71962f51105",
+    "scripts/rust-port/sqlite/main_test.go": "6bead4fe1755c3afb0a0272e2b3ae5d5333072e9d9ef78b11a88fe0b5afed7da",
+    "scripts/rust-port/sqlite/migrations/001_test.sql": "31c01d0b463acd6a9f7b4c6b198fe998b26b3309ee31350ea4efff26efd13f79",
+    "scripts/rust-port/sqlite/migrations/002_index.sql": "d605a1446f538f11e03213209af02a4f0a319ce82cb3720913b1698088d67449",
+    "scripts/rust-port/sqlite/test_acceptance.py": "756b2115685ca26dd0416f42ea449a9ddfb936a073d7ea13a47231d3c736e320",
+    "scripts/rust-port/sqlite/test_diff.py": "06ff33e37b49a6444d23c238cf6b26347e123ed5d026b69feebb74da11729af2",
+    "scripts/rust-port/sqlite/test_failure_capture.py": "e9efec1905f684013a4cc7aa275ec2efe1c4a0de9e38c8d83350704176805d2f",
+    "scripts/rust-port/sqlite/test_generate.py": "3169f7b1718be3bd9c55a96ee46438fe5cc8980ddda67d23e62857b3752d5895",
+    "scripts/rust-port/sqlite/test_typed.py": "c516d8f2e2b01729a55bb9cd7306ae7e1852fa67bfc74b61fe5bb2f7fa1dcc4a",
+    "scripts/rust-port/sqlite/testdata/locked-migration/capture.py": "6e8ec1a4f099db8df91d6ed3f1324026727065dbd9d7a6f699132f1cde4f45bd",
+    "scripts/rust-port/sqlite/testdata/locked-migration/main.go": "4c411414e1f5a0a7f6878193b96099c273b46d09fcbaea215d170b8a758b4b76",
+    "scripts/rust-port/sqlite/typed_contract.py": "a077fcb72f1ba4114daaea7776c1d98d3773bf20eafb11f55658bd39e8b0382b"
+  },
+  "oracle_commit": "f3d3eb79b9b1f31b4f973d2ed518a8292cedf588",
+  "source_hashes": {
+    "fsutil/atomicwrite.go": "ea34d7c2ea41119b5f38557f8beec6d27c221938e9d6cd0e4a8f358193938221",
+    "fsutil/pathutil.go": "e8baadddca065b48f13fea532a791a018a4843314bac7e9f9760d6bd45a53932",
+    "fsutil/safewrite.go": "4c180680c793312ce253baefde208b9780691fa3e58b44b1a788db7877e3065d",
+    "fsutil/safewrite_windows.go": "518df3baee81a65fd23fb61783efe3007c9f6185e4fa5dc2dcf8680eb224b0c5",
+    "go.mod": "33953c9c031137a9bad2f2d618fd1039288147233053e52948d37571feaf2412",
+    "go.sum": "8cc94b576fd1645b94c882cef30c6d5da6d80df6527eb6cab02fd6d1a67d33a1",
+    "sqlitekit/sqlitekit.go": "b54e235b355f24681b22344afc3fb1e2d3e0b6690d2f1d8bf3b576217873065d"
+  }
+}

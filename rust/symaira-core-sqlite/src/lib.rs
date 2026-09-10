@@ -5,7 +5,11 @@
 //! pools must use this constructor for **every** pooled connection. No runtime
 //! service or product schema is required. Go remains the compatibility oracle.
 
-use std::{fs, io, path::Path, time::Duration};
+use std::{
+    fs, io,
+    path::Path,
+    time::{Duration, Instant},
+};
 
 pub use rusqlite::Connection;
 use thiserror::Error;
@@ -50,6 +54,10 @@ pub enum Error {
     },
 }
 
+/// The busy-wait budget advertised on every connection and enforced around
+/// each lock-contended migration statement. See [`retry_locked`].
+const BUSY_TIMEOUT: Duration = Duration::from_millis(5000);
+
 /// Open a database with WAL, foreign keys and a five-second busy timeout.
 ///
 /// # Errors
@@ -62,9 +70,7 @@ pub fn open(path: impl AsRef<Path>) -> Result<Connection, Error> {
         .unwrap_or(Path::new("."));
     symaira_core_fs::safe_mkdir_all(parent, 0o700).map_err(Error::Directory)?;
     let connection = Connection::open(path).map_err(Error::Open)?;
-    connection
-        .busy_timeout(Duration::from_millis(5000))
-        .map_err(Error::Open)?;
+    connection.busy_timeout(BUSY_TIMEOUT).map_err(Error::Open)?;
     connection
         .pragma_update(None, "foreign_keys", true)
         .map_err(Error::Open)?;
@@ -72,6 +78,40 @@ pub fn open(path: impl AsRef<Path>) -> Result<Connection, Error> {
         .pragma_update(None, "journal_mode", "WAL")
         .map_err(Error::Open)?;
     Ok(connection)
+}
+
+/// Run `attempt` against `connection`, retrying `SQLITE_BUSY` failures against
+/// a wall-clock deadline instead of SQLite's built-in busy handler.
+///
+/// SQLite's default busy handler tracks a *nominal* elapsed time computed
+/// from its fixed retry schedule, not the OS clock: each retry assumes its
+/// requested sleep duration elapsed exactly as requested. Under scheduler
+/// latency (observed on loaded macOS CI runners), the actual sleeps run
+/// noticeably longer than requested, so the nominal schedule reaches its
+/// target well before the wall clock does and the real wait overruns the
+/// configured timeout by several seconds. Disabling the built-in handler for
+/// the duration of the contended statement and retrying against an
+/// [`Instant`] deadline keeps the real wait bounded by [`BUSY_TIMEOUT`]
+/// regardless of individual sleep overshoot.
+fn retry_locked<T>(
+    connection: &Connection,
+    mut attempt: impl FnMut() -> rusqlite::Result<T>,
+) -> rusqlite::Result<T> {
+    connection.busy_timeout(Duration::ZERO)?;
+    let deadline = Instant::now() + BUSY_TIMEOUT;
+    let result = loop {
+        match attempt() {
+            Err(error)
+                if error.sqlite_error_code() == Some(rusqlite::ErrorCode::DatabaseBusy)
+                    && Instant::now() < deadline =>
+            {
+                std::thread::sleep(Duration::from_millis(15));
+            }
+            other => break other,
+        }
+    };
+    connection.busy_timeout(BUSY_TIMEOUT)?;
+    result
 }
 
 /// One directory entry in an abstract migration source.
@@ -144,9 +184,7 @@ const SCHEMA: &str = "CREATE TABLE IF NOT EXISTS schema_migrations (\n\t\tversio
 /// Returns the failing phase and provider/source error. A failing transaction
 /// is rolled back on drop; previously committed migrations are not undone.
 pub fn migrate(connection: &mut Connection, source: &impl MigrationSource) -> Result<(), Error> {
-    connection
-        .execute_batch(SCHEMA)
-        .map_err(Error::CreateTable)?;
+    retry_locked(connection, || connection.execute_batch(SCHEMA)).map_err(Error::CreateTable)?;
     let mut entries = source.entries().map_err(Error::ReadDirectory)?;
     entries.retain(|entry| !entry.is_dir && entry.name.ends_with(".sql"));
     entries.sort_by(|a, b| a.name.cmp(&b.name));
@@ -179,12 +217,12 @@ pub fn migrate(connection: &mut Connection, source: &impl MigrationSource) -> Re
             version: version.into(),
             source,
         })?;
-        transaction
-            .execute_batch(sql)
-            .map_err(|source| Error::Execute {
+        retry_locked(&transaction, || transaction.execute_batch(sql)).map_err(|source| {
+            Error::Execute {
                 version: version.into(),
                 source,
-            })?;
+            }
+        })?;
         transaction
             .execute(
                 "INSERT INTO schema_migrations (version) VALUES (?)",
