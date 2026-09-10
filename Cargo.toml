@@ -8,6 +8,7 @@ members = [
   "rust/symaira-core-mcp",
   "rust/symaira-core-fs",
   "rust/symaira-core-secretref",
+  "rust/symaira-core-sqlite",
   "rust/test-support/symaira-contract-fixtures",
   "rust/test-support/symaira-core-foundation",
 ]

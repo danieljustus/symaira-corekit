@@ -1,6 +1,6 @@
 # Symaira CoreKit Go→Rust implementation plan
 
-> **Execution rule:** implement one work item per reviewed PR. Keep Go green and released. Begin only with the first `ready` item in [`work-items.json`](work-items.json); update statuses only after every acceptance command really passes.
+> **Execution rule:** implement one work item per reviewed PR. Keep Go green and released. Rust crates remain Git-pinned and non-publishing until the full migration, consumer rollout, and external registry-evidence gates are complete. Begin only with the first `ready` item in [`work-items.json`](work-items.json); update statuses only after every acceptance command really passes.
 
 **Goal:** Add adopted, idiomatic Rust CoreKit crates beside the stable Go module, preserving all observable contracts and removing duplicate foundations from active Rust consumers without a flag-day rewrite.
 
@@ -97,7 +97,7 @@ quality review passed.
 6. Enable tracing and prove stdout remains protocol-only.
 7. Fuzz copied seed corpora; never let libFuzzer mutate tracked seeds.
 
-## RUST-005: Foundation multi-consumer adoption and value gate
+## RUST-005: Foundation multi-consumer adoption and value gate — COMPLETE (live read-back 2026-09-08)
 
 **Objective:** Prove the shared Rust foundation has real ecosystem value before expensive package ports.
 
@@ -109,6 +109,8 @@ quality review passed.
 4. Measure 50-run startup p95/RSS median/binary size canaries and 10-run clean/warm consumer build distributions.
 5. Record deleted/avoided duplicate source and dependency-feature closure.
 6. Stop, split or abandon crates that lack two adopters/two-language SSOT or exceed the 10% regression ceiling without an approved security exception.
+
+**Acceptance evidence:** Live `python3 scripts/rust-port/adoption.py --check --min-consumers 2` on 2026-09-08 read back both adoption PRs as merged: danieljustus/symaira-vault PR #1000 (merge commit `b39d1c2de59d205a91c01e584776d568c3877d7e`) and danieljustus/symaira-eraseme PR #866 (merge commit `eb628050d136a2b2009250a8c6f21eb718d853fc`), both exact-pinned to CoreKit revision `27177f25f551cecefa7bd6c4524abf175b3a75c7` with matching `Cargo.lock` resolution. `bench.py --check` validates the tracked 50-run benchmark evidence (maximum regression ratio 0.4755 vault / 0.4430 eraseme, below the 1.1 ceiling), `make port-consumer-smoke` passes, and `value-gate.json` records `status: passed` / `decision: continue`. This is Git-pin adoption evidence, not a registry or release claim.
 
 All RUST-006+ work depends transitively on this graph barrier.
 
@@ -194,21 +196,57 @@ All RUST-006+ work depends transitively on this graph barrier.
 
 **Steps:** Generate deterministic rotation/2–4-bit/metadata/sidecar/ranking fixtures through Go; implement safe scalar Rust first; require exact packed/persisted bytes; then benchmark ten paired runs. Add SIMD only as a separate reviewed optimization after parity.
 
-## RUST-013: Full dual-language hardening and native CI
+## RUST-013: Full dual-language hardening and native CI — COMPLETE (revalidated 2026-09-08)
 
 **Objective:** Turn the foundation and every optional slice activated so far into a sustainable repository gate. Deferred, unbuilt crates do not block a foundation release.
 
 **Steps:** Add native macOS/Linux/Windows Rust jobs, MSRV, feature isolation, coverage, audit, deny, Miri and fuzz schedules. Verify all Go tests/lint/build/apidiff remain required. Inventory every transitive unsafe source and ensure contract edits trigger both language suites.
 
-## RUST-014: SemVer, publishing manifest and release verification
+**Miri gate:** `scripts/rust-port/miri_gate.py` derives the expected package set from Cargo metadata and rejects overlaps or omissions. It runs pure/core packages with Miri's default isolation, then runs filesystem/process/environment boundary packages in a separate invocation with `MIRIFLAGS=-Zmiri-disable-isolation`. The negative probe executes the real `CON-001` fixture under default isolation and must observe Miri's isolated `open` rejection; a successful probe is a gate failure, not a reason to silently broaden the non-isolated set. The deterministic 10,000-iteration MCP smoke test is explicitly skipped in both Miri invocations because it is covered by the dedicated fuzz gate and otherwise dominates runtime; all other selected tests and doctests still run. Native filesystem safety remains covered by the RUST-003 matrix; this split only makes the Miri trust boundary explicit and bounded.
 
-**Objective:** Publish only adopted crates without confusing Go module tags.
+**Hardening execution:** `make rust-hardening` is the executable RUST-013 aggregate. It runs pinned-toolchain format/check/Clippy, nextest, doctests, every-feature validation, LLVM coverage instrumentation, cargo-audit, cargo-deny, Rust-port metadata validation, and the complete Go build/test/lint gates. The `cargo hack --no-dev-deps` invocation deliberately omits `--locked` because cargo-hack temporarily rewrites manifests and must refresh its lock view; all other lock-sensitive commands remain locked. CI additionally runs full Rust workspace tests and doctests natively on Linux, macOS, and Windows.
 
-**Steps:** Add `cargo semver-checks`; define a repository release manifest mapping tag to changed crate versions and publish order; dry-run packaging/provenance/SBOM; verify crates.io ownership and public bytes after publication. Keep exact Git-revision consumption until this gate passes.
+**Acceptance evidence:** The historical hardening gate was merged through PR #246 at exact head `b3f189f6ac4c78986c48be510805663906cce876`; GitHub reports the `Rust RUST-013 hardening` job successful in run `34193678917` (job `101956734067`). Its log contains successful `cargo audit` and `cargo deny check` commands, which is the bound evidence for `REL-004` parity. Revalidation on 2026-09-08 at `d382b8615ce879bac6f23c7250e13667934e8f93`: the local gate set (`cargo fmt --all --check`, `cargo check/clippy/nextest/doctest --locked`, `cargo hack --each-feature`, `cargo audit`, `cargo deny check`, `miri_gate.py --self-test`) passed on macOS, and native CI run `34231886903` (push to main) for that commit is green on ubuntu-latest, macos-latest and windows-latest including the RUST-013 native, Miri gate and hardening jobs. RUST-013 is complete; no crate publication, Go cutover or Go-oracle removal occurred.
 
-## RUST-015: Consumer rollout and Go-retention review
+## RUST-014: SemVer, publishing manifest and release verification — IN PROGRESS (non-publishing local gate)
+
+**Objective:** Keep the release contract executable without publishing. No crates.io publication is permitted until the full migration and consumer rollout are complete, followed by separately approved external registry evidence.
+
+**Create:** `port/release/manifest.json`, `port/release/verify.py`, and focused
+stdlib-only verifier tests. The manifest classifies every workspace package,
+records the two RUST-005 adopters of `symaira-core-version`, freezes the only
+permitted publication order, and keeps all crates non-publishable until a
+separate external release approval.
+
+**Steps completed:**
+
+1. Added `cargo semver-checks` as a pinned CI tool/bootstrap gate, independent
+   of the existing Go `apidiff` gate. It does not establish public Rust SemVer
+   compatibility until a publishable crate has an immutable registry baseline.
+2. Added a checked-in release plan mapping the stable Go `v0.17.0` namespace to
+   explicit Rust package paths/versions. Rust-specific repository tags are
+   rejected; the Go `vMAJOR.MINOR.PATCH` tag remains the only release namespace.
+3. Added a fail-closed dry-run verifier that checks locked Cargo metadata,
+   workspace coverage, adoption evidence, package order and temporary `.crate`
+   archives, and emits source/input digest plus Cargo-metadata SBOM evidence.
+4. Wired the verifier and SemVer tool into `ci.yml` and the
+   `rust-release-contract` Make target. The Go-only tag workflow deliberately
+   does not run a Rust publication plan; no publish or tag command exists in
+   the verifier.
+
+**Evidence:** `cargo semver-checks check-release`,
+`python3 port/release/verify.py --dry-run`, and the focused Python tests pass on
+macOS. `REL-002` is locally verified by the existing Go `apidiff` gate.
+`REL-003` and `REL-005` are `fixture-ready`: no public Rust API baseline,
+crates.io ownership, public-byte readback, or external OIDC/publishing evidence
+exists while every crate stays `publish = false`. Go build/test/lint and exact
+Git-revision consumer support remain unchanged.
+
+## RUST-015: Consumer rollout and Go-retention review — BLOCKED (verifier implemented)
 
 **Objective:** Finish adoption without pretending Rust crate availability removes the Go API.
+
+**Executable gate:** `python3 port/consumer/verify.py --released-consumers` checks every `docs/consumers.json` record. It distinguishes released Git revisions from registry pins, exact Cargo.toml versions, Cargo.lock source/checksum, release-tag ancestry, Go imports, and explicit standalone/rollback evidence. The current run is expected to exit 1 with blockers; `make consumer-drift` runs the same verifier from the canonical checkout even when invoked from a registered worktree.
 
 **Steps:** Track every released Go and Rust consumer, exact pin and package use; migrate consumer by consumer with its own suite; retain Go releases while any released consumer imports a package. Any Go removal is a later, separate major-version proposal with rollback evidence.
 

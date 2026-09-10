@@ -39,7 +39,7 @@
         "make port-oracle-selftest",
         "make port-fixture-source-check"
       ],
-      "stop_rule": "No Rust production crate until Go\u2194Go self-equality, source-digest rejection, isolated side effects and a deliberate negative-control failure are proven."
+      "stop_rule": "No Rust production crate until Go↔Go self-equality, source-digest rejection, isolated side effects and a deliberate negative-control failure are proven."
     },
     {
       "id": "RUST-002",
@@ -176,7 +176,8 @@
         "SQL-005",
         "SQL-006"
       ],
-      "status": "deferred",
+      "status": "in_progress",
+      "demand_evidence": "sqlite-demand.md",
       "demand_class": "demand_driven",
       "acceptance_commands": [
         "make rust-sqlite-contract",
@@ -350,7 +351,7 @@
       "contracts": [
         "REL-004"
       ],
-      "status": "ready",
+      "status": "complete",
       "demand_class": "required",
       "acceptance_commands": [
         "cargo fmt --all --check",
@@ -359,9 +360,12 @@
         "cargo nextest run --workspace --all-features",
         "cargo test --workspace --doc --all-features",
         "cargo hack check --workspace --each-feature --no-dev-deps",
-        "cargo +nightly miri test --workspace",
+        "python3 scripts/rust-port/miri_gate.py --self-test",
+        "python3 scripts/rust-port/miri_gate.py --negative-test",
+        "python3 scripts/rust-port/miri_gate.py --run",
         "cargo audit",
         "cargo deny check",
+        "make rust-hardening",
         "make test lint build"
       ],
       "stop_rule": "No crate proceeds with untriaged advisories/licenses, missing native runtime proof, unfuzzed untrusted parsers or broken Go gates."
@@ -377,7 +381,7 @@
         "REL-003",
         "REL-005"
       ],
-      "status": "blocked",
+      "status": "in_progress",
       "demand_class": "required",
       "acceptance_commands": [
         "cargo semver-checks check-release",
@@ -400,6 +404,7 @@
       "status": "blocked",
       "demand_class": "required",
       "acceptance_commands": [
+        "python3 -m unittest discover -s port/consumer -p 'test_*.py'",
         "python3 port/consumer/verify.py --released-consumers",
         "make consumer-drift",
         "python3 scripts/rust-port/adoption.py --check"

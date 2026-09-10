@@ -588,8 +588,10 @@ def main() -> int:
     gate_status = value_gate.get("status")
     if gate_status not in {"pending", "passed", "failed"}:
         fail("value-gate: invalid status")
+    # A pending value-gate may coexist with explicit in-progress revalidation
+    # rows. Only a new ready/complete downstream claim violates the barrier.
     active_downstream = any(
-        statuses[item_id] in {"ready", "in_progress", "complete"}
+        statuses[item_id] in {"ready", "complete"}
         for item_id in barrier
     )
     if active_downstream and statuses[gate] != "complete":

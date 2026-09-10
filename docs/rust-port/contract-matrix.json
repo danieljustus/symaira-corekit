@@ -1750,7 +1750,7 @@
         "windows"
       ],
       "rust_test": "CI apidiff gate",
-      "status": "todo"
+      "status": "parity"
     },
     {
       "id": "REL-003",
@@ -1765,7 +1765,7 @@
         "windows"
       ],
       "rust_test": "CI cargo-semver-checks",
-      "status": "todo"
+      "status": "fixture-ready"
     },
     {
       "id": "REL-004",
@@ -1780,7 +1780,16 @@
         "windows"
       ],
       "rust_test": "CI supply-chain gate",
-      "status": "todo"
+      "status": "parity",
+      "evidence": {
+        "pull_request": 246,
+        "head": "b3f189f6ac4c78986c48be510805663906cce876",
+        "workflow_run": "34193678917",
+        "job": "101956734067",
+        "job_url": "https://github.com/danieljustus/symaira-corekit/actions/runs/34193678917/job/101956734067",
+        "commands": ["cargo audit", "cargo deny check"],
+        "conclusion": "success"
+      }
     },
     {
       "id": "REL-005",
@@ -1795,7 +1804,7 @@
         "windows"
       ],
       "rust_test": "port/release/verify.py",
-      "status": "todo"
+      "status": "fixture-ready"
     },
     {
       "id": "REL-006",

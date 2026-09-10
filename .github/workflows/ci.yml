@@ -246,6 +246,44 @@ jobs:
         if: runner.os == 'Linux'
         run: make mcp-differential
 
+  rust-sqlite-native:
+    name: Rust SQLite native (${{ matrix.os }})
+    if: github.event_name != 'pull_request'
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: "1.26.6"
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: "3.12"
+      - name: Install pinned Rust toolchain
+        shell: bash
+        run: rustup toolchain install 1.98.0 --profile minimal --component rustfmt,clippy
+      - name: SQLite tests and live source-bound differential
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo test --manifest-path "$GITHUB_WORKSPACE/Cargo.toml" -p symaira-core-sqlite --all-features --locked
+          cargo clippy --manifest-path "$GITHUB_WORKSPACE/Cargo.toml" -p symaira-core-sqlite --all-targets --all-features --locked -- -D warnings
+          python -m unittest discover -s scripts/rust-port/sqlite -p 'test_*.py'
+          python scripts/rust-port/sqlite/diff.py --typed-errors --output sqlite-native-report.json
+      - name: Retain native differential evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: sqlite-native-${{ matrix.os }}-${{ github.sha }}
+          path: sqlite-native-report.json
+          if-no-files-found: error
+          retention-days: 30
+
   rust-rust003-native:
     name: Rust RUST-003 native (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
@@ -304,3 +342,91 @@ jobs:
           rustup component add miri --toolchain nightly
       - name: Run Miri with filesystem isolation disabled
         run: MIRIFLAGS=-Zmiri-disable-isolation cargo +nightly miri test -p symaira-core-fs -p symaira-core-secretref --all-features
+
+  rust-rust013-miri:
+    name: Rust RUST-013 Miri gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
+      - name: Install pinned nightly and Miri
+        run: |
+          rustup toolchain install nightly --profile minimal
+          rustup component add miri --toolchain nightly
+      - name: Validate explicit Miri package partition
+        run: python3 scripts/rust-port/miri_gate.py --self-test
+      - name: Run negative default-isolation probe
+        run: python3 scripts/rust-port/miri_gate.py --negative-test
+      - name: Run bounded split Miri gate
+        run: python3 scripts/rust-port/miri_gate.py --run
+
+  rust-rust013-native:
+    name: Rust RUST-013 native (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
+      - name: Install pinned Rust toolchain
+        shell: bash
+        run: rustup toolchain install 1.98.0 --profile minimal --component rustfmt,clippy
+      - name: Run full workspace tests natively
+        run: cargo +1.98.0 test --workspace --all-features --locked
+      - name: Run workspace doctests natively
+        run: cargo +1.98.0 test --workspace --doc --all-features --locked
+
+  rust-rust013-hardening:
+    name: Rust RUST-013 hardening
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
+        with:
+          fetch-depth: 0
+      - name: Set up Go oracle toolchain
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: "1.26.6"
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: "3.12"
+      - name: Install pinned Rust toolchain
+        shell: bash
+        run: rustup toolchain install 1.98.0 --profile minimal --component rustfmt,clippy
+      - name: Install pinned Rust gate tools
+        run: |
+          cargo install cargo-nextest --version 0.9.143 --locked
+          cargo install cargo-hack --version 0.6.45 --locked
+          cargo install cargo-llvm-cov --version 0.9.0 --locked
+          cargo install cargo-audit --version 0.22.2 --locked
+          cargo install cargo-deny --version 0.20.2 --locked
+      - name: Install pinned Go linter
+        uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
+        with:
+          version: v2.13.2
+      - name: Run complete dual-language hardening gate
+        run: make rust-hardening
+
+  rust-release-manifest:
+    name: Rust release manifest
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
+        with:
+          fetch-depth: 0
+      - name: Install pinned Rust toolchain
+        shell: bash
+        run: rustup toolchain install 1.98.0 --profile minimal --component rustfmt,clippy
+      - name: Install cargo-semver-checks
+        run: cargo install cargo-semver-checks --version 0.50.0 --locked
+      - name: Check Rust API compatibility
+        run: cargo semver-checks check-release
+      - name: Run non-publishing governance verifier tests
+        run: |
+          python3 -m unittest discover -s port/release -p 'test_*.py'
+          python3 -m unittest discover -s port/consumer -p 'test_*.py'
+      - name: Verify release manifest, packages, provenance and SBOM
+        run: python3 port/release/verify.py --dry-run

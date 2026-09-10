@@ -20,6 +20,45 @@ LATEST=$(gh release view --repo danieljustus/symaira-corekit --json tagName -q .
 echo "Latest symaira-corekit release: $LATEST"
 echo
 
+# Go pseudo-versions are ordered by the base release version. A pseudo-version
+# for the same base version is before that tagged release; one for a later base
+# version is newer than the latest tagged release. Never compare these as raw
+# strings: v0.17.1-0.<timestamp>-<hash> is newer than v0.17.0.
+classify_pin() {
+  python3 - "$1" "$LATEST" <<'PY'
+import re
+import sys
+
+pin, latest = sys.argv[1:]
+tag = re.compile(r"^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$")
+pseudo = re.compile(
+    r"^v(?P<major>0|[1-9][0-9]*)\.(?P<minor>0|[1-9][0-9]*)\.(?P<patch>0|[1-9][0-9]*)-"
+    r"(?P<zero>0\.)?(?P<timestamp>[0-9]{14})-(?P<hash>[0-9a-f]{12})$"
+)
+
+latest_match = tag.fullmatch(latest)
+pin_tag = tag.fullmatch(pin)
+pin_pseudo = pseudo.fullmatch(pin)
+if not latest_match or (not pin_tag and not pin_pseudo):
+    print("invalid")
+    raise SystemExit(0)
+latest_version = tuple(int(part) for part in latest_match.groups())
+if pin == latest:
+    print("tagged-release")
+    raise SystemExit(0)
+if pin_pseudo:
+    pin_version = tuple(int(pin_pseudo.group(part)) for part in ("major", "minor", "patch"))
+    # The no-0. form is valid only for the initial vX.0.0 pseudo-version.
+    if pin_pseudo.group("zero") is None and pin_version[1:] != (0, 0):
+        print("invalid")
+        raise SystemExit(0)
+    print("pseudoversion-newer" if pin_version > latest_version else "pseudoversion-older")
+else:
+    pin_version = tuple(int(part) for part in pin_tag.groups())
+    print("tagged-release-newer" if pin_version > latest_version else "older")
+PY
+}
+
 drifted=()
 
 while IFS=$'\t' read -r repo pin; do
@@ -29,18 +68,44 @@ while IFS=$'\t' read -r repo pin; do
     continue
   fi
 
-  version=$(echo "$content" | grep -oE 'github\.com/danieljustus/symaira-corekit v[0-9]+\.[0-9]+\.[0-9]+' | head -1 | awk '{print $2}')
-  if [ -z "$version" ]; then
-    echo "WARN  $repo:$pin — no symaira-corekit require line found"
-    continue
-  fi
+  parsed=$(printf '%s\n' "$content" | python3 "$SCRIPT_DIR/parse-go-pin.py")
+  case "$parsed" in
+    v*)
+      version=$parsed
+      ;;
+    missing)
+      echo "WARN  $repo:$pin — no anchored symaira-corekit require declaration found"
+      continue
+      ;;
+    invalid|duplicate|inconsistent)
+      echo "WARN  $repo:$pin — $parsed symaira-corekit require declarations"
+      continue
+      ;;
+    *)
+      echo "WARN  $repo:$pin — malformed CoreKit pin parser result"
+      continue
+      ;;
+  esac
 
-  if [ "$version" = "$LATEST" ]; then
-    echo "OK    $repo:$pin — $version"
-  else
-    echo "STALE $repo:$pin — $version (latest: $LATEST)"
-    drifted+=("$repo:$pin@$version")
-  fi
+  classification=$(classify_pin "$version")
+  case "$classification" in
+    tagged-release)
+      echo "OK    $repo:$pin — $version (tagged-release)"
+      ;;
+    older|pseudoversion-older)
+      echo "STALE $repo:$pin — $version ($classification than latest)"
+      drifted+=("$repo:$pin@$version")
+      ;;
+    tagged-release-newer)
+      echo "AHEAD $repo:$pin — $version ($classification)"
+      ;;
+    pseudoversion-newer)
+      echo "OK    $repo:$pin — $version ($classification)"
+      ;;
+    *)
+      echo "WARN  $repo:$pin — unsupported CoreKit version $version"
+      ;;
+  esac
 done < <(jq -r '.consumers[] | .repo as $r | .pins[] | "\($r)\t\(.)"' "$MANIFEST")
 
 if [ "$CREATE_ISSUE" = true ] && [ "${#drifted[@]}" -gt 0 ]; then
