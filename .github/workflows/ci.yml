@@ -192,7 +192,10 @@ jobs:
             ~/.cargo/registry/cache
             ~/.cargo/git/db
             target
-          key: rust-${{ runner.os }}-${{ runner.arch }}-1.98.0-${{ hashFiles('Cargo.lock') }}
+          key: rust-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-1.98.0-${{ hashFiles('Cargo.lock') }}-${{ hashFiles('**/*.rs') }}
+          restore-keys: |
+            rust-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-1.98.0-${{ hashFiles('Cargo.lock') }}-
+            rust-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-1.98.0-
       - name: Set up Go oracle toolchain
         uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
@@ -237,7 +240,10 @@ jobs:
             ~/.cargo/registry/cache
             ~/.cargo/git/db
             target
-          key: rust-${{ runner.os }}-${{ runner.arch }}-1.98.0-${{ hashFiles('Cargo.lock') }}
+          key: rust-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-1.98.0-${{ hashFiles('Cargo.lock') }}-${{ hashFiles('**/*.rs') }}
+          restore-keys: |
+            rust-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-1.98.0-${{ hashFiles('Cargo.lock') }}-
+            rust-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-1.98.0-
       - name: Install pinned Rust toolchain
         shell: bash
         run: rustup toolchain install 1.98.0 --profile minimal --component rustfmt,clippy
@@ -286,7 +292,10 @@ jobs:
             ~/.cargo/registry/cache
             ~/.cargo/git/db
             target
-          key: rust-${{ runner.os }}-${{ runner.arch }}-1.98.0-${{ hashFiles('Cargo.lock') }}
+          key: rust-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-1.98.0-${{ hashFiles('Cargo.lock') }}-${{ hashFiles('**/*.rs') }}
+          restore-keys: |
+            rust-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-1.98.0-${{ hashFiles('Cargo.lock') }}-
+            rust-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-1.98.0-
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version: "1.26.6"
@@ -332,7 +341,10 @@ jobs:
             ~/.cargo/registry/cache
             ~/.cargo/git/db
             target
-          key: rust-${{ runner.os }}-${{ runner.arch }}-1.98.0-${{ hashFiles('Cargo.lock') }}
+          key: rust-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-1.98.0-${{ hashFiles('Cargo.lock') }}-${{ hashFiles('**/*.rs') }}
+          restore-keys: |
+            rust-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-1.98.0-${{ hashFiles('Cargo.lock') }}-
+            rust-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-1.98.0-
       - name: Set up Go oracle toolchain
         uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
@@ -381,8 +393,10 @@ jobs:
             ~/.cargo/registry/index
             ~/.cargo/registry/cache
             ~/.cargo/git/db
-            target
-          key: rust-${{ runner.os }}-${{ runner.arch }}-nightly-${{ hashFiles('Cargo.lock') }}
+          key: rust-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-nightly-${{ hashFiles('Cargo.lock') }}-${{ hashFiles('**/*.rs') }}
+          restore-keys: |
+            rust-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-nightly-${{ hashFiles('Cargo.lock') }}-
+            rust-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-nightly-
       - name: Install pinned nightly and Miri
         run: |
           rustup toolchain install nightly --profile minimal
@@ -403,8 +417,10 @@ jobs:
             ~/.cargo/registry/index
             ~/.cargo/registry/cache
             ~/.cargo/git/db
-            target
-          key: rust-${{ runner.os }}-${{ runner.arch }}-nightly-${{ hashFiles('Cargo.lock') }}
+          key: rust-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-nightly-${{ hashFiles('Cargo.lock') }}-${{ hashFiles('**/*.rs') }}
+          restore-keys: |
+            rust-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-nightly-${{ hashFiles('Cargo.lock') }}-
+            rust-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-nightly-
       - name: Install pinned nightly and Miri
         run: |
           rustup toolchain install nightly --profile minimal
@@ -433,7 +449,10 @@ jobs:
             ~/.cargo/registry/cache
             ~/.cargo/git/db
             target
-          key: rust-${{ runner.os }}-${{ runner.arch }}-1.98.0-${{ hashFiles('Cargo.lock') }}
+          key: rust-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-1.98.0-${{ hashFiles('Cargo.lock') }}-${{ hashFiles('**/*.rs') }}
+          restore-keys: |
+            rust-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-1.98.0-${{ hashFiles('Cargo.lock') }}-
+            rust-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-1.98.0-
       - name: Install pinned Rust toolchain
         shell: bash
         run: rustup toolchain install 1.98.0 --profile minimal --component rustfmt,clippy
@@ -458,7 +477,10 @@ jobs:
             ~/.cargo/registry/cache
             ~/.cargo/git/db
             target
-          key: rust-${{ runner.os }}-${{ runner.arch }}-1.98.0-${{ hashFiles('Cargo.lock') }}
+          key: rust-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-1.98.0-${{ hashFiles('Cargo.lock') }}-${{ hashFiles('**/*.rs') }}
+          restore-keys: |
+            rust-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-1.98.0-${{ hashFiles('Cargo.lock') }}-
+            rust-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-1.98.0-
       - name: Set up Go oracle toolchain
         uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
@@ -499,7 +521,10 @@ jobs:
             ~/.cargo/registry/cache
             ~/.cargo/git/db
             target
-          key: rust-${{ runner.os }}-${{ runner.arch }}-1.98.0-${{ hashFiles('Cargo.lock') }}
+          key: rust-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-1.98.0-${{ hashFiles('Cargo.lock') }}-${{ hashFiles('**/*.rs') }}
+          restore-keys: |
+            rust-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-1.98.0-${{ hashFiles('Cargo.lock') }}-
+            rust-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-1.98.0-
       - name: Install pinned Rust toolchain
         shell: bash
         run: rustup toolchain install 1.98.0 --profile minimal --component rustfmt,clippy
