@@ -5,6 +5,8 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  schedule:
+    - cron: '23 5 * * 1' # weekly full compatibility and migration suite
   workflow_dispatch:
 
 concurrency:
@@ -42,6 +44,8 @@ jobs:
         run: CGO_ENABLED=0 go test -count=1 -timeout=5m ./...
 
   cross-platform:
+    # Full compatibility/parity coverage stays on main and weekly runs.
+    if: github.event_name != 'pull_request'
     name: cross (${{ matrix.goos }}/${{ matrix.goarch }})
     strategy:
       fail-fast: false
@@ -81,6 +85,8 @@ jobs:
         run: make rust-port-validate
 
   port-contract:
+    # Full compatibility/parity coverage stays on main and weekly runs.
+    if: github.event_name != 'pull_request'
     name: port contract (${{ matrix.os }})
     strategy:
       fail-fast: false
@@ -172,6 +178,8 @@ jobs:
           apidiff -m -incompatible base.api .
 
   rust-foundation:
+    # Full compatibility/parity coverage stays on main and weekly runs.
+    if: github.event_name != 'pull_request'
     name: Rust foundation (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     strategy:
@@ -208,6 +216,8 @@ jobs:
           cargo deny check
 
   rust-mcp:
+    # Full compatibility/parity coverage stays on main and weekly runs.
+    if: github.event_name != 'pull_request'
     name: Rust MCP (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     strategy:
@@ -247,8 +257,9 @@ jobs:
         run: make mcp-differential
 
   rust-sqlite-native:
-    name: Rust SQLite native (${{ matrix.os }})
+    # Full compatibility/parity coverage stays on main and weekly runs.
     if: github.event_name != 'pull_request'
+    name: Rust SQLite native (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -285,6 +296,8 @@ jobs:
           retention-days: 30
 
   rust-rust003-native:
+    # Full compatibility/parity coverage stays on main and weekly runs.
+    if: github.event_name != 'pull_request'
     name: Rust RUST-003 native (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     strategy:
@@ -332,6 +345,8 @@ jobs:
           cargo deny check
 
   rust-rust003-miri:
+    # Full compatibility/parity coverage stays on main and weekly runs.
+    if: github.event_name != 'pull_request'
     name: Rust RUST-003 Miri
     runs-on: ubuntu-latest
     steps:
@@ -344,6 +359,8 @@ jobs:
         run: MIRIFLAGS=-Zmiri-disable-isolation cargo +nightly miri test -p symaira-core-fs -p symaira-core-secretref --all-features
 
   rust-rust013-miri:
+    # Full compatibility/parity coverage stays on main and weekly runs.
+    if: github.event_name != 'pull_request'
     name: Rust RUST-013 Miri gate
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -361,6 +378,8 @@ jobs:
         run: python3 scripts/rust-port/miri_gate.py --run
 
   rust-rust013-native:
+    # Full compatibility/parity coverage stays on main and weekly runs.
+    if: github.event_name != 'pull_request'
     name: Rust RUST-013 native (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     strategy:
@@ -378,6 +397,8 @@ jobs:
         run: cargo +1.98.0 test --workspace --doc --all-features --locked
 
   rust-rust013-hardening:
+    # Full compatibility/parity coverage stays on main and weekly runs.
+    if: github.event_name != 'pull_request'
     name: Rust RUST-013 hardening
     runs-on: ubuntu-latest
     timeout-minutes: 45
@@ -411,6 +432,8 @@ jobs:
         run: make rust-hardening
 
   rust-release-manifest:
+    # Full compatibility/parity coverage stays on main and weekly runs.
+    if: github.event_name != 'pull_request'
     name: Rust release manifest
     runs-on: ubuntu-latest
     steps:
