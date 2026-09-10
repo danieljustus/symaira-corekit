@@ -5,6 +5,8 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  schedule:
+    - cron: '23 5 * * 1' # weekly full compatibility and migration suite
   workflow_dispatch:
 
 concurrency:
@@ -182,6 +184,18 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
         with:
           fetch-depth: 0
+      - name: Cache Cargo dependencies and target
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            ~/.cargo/git/db
+            target
+          key: rust-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-1.98.0-${{ hashFiles('Cargo.lock') }}-${{ hashFiles('**/*.rs') }}
+          restore-keys: |
+            rust-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-1.98.0-${{ hashFiles('Cargo.lock') }}-
+            rust-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-1.98.0-
       - name: Set up Go oracle toolchain
         uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
@@ -218,6 +232,18 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
         with:
           fetch-depth: 0
+      - name: Cache Cargo dependencies and target
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            ~/.cargo/git/db
+            target
+          key: rust-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-1.98.0-${{ hashFiles('Cargo.lock') }}-${{ hashFiles('**/*.rs') }}
+          restore-keys: |
+            rust-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-1.98.0-${{ hashFiles('Cargo.lock') }}-
+            rust-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-1.98.0-
       - name: Install pinned Rust toolchain
         shell: bash
         run: rustup toolchain install 1.98.0 --profile minimal --component rustfmt,clippy
@@ -247,8 +273,8 @@ jobs:
         run: make mcp-differential
 
   rust-sqlite-native:
-    name: Rust SQLite native (${{ matrix.os }})
     if: github.event_name != 'pull_request'
+    name: Rust SQLite native (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -258,6 +284,18 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
         with:
           fetch-depth: 0
+      - name: Cache Cargo dependencies and target
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            ~/.cargo/git/db
+            target
+          key: rust-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-1.98.0-${{ hashFiles('Cargo.lock') }}-${{ hashFiles('**/*.rs') }}
+          restore-keys: |
+            rust-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-1.98.0-${{ hashFiles('Cargo.lock') }}-
+            rust-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-1.98.0-
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version: "1.26.6"
@@ -295,6 +333,18 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
         with:
           fetch-depth: 0
+      - name: Cache Cargo dependencies and target
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            ~/.cargo/git/db
+            target
+          key: rust-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-1.98.0-${{ hashFiles('Cargo.lock') }}-${{ hashFiles('**/*.rs') }}
+          restore-keys: |
+            rust-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-1.98.0-${{ hashFiles('Cargo.lock') }}-
+            rust-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-1.98.0-
       - name: Set up Go oracle toolchain
         uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
@@ -336,6 +386,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
+      - name: Cache Cargo dependencies and target
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            ~/.cargo/git/db
+          key: rust-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-nightly-${{ hashFiles('Cargo.lock') }}-${{ hashFiles('**/*.rs') }}
+          restore-keys: |
+            rust-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-nightly-${{ hashFiles('Cargo.lock') }}-
+            rust-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-nightly-
       - name: Install pinned nightly and Miri
         run: |
           rustup toolchain install nightly --profile minimal
@@ -349,6 +410,17 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
+      - name: Cache Cargo dependencies and target
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            ~/.cargo/git/db
+          key: rust-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-nightly-${{ hashFiles('Cargo.lock') }}-${{ hashFiles('**/*.rs') }}
+          restore-keys: |
+            rust-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-nightly-${{ hashFiles('Cargo.lock') }}-
+            rust-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-nightly-
       - name: Install pinned nightly and Miri
         run: |
           rustup toolchain install nightly --profile minimal
@@ -369,6 +441,18 @@ jobs:
         os: [ubuntu-latest, macos-latest, windows-latest]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
+      - name: Cache Cargo dependencies and target
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            ~/.cargo/git/db
+            target
+          key: rust-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-1.98.0-${{ hashFiles('Cargo.lock') }}-${{ hashFiles('**/*.rs') }}
+          restore-keys: |
+            rust-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-1.98.0-${{ hashFiles('Cargo.lock') }}-
+            rust-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-1.98.0-
       - name: Install pinned Rust toolchain
         shell: bash
         run: rustup toolchain install 1.98.0 --profile minimal --component rustfmt,clippy
@@ -385,6 +469,18 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
         with:
           fetch-depth: 0
+      - name: Cache Cargo dependencies and target
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            ~/.cargo/git/db
+            target
+          key: rust-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-1.98.0-${{ hashFiles('Cargo.lock') }}-${{ hashFiles('**/*.rs') }}
+          restore-keys: |
+            rust-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-1.98.0-${{ hashFiles('Cargo.lock') }}-
+            rust-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-1.98.0-
       - name: Set up Go oracle toolchain
         uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
@@ -417,6 +513,18 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
         with:
           fetch-depth: 0
+      - name: Cache Cargo dependencies and target
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            ~/.cargo/git/db
+            target
+          key: rust-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-1.98.0-${{ hashFiles('Cargo.lock') }}-${{ hashFiles('**/*.rs') }}
+          restore-keys: |
+            rust-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-1.98.0-${{ hashFiles('Cargo.lock') }}-
+            rust-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-1.98.0-
       - name: Install pinned Rust toolchain
         shell: bash
         run: rustup toolchain install 1.98.0 --profile minimal --component rustfmt,clippy
