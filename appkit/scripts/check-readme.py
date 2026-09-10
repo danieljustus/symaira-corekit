@@ -39,7 +39,7 @@ let package = Package(
     name: "READMEExamples",
     platforms: [.macOS(.v14)],
     dependencies: [
-        .package(path: "{package_path}"),
+        .package(name: "symaira-appkit", path: "{package_path}"),
     ],
     targets: [
         .executableTarget(
@@ -112,7 +112,7 @@ def main() -> int:
             )
 
         result = subprocess.run(
-            ["swift", "build", "--package-path", str(package)],
+            ["swift", "build", "--manifest-cache", "local", "--package-path", str(package)],
             cwd=ROOT,
             check=False,
         )
