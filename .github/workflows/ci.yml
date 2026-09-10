@@ -248,7 +248,6 @@ jobs:
 
   rust-sqlite-native:
     name: Rust SQLite native (${{ matrix.os }})
-    if: github.event_name != 'pull_request'
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
