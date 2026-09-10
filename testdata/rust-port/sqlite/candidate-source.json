@@ -1,9 +1,9 @@
 {
-  "base": "705f5e075607149c9b4314920110e66e39e7e71a",
+  "base": "13373e49e99c83abe116689dce030b5913dba3f6",
   "schema_version": 1,
   "source_hashes": {
     ".gitattributes": "f5001cfbf0e3c5454e5463cf700f465f79140fbcfaf504a61773799a76d232b2",
-    ".github/workflows/ci.yml": "eab2b63aa1c899ecd84241097b03b09c8e5fc40a1dd3d8f0a38697a8394d98b5",
+    ".github/workflows/ci.yml": "d1257a989996e6d16b72130dae22107099fd861d320e38f0dcae6519e0efbc59",
     "Cargo.lock": "b20bf5f7744d99b2c3282de0b4c69f5111acc1b203af1151a6d508fb4ca73b2d",
     "Cargo.toml": "90bea7580de79925a8eca263a3c0f83ff9ba7766cc9dae007bea442630e634d6",
     "rust-toolchain.toml": "e879701472a698533f43f54989bbf5f3101eb0503472159d32633f3bb8a13fdf",
@@ -26,9 +26,11 @@
     "rust/symaira-core-secretref/src/lib.rs": "f3d4c6d9aa0ca500552f21a6807662fdebd9422652579fc7745813f463d67b8b",
     "rust/symaira-core-secretref/tests/parity.rs": "80665d3a6c0cf5543dec10626a1451446318c33df27a80efb86d6bc6410abf85",
     "rust/symaira-core-sqlite/Cargo.toml": "29c41f09f75ddef6348b8755cc80125957cc370ef610f75f597183cc73f1c799",
-    "rust/symaira-core-sqlite/examples/sqlite-observe.rs": "94ab37b297daa31354e57f253f52d4658b788f02f9e0b8ee09217a02384b55b5",
-    "rust/symaira-core-sqlite/src/lib.rs": "406e8c0cda573f76c779efb7f18271718bdf125ea51448d907462d9e90f49aeb",
-    "rust/symaira-core-sqlite/tests/contracts.rs": "1432adf42c6293a180c06fc7c3c70bc2f011d6171c93af7541705c5b680016b6",
+    "rust/symaira-core-sqlite/examples/sqlite-observe.rs": "8c963ae7aed9b9dcae17883bc863eb1f642c257ebb349c9b207b4fb92fa4e23f",
+    "rust/symaira-core-sqlite/src/lib.rs": "9a96bf2a30187ddbe0618cc4496449b6c85a30cab10b07527493707ae751cb91",
+    "rust/symaira-core-sqlite/tests/contracts.rs": "47071f78ef04222c99341e77dbe54d1d0091acd3b66d072c4faeb014c6f8d529",
+    "rust/symaira-core-sqlite/tests/execute.rs": "82a70a6864832734f32e55a202a8b09f7da65e961a718f894c43a6a56f536ddf",
+    "rust/symaira-core-sqlite/tests/migration_selection.rs": "fb7add90fbe6f4e1fb81b619ee5a0004e44ead7e617ecc3f8169b4d3ece9344f",
     "rust/symaira-core-version/Cargo.toml": "105564028bb4d57e8ca02a59873432c5107e3f266831391bab912a511251baf6",
     "rust/symaira-core-version/src/lib.rs": "77cd98590d6d1d21f99fd812d2464fb0deeccfa052bde555ae077ae853a60b20",
     "rust/test-support/symaira-contract-fixtures/Cargo.toml": "e2fafe830cd528c7a09606e6caf73794d6a0d29e8e9b7540a0e7b8461ec6d377",
@@ -58,6 +60,11 @@
     "scripts/rust-port/sqlite/test_failure_capture.py": "e9efec1905f684013a4cc7aa275ec2efe1c4a0de9e38c8d83350704176805d2f",
     "scripts/rust-port/sqlite/test_generate.py": "ab8ec206614d8a393f0efe57fee87178e7f00939238b62060462bce56ae35db4",
     "scripts/rust-port/sqlite/test_typed.py": "c516d8f2e2b01729a55bb9cd7306ae7e1852fa67bfc74b61fe5bb2f7fa1dcc4a",
+    "scripts/rust-port/sqlite/testdata/locked-migration/capture.py": "6e8ec1a4f099db8df91d6ed3f1324026727065dbd9d7a6f699132f1cde4f45bd",
+    "scripts/rust-port/sqlite/testdata/locked-migration/main.go": "4c411414e1f5a0a7f6878193b96099c273b46d09fcbaea215d170b8a758b4b76",
+    "scripts/rust-port/sqlite/testdata/migration-selection/capture.py": "1b535b56f7d4e2f9c18766d89204576a387c81de206474cdd964bd12bfba1e81",
+    "scripts/rust-port/sqlite/testdata/migration-selection/main.go": "bfb006694395931f3101ca6bcc0757d1b032795d0eb1b504d86f6efc36482ffc",
+    "scripts/rust-port/sqlite/testdata/migration-selection/test_capture.py": "c0c0f3a19d1e68ef648eb16443ce889327a06ae4a2040dd05ce6479634ac3000",
     "scripts/rust-port/sqlite/typed_contract.py": "a077fcb72f1ba4114daaea7776c1d98d3773bf20eafb11f55658bd39e8b0382b"
   }
 }
