@@ -1,0 +1,211 @@
+{
+  "case_ids": [
+    "SQL-003/migration-selection"
+  ],
+  "cases": [
+    {
+      "data": [
+        {
+          "id": 1,
+          "value": "ten"
+        },
+        {
+          "id": 2,
+          "value": "two"
+        },
+        {
+          "id": 3,
+          "value": "suffix"
+        }
+      ],
+      "id": "SQL-003/migration-selection",
+      "reads": [
+        "migrations/001_create.sql",
+        "migrations/10_add.sql",
+        "migrations/2_add.sql",
+        "migrations/3_repeat.sql.sql"
+      ],
+      "schema": [
+        {
+          "name": "schema_migrations",
+          "sql": "CREATE TABLE schema_migrations (\n\t\tversion TEXT PRIMARY KEY,\n\t\tapplied_at DATETIME DEFAULT CURRENT_TIMESTAMP\n\t)",
+          "type": "table"
+        },
+        {
+          "name": "selection",
+          "sql": "CREATE TABLE selection (id INTEGER PRIMARY KEY, value TEXT)",
+          "type": "table"
+        }
+      ],
+      "versions": [
+        "001_create",
+        "10_add",
+        "2_add",
+        "3_repeat.sql"
+      ]
+    }
+  ],
+  "dependencies": {
+    "github.com/BurntSushi/toml": {
+      "Version": "v1.6.0"
+    },
+    "github.com/dustin/go-humanize": {
+      "GoModSum": "h1:Mu1zIs6XwVuF/gI1OepvI0qD18qycQx+mFykh5fBlto=",
+      "Sum": "h1:GzkhY7T5VNhEkwH0PVJgjz+fX1rhBrR7pRT3mDkpeCY=",
+      "Version": "v1.0.1"
+    },
+    "github.com/google/pprof": {
+      "GoModSum": "h1:jl5iWTm0/hd5PjEYEOuwAJ57L/CibdZfrqZ5XA5GrCk=",
+      "Sum": "h1:LMLX+LgTNWpfvCBdFebv6EsYotImrt/Ppc5cXIriCSo=",
+      "Version": "v0.0.0-20260802141513-ef3492d7dac3"
+    },
+    "github.com/google/uuid": {
+      "GoModSum": "h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=",
+      "Sum": "h1:NIvaJDMOsjHA8n1jAhLSgzrAzy1Hgr+hNrb57e+94F0=",
+      "Version": "v1.6.0"
+    },
+    "github.com/hashicorp/golang-lru/v2": {
+      "GoModSum": "h1:QeFd9opnmA6QUJc5vARoKUSoFhyfM2/ZepoAG6RGpeM=",
+      "Sum": "h1:a+bsQ5rvGLjzHuww6tVxozPZFVghXaHOwFs4luLUK2k=",
+      "Version": "v2.0.7"
+    },
+    "github.com/mattn/go-isatty": {
+      "GoModSum": "h1:nMCL3Zebbrt45jsMDgnfIwz6ydEQApk5oEI3HqDio6A=",
+      "Sum": "h1:tGZZoVgT/KiqK1c8ocVLeDS8BSWMRd47J3Lbz7vsReI=",
+      "Version": "v0.0.24"
+    },
+    "github.com/ncruces/go-strftime": {
+      "GoModSum": "h1:Fwc5htZGVVkseilnfgOVb9mKy6w1naJmn9CehxcKcls=",
+      "Sum": "h1:HMFp8mLCTPp341M/ZnA4qaf7ZlsbTc+miZjCLOFAw7w=",
+      "Version": "v1.0.0"
+    },
+    "github.com/remyoudompheng/bigfft": {
+      "GoModSum": "h1:qqbHyh8v60DhA7CoWK5oRCqLrMHRGoxYCSS9EjAz6Eo=",
+      "Sum": "h1:W09IVJc94icq4NjY3clb7Lk8O1qJ8BdBEF8z0ibU0rE=",
+      "Version": "v0.0.0-20230129092748-24d4a6f8daec"
+    },
+    "golang.org/x/mod": {
+      "GoModSum": "h1:m8S8VeM9r4dzDwjrKO0a1sZP3YjeMamRRlD+fmR2Q/0=",
+      "Sum": "h1:vF1DjpVEshcIqoEaauuHebaLk1O1forxjxBaVn884JQ=",
+      "Version": "v0.37.0"
+    },
+    "golang.org/x/net": {
+      "Version": "v0.58.0"
+    },
+    "golang.org/x/sync": {
+      "GoModSum": "h1:9xrNwdLfx4jkKbNva9FpL6vEN7evnE43NNNJQ2LF3+0=",
+      "Sum": "h1:HLII4xRRTtCRkxYp4HNFF0Js/Og6q2i++KXbg0gHCwM=",
+      "Version": "v0.21.0"
+    },
+    "golang.org/x/sys": {
+      "GoModSum": "h1:4GL1E5IUh+htKOUEOaiffhrAeqysfVGipDYzABqnCmw=",
+      "Sum": "h1:o7XGOvZQCADBQQ4Y7VNq2dRWQR7JmOUW8Kxx4ZsNgWs=",
+      "Version": "v0.47.0"
+    },
+    "golang.org/x/tools": {
+      "GoModSum": "h1:dFHnyTvFWY212G+h7ZY4Vsp/K3U4/7W9TyVaAul8uCA=",
+      "Sum": "h1:7Kn5x/d1svx/PzryTsqeoZN4TZwqeH5pGWjefhLi/1Q=",
+      "Version": "v0.47.0"
+    },
+    "gopkg.in/yaml.v3": {
+      "Version": "v3.0.1"
+    },
+    "modernc.org/cc/v4": {
+      "GoModSum": "h1:OnovgIhbbMXMu1aISnJ0wvVD1KnW+cAUJkIrAWh+kVI=",
+      "Sum": "h1:MKgdCV3WykTSPqpVrnxdEDS0HEd2FHpKZDzxzU5LyeI=",
+      "Version": "v4.29.1"
+    },
+    "modernc.org/ccgo/v4": {
+      "GoModSum": "h1:SZ8YcN9NG7XVsQYdm6jYBvi8PQP1qi+kqB6OhjqI3Fk=",
+      "Sum": "h1:sBgfIwyN0TQ9C5hwIeuqyeAKyMWnbvj2fvpF4L11uzU=",
+      "Version": "v4.34.6"
+    },
+    "modernc.org/fileutil": {
+      "GoModSum": "h1:EqdKFDxiByqxLk8ozOxObDSfcVOv/54xDs/DUHdvCUU=",
+      "Sum": "h1:j6ZzNTftVS054gi281TyLjHPp6CPHr2KCxEXjEbD6SM=",
+      "Version": "v1.4.0"
+    },
+    "modernc.org/gc/v2": {
+      "GoModSum": "h1:YgIahr1ypgfe7chRuJi2gD7DBQiKSLMPgBQe9oIiito=",
+      "Sum": "h1:nyqdV8q46KvTpZlsw66kWqwXRHdjIlJOhG6kxiV/9xI=",
+      "Version": "v2.6.5"
+    },
+    "modernc.org/gc/v3": {
+      "GoModSum": "h1:HFK/6AGESC7Ex+EZJhJ2Gni6cTaYpSMmU/cT9RmlfYY=",
+      "Sum": "h1:2g65LGVSmFQrXeITAw97x7hCRvZFcyE1uDP+7Vng7JI=",
+      "Version": "v3.1.4"
+    },
+    "modernc.org/goabi0": {
+      "GoModSum": "h1:CEFRnnJhKvWT1c1JTI3Avm+tgOWbkOu5oPA8eH8LnMI=",
+      "Sum": "h1:HvEowk7LxcPd0eq6mVOAEMai46V+i7Jrj13t4AzuNks=",
+      "Version": "v0.2.0"
+    },
+    "modernc.org/libc": {
+      "GoModSum": "h1:eeQAS9W3sZeKYMFubydxJpII9ybHWshk+7or7bLG9co=",
+      "Sum": "h1:fX1Omw4o2/1C2iRkkIsrQTasJQldLhRmuPreXLoWs9k=",
+      "Version": "v1.74.4"
+    },
+    "modernc.org/mathutil": {
+      "GoModSum": "h1:4p5IwJITfppl0G4sUEDtCr4DthTaT47/N3aT6MhfgJg=",
+      "Sum": "h1:GCZVGXdaN8gTqB1Mf/usp1Y/hSqgI2vAGGP4jZMCxOU=",
+      "Version": "v1.7.1"
+    },
+    "modernc.org/memory": {
+      "GoModSum": "h1:/JP4VbVC+K5sU2wZi9bHoq2MAkCnrt2r98UGeSK7Mjw=",
+      "Sum": "h1:o4QC8aMQzmcwCK3t3Ux/ZHmwFPzE6hf2Y5LbkRs+hbI=",
+      "Version": "v1.11.0"
+    },
+    "modernc.org/opt": {
+      "GoModSum": "h1:03fq9lsNfvkYSfxrfUhZCWPk1lm4cq4N+Bh//bEtgns=",
+      "Sum": "h1:tGyef5ApycA7FSEOMraay9SaTk5zmbx7Tu+cJs4QKZg=",
+      "Version": "v0.2.0"
+    },
+    "modernc.org/sortutil": {
+      "GoModSum": "h1:7ZI3a3REbai7gzCLcotuw9AC4VZVpYMjDzETGsSMqJE=",
+      "Sum": "h1:+xyoGf15mM3NMlPDnFqrteY07klSFxLElE2PVuWIJ7w=",
+      "Version": "v1.2.1"
+    },
+    "modernc.org/sqlite": {
+      "GoModSum": "h1:yCJ2cmAaIkHQ25oXWrF8H4O1lIfPYPR26yCEDj2P3pQ=",
+      "Sum": "h1:qNQP6xnx5M0ISNtlnxoOX0+cD5bJ0/gr9aMmndFczzg=",
+      "Version": "v1.57.0"
+    },
+    "modernc.org/strutil": {
+      "GoModSum": "h1:EHkiggD70koQxjVdSBM3JKM7k6L0FbGE5eymy9i3B9A=",
+      "Sum": "h1:UneZBkQA+DX2Rp35KcM69cSsNES9ly8mQWD71HKlOA0=",
+      "Version": "v1.2.1"
+    },
+    "modernc.org/token": {
+      "GoModSum": "h1:UGzOrNV1mAFSEB63lOFHIpNRUVMvYTc6yu1SMY/XTDM=",
+      "Sum": "h1:Xl7Ap9dKaEs5kLoOQeQmPWevfnk/DM5qcLcYlA8ys6Y=",
+      "Version": "v1.1.0"
+    }
+  },
+  "go_version": "go1.26.6",
+  "helper_hashes": {
+    "scripts/rust-port/sqlite/generate.py": "ff89620f03c5643d8733b5101323060ce5b982c5c95f576a4b2fc297f3ae00e0",
+    "scripts/rust-port/sqlite/go.mod": "ca0dac8ac8d3f259ebf6fd50de3178b16f1f82c7d2ac3e9345d3f071615e3b58",
+    "scripts/rust-port/sqlite/go.sum": "9146e7666d70f22e7739e8735d90275a271753977bd21337caf82345fd8f3cd0",
+    "scripts/rust-port/sqlite/testdata/migration-selection/capture.py": "1b535b56f7d4e2f9c18766d89204576a387c81de206474cdd964bd12bfba1e81",
+    "scripts/rust-port/sqlite/testdata/migration-selection/cases.json": "2d60897799032ccbb174988e1cb697b7d1643ead6685f445cdfcd2ced7386852",
+    "scripts/rust-port/sqlite/testdata/migration-selection/main.go": "bfb006694395931f3101ca6bcc0757d1b032795d0eb1b504d86f6efc36482ffc",
+    "scripts/rust-port/sqlite/testdata/migration-selection/test_capture.py": "c0c0f3a19d1e68ef648eb16443ce889327a06ae4a2040dd05ce6479634ac3000"
+  },
+  "oracle_commit": "f3d3eb79b9b1f31b4f973d2ed518a8292cedf588",
+  "oracle_test_hashes": {
+    "sqlitekit/example_test.go": "a8c09cf7708dcf7f373472f8bed9d981c3a1d9a930af07ff3355f26be8dd8eed",
+    "sqlitekit/sqlitekit_errors_test.go": "7d46cae66d1dfc51b7e6b3c743e519cb2c2d77c144c917260c68aee8ef78293f",
+    "sqlitekit/sqlitekit_test.go": "69b5a14cc69147714af13cdbcb436f802ad91bae4b494d752c5205771eeff252",
+    "sqlitekit/testdata/migrations/001_test.sql": "31c01d0b463acd6a9f7b4c6b198fe998b26b3309ee31350ea4efff26efd13f79",
+    "sqlitekit/testdata/migrations/002_index.sql": "d605a1446f538f11e03213209af02a4f0a319ce82cb3720913b1698088d67449"
+  },
+  "source_hashes": {
+    "fsutil/atomicwrite.go": "ea34d7c2ea41119b5f38557f8beec6d27c221938e9d6cd0e4a8f358193938221",
+    "fsutil/pathutil.go": "e8baadddca065b48f13fea532a791a018a4843314bac7e9f9760d6bd45a53932",
+    "fsutil/safewrite.go": "4c180680c793312ce253baefde208b9780691fa3e58b44b1a788db7877e3065d",
+    "fsutil/safewrite_windows.go": "518df3baee81a65fd23fb61783efe3007c9f6185e4fa5dc2dcf8680eb224b0c5",
+    "go.mod": "33953c9c031137a9bad2f2d618fd1039288147233053e52948d37571feaf2412",
+    "go.sum": "8cc94b576fd1645b94c882cef30c6d5da6d80df6527eb6cab02fd6d1a67d33a1",
+    "sqlitekit/sqlitekit.go": "b54e235b355f24681b22344afc3fb1e2d3e0b6690d2f1d8bf3b576217873065d"
+  }
+}
