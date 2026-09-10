@@ -80,6 +80,66 @@ pub fn open(path: impl AsRef<Path>) -> Result<Connection, Error> {
     Ok(connection)
 }
 
+/// Execute one statement with a five-second wall-clock busy-wait budget.
+///
+/// Use this operation boundary for contended writes on connections from [`open`].
+/// Raw [`Connection`] methods retain SQLite's nominal busy-sleep schedule, which
+/// can exceed five seconds under scheduler latency. Preparation and execution
+/// share one retry budget here; positional parameters are bound only once, and
+/// only SQLite preparation/step `SQLITE_BUSY` errors are retried. SQL batches are
+/// rejected by `prepare`. Pass parameters with `rusqlite::params!` or `&[]`.
+///
+/// The connection is exclusively borrowed while its native busy handler is
+/// temporarily disabled. `PRAGMA busy_timeout` is restored to 5000 before return
+/// (including errors and unwinding). This applies the same policy as [`migrate`];
+/// it replaces any caller-installed busy handler. The budget bounds lock retries,
+/// not SQL execution time or arbitrary parameter conversion work.
+///
+/// # Errors
+/// Returns the original SQLite preparation, binding or execution error, or a
+/// busy-timeout configuration error. A timed-out writer retains `SQLITE_BUSY`.
+pub fn execute(
+    connection: &mut Connection,
+    sql: &str,
+    params: &[&dyn rusqlite::ToSql],
+) -> rusqlite::Result<usize> {
+    // retry_locked restores on normal returns. Keep restoration on unwind local
+    // to this API, where user-provided ToSql implementations may panic.
+    struct RestoreTimeout<'a>(&'a Connection);
+    impl Drop for RestoreTimeout<'_> {
+        fn drop(&mut self) {
+            let _ = self.0.busy_timeout(BUSY_TIMEOUT);
+        }
+    }
+    let _restore = RestoreTimeout(connection);
+    let mut statement = None;
+    let mut bound = false;
+    retry_locked(connection, || {
+        if statement.is_none() {
+            statement = Some(connection.prepare(sql)?);
+        }
+        let statement = statement.as_mut().expect("prepared above");
+        if !bound {
+            if params.len() != statement.parameter_count() {
+                return Ok(Err(rusqlite::Error::InvalidParameterCount(
+                    params.len(),
+                    statement.parameter_count(),
+                )));
+            }
+            for (index, param) in params.iter().enumerate() {
+                if let Err(error) = statement.raw_bind_parameter(index + 1, *param) {
+                    // A user ToSql can itself return SQLITE_BUSY. Such a binding
+                    // error must not retry a statement with incomplete values.
+                    return Ok(Err(error));
+                }
+            }
+            bound = true;
+        }
+        // rusqlite resets after every step, retaining the already-bound values.
+        statement.raw_execute().map(Ok)
+    })?
+}
+
 /// Run `attempt` against `connection`, retrying `SQLITE_BUSY` failures against
 /// a wall-clock deadline instead of SQLite's built-in busy handler.
 ///
