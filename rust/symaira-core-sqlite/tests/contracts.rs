@@ -233,7 +233,7 @@ fn locked_migrations_match_go_timeout_and_error_phases() {
         // externally stored target directory or use an ambient user database.
         let temp = tempfile::Builder::new()
             .prefix("locked-migration-")
-            .tempdir_in(concat!(env!("CARGO_MANIFEST_DIR"), "/tests"))
+            .tempdir()
             .unwrap();
         let path = temp.path().join("database.db");
         let mut holder = open(&path).unwrap();
