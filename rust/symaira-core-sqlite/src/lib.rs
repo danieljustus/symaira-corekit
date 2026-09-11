@@ -1,8 +1,10 @@
 #![deny(unsafe_code)]
 //! Domain-free SQLite connection policy and per-file transactional migrations.
 //!
-//! Every call to [`open`] initializes its own connection. Consumers that maintain
-//! pools must use this constructor for **every** pooled connection. No runtime
+//! Every call to [`open`] or [`open_with_existing_parent`] initializes its own
+//! connection. Consumers that maintain pools must use one of these constructors
+//! for **every** pooled connection. [`open`] owns secure parent creation;
+//! [`open_with_existing_parent`] leaves parent policy to the caller. No runtime
 //! service or product schema is required. Go remains the compatibility oracle.
 
 use std::{
@@ -60,6 +62,10 @@ const BUSY_TIMEOUT: Duration = Duration::from_millis(5000);
 
 /// Open a database with WAL, foreign keys and a five-second busy timeout.
 ///
+/// Creates and validates the parent using [`symaira_core_fs::safe_mkdir_all`]
+/// with mode `0o700`. Use [`open_with_existing_parent`] when the caller owns
+/// the parent creation and validation contract.
+///
 /// # Errors
 /// Returns directory-creation or eager database/pragma failures.
 pub fn open(path: impl AsRef<Path>) -> Result<Connection, Error> {
@@ -69,6 +75,26 @@ pub fn open(path: impl AsRef<Path>) -> Result<Connection, Error> {
         .filter(|p| !p.as_os_str().is_empty())
         .unwrap_or(Path::new("."));
     symaira_core_fs::safe_mkdir_all(parent, 0o700).map_err(Error::Directory)?;
+    open_connection(path)
+}
+
+/// Open a database with WAL, foreign keys and a five-second busy timeout,
+/// leaving the parent directory entirely to the caller.
+///
+/// The caller owns parent creation and validation, including permissions and
+/// symlink policy. This constructor does not create, validate, canonicalize or
+/// change permissions on the parent; SQLite resolves the supplied path normally
+/// and may create the database file. This is not a filesystem security boundary.
+/// Use [`open`] when CoreKit should own secure parent creation instead.
+///
+/// # Errors
+/// Returns eager database/pragma failures as [`Error::Open`], retaining the
+/// underlying SQLite error. A missing parent is not created and opening fails.
+pub fn open_with_existing_parent(path: impl AsRef<Path>) -> Result<Connection, Error> {
+    open_connection(path.as_ref())
+}
+
+fn open_connection(path: &Path) -> Result<Connection, Error> {
     let connection = Connection::open(path).map_err(Error::Open)?;
     connection.busy_timeout(BUSY_TIMEOUT).map_err(Error::Open)?;
     connection
@@ -82,7 +108,8 @@ pub fn open(path: impl AsRef<Path>) -> Result<Connection, Error> {
 
 /// Execute one statement with a five-second wall-clock busy-wait budget.
 ///
-/// Use this operation boundary for contended writes on connections from [`open`].
+/// Use this operation boundary for contended writes on connections from [`open`]
+/// or [`open_with_existing_parent`].
 /// Raw [`Connection`] methods retain SQLite's nominal busy-sleep schedule, which
 /// can exceed five seconds under scheduler latency. Preparation and execution
 /// share one retry budget here; positional parameters are bound only once, and
