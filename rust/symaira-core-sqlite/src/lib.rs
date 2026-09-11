@@ -250,16 +250,17 @@ pub fn migrate(connection: &mut Connection, source: &impl MigrationSource) -> Re
     entries.sort_by(|a, b| a.name.cmp(&b.name));
     for entry in entries {
         let version = entry.name.strip_suffix(".sql").expect("filtered suffix");
-        let count: i64 = connection
-            .query_row(
+        let count: i64 = retry_locked(connection, || {
+            connection.query_row(
                 "SELECT COUNT(*) FROM schema_migrations WHERE version = ?",
                 [version],
                 |row| row.get(0),
             )
-            .map_err(|source| Error::CheckState {
-                version: version.into(),
-                source,
-            })?;
+        })
+        .map_err(|source| Error::CheckState {
+            version: version.into(),
+            source,
+        })?;
         if count > 0 {
             continue;
         }
@@ -273,28 +274,40 @@ pub fn migrate(connection: &mut Connection, source: &impl MigrationSource) -> Re
             name: entry.name.clone(),
             source: io::Error::new(io::ErrorKind::InvalidData, error),
         })?;
-        let transaction = connection.transaction().map_err(|source| Error::Begin {
-            version: version.into(),
-            source,
-        })?;
+        // migrate keeps exclusive access to the connection. The shared borrow
+        // lets the retry closure return a transaction, while retaining the
+        // connection's configured transaction behavior and rollback-on-drop.
+        let transaction =
+            retry_locked(connection, || connection.unchecked_transaction()).map_err(|source| {
+                Error::Begin {
+                    version: version.into(),
+                    source,
+                }
+            })?;
         retry_locked(&transaction, || transaction.execute_batch(sql)).map_err(|source| {
             Error::Execute {
                 version: version.into(),
                 source,
             }
         })?;
-        transaction
-            .execute(
+        retry_locked(&transaction, || {
+            transaction.execute(
                 "INSERT INTO schema_migrations (version) VALUES (?)",
                 [version],
             )
-            .map_err(|source| Error::Record {
-                version: version.into(),
-                source,
-            })?;
-        transaction.commit().map_err(|source| Error::Commit {
+        })
+        .map_err(|source| Error::Record {
             version: version.into(),
             source,
+        })?;
+        // Transaction::commit consumes the guard even on SQLITE_BUSY. Keep it
+        // alive across retries; drop rolls back on failure and is a no-op once
+        // COMMIT has returned the connection to autocommit mode.
+        retry_locked(&transaction, || transaction.execute_batch("COMMIT")).map_err(|source| {
+            Error::Commit {
+                version: version.into(),
+                source,
+            }
         })?;
     }
     Ok(())
