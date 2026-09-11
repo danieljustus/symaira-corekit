@@ -3,7 +3,7 @@
 use serde_json::{Value, json};
 use std::{cell::Cell, collections::BTreeMap, io, path::Path, time::Instant};
 use symaira_core_sqlite::{
-    Connection, DirectorySource, Entry, Error, MigrationSource, migrate, open,
+    Connection, DirectorySource, Entry, Error, MigrationSource, execute, migrate, open,
 };
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
@@ -172,7 +172,7 @@ fn observe(root: &Path, fixture: &Path) -> Result<Value> {
     let tx = first[0].transaction()?;
     tx.execute("INSERT INTO lock_probe VALUES (1)", [])?;
     let started = Instant::now();
-    let writer = others[0].execute("INSERT INTO lock_probe VALUES (2)", []);
+    let writer = execute(&mut others[0], "INSERT INTO lock_probe VALUES (2)", &[]);
     let seconds = started.elapsed().as_secs_f64();
     // Retain the raw duration for failed timing gates, without changing limits.
     let reader = others[1].query_row("SELECT COUNT(*) FROM lock_probe", [], |r| {

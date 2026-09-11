@@ -61,10 +61,16 @@ def equal(left, right):
 
 def evaluate(go, rust, manifest):
     candidate.verify(rust, manifest)
+    # Validate the Go oracle before reading platform-specific state. This keeps
+    # malformed/misaligned declared case sets from surfacing as unrelated
+    # KeyError/IndexError failures in the native-identity check.
+    generate.validate(go)
     # Rust is an independent observation source. Validate its full acceptance
     # shape before comparing it with Go, so self-reported case success cannot
     # hide a missing negative, rollback, schema, or timing observation.
     generate.validate_observations(rust, require_busy_measurement=True)
+    # Validate Go's case IDs before indexing its positional platform observation.
+    generate.validate(go)
     native = rust.get('native', {})
     go_state = go['cases'][0]['state']
     if (native.get('goos') != go_state['native_goos']

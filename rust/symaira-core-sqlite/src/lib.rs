@@ -1,8 +1,10 @@
 #![deny(unsafe_code)]
 //! Domain-free SQLite connection policy and per-file transactional migrations.
 //!
-//! Every call to [`open`] initializes its own connection. Consumers that maintain
-//! pools must use this constructor for **every** pooled connection. No runtime
+//! Every call to [`open`] or [`open_with_existing_parent`] initializes its own
+//! connection. Consumers that maintain pools must use one of these constructors
+//! for **every** pooled connection. [`open`] owns secure parent creation;
+//! [`open_with_existing_parent`] leaves parent policy to the caller. No runtime
 //! service or product schema is required. Go remains the compatibility oracle.
 
 use std::{
@@ -60,6 +62,10 @@ const BUSY_TIMEOUT: Duration = Duration::from_millis(5000);
 
 /// Open a database with WAL, foreign keys and a five-second busy timeout.
 ///
+/// Creates and validates the parent using [`symaira_core_fs::safe_mkdir_all`]
+/// with mode `0o700`. Use [`open_with_existing_parent`] when the caller owns
+/// the parent creation and validation contract.
+///
 /// # Errors
 /// Returns directory-creation or eager database/pragma failures.
 pub fn open(path: impl AsRef<Path>) -> Result<Connection, Error> {
@@ -69,6 +75,26 @@ pub fn open(path: impl AsRef<Path>) -> Result<Connection, Error> {
         .filter(|p| !p.as_os_str().is_empty())
         .unwrap_or(Path::new("."));
     symaira_core_fs::safe_mkdir_all(parent, 0o700).map_err(Error::Directory)?;
+    open_connection(path)
+}
+
+/// Open a database with WAL, foreign keys and a five-second busy timeout,
+/// leaving the parent directory entirely to the caller.
+///
+/// The caller owns parent creation and validation, including permissions and
+/// symlink policy. This constructor does not create, validate, canonicalize or
+/// change permissions on the parent; SQLite resolves the supplied path normally
+/// and may create the database file. This is not a filesystem security boundary.
+/// Use [`open`] when CoreKit should own secure parent creation instead.
+///
+/// # Errors
+/// Returns eager database/pragma failures as [`Error::Open`], retaining the
+/// underlying SQLite error. A missing parent is not created and opening fails.
+pub fn open_with_existing_parent(path: impl AsRef<Path>) -> Result<Connection, Error> {
+    open_connection(path.as_ref())
+}
+
+fn open_connection(path: &Path) -> Result<Connection, Error> {
     let connection = Connection::open(path).map_err(Error::Open)?;
     connection.busy_timeout(BUSY_TIMEOUT).map_err(Error::Open)?;
     connection
@@ -78,6 +104,67 @@ pub fn open(path: impl AsRef<Path>) -> Result<Connection, Error> {
         .pragma_update(None, "journal_mode", "WAL")
         .map_err(Error::Open)?;
     Ok(connection)
+}
+
+/// Execute one statement with a five-second wall-clock busy-wait budget.
+///
+/// Use this operation boundary for contended writes on connections from [`open`]
+/// or [`open_with_existing_parent`].
+/// Raw [`Connection`] methods retain SQLite's nominal busy-sleep schedule, which
+/// can exceed five seconds under scheduler latency. Preparation and execution
+/// share one retry budget here; positional parameters are bound only once, and
+/// only SQLite preparation/step `SQLITE_BUSY` errors are retried. SQL batches are
+/// rejected by `prepare`. Pass parameters with `rusqlite::params!` or `&[]`.
+///
+/// The connection is exclusively borrowed while its native busy handler is
+/// temporarily disabled. `PRAGMA busy_timeout` is restored to 5000 before return
+/// (including errors and unwinding). This applies the same policy as [`migrate`];
+/// it replaces any caller-installed busy handler. The budget bounds lock retries,
+/// not SQL execution time or arbitrary parameter conversion work.
+///
+/// # Errors
+/// Returns the original SQLite preparation, binding or execution error, or a
+/// busy-timeout configuration error. A timed-out writer retains `SQLITE_BUSY`.
+pub fn execute(
+    connection: &mut Connection,
+    sql: &str,
+    params: &[&dyn rusqlite::ToSql],
+) -> rusqlite::Result<usize> {
+    // retry_locked restores on normal returns. Keep restoration on unwind local
+    // to this API, where user-provided ToSql implementations may panic.
+    struct RestoreTimeout<'a>(&'a Connection);
+    impl Drop for RestoreTimeout<'_> {
+        fn drop(&mut self) {
+            let _ = self.0.busy_timeout(BUSY_TIMEOUT);
+        }
+    }
+    let _restore = RestoreTimeout(connection);
+    let mut statement = None;
+    let mut bound = false;
+    retry_locked(connection, || {
+        if statement.is_none() {
+            statement = Some(connection.prepare(sql)?);
+        }
+        let statement = statement.as_mut().expect("prepared above");
+        if !bound {
+            if params.len() != statement.parameter_count() {
+                return Ok(Err(rusqlite::Error::InvalidParameterCount(
+                    params.len(),
+                    statement.parameter_count(),
+                )));
+            }
+            for (index, param) in params.iter().enumerate() {
+                if let Err(error) = statement.raw_bind_parameter(index + 1, *param) {
+                    // A user ToSql can itself return SQLITE_BUSY. Such a binding
+                    // error must not retry a statement with incomplete values.
+                    return Ok(Err(error));
+                }
+            }
+            bound = true;
+        }
+        // rusqlite resets after every step, retaining the already-bound values.
+        statement.raw_execute().map(Ok)
+    })?
 }
 
 /// Run `attempt` against `connection`, retrying `SQLITE_BUSY` failures against
@@ -190,16 +277,17 @@ pub fn migrate(connection: &mut Connection, source: &impl MigrationSource) -> Re
     entries.sort_by(|a, b| a.name.cmp(&b.name));
     for entry in entries {
         let version = entry.name.strip_suffix(".sql").expect("filtered suffix");
-        let count: i64 = connection
-            .query_row(
+        let count: i64 = retry_locked(connection, || {
+            connection.query_row(
                 "SELECT COUNT(*) FROM schema_migrations WHERE version = ?",
                 [version],
                 |row| row.get(0),
             )
-            .map_err(|source| Error::CheckState {
-                version: version.into(),
-                source,
-            })?;
+        })
+        .map_err(|source| Error::CheckState {
+            version: version.into(),
+            source,
+        })?;
         if count > 0 {
             continue;
         }
@@ -213,28 +301,40 @@ pub fn migrate(connection: &mut Connection, source: &impl MigrationSource) -> Re
             name: entry.name.clone(),
             source: io::Error::new(io::ErrorKind::InvalidData, error),
         })?;
-        let transaction = connection.transaction().map_err(|source| Error::Begin {
-            version: version.into(),
-            source,
-        })?;
+        // migrate keeps exclusive access to the connection. The shared borrow
+        // lets the retry closure return a transaction, while retaining the
+        // connection's configured transaction behavior and rollback-on-drop.
+        let transaction =
+            retry_locked(connection, || connection.unchecked_transaction()).map_err(|source| {
+                Error::Begin {
+                    version: version.into(),
+                    source,
+                }
+            })?;
         retry_locked(&transaction, || transaction.execute_batch(sql)).map_err(|source| {
             Error::Execute {
                 version: version.into(),
                 source,
             }
         })?;
-        transaction
-            .execute(
+        retry_locked(&transaction, || {
+            transaction.execute(
                 "INSERT INTO schema_migrations (version) VALUES (?)",
                 [version],
             )
-            .map_err(|source| Error::Record {
-                version: version.into(),
-                source,
-            })?;
-        transaction.commit().map_err(|source| Error::Commit {
+        })
+        .map_err(|source| Error::Record {
             version: version.into(),
             source,
+        })?;
+        // Transaction::commit consumes the guard even on SQLITE_BUSY. Keep it
+        // alive across retries; drop rolls back on failure and is a no-op once
+        // COMMIT has returned the connection to autocommit mode.
+        retry_locked(&transaction, || transaction.execute_batch("COMMIT")).map_err(|source| {
+            Error::Commit {
+                version: version.into(),
+                source,
+            }
         })?;
     }
     Ok(())

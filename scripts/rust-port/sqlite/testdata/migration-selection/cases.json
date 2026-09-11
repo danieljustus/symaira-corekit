@@ -1,0 +1,18 @@
+{
+  "case_ids": ["SQL-003/migration-selection"],
+  "cases": [
+    {
+      "id": "SQL-003/migration-selection",
+      "entries": [
+        {"name": "2_add.sql", "is_dir": false, "sql": "INSERT INTO selection(value) VALUES ('two');"},
+        {"name": "003_directory.sql", "is_dir": true, "sql": ""},
+        {"name": "004_upper.SQL", "is_dir": false, "sql": "INVALID UPPERCASE EXTENSION"},
+        {"name": "001_create.sql", "is_dir": false, "sql": "CREATE TABLE selection (id INTEGER PRIMARY KEY, value TEXT);"},
+        {"name": "3_repeat.sql.sql", "is_dir": false, "sql": "INSERT INTO selection(value) VALUES ('suffix');"},
+        {"name": "005_backup.sql.bak", "is_dir": false, "sql": "INVALID BACKUP EXTENSION"},
+        {"name": "10_add.sql", "is_dir": false, "sql": "INSERT INTO selection(value) VALUES ('ten');"},
+        {"name": "README", "is_dir": false, "sql": "INVALID NON SQL FILE"}
+      ]
+    }
+  ]
+}
