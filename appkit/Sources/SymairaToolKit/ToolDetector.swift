@@ -95,12 +95,18 @@ public struct ToolDetector: Sendable {
         return DetectedTool(tool: tool, location: location, versionInfo: info)
     }
 
-    /// Detect every registry tool that is installed on this machine.
+    /// Detect every active registry tool that is installed on this machine.
+    ///
+    /// Deprecated entries remain addressable through `detect(_:)` for clients
+    /// that explicitly support a historical compatibility route, but the
+    /// registry-wide scan must not report absorbed, independently uninstallable
+    /// binaries. Callers that intentionally need the historical set can pass
+    /// `SymairaToolRegistry.all` explicitly.
     ///
     /// Handshakes run concurrently in a bounded sliding window (default 4),
     /// admitting the next tool as soon as any in-flight handshake completes.
     /// Results are returned in the same order as the input `tools` array.
-    public func detectInstalled(from tools: [SymairaTool] = SymairaToolRegistry.all) async -> [DetectedTool] {
+    public func detectInstalled(from tools: [SymairaTool] = SymairaToolRegistry.active) async -> [DetectedTool] {
         let concurrency = max(1, maxConcurrentHandshakes)
         var detected = Array<DetectedTool?>(repeating: nil, count: tools.count)
 

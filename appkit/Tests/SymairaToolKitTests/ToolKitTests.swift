@@ -429,6 +429,34 @@ final class ToolDetectorTests: XCTestCase {
         XCTAssertNil(detected)
     }
 
+    func testDefaultInstalledScanExcludesDeprecatedEntries() async throws {
+        let active = try makeFakeTool(
+            named: "symvault",
+            script: "#!/bin/sh\necho '{\"version\":\"1.0.0\",\"schema_version\":1}'\n"
+        )
+        let deprecated = try makeFakeTool(
+            named: "symmemory",
+            script: "#!/bin/sh\necho '{\"version\":\"1.0.0\",\"schema_version\":1}'\n"
+        )
+
+        let detected = await detector.detectInstalled()
+        XCTAssertEqual(detected.map(\.tool.id), [active.id],
+                       "The default scan must only probe active registry entries")
+        XCTAssertFalse(detected.contains { $0.tool.id == deprecated.id })
+    }
+
+    func testDeprecatedEntryRemainsAvailableForExplicitCompatibilityDetection() async throws {
+        _ = try makeFakeTool(
+            named: "symmemory",
+            script: "#!/bin/sh\necho '{\"version\":\"1.0.0\",\"schema_version\":1}'\n"
+        )
+        let deprecated = try XCTUnwrap(SymairaToolRegistry.tool(id: "symmemory"))
+
+        let detected = await detector.detect(deprecated)
+        XCTAssertEqual(detected?.tool.id, deprecated.id)
+        XCTAssertEqual(detected?.versionInfo, ToolVersionInfo(version: "1.0.0", schemaVersion: 1))
+    }
+
     func testSchemaMismatchThrows() async throws {
         let tool = try makeFakeTool(
             named: "symfake",
