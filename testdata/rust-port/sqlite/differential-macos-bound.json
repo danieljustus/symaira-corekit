@@ -1,8 +1,8 @@
 {
   "go": {
     "capture_interval": [
-      1789094024,
-      1789094030
+      1789115416,
+      1789115422
     ],
     "cases": [
       {
@@ -83,13 +83,13 @@
         "id": "SQL-003",
         "state": {
           "applied_at": [
-            "2026-09-11T02:33:50Z",
-            "2026-09-11T02:33:50Z"
+            "2026-09-11T08:30:22Z",
+            "2026-09-11T08:30:22Z"
           ],
           "applied_at_utc": true,
           "data": [
             {
-              "created_at": "2026-09-11T02:33:50Z",
+              "created_at": "2026-09-11T08:30:22Z",
               "id": "item-1",
               "name": "alpha"
             }
@@ -126,14 +126,14 @@
         "id": "SQL-004",
         "state": {
           "applied_at": [
-            "2026-09-11T02:33:50Z",
-            "2026-09-11T02:33:50Z"
+            "2026-09-11T08:30:22Z",
+            "2026-09-11T08:30:22Z"
           ],
           "applied_at_unchanged": true,
           "applied_at_utc": true,
           "data": [
             {
-              "created_at": "2026-09-11T02:33:50Z",
+              "created_at": "2026-09-11T08:30:22Z",
               "id": "item-1",
               "name": "alpha"
             }
@@ -469,13 +469,13 @@
     }
   },
   "rust": {
-    "binary_sha256": "40d45b979176182e511e27c939e184bec5f2eee9942c3c52a41755fbfd965708",
-    "candidate_base": "adca1f746e3cd8200e611ec38bf9f97156be8eaf",
-    "candidate_manifest_sha256": "807cb53f28d879900e84c7e96cafe4059a1c229efaae24a36bc1e83c9e323942",
-    "candidate_revision": "adca1f746e3cd8200e611ec38bf9f97156be8eaf",
+    "binary_sha256": "577644da00ad7856a7c63a663c8a810cdb802fd812dfa9d26529145175de1fd4",
+    "candidate_base": "2bf77956a0156c2ccd2d09bc50833d027bc88bbf",
+    "candidate_manifest_sha256": "4129dbf9ddbbe5f1ea91a2cb1eeec1746a20862b39f2a10feb2b9c615ad99ada",
+    "candidate_revision": "2bf77956a0156c2ccd2d09bc50833d027bc88bbf",
     "capture_interval": [
-      1789094031,
-      1789094036
+      1789115422,
+      1789115428
     ],
     "cases": [
       {
@@ -509,7 +509,7 @@
       },
       {
         "id": "SQL-002",
-        "observed_busy_seconds": 5.047719333,
+        "observed_busy_seconds": 5.061368291,
         "state": {
           "connections": [
             {
@@ -559,12 +559,12 @@
         "id": "SQL-003",
         "state": {
           "applied_at": [
-            "2026-09-11T02:33:56Z",
-            "2026-09-11T02:33:56Z"
+            "2026-09-11T08:30:28Z",
+            "2026-09-11T08:30:28Z"
           ],
           "data": [
             {
-              "created_at": "2026-09-11T02:33:56Z",
+              "created_at": "2026-09-11T08:30:28Z",
               "id": "item-1",
               "name": "alpha"
             }
@@ -601,13 +601,13 @@
         "id": "SQL-004",
         "state": {
           "applied_at": [
-            "2026-09-11T02:33:56Z",
-            "2026-09-11T02:33:56Z"
+            "2026-09-11T08:30:28Z",
+            "2026-09-11T08:30:28Z"
           ],
           "applied_at_unchanged": true,
           "data": [
             {
-              "created_at": "2026-09-11T02:33:56Z",
+              "created_at": "2026-09-11T08:30:28Z",
               "id": "item-1",
               "name": "alpha"
             }
@@ -748,8 +748,8 @@
     "source_hashes": {
       ".gitattributes": "f5001cfbf0e3c5454e5463cf700f465f79140fbcfaf504a61773799a76d232b2",
       ".github/workflows/ci.yml": "d1257a989996e6d16b72130dae22107099fd861d320e38f0dcae6519e0efbc59",
-      "Cargo.lock": "b20bf5f7744d99b2c3282de0b4c69f5111acc1b203af1151a6d508fb4ca73b2d",
-      "Cargo.toml": "90bea7580de79925a8eca263a3c0f83ff9ba7766cc9dae007bea442630e634d6",
+      "Cargo.lock": "3389354d8ef0c91cb5c7cfc8a2bbd1febaddbf5c084cdfefd51333eb6c572201",
+      "Cargo.toml": "950d87425007a781740cc5200af24d0f20acb228088291cfa01093d0ae64d3e3",
       "rust-toolchain.toml": "e879701472a698533f43f54989bbf5f3101eb0503472159d32633f3bb8a13fdf",
       "rust/symaira-core-config/Cargo.toml": "1f405889056892b0c01dcdd3b10a2dd3e90ab1ef7e3bade551b2d826973cd38b",
       "rust/symaira-core-config/src/lib.rs": "494c9e9d2bad33065881e9c2f7597852ba95984daea9de5d00c661052309879f",
@@ -771,11 +771,12 @@
       "rust/symaira-core-secretref/tests/parity.rs": "80665d3a6c0cf5543dec10626a1451446318c33df27a80efb86d6bc6410abf85",
       "rust/symaira-core-sqlite/Cargo.toml": "29c41f09f75ddef6348b8755cc80125957cc370ef610f75f597183cc73f1c799",
       "rust/symaira-core-sqlite/examples/sqlite-observe.rs": "8c963ae7aed9b9dcae17883bc863eb1f642c257ebb349c9b207b4fb92fa4e23f",
-      "rust/symaira-core-sqlite/src/lib.rs": "dcae195eeba6efa932443924aa0c2de3412cab91635de29f5fbbe93d80a66308",
+      "rust/symaira-core-sqlite/src/lib.rs": "92eed0695fffc93b110c06bc8da24c54056174fd3fbf0c4b893d5e27ac62c119",
       "rust/symaira-core-sqlite/tests/contracts.rs": "47071f78ef04222c99341e77dbe54d1d0091acd3b66d072c4faeb014c6f8d529",
       "rust/symaira-core-sqlite/tests/execute.rs": "82a70a6864832734f32e55a202a8b09f7da65e961a718f894c43a6a56f536ddf",
       "rust/symaira-core-sqlite/tests/migration_contention.rs": "e5f5617af96358abb8140b0afdb3f95da116ffd3b2284646ad89c3c97206b070",
       "rust/symaira-core-sqlite/tests/migration_selection.rs": "fb7add90fbe6f4e1fb81b619ee5a0004e44ead7e617ecc3f8169b4d3ece9344f",
+      "rust/symaira-core-sqlite/tests/open_policy.rs": "06bb4a8780b6df3485d8c54436e0c6f74fedcc0637f83df227b8e7d96f9dac8e",
       "rust/symaira-core-version/Cargo.toml": "105564028bb4d57e8ca02a59873432c5107e3f266831391bab912a511251baf6",
       "rust/symaira-core-version/src/lib.rs": "77cd98590d6d1d21f99fd812d2464fb0deeccfa052bde555ae077ae853a60b20",
       "rust/test-support/symaira-contract-fixtures/Cargo.toml": "e2fafe830cd528c7a09606e6caf73794d6a0d29e8e9b7540a0e7b8461ec6d377",
