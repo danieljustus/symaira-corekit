@@ -34,7 +34,7 @@ The verifier performs all local checks without `cargo publish` or tag writes:
 4. packages each adopted candidate into a temporary target directory and hashes the resulting `.crate` archive;
 5. records the resolved source revision, input digests and Cargo metadata as dry-run provenance/SBOM evidence.
 
-`source_revision: HEAD` is allowed only for this local dry-run. A future publication change must replace it with the immutable commit being released, set publication state explicitly in a separately reviewed change, and add public crates.io read-back evidence.
+`source_revision: HEAD` is allowed only for this local dry-run. An explicit source commit must match the checkout's HEAD because packaging and input digests use that checkout. A future publication change must replace it with the immutable commit being released, set publication state explicitly in a separately reviewed change, and add public crates.io read-back evidence.
 
 ## Status and external gate
 

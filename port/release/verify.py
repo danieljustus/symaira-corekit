@@ -242,6 +242,8 @@ def validate_git_provenance(release: dict[str, Any], selected_tag: str | None) -
     resolved = current if source_revision == "HEAD" else source_revision
     if source_revision != "HEAD":
         run(["git", "cat-file", "-e", f"{source_revision}^{{commit}}"])
+        if source_revision != current:
+            fail("release.source_revision must match checkout HEAD; packaging uses the current checkout")
     oracle_commit = release["provenance"]["oracle_commit"]
     run(["git", "cat-file", "-e", f"{oracle_commit}^{{commit}}"])
     tags = run(["git", "tag", "--list"]).splitlines()
