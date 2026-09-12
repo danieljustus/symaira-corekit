@@ -10,7 +10,7 @@ import typed_contract
 
 class AcceptanceControls(unittest.TestCase):
     def setUp(self):
-        self.record = json.loads((diff.ROOT / 'testdata/rust-port/sqlite/differential-macos-bound.json').read_text())
+        self.record = json.loads((diff.ROOT / 'testdata/rust-port/sqlite/differential-macos-bound-rust014.json').read_text())
         self.go = self.record['go']
         self.rust = copy.deepcopy(self.record['rust'])
         self.manifest, _ = candidate.load()

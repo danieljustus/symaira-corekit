@@ -54,7 +54,7 @@ class DifferentialControls(unittest.TestCase):
         self.assert_difference('SQL-002/connections')
 
     def test_rust_missing_negative_corpus_is_rejected_before_comparison(self):
-        record = json.loads((diff.ROOT / 'testdata/rust-port/sqlite/differential-macos-bound.json').read_text())
+        record = json.loads((diff.ROOT / 'testdata/rust-port/sqlite/differential-macos-bound-rust014.json').read_text())
         rust = copy.deepcopy(record['rust'])
         del rust['cases'][4]['errors']['insert_failure']
         manifest, _ = candidate.load()
@@ -63,7 +63,7 @@ class DifferentialControls(unittest.TestCase):
                 diff.evaluate(record['go'], rust, manifest)
 
     def test_rust_missing_busy_measurement_is_rejected_before_comparison(self):
-        record = json.loads((diff.ROOT / 'testdata/rust-port/sqlite/differential-macos-bound.json').read_text())
+        record = json.loads((diff.ROOT / 'testdata/rust-port/sqlite/differential-macos-bound-rust014.json').read_text())
         rust = copy.deepcopy(record['rust'])
         rust['cases'][1]['observed_busy_seconds'] = None
         manifest, _ = candidate.load()

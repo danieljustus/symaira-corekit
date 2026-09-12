@@ -97,7 +97,7 @@ emits computed per-case success and compiled OS/architecture identity.
 manifest. Capture checks the exact source inventory before building and after
 execution; it verifies base ancestry and records the actual revision separately.
 `candidate.py` is an explicit freeze operation, never run automatically by CI.
-The frozen `candidate-source.json` and fresh `differential-macos-bound.json`
+The frozen `candidate-source.json` and fresh `differential-macos-bound-rust014.json`
 must receive independent review together before being acceptance evidence.
 The old state-only comparator is private and used only by historical regression
 tests, not the live acceptance entrypoint.
@@ -119,11 +119,13 @@ The current candidate repairs local oracle reproducibility: it resolves the
 pinned Go compiler before replacing `HOME`, so the isolated runtime does not
 mistake an installed `go1.26.6` for a missing download. The dependency inventory
 has a bounded 300-second allowance for a cold isolated Go cache. The explicit
-candidate-source manifest was regenerated for this change. The fresh macOS arm64
-capture retained in `differential-macos-bound.json` has SHA-256
-`fd80b18fdbe3757d64fca9b375fcbaa34f337e51988991eca47033280d1c248d`; its
+candidate-source manifest was regenerated for this change. The prior macOS
+capture remains in `differential-macos-bound.json` as historical evidence for
+its original source snapshot. The fresh macOS arm64 capture for RUST-014 is
+retained in `differential-macos-bound-rust014.json` with SHA-256
+`dc5a5ec9eb7c9f0fc85a4610806a41811e4df80361094f11262ad1e76f44de2d`; its
 six-group typed differential passed with Go `go1.26.6`, and it measured the
-Rust busy wait at 5.200130959 seconds. This is a real local capture, not a
+Rust busy wait at 5.069667334 seconds. This is a real local capture, not a
 synthetic fixture.
 
 The latest review repair validates the complete Rust observation shape before
