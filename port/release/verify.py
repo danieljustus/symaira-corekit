@@ -242,6 +242,8 @@ def validate_git_provenance(release: dict[str, Any], selected_tag: str | None) -
     resolved = current if source_revision == "HEAD" else source_revision
     if source_revision != "HEAD":
         run(["git", "cat-file", "-e", f"{source_revision}^{{commit}}"])
+    oracle_commit = release["provenance"]["oracle_commit"]
+    run(["git", "cat-file", "-e", f"{oracle_commit}^{{commit}}"])
     tags = run(["git", "tag", "--list"]).splitlines()
     if any(tag_name.startswith(("rust-v", "rust/", "crate-v")) for tag_name in tags):
         fail("repository contains a Rust-specific tag; Go v* tags must remain the only release namespace")

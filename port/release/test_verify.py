@@ -55,6 +55,34 @@ class ManifestShapeTests(unittest.TestCase):
         with patch.object(verify, "run", return_value=""):
             verify.validate_clean_source()
 
+    def test_oracle_commit_rejects_missing_object(self) -> None:
+        manifest = copy.deepcopy(self.manifest)
+        manifest["release"]["provenance"]["oracle_commit"] = "0" * 40
+        release = verify.validate_manifest_shape(manifest)
+        with self.assertRaisesRegex(verify.VerificationError, "command failed.*commit"):
+            verify.validate_git_provenance(release, None)
+
+    def test_oracle_commit_rejects_non_commit_objects(self) -> None:
+        for revision in ("HEAD^{tree}", "HEAD:port/release/manifest.json"):
+            with self.subTest(revision=revision):
+                manifest = copy.deepcopy(self.manifest)
+                manifest["release"]["provenance"]["oracle_commit"] = verify.run(
+                    ["git", "rev-parse", revision]
+                ).strip()
+                release = verify.validate_manifest_shape(manifest)
+                with self.assertRaisesRegex(verify.VerificationError, "command failed.*commit"):
+                    verify.validate_git_provenance(release, None)
+
+    def test_existing_oracle_commit_preserves_source_revision(self) -> None:
+        current = verify.run(["git", "rev-parse", "HEAD"]).strip()
+        oracle = self.manifest["release"]["provenance"]["oracle_commit"]
+        for source_revision, expected in (("HEAD", current), (oracle, oracle)):
+            with self.subTest(source_revision=source_revision):
+                manifest = copy.deepcopy(self.manifest)
+                manifest["release"]["source_revision"] = source_revision
+                release = verify.validate_manifest_shape(manifest)
+                self.assertEqual(verify.validate_git_provenance(release, None), expected)
+
     def test_non_publishable_crate_requires_explicit_publish_empty_list(self) -> None:
         metadata = copy.deepcopy(verify.cargo_metadata())
         package = next(item for item in metadata["packages"] if item["name"] == "symaira-core-exit")
