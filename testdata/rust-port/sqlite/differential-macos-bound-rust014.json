@@ -470,9 +470,9 @@
   },
   "rust": {
     "binary_sha256": "fc9a75ee3c63828f1a66f70e0fc72f0b182131964adeeb3170a3783908565f36",
-    "candidate_base": "702601ff944af22447e9e65834d795d34c3c992c",
-    "candidate_manifest_sha256": "39efd395cab8b4bfb775080825d394b5d990ceaaa97902eec156a8593fdd432e",
-    "candidate_revision": "702601ff944af22447e9e65834d795d34c3c992c",
+    "candidate_base": "51b1fb2a1cf9ecdbfcdaaea0d9dbc83549af3d06",
+    "candidate_manifest_sha256": "260cabbf305f8c91417ccb33a53f2d386ac80a1b48fc481307b8c71a79d764bc",
+    "candidate_revision": "51b1fb2a1cf9ecdbfcdaaea0d9dbc83549af3d06",
     "capture_interval": [
       1789235800,
       1789235806
