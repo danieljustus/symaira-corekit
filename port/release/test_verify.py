@@ -75,13 +75,22 @@ class ManifestShapeTests(unittest.TestCase):
 
     def test_existing_oracle_commit_preserves_source_revision(self) -> None:
         current = verify.run(["git", "rev-parse", "HEAD"]).strip()
-        oracle = self.manifest["release"]["provenance"]["oracle_commit"]
-        for source_revision, expected in (("HEAD", current), (oracle, oracle)):
+        for source_revision, expected in (("HEAD", current), (current, current)):
             with self.subTest(source_revision=source_revision):
                 manifest = copy.deepcopy(self.manifest)
                 manifest["release"]["source_revision"] = source_revision
                 release = verify.validate_manifest_shape(manifest)
                 self.assertEqual(verify.validate_git_provenance(release, None), expected)
+
+    def test_source_revision_rejects_commit_other_than_checkout(self) -> None:
+        manifest = copy.deepcopy(self.manifest)
+        previous = verify.run(["git", "rev-parse", "HEAD^"]).strip()
+        current = verify.run(["git", "rev-parse", "HEAD"]).strip()
+        self.assertNotEqual(previous, current)
+        manifest["release"]["source_revision"] = previous
+        release = verify.validate_manifest_shape(manifest)
+        with self.assertRaisesRegex(verify.VerificationError, "source_revision must match checkout HEAD"):
+            verify.validate_git_provenance(release, None)
 
     def test_non_publishable_crate_requires_explicit_publish_empty_list(self) -> None:
         metadata = copy.deepcopy(verify.cargo_metadata())
