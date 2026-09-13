@@ -138,6 +138,32 @@ The local SQLite test suite now has 48 Python controls. These additions resolve
 review findings but still require independent review of the refreshed source
 manifest before becoming acceptance evidence.
 
+### SQL-006 review repair on the current migration branch
+
+The source-bound SQL-006 oracle was recaptured through `generate.py` at
+`b1b5644c45cef3a94d4d4f12cdf9e5b0016afb80`, resolving direct
+`modernc.org/sqlite v1.58.0`. Relative to the prior `f3d3eb7` oracle, that
+production revision changes only the Go driver/module graph (and its
+transitives); the captured `sqlitekit` and `fsutil` implementation sources are
+unchanged. The regenerated source observation and Rust differential retain a
+six-group typed-contract `passed` verdict; no output or hash was hand-edited.
+
+The fixture acceptance entrypoint now verifies the Rust report's raw
+candidate-manifest SHA-256 as well as its source hashes and base, with a
+mutation control for a missing or altered digest. SQL-006 now asserts the
+SQLite primary numeric code (`extended_code & 0xff == 1`) alongside the
+existing error-code checks. Its missing-directory and migration-read negatives
+run `migrate` against the production `DirectorySource`; the latter uses a
+deterministic post-list deletion so `DirectorySource` itself performs the
+failed file read.
+
+The scoped generator runner already uses `taskkill /T /F` on Windows timeout.
+A native Windows-only regression test now creates a parent and descendant via
+that runner and checks that the descendant has gone. It was intentionally not
+treated as macOS evidence: native Windows execution, the native
+Linux/macOS/Windows differential, consumer, cost, release, rollback, cutover,
+and Go-fallback gates remain open.
+
 **Next action:** independently review the refreshed candidate manifest, then
 execute native Linux/macOS/Windows, consumer-integration and cost gates. These
 remain pending. No SQL matrix row is promoted; no publication or Go removal is

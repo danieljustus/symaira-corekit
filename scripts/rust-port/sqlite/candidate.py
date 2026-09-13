@@ -37,7 +37,9 @@ def load(path=DEFAULT):
     return manifest, hashlib.sha256(raw).hexdigest()
 
 
-def verify(report, manifest):
+def verify(report, manifest, manifest_sha256):
+    if report.get('candidate_manifest_sha256') != manifest_sha256:
+        raise ValueError('Rust report differs from frozen candidate manifest digest')
     if report.get('source_hashes') != manifest['source_hashes']:
         raise ValueError('Rust report differs from frozen source manifest')
     if report.get('candidate_base') != manifest['base']:

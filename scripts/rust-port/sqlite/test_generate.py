@@ -29,6 +29,14 @@ class ValidatorTests(unittest.TestCase):
     def test_unchanged_capture_is_accepted(self):
         generator.compare(self.report, copy.deepcopy(self.report))
 
+    def test_capture_uses_current_sqlite_driver_baseline(self):
+        self.assertEqual(generator.ORACLE_COMMIT, 'b1b5644c45cef3a94d4d4f12cdf9e5b0016afb80')
+        self.assertEqual(self.report['oracle']['commit'], generator.ORACLE_COMMIT)
+        self.assertEqual(
+            self.report['oracle']['dependencies']['modernc.org/sqlite']['Version'],
+            generator.EXPECTED_SQLITE_DRIVER,
+        )
+
     def test_wrong_journal_mode_is_rejected(self):
         self.rejected(lambda r: r["cases"][1]["state"]["connections"][0].update(journal_mode="delete"))
 
@@ -111,6 +119,33 @@ class ProcessTests(unittest.TestCase):
             self.assertEqual(actual, 0o022)
         finally:
             os.umask(previous)
+
+    @unittest.skipUnless(os.name == "nt", "native Windows process-tree proof")
+    def test_timeout_reaps_windows_parent_and_descendant(self):
+        with tempfile.TemporaryDirectory() as name:
+            pidfile = Path(name) / "child.pid"
+            code = ("import subprocess,sys,time; from pathlib import Path; "
+                    "child=subprocess.Popen([sys.executable,'-c','import time; time.sleep(60)']); "
+                    "Path(sys.argv[1]).write_text(str(child.pid)); time.sleep(60)")
+            started = time.monotonic()
+            with self.assertRaises(TimeoutError):
+                generator.run([sys.executable, "-c", code, str(pidfile)],
+                              cwd=generator.ROOT, timeout=1)
+            self.assertLess(time.monotonic() - started, 5)
+            pid = int(pidfile.read_text())
+            deadline = time.monotonic() + 5
+            output = ""
+            while time.monotonic() < deadline:
+                output = subprocess.run(
+                    ["tasklist", "/FI", f"PID eq {pid}", "/FO", "CSV", "/NH"],
+                    capture_output=True,
+                    text=True,
+                    timeout=3,
+                ).stdout
+                if str(pid) not in output:
+                    break
+                time.sleep(0.1)
+            self.assertNotIn(str(pid), output, output)
 
 
 if __name__ == "__main__":

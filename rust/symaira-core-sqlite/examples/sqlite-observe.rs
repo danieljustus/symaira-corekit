@@ -1,7 +1,7 @@
 #![deny(unsafe_code)]
 //! Test adapter: every observation is obtained through the real Rust library.
 use serde_json::{Value, json};
-use std::{cell::Cell, collections::BTreeMap, io, path::Path, time::Instant};
+use std::{cell::Cell, collections::BTreeMap, fs, io, path::Path, time::Instant};
 use symaira_core_sqlite::{
     Connection, DirectorySource, Entry, Error, MigrationSource, execute, migrate, open,
 };
@@ -11,8 +11,6 @@ type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 struct MemorySource {
     files: BTreeMap<String, Vec<u8>>,
     reads: Cell<usize>,
-    fail_read: bool,
-    fail_dir: bool,
 }
 impl MemorySource {
     fn new(files: &[(&str, &str)]) -> Self {
@@ -22,16 +20,11 @@ impl MemorySource {
                 .map(|(k, v)| ((*k).into(), v.as_bytes().to_vec()))
                 .collect(),
             reads: Cell::new(0),
-            fail_read: false,
-            fail_dir: false,
         }
     }
 }
 impl MigrationSource for MemorySource {
     fn entries(&self) -> io::Result<Vec<Entry>> {
-        if self.fail_dir {
-            return Err(io::Error::from(io::ErrorKind::NotFound));
-        }
         Ok(self
             .files
             .keys()
@@ -43,13 +36,27 @@ impl MigrationSource for MemorySource {
     }
     fn read(&self, name: &str) -> io::Result<Vec<u8>> {
         self.reads.set(self.reads.get() + 1);
-        if self.fail_read {
-            return Err(io::Error::from(io::ErrorKind::NotFound));
-        }
         self.files
             .get(name)
             .cloned()
             .ok_or_else(|| io::Error::from(io::ErrorKind::NotFound))
+    }
+}
+
+/// Preserves the real [`DirectorySource`] filesystem boundary while making the
+/// list/read race deterministic for the source-bound SQL-006 observation.
+struct RemovedMigrationAfterListing<'a> {
+    root: &'a Path,
+    migration: &'a Path,
+}
+impl MigrationSource for RemovedMigrationAfterListing<'_> {
+    fn entries(&self) -> io::Result<Vec<Entry>> {
+        let entries = DirectorySource(self.root).entries()?;
+        fs::remove_file(self.migration)?;
+        Ok(entries)
+    }
+    fn read(&self, name: &str) -> io::Result<Vec<u8>> {
+        DirectorySource(self.root).read(name)
     }
 }
 fn schema(db: &Connection) -> Result<Value> {
@@ -273,17 +280,27 @@ fn observe(root: &Path, fixture: &Path) -> Result<Value> {
     let data = memory.query_row("SELECT id,name FROM test_items", [], |r| {
         Ok(json!({"id":r.get::<_,String>(0)?,"name":r.get::<_,String>(1)?}))
     })?;
-    let mut empty = MemorySource::new(&[]);
-    empty.fail_dir = true;
-    let missing =
-        error_value(migrate(&mut memory, &empty).expect_err("missing directory must fail"));
+    let missing_root = root.join("sql006-missing-directory");
+    fs::create_dir(&missing_root)?;
+    let mut missing_db = Connection::open_in_memory()?;
+    let missing = error_value(
+        migrate(&mut missing_db, &DirectorySource(&missing_root))
+            .expect_err("missing directory must fail"),
+    );
     let mut query = Connection::open_in_memory()?;
     query.execute_batch("CREATE VIEW schema_migrations AS SELECT 1 AS version, datetime('now') AS applied_at FROM missing_table")?;
     let query_error = error_value(migrate(&mut query, &source).expect_err("broken view must fail"));
+    let read_root = root.join("sql006-read-file");
+    let migration_dir = read_root.join("migrations");
+    fs::create_dir_all(&migration_dir)?;
+    let migration = migration_dir.join("001_test.sql");
+    fs::write(&migration, "CREATE TABLE must_not_run (id INTEGER)")?;
     let mut read = Connection::open_in_memory()?;
-    let mut failing = MemorySource::new(&[("001_test.sql", "unused")]);
-    failing.fail_read = true;
-    let read_error = error_value(migrate(&mut read, &failing).expect_err("read must fail"));
+    let read_source = RemovedMigrationAfterListing {
+        root: &read_root,
+        migration: &migration,
+    };
+    let read_error = error_value(migrate(&mut read, &read_source).expect_err("read must fail"));
     cases.push(json!({"id":"SQL-006","state":{"in_memory_success":true,"in_memory":{"schema":memory_schema,"data":[data]}},"errors":{"missing_directory":missing,"version_query":query_error,"read_file":read_error},"unsupported":["closed_db: rusqlite close consumes Connection; no safe closed handle can be passed to migrate"]}));
     cases[1]["observed_busy_seconds"] = json!(seconds);
     for case in &mut cases {

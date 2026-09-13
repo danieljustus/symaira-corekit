@@ -22,7 +22,11 @@ import time
 ROOT = Path(__file__).resolve().parents[3]
 HELPER = ROOT / "scripts/rust-port/sqlite"
 OUT = ROOT / "testdata/rust-port/sqlite/observations.json"
-ORACLE_COMMIT = "f3d3eb79b9b1f31b4f973d2ed518a8292cedf588"
+# SQL-006 follows the production modernc SQLite update rather than the older
+# repository-wide RUST-001 API baseline. The change from f3d3eb7 is limited to
+# the driver graph (modernc SQLite 1.57.0 -> 1.58.0 and transitive modules).
+ORACLE_COMMIT = "b1b5644c45cef3a94d4d4f12cdf9e5b0016afb80"
+EXPECTED_SQLITE_DRIVER = "v1.58.0"
 TOOLCHAIN = "go1.26.6"
 EXPECTED_IDS = [f"SQL-{i:03}" for i in range(1, 7)]
 MODULE = "github.com/danieljustus/symaira-corekit"
@@ -206,6 +210,8 @@ def capture() -> dict:
                                  "isolation": {"locale": "C", "timezone": "UTC",
                                                "umask": "0077" if os.name != "nt" else "not-applicable",
                                                "os_sandbox": False}})
+    if dependencies.get("modernc.org/sqlite", {}).get("Version") != EXPECTED_SQLITE_DRIVER:
+        raise RuntimeError("oracle did not resolve the required modernc SQLite driver")
     if helper_snapshot() != helpers:
         raise RuntimeError("helper source changed during capture; retry after writers finish")
     return report

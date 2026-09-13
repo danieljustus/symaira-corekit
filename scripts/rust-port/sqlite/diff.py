@@ -15,7 +15,7 @@ import candidate
 
 ROOT = generate.ROOT
 MANIFEST = ROOT / "Cargo.toml"
-TARGET = ROOT / "target"
+TARGET = Path(os.environ.get("CARGO_TARGET_DIR", ROOT / "target")).resolve()
 
 
 def rust_capture(manifest):
@@ -59,8 +59,8 @@ def equal(left, right):
     return json.dumps(left, sort_keys=True, allow_nan=False) == json.dumps(right, sort_keys=True, allow_nan=False)
 
 
-def evaluate(go, rust, manifest):
-    candidate.verify(rust, manifest)
+def evaluate(go, rust, manifest, manifest_sha256):
+    candidate.verify(rust, manifest, manifest_sha256)
     # Validate the Go oracle before reading platform-specific state. This keeps
     # malformed/misaligned declared case sets from surfacing as unrelated
     # KeyError/IndexError failures in the native-identity check.
@@ -141,7 +141,7 @@ def main():
     rust = rust_capture(manifest)
     rust['candidate_manifest_sha256'] = manifest_sha
     try:
-        verdict = evaluate(go, rust, manifest)
+        verdict = evaluate(go, rust, manifest, manifest_sha)
         if args.typed_errors:
             verdict = typed_contract.apply(go, rust, verdict)
     except (ValueError, KeyError, TypeError) as error:

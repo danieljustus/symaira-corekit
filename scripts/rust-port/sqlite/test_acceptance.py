@@ -13,10 +13,10 @@ class AcceptanceControls(unittest.TestCase):
         self.record = json.loads((diff.ROOT / 'testdata/rust-port/sqlite/differential-macos-bound-rust014.json').read_text())
         self.go = self.record['go']
         self.rust = copy.deepcopy(self.record['rust'])
-        self.manifest, _ = candidate.load()
+        self.manifest, self.manifest_sha = candidate.load()
 
     def test_source_bound_real_capture_passes(self):
-        verdict = diff.evaluate(self.go, self.rust, self.manifest)
+        verdict = diff.evaluate(self.go, self.rust, self.manifest, self.manifest_sha)
         self.assertEqual(typed_contract.apply(self.go, self.rust, verdict)['status'], 'passed')
 
     def test_false_success_rejected(self):
@@ -24,28 +24,28 @@ class AcceptanceControls(unittest.TestCase):
             with self.subTest(value=value):
                 self.rust['cases'][0]['success'] = value
                 with self.assertRaisesRegex(ValueError, 'success'):
-                    diff.evaluate(self.go, self.rust, self.manifest)
+                    diff.evaluate(self.go, self.rust, self.manifest, self.manifest_sha)
 
     def test_missing_success_rejected(self):
         del self.rust['cases'][0]['success']
         with self.assertRaisesRegex(ValueError, 'success'):
-            diff.evaluate(self.go, self.rust, self.manifest)
+            diff.evaluate(self.go, self.rust, self.manifest, self.manifest_sha)
 
     def test_source_hash_mutation_rejected(self):
         name = next(iter(self.rust['source_hashes']))
         self.rust['source_hashes'][name] = '0' * 64
         with self.assertRaisesRegex(ValueError, 'frozen source'):
-            diff.evaluate(self.go, self.rust, self.manifest)
+            diff.evaluate(self.go, self.rust, self.manifest, self.manifest_sha)
 
     def test_candidate_base_mutation_rejected(self):
         self.rust['candidate_base'] = '0' * 40
         with self.assertRaisesRegex(ValueError, 'candidate base'):
-            diff.evaluate(self.go, self.rust, self.manifest)
+            diff.evaluate(self.go, self.rust, self.manifest, self.manifest_sha)
 
     def test_native_identity_mutation_rejected(self):
         self.rust['native']['goos'] = 'not-this-host'
         with self.assertRaisesRegex(ValueError, 'native platform'):
-            diff.evaluate(self.go, self.rust, self.manifest)
+            diff.evaluate(self.go, self.rust, self.manifest, self.manifest_sha)
 
     def test_wrong_source_rejected_before_cargo(self):
         with patch.object(candidate, 'snapshot', return_value={}):
@@ -55,25 +55,33 @@ class AcceptanceControls(unittest.TestCase):
     def test_missing_revision_rejected(self):
         del self.rust['candidate_revision']
         with self.assertRaisesRegex(ValueError, 'candidate revision'):
-            diff.evaluate(self.go, self.rust, self.manifest)
+            diff.evaluate(self.go, self.rust, self.manifest, self.manifest_sha)
 
     def test_malformed_revision_rejected_before_git(self):
         for value in ('HEAD', '--help', 'a' * 39, None):
             self.rust['candidate_revision'] = value
             with patch.object(candidate.generate, 'run') as command:
                 with self.assertRaisesRegex(ValueError, 'candidate revision'):
-                    diff.evaluate(self.go, self.rust, self.manifest)
+                    diff.evaluate(self.go, self.rust, self.manifest, self.manifest_sha)
                 command.assert_not_called()
 
     def test_unrelated_revision_rejected(self):
         self.rust['candidate_revision'] = '0' * 40
         with self.assertRaisesRegex(ValueError, 'verified descendant'):
-            diff.evaluate(self.go, self.rust, self.manifest)
+            diff.evaluate(self.go, self.rust, self.manifest, self.manifest_sha)
 
     def test_old_capture_is_not_current_acceptance(self):
         old = json.loads((diff.ROOT / 'testdata/rust-port/sqlite/differential-macos-typed.json').read_text())
         with self.assertRaises(ValueError):
-            diff.evaluate(old['go'], old['rust'], self.manifest)
+            diff.evaluate(old['go'], old['rust'], self.manifest, self.manifest_sha)
+
+    def test_candidate_manifest_digest_mutation_rejected(self):
+        for value in ('0' * 64, None):
+            with self.subTest(value=value):
+                rust = copy.deepcopy(self.rust)
+                rust['candidate_manifest_sha256'] = value
+                with self.assertRaisesRegex(ValueError, 'candidate manifest digest'):
+                    diff.evaluate(self.go, rust, self.manifest, self.manifest_sha)
 
 
 if __name__ == '__main__':
