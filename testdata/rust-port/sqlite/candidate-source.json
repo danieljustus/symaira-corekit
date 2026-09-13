@@ -1,5 +1,5 @@
 {
-  "base": "51b1fb2a1cf9ecdbfcdaaea0d9dbc83549af3d06",
+  "base": "8beb23ce10cf46535d33e8a9f49f2d65cc3c6788",
   "schema_version": 1,
   "source_hashes": {
     ".gitattributes": "f5001cfbf0e3c5454e5463cf700f465f79140fbcfaf504a61773799a76d232b2",
@@ -33,6 +33,7 @@
     "rust/symaira-core-sqlite/tests/migration_contention.rs": "e5f5617af96358abb8140b0afdb3f95da116ffd3b2284646ad89c3c97206b070",
     "rust/symaira-core-sqlite/tests/migration_selection.rs": "fb7add90fbe6f4e1fb81b619ee5a0004e44ead7e617ecc3f8169b4d3ece9344f",
     "rust/symaira-core-sqlite/tests/open_policy.rs": "06bb4a8780b6df3485d8c54436e0c6f74fedcc0637f83df227b8e7d96f9dac8e",
+    "rust/symaira-core-sqlite/tests/sql006.rs": "53e509432226dc8f29dc25ee2e43a25576acbfa8abce07125f3c94e57d391c88",
     "rust/symaira-core-version/Cargo.toml": "105564028bb4d57e8ca02a59873432c5107e3f266831391bab912a511251baf6",
     "rust/symaira-core-version/src/lib.rs": "77cd98590d6d1d21f99fd812d2464fb0deeccfa052bde555ae077ae853a60b20",
     "rust/test-support/symaira-contract-fixtures/Cargo.toml": "e2fafe830cd528c7a09606e6caf73794d6a0d29e8e9b7540a0e7b8461ec6d377",

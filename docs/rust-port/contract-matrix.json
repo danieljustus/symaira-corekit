@@ -999,8 +999,8 @@
         "linux",
         "windows"
       ],
-      "rust_test": "symaira-core-sqlite/tests/parity.rs",
-      "status": "todo"
+      "rust_test": "rust/symaira-core-sqlite/tests/sql006.rs",
+      "status": "parity"
     },
     {
       "id": "UPD-001",
