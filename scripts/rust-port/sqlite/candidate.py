@@ -37,7 +37,9 @@ def load(path=DEFAULT):
     return manifest, hashlib.sha256(raw).hexdigest()
 
 
-def verify(report, manifest):
+def verify(report, manifest, manifest_sha256):
+    if report.get('candidate_manifest_sha256') != manifest_sha256:
+        raise ValueError('Rust report differs from frozen candidate manifest digest')
     if report.get('source_hashes') != manifest['source_hashes']:
         raise ValueError('Rust report differs from frozen source manifest')
     if report.get('candidate_base') != manifest['base']:
@@ -45,6 +47,12 @@ def verify(report, manifest):
     revision = report.get('candidate_revision')
     if not isinstance(revision, str) or not re.fullmatch('[0-9a-f]{40}', revision):
         raise ValueError('missing or malformed candidate revision')
+    # Validate the declared baseline even when the candidate revision equals it;
+    # otherwise a nonexistent object bypasses every Git provenance check below.
+    try:
+        generate.run(['git', 'cat-file', '-e', f"{manifest['base']}^{{commit}}"], cwd=ROOT)
+    except RuntimeError as error:
+        raise ValueError('candidate base is not a verified commit') from error
     # The immutable source manifest identifies dirty diagnostic bytes; the
     # revision must independently belong to the declared baseline's history.
     if revision != manifest['base']:

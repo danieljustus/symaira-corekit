@@ -15,7 +15,7 @@ import candidate
 
 ROOT = generate.ROOT
 MANIFEST = ROOT / "Cargo.toml"
-TARGET = ROOT / "target"
+TARGET = Path(os.environ.get("CARGO_TARGET_DIR", ROOT / "target")).resolve()
 
 
 def rust_capture(manifest):
@@ -59,13 +59,13 @@ def equal(left, right):
     return json.dumps(left, sort_keys=True, allow_nan=False) == json.dumps(right, sort_keys=True, allow_nan=False)
 
 
-def evaluate(go, rust, manifest):
+def evaluate(go, rust, manifest, manifest_sha256):
     # Validate observable shape before provenance so malformed reports are
     # rejected for the defect they contain, even when an older capture is
     # intentionally being exercised as a historical negative control.
     generate.validate(go)
     generate.validate_observations(rust, require_busy_measurement=True)
-    candidate.verify(rust, manifest)
+    candidate.verify(rust, manifest, manifest_sha256)
     # Validate Go's case IDs before indexing its positional platform observation.
     generate.validate(go)
     native = rust.get('native', {})
@@ -138,7 +138,7 @@ def main():
     rust = rust_capture(manifest)
     rust['candidate_manifest_sha256'] = manifest_sha
     try:
-        verdict = evaluate(go, rust, manifest)
+        verdict = evaluate(go, rust, manifest, manifest_sha)
         if args.typed_errors:
             verdict = typed_contract.apply(go, rust, verdict)
     except (ValueError, KeyError, TypeError) as error:
