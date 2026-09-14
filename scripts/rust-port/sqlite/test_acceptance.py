@@ -82,6 +82,14 @@ class AcceptanceControls(unittest.TestCase):
                 rust['candidate_manifest_sha256'] = value
                 with self.assertRaisesRegex(ValueError, 'candidate manifest digest'):
                     diff.evaluate(self.go, rust, self.manifest, self.manifest_sha)
+    def test_equal_nonexistent_base_rejected(self):
+        manifest = copy.deepcopy(self.manifest)
+        manifest['base'] = '0' * 40
+        rust = copy.deepcopy(self.rust)
+        rust['candidate_base'] = manifest['base']
+        rust['candidate_revision'] = manifest['base']
+        with self.assertRaisesRegex(ValueError, 'candidate base is not a verified commit'):
+            candidate.verify(rust, manifest, self.manifest_sha)
 
 
 if __name__ == '__main__':

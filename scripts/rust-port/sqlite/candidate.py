@@ -47,6 +47,12 @@ def verify(report, manifest, manifest_sha256):
     revision = report.get('candidate_revision')
     if not isinstance(revision, str) or not re.fullmatch('[0-9a-f]{40}', revision):
         raise ValueError('missing or malformed candidate revision')
+    # Validate the declared baseline even when the candidate revision equals it;
+    # otherwise a nonexistent object can bypass all Git provenance checks.
+    try:
+        generate.run(['git', 'cat-file', '-e', f"{manifest['base']}^{{commit}}"], cwd=ROOT)
+    except RuntimeError as error:
+        raise ValueError('candidate base is not a verified commit') from error
     # The immutable source manifest identifies dirty diagnostic bytes; the
     # revision must independently belong to the declared baseline's history.
     if revision != manifest['base']:

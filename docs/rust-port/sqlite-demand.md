@@ -123,9 +123,9 @@ candidate-source manifest was regenerated for this change. The prior macOS
 capture remains in `differential-macos-bound.json` as historical evidence for
 its original source snapshot. The fresh macOS arm64 capture for RUST-014 is
 retained in `differential-macos-bound-rust014.json` with SHA-256
-`dc5a5ec9eb7c9f0fc85a4610806a41811e4df80361094f11262ad1e76f44de2d`; its
+`0d6b30b0f1ebb34651275fabfd6e1f261f2c25cf438e495828fd28e3c2c36ff5`; its
 six-group typed differential passed with Go `go1.26.6`, and it measured the
-Rust busy wait at 5.069667334 seconds. This is a real local capture, not a
+Rust busy wait at 5.1102295 seconds. This is a real local capture, not a
 synthetic fixture.
 
 The latest review repair validates the complete Rust observation shape before

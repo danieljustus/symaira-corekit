@@ -1000,7 +1000,7 @@
         "windows"
       ],
       "rust_test": "rust/symaira-core-sqlite/tests/sql006.rs",
-      "status": "parity"
+      "status": "fixture-ready"
     },
     {
       "id": "UPD-001",
