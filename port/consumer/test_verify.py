@@ -652,6 +652,35 @@ import (
             present = [item for item in report["findings"] if item["code"] == "rust.not_adopted.present"]
             self.assertEqual({item["message"].rsplit(" ", 1)[-1] for item in present}, {"Cargo.toml", "Cargo.lock"}, report)
 
+    def test_not_adopted_rejects_aliased_dependency_without_lockfile(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            root = Path(raw)
+            manifest, corekit, consumer, _, _ = make_fixture(root)
+            cargo_path = consumer / "Cargo.toml"
+            cargo_path.write_text(
+                cargo_path.read_text(encoding="utf-8").replace(
+                    'symaira-core-version = {',
+                    'core_version = { package = "symaira-core-version",',
+                ),
+                encoding="utf-8",
+            )
+            git(consumer, "rm", "Cargo.lock")
+            git(consumer, "add", "Cargo.toml")
+            git(consumer, "commit", "-qm", "alias-without-lockfile")
+            document = json.loads(manifest.read_text(encoding="utf-8"))
+            document["consumers"][0]["rust"] = {"status": "not_adopted"}
+            document["consumers"][0]["checkout_commit"] = git(consumer, "rev-parse", "HEAD")
+            manifest.write_text(json.dumps(document), encoding="utf-8")
+
+            report = verify.verify_manifest(manifest, workspace_root=root, corekit_root=corekit)
+            self.assertEqual(report["status"], "blocked", report)
+            self.assertEqual(
+                [item["code"] for item in report["findings"]],
+                ["rust.not_adopted.present"],
+                report,
+            )
+            self.assertTrue(report["findings"][0]["message"].endswith("Cargo.toml"), report)
+
     def test_declared_cargo_paths_reject_forbidden_components_and_symlinks(self) -> None:
         for relative in ("vendor/Cargo.toml", "target/Cargo.toml", ".worktrees/Cargo.toml"):
             with self.subTest(relative=relative), tempfile.TemporaryDirectory() as raw:

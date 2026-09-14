@@ -304,7 +304,7 @@ def _tracked_cargo_files(checkout: Path) -> tuple[bool, list[Path]]:
 
 def _cargo_contains_package(document: Any, package: str) -> bool:
     if isinstance(document, dict):
-        if package in document or document.get("name") == package:
+        if package in document or document.get("name") == package or document.get("package") == package:
             return True
         return any(_cargo_contains_package(value, package) for value in document.values())
     if isinstance(document, list):
