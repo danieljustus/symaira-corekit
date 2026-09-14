@@ -10,17 +10,17 @@ import typed_contract
 
 class AcceptanceControls(unittest.TestCase):
     def setUp(self):
-        self.record = json.loads((diff.ROOT / 'testdata/rust-port/sqlite/differential-macos-bound-rust014.json').read_text())
+        self.record = json.loads((diff.ROOT / 'testdata/rust-port/sqlite/differential-macos-sql006-reviewed.json').read_text())
         self.go = self.record['go']
         self.rust = copy.deepcopy(self.record['rust'])
-        self.stale_rust = copy.deepcopy(self.rust)
+        historical = json.loads((diff.ROOT / 'testdata/rust-port/sqlite/differential-macos-bound-rust014.json').read_text())
+        self.stale_rust = historical['rust']
         self.manifest, _ = candidate.load()
-        # Mutation controls target acceptance ordering, so bind their otherwise
-        # unchanged observation to the current frozen source. The retained
-        # capture itself remains source-bound to the previous candidate.
-        self.rust['source_hashes'] = copy.deepcopy(self.manifest['source_hashes'])
-        self.rust['candidate_base'] = self.manifest['base']
-        self.rust['candidate_revision'] = self.manifest['base']
+
+    def test_source_bound_current_capture_passes(self):
+        self.assertEqual(candidate.snapshot(), self.manifest['source_hashes'])
+        verdict = diff.evaluate(self.go, self.rust, self.manifest)
+        self.assertEqual(typed_contract.apply(self.go, self.rust, verdict)['status'], 'passed')
 
     def test_historical_capture_is_rejected_for_current_source(self):
         # This retained capture is bound to the prior Rust-014 candidate. It
