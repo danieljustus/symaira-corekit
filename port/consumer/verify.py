@@ -150,7 +150,37 @@ def _add(findings: list[Finding], repository: str, code: str, message: str) -> N
     findings.append(Finding(repository, code, message))
 
 
-FORBIDDEN_PATH_PARTS = frozenset({".worktrees", "target", "vendor"})
+# Generated/dependency trees are not checkout source and can contain millions
+# of files. Exclude them from the ignored-source scan just like worktrees and
+# target output; tracked files in these trees are still checked below via
+# ``git ls-files``.
+FORBIDDEN_PATH_PARTS = frozenset({
+    ".agentsroom",
+    ".app-test-build",
+    ".build",
+    ".claude",
+    ".coverage-html",
+    ".cursor",
+    ".mypy_cache",
+    ".omo",
+    ".opencode",
+    ".phase0-evidence",
+    ".playwright-cli",
+    ".playwright-mcp",
+    ".pytest_cache",
+    ".ruff_cache",
+    ".sisyphus",
+    ".swiftpm",
+    ".venv",
+    ".worktrees",
+    "build",
+    "coverage",
+    "dist",
+    "node_modules",
+    "target",
+    "target-run",
+    "vendor",
+})
 
 
 def _validate_relative_path(relative: str) -> tuple[str, ...]:
@@ -215,6 +245,10 @@ def _check_checkout_snapshot(
         _add(findings, repository, "checkout.status", f"cannot inspect checkout status: {error or 'git failed'}")
     elif status:
         _add(findings, repository, "checkout.dirty", "consumer checkout has tracked or untracked changes")
+        # Once the snapshot is dirty, the verifier is already blocked. Avoid
+        # walking ignored build/test trees merely to produce more findings;
+        # the trusted checkout identity is the security boundary.
+        return
 
     # Git status omits ignored files. Scan source-shaped files as well so an
     # ignored untracked Go/Rust source file cannot alter the verified input.

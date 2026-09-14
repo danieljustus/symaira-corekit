@@ -815,6 +815,35 @@ import (
             )
             self.assertTrue(report["findings"][0]["message"].endswith("Cargo.toml"), report)
 
+    def test_generated_trees_are_excluded_from_ignored_source_scan(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            root = Path(raw)
+            manifest, corekit, consumer, _, _ = make_fixture(root)
+            generated = (
+                ".agentsroom", ".app-test-build", ".build", ".claude",
+                ".coverage-html", ".cursor", ".mypy_cache", ".omo", ".opencode",
+                ".phase0-evidence", ".playwright-cli", ".playwright-mcp",
+                ".pytest_cache", ".ruff_cache", ".sisyphus", ".swiftpm", ".venv",
+                ".worktrees", "build", "coverage", "dist", "node_modules", "target",
+                "target-run", "vendor",
+            )
+            (consumer / ".gitignore").write_text("\n".join(generated) + "\n", encoding="utf-8")
+            for directory in generated:
+                path = consumer / directory
+                path.mkdir(parents=True)
+                (path / "generated.go").write_text(
+                    'package generated\nimport _ "github.com/danieljustus/symaira-corekit/versionkit"\n',
+                    encoding="utf-8",
+                )
+            subprocess.run(["git", "-C", str(consumer), "add", ".gitignore"], check=True)
+            subprocess.run(["git", "-C", str(consumer), "commit", "-qm", "ignore-generated-trees"], check=True)
+            document = json.loads(manifest.read_text(encoding="utf-8"))
+            document["consumers"][0]["checkout_commit"] = git(consumer, "rev-parse", "HEAD")
+            manifest.write_text(json.dumps(document), encoding="utf-8")
+
+            report = verify.verify_manifest(manifest, workspace_root=root, corekit_root=corekit)
+            self.assertEqual(report["status"], "passed", report)
+
 
 if __name__ == "__main__":
     unittest.main()
