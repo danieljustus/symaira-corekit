@@ -767,7 +767,7 @@ import (
             manifest, corekit, consumer, _, _ = make_fixture(root)
             (consumer / "Cargo.toml").write_text(
                 '[package]\nname = "fixture"\nversion = "1.0.0"\n'
-                'description = "mentions symaira-core-version in metadata"\n',
+                '[package.metadata]\nsymaira-core-version = "informational metadata"\n',
                 encoding="utf-8",
             )
             git(consumer, "rm", "Cargo.lock")
