@@ -999,7 +999,7 @@
         "linux",
         "windows"
       ],
-      "rust_test": "symaira-core-sqlite/tests/parity.rs",
+      "rust_test": "rust/symaira-core-sqlite/tests/sql006.rs",
       "status": "todo"
     },
     {

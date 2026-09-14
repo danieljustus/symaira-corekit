@@ -40,12 +40,12 @@ class CaseIdControls(unittest.TestCase):
         for side in ('go', 'rust'):
             with self.subTest(side=side):
                 self.assertEqual([c['id'] for c in self.record[side]['cases']], EXPECTED_IDS)
-        for entrypoint in ('acceptance', 'historical'):
-            with self.subTest(entrypoint=entrypoint):
-                go, rust = self.record['go'], self.record['rust']
-                verdict = self.compare(entrypoint, go, rust)
-                self.assertEqual(verdict['case_ids'], EXPECTED_IDS)
-                self.assertEqual(typed_contract.apply(go, rust, verdict), self.record['verdict'])
+        go, rust = self.record['go'], self.record['rust']
+        with self.assertRaisesRegex(ValueError, 'Rust report differs from frozen source manifest'):
+            self.compare('acceptance', go, rust)
+        verdict = self.compare('historical', go, rust)
+        self.assertEqual(verdict['case_ids'], EXPECTED_IDS)
+        self.assertEqual(typed_contract.apply(go, rust, verdict), self.record['verdict'])
 
     def test_zero_executed_cases_rejected(self):
         self.assert_case_ids_rejected(lambda cases: cases.clear())
