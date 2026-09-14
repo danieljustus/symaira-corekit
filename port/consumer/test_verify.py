@@ -761,5 +761,30 @@ import (
                 self.assertTrue(any(item["code"] == "go.replace.forbidden" for item in report["findings"]), report)
 
 
+    def test_not_adopted_ignores_unrelated_manifest_metadata(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            root = Path(raw)
+            manifest, corekit, consumer, _, _ = make_fixture(root)
+            (consumer / "Cargo.toml").write_text(
+                '[package]\nname = "fixture"\nversion = "1.0.0"\n'
+                'description = "mentions symaira-core-version in metadata"\n',
+                encoding="utf-8",
+            )
+            git(consumer, "rm", "Cargo.lock")
+            git(consumer, "add", "Cargo.toml")
+            git(consumer, "commit", "-qm", "metadata-only-package-name")
+            document = json.loads(manifest.read_text(encoding="utf-8"))
+            document["consumers"][0]["rust"] = {"status": "not_adopted"}
+            document["consumers"][0]["checkout_commit"] = git(consumer, "rev-parse", "HEAD")
+            manifest.write_text(json.dumps(document), encoding="utf-8")
+
+            report = verify.verify_manifest(manifest, workspace_root=root, corekit_root=corekit)
+            self.assertEqual(report["status"], "passed", report)
+            self.assertFalse(
+                any(item["code"] == "rust.not_adopted.present" for item in report["findings"]),
+                report,
+            )
+
+
 if __name__ == "__main__":
     unittest.main()

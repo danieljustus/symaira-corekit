@@ -302,14 +302,23 @@ def _tracked_cargo_files(checkout: Path) -> tuple[bool, list[Path]]:
     return True, paths
 
 
-def _cargo_contains_package(document: Any, package: str) -> bool:
-    if isinstance(document, dict):
-        if package in document or document.get("name") == package or document.get("package") == package:
-            return True
-        return any(_cargo_contains_package(value, package) for value in document.values())
-    if isinstance(document, list):
-        return any(_cargo_contains_package(value, package) for value in document)
+def _cargo_manifest_contains_package(document: dict[str, Any], package: str) -> bool:
+    """Find a package only in Cargo dependency declarations, not metadata."""
+    for table in _dependency_tables(document):
+        for dependency, spec in table.items():
+            if dependency == package:
+                return True
+            if isinstance(spec, dict) and spec.get("package") == package:
+                return True
     return False
+
+
+def _cargo_lock_contains_package(document: dict[str, Any], package: str) -> bool:
+    """Find a resolved package in Cargo.lock's package records."""
+    packages = document.get("package")
+    return isinstance(packages, list) and any(
+        isinstance(item, dict) and item.get("name") == package for item in packages
+    )
 
 
 def _check_not_adopted_rust(
@@ -329,7 +338,12 @@ def _check_not_adopted_rust(
         except (OSError, UnicodeDecodeError, ValueError, tomllib.TOMLDecodeError) as error:
             _add(findings, repository, "rust.manifest.read", f"cannot inspect tracked {relative}: {error}")
             continue
-        if _cargo_contains_package(document, COREKIT_PACKAGE):
+        contains_package = (
+            _cargo_lock_contains_package(document, COREKIT_PACKAGE)
+            if path.name == "Cargo.lock"
+            else _cargo_manifest_contains_package(document, COREKIT_PACKAGE)
+        )
+        if contains_package:
             _add(
                 findings,
                 repository,
