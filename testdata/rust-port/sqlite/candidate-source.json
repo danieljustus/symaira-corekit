@@ -1,5 +1,5 @@
 {
-  "base": "ae129601b409d065b92ce25b22b61af91cc34c4e",
+  "base": "6ed17eb58aca757e6cfb53dc8d1482cad8e6c43d",
   "schema_version": 1,
   "source_hashes": {
     ".gitattributes": "f5001cfbf0e3c5454e5463cf700f465f79140fbcfaf504a61773799a76d232b2",
@@ -58,7 +58,7 @@
     "scripts/rust-port/sqlite/main_test.go": "6bead4fe1755c3afb0a0272e2b3ae5d5333072e9d9ef78b11a88fe0b5afed7da",
     "scripts/rust-port/sqlite/migrations/001_test.sql": "31c01d0b463acd6a9f7b4c6b198fe998b26b3309ee31350ea4efff26efd13f79",
     "scripts/rust-port/sqlite/migrations/002_index.sql": "d605a1446f538f11e03213209af02a4f0a319ce82cb3720913b1698088d67449",
-    "scripts/rust-port/sqlite/test_acceptance.py": "00d8ab5f637325cddce71cb7766c317d7f1f3956ff2c28b16e801f0521577b7d",
+    "scripts/rust-port/sqlite/test_acceptance.py": "5bed7f24e2a6a3c61c4c62a1eee1f80b50e4d495b384cb50fc72b09e4d02265d",
     "scripts/rust-port/sqlite/test_case_ids.py": "618c4c67f84647d3c3fe1788625b9752a555fb1a6f1b6330e9fb23797bbb4c5d",
     "scripts/rust-port/sqlite/test_diff.py": "816cb94d52d69e60dd5d2be7accb3b1bc7d4d69400160323841519926d816b1c",
     "scripts/rust-port/sqlite/test_failure_capture.py": "f5546d213d3a63e05c9967f3df454b258a7a785b9c837bdab4fb68d8abafc94d",
