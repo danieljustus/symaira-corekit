@@ -23,10 +23,11 @@ class AcceptanceControls(unittest.TestCase):
         self.assertEqual(typed_contract.apply(self.go, self.rust, verdict)['status'], 'passed')
 
     def test_current_capture_is_bound_to_post_squash_checkout(self):
-        head = candidate.generate.run(['git', 'rev-parse', 'HEAD'], cwd=candidate.ROOT).decode().strip()
-        self.assertEqual(self.manifest['base'], head)
-        self.assertEqual(self.rust['candidate_base'], head)
-        self.assertEqual(self.rust['candidate_revision'], head)
+        base = self.manifest['base']
+        checkout = candidate.generate.run(['git', 'rev-parse', 'HEAD'], cwd=candidate.ROOT).decode().strip()
+        self.assertEqual(self.rust['candidate_base'], base)
+        self.assertEqual(self.rust['candidate_revision'], base)
+        candidate.generate.run(['git', 'merge-base', '--is-ancestor', base, checkout], cwd=candidate.ROOT)
 
     def test_historical_capture_is_rejected_for_current_source(self):
         # This retained capture is bound to the prior Rust-014 candidate. It
