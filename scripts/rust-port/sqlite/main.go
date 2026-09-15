@@ -151,6 +151,15 @@ func pragmaCase() (observation, error) {
 		}
 		values = append(values, map[string]any{"foreign_keys": fk, "busy_timeout": busy, "journal_mode": strings.ToLower(journal)})
 	}
+	// The policy probes above intentionally hold five pooled connections.
+	// Release them before the contention probe so it can acquire its own
+	// holder and contender on platforms with stricter pool scheduling.
+	// The policy values remain captured above; the lock probe still exercises
+	// two distinct real file-backed connections.
+	for _, c := range conns {
+		_ = c.Close()
+	}
+	conns = nil
 	contention := contentionCase(db)
 	return observation{ID: "SQL-002", Success: len(values) == 5 && contention["observed"] == true && contention["blocked"] == true && contention["reader_succeeded"] == true, State: map[string]any{"connections": values, "contention": contention}}, nil
 }
