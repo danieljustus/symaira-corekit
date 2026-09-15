@@ -10,7 +10,7 @@ import typed_contract
 
 class AcceptanceControls(unittest.TestCase):
     def setUp(self):
-        self.record = json.loads((diff.ROOT / 'testdata/rust-port/sqlite/differential-macos-sql006-reviewed.json').read_text())
+        self.record = json.loads((diff.ROOT / 'testdata/rust-port/sqlite/differential-checkpoint-provenance-repair.json').read_text())
         self.go = self.record['go']
         self.rust = copy.deepcopy(self.record['rust'])
         historical = json.loads((diff.ROOT / 'testdata/rust-port/sqlite/differential-macos-bound-rust014.json').read_text())
@@ -110,6 +110,28 @@ class AcceptanceControls(unittest.TestCase):
         rust['candidate_revision'] = manifest['base']
         with self.assertRaisesRegex(ValueError, 'candidate base is not a verified commit'):
             candidate.verify(rust, manifest, self.manifest_sha)
+
+    def test_manifest_base_rejected_before_git(self):
+        for value in ('HEAD', 'origin/main', 'HEAD~1', 'a' * 39, 'A' * 40, 'not-a-base'):
+            with self.subTest(value=value):
+                manifest = copy.deepcopy(self.manifest)
+                manifest['base'] = value
+                rust = copy.deepcopy(self.rust)
+                rust['candidate_base'] = value
+                with patch.object(candidate.generate, 'run') as command:
+                    with self.assertRaisesRegex(ValueError, 'candidate base'):
+                        diff.evaluate(self.go, rust, manifest, self.manifest_sha)
+                    command.assert_not_called()
+
+    def test_manifest_base_non_commit_rejected(self):
+        non_commit = candidate.generate.run(['git', 'rev-parse', 'HEAD^{tree}'], cwd=candidate.ROOT).decode().strip()
+        manifest = copy.deepcopy(self.manifest)
+        manifest['base'] = non_commit
+        rust = copy.deepcopy(self.rust)
+        rust['candidate_base'] = non_commit
+        rust['candidate_revision'] = non_commit
+        with self.assertRaisesRegex(ValueError, 'candidate base is not a verified commit'):
+            diff.evaluate(self.go, rust, manifest, self.manifest_sha)
 
 
 if __name__ == '__main__':

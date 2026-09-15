@@ -19,6 +19,7 @@ TARGET = Path(os.environ.get("CARGO_TARGET_DIR", ROOT / "target")).resolve()
 
 
 def rust_capture(manifest):
+    candidate.validate_base(manifest)
     before = candidate.snapshot()
     if before != manifest['source_hashes']:
         raise ValueError('candidate changed since explicit source freeze')

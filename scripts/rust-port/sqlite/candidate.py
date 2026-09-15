@@ -37,7 +37,16 @@ def load(path=DEFAULT):
     return manifest, hashlib.sha256(raw).hexdigest()
 
 
+def validate_base(manifest):
+    base = manifest.get('base')
+    if not isinstance(base, str) or not re.fullmatch('[0-9a-f]{40}', base):
+        raise ValueError('missing or malformed candidate base')
+
+
 def verify(report, manifest, manifest_sha256):
+    # Validate the baseline representation before any Git command can resolve
+    # a moving ref, abbreviation, revision expression, or other input.
+    validate_base(manifest)
     if report.get('candidate_manifest_sha256') != manifest_sha256:
         raise ValueError('Rust report differs from frozen candidate manifest digest')
     if report.get('source_hashes') != manifest['source_hashes']:
