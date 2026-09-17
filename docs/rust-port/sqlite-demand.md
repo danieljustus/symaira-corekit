@@ -371,9 +371,11 @@ release work or a Go cutover.
 SQL-006 adds `cost_gate.py` and `test_cost_gate.py` to the SQLite helper tree,
 which the source-bound contract deliberately freezes. The active manifest was
 therefore refreshed from 68 to 70 files (SHA-256
-`0c8521af782798e8d8df2e1cc5292798d37d5779c03728e3d6af9120c04feda6`),
-and the active post-squash capture was recaptured at reachable candidate
-revision `8747ec7857c07367e08d330ab1ed75025c6e4900`. Its Go oracle now binds
+`f06e39bde1d9f5dcc01d3244f72ee003828e151c3f47a57479f3b565a76511a5`),
+and the active post-squash capture (SHA-256
+`238f390580e20e6ec5c7075cce782a9aaab891e773f4920727440bdbc925410d`)
+was recaptured at reachable candidate revision
+`8a091aebcd1179786738647aa1cced5a82152f4b`. Its Go oracle now binds
 24 helper files; the typed differential remains six cases, 42 checked fields,
 nine explicit differences and zero unresolved differences. Older historical
 captures remain unchanged.
