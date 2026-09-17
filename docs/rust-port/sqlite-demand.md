@@ -348,10 +348,12 @@ differential ran. The old capture is retained as historical evidence; it was
 not rewritten.
 
 A fresh branch from `main` at `2f995ca721f87d525324c0241835a588d6421966`
-now records that reachable revision before its fixture changes are committed.
-The regenerated source manifest has 68 files and SHA-256
+recorded that reachable revision before its fixture changes were committed.
+This 68-file manifest and report are retained historical predecessor evidence;
+they are superseded by the active 70-file capture below. Its source manifest had
+SHA-256
 `b1486fa30b58154f820d73e2b8496b12d78181e50113dc04613ae786f8de6774`.
-The new native macOS arm64 report is
+Its native macOS arm64 report was
 `testdata/rust-port/sqlite/differential-macos-bound-rust006-post-squash-20260917.json`
 (SHA-256 `8e3d6b0c099e3ba83ae9699ca6cac29c69498079881f3e6533a173aa86861641`):
 six case IDs, 42 checked fields, zero unresolved differences and nine explicit
@@ -373,9 +375,9 @@ which the source-bound contract deliberately freezes. The active manifest was
 therefore refreshed from 68 to 70 files (SHA-256
 `f06e39bde1d9f5dcc01d3244f72ee003828e151c3f47a57479f3b565a76511a5`),
 and the active post-squash capture (SHA-256
-`238f390580e20e6ec5c7075cce782a9aaab891e773f4920727440bdbc925410d`)
+`01845355150ceaed1e747788b524cc9b1f40d0112aff1db2ac2f98dcf4161bed`)
 was recaptured at reachable candidate revision
-`8a091aebcd1179786738647aa1cced5a82152f4b`. Its Go oracle now binds
+`31f61d2d02d83b8ab3d5f3d8f6f08f7a0f3491d7`. Its Go oracle now binds
 24 helper files; the typed differential remains six cases, 42 checked fields,
 nine explicit differences and zero unresolved differences. Older historical
 captures remain unchanged.
