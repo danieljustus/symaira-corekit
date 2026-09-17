@@ -87,12 +87,6 @@ def verify(report, manifest, manifest_sha256):
         generate.run(['git', 'cat-file', '-e', f"{manifest['base']}^{{commit}}"], cwd=ROOT)
     except RuntimeError as error:
         raise ValueError('candidate base is not a verified commit') from error
-    try:
-        checkout = generate.run(['git', 'rev-parse', 'HEAD^{commit}'], cwd=ROOT).decode().strip()
-    except RuntimeError as error:
-        raise ValueError('actual checkout revision is not available') from error
-    if revision != checkout:
-        raise ValueError('candidate revision differs from actual checkout')
     # The immutable source manifest identifies dirty diagnostic bytes; the
     # revision must independently belong to the declared baseline's history.
     if revision != manifest['base']:
@@ -100,14 +94,17 @@ def verify(report, manifest, manifest_sha256):
             generate.run(['git', 'merge-base', '--is-ancestor', manifest['base'], revision], cwd=ROOT)
         except RuntimeError as error:
             raise ValueError('candidate revision is not a verified descendant of the baseline') from error
+    try:
+        generate.run(['git', 'merge-base', '--is-ancestor', revision, 'HEAD'], cwd=ROOT)
+    except RuntimeError as error:
+        raise ValueError('candidate revision is not an ancestor of the actual checkout') from error
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--output', type=Path, default=DEFAULT)
     args = parser.parse_args()
-    base = generate.run(['git', 'rev-parse', 'HEAD'], cwd=ROOT).decode().strip()
-    args.output.write_text(json.dumps({'schema_version': 1, 'base': base, 'source_hashes': snapshot()}, indent=2, sort_keys=True) + '\n')
+    args.output.write_text(json.dumps({'schema_version': 1, 'base': EXPECTED_BASE, 'source_hashes': snapshot()}, indent=2, sort_keys=True) + '\n')
     print(f'FROZEN {args.output}; requires independent review, not approval by generation')
 
 

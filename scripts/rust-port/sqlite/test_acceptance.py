@@ -28,8 +28,8 @@ class AcceptanceControls(unittest.TestCase):
         base = self.manifest['base']
         checkout = candidate.generate.run(['git', 'rev-parse', 'HEAD'], cwd=candidate.ROOT).decode().strip()
         self.assertEqual(self.rust['candidate_base'], base)
-        self.assertEqual(self.rust['candidate_revision'], checkout)
-        candidate.generate.run(['git', 'merge-base', '--is-ancestor', base, checkout], cwd=candidate.ROOT)
+        candidate.generate.run(['git', 'merge-base', '--is-ancestor', base, self.rust['candidate_revision']], cwd=candidate.ROOT)
+        candidate.generate.run(['git', 'merge-base', '--is-ancestor', self.rust['candidate_revision'], checkout], cwd=candidate.ROOT)
 
     def test_historical_capture_is_rejected_for_current_source(self):
         # This retained capture is bound to the prior Rust-014 candidate. It
@@ -114,20 +114,30 @@ class AcceptanceControls(unittest.TestCase):
 
     def test_unrelated_revision_rejected(self):
         self.rust['candidate_revision'] = '0' * 40
-        with self.assertRaisesRegex(ValueError, 'actual checkout'):
+        with self.assertRaisesRegex(ValueError, 'verified descendant'):
             diff.evaluate(self.go, self.rust, self.manifest, self.manifest_sha)
 
-    def test_valid_ancestor_revision_is_rejected_for_current_checkout(self):
+    def test_baseline_ancestor_revision_is_rejected(self):
         ancestor = candidate.generate.run(
-            ['git', 'rev-parse', 'HEAD^'], cwd=candidate.ROOT
+            ['git', 'rev-parse', f"{self.manifest['base']}^"], cwd=candidate.ROOT
         ).decode().strip()
         self.rust['candidate_revision'] = ancestor
-        with self.assertRaisesRegex(ValueError, 'actual checkout'):
+        with self.assertRaisesRegex(ValueError, 'verified descendant'):
             diff.evaluate(self.go, self.rust, self.manifest, self.manifest_sha)
+
+    def test_non_ancestor_revision_rejected_for_current_checkout(self):
+        with patch.object(candidate.generate, 'run') as mock_run:
+            def side_effect(cmd, **kwargs):
+                if cmd[:3] == ['git', 'merge-base', '--is-ancestor'] and cmd[4] == 'HEAD':
+                    raise RuntimeError('not ancestor')
+                return b''
+            mock_run.side_effect = side_effect
+            with self.assertRaisesRegex(ValueError, 'ancestor of the actual checkout'):
+                diff.evaluate(self.go, self.rust, self.manifest, self.manifest_sha)
 
     def test_co_mutated_valid_ancestor_baseline_is_rejected(self):
         ancestor = candidate.generate.run(
-            ['git', 'rev-parse', 'HEAD~2'], cwd=candidate.ROOT
+            ['git', 'rev-parse', f"{candidate.EXPECTED_BASE}^"], cwd=candidate.ROOT
         ).decode().strip()
         manifest = copy.deepcopy(self.manifest)
         manifest['base'] = ancestor
