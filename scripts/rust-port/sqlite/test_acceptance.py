@@ -9,7 +9,7 @@ import typed_contract
 
 
 class AcceptanceControls(unittest.TestCase):
-    CURRENT_CAPTURE = 'testdata/rust-port/sqlite/differential-macos-bound-rust006-20260916.json'
+    CURRENT_CAPTURE = 'testdata/rust-port/sqlite/differential-macos-bound-rust006-post-squash-20260917.json'
 
     def setUp(self):
         self.record = json.loads((diff.ROOT / self.CURRENT_CAPTURE).read_text())

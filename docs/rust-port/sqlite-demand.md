@@ -338,3 +338,30 @@ The first all-NVMe runtime attempt intentionally exercised the macOS path contra
 The differential report records native identity `darwin/arm64`, candidate base and revision equal to `82968b4fc9537daf62c2008331f5e5ce5d32b6c6`, and measured busy contention of 5.062894375 seconds. `dev-external --status` was PASS before each heavy run (`mounted=true`); the NVMe run root, HOME/XDG roots, caches and runtime exception were mode 0700. No real stores or secrets were accessed.
 
 This closes only the local native macOS gate for the dirty candidate; SQL-006/RUST-006 remains `in_progress`. Native Linux and Windows runtime lanes remain open and cannot be inferred from this host. Consumer pins/smokes, Value, Cost, RUST-006 promotion and RUST-014/015 release/consumer gates remain open. No consumer, release, PR, push, cutover, Go deletion, benchmark or `Arbeitsstand.md` change was made.
+
+## Post-squash source-bound capture — 2026-09-17
+
+The squash merge of #284 preserved the candidate source bytes but removed the
+branch-only capture revision from `main`. The existing validator correctly
+rejected that report in all three SQLite-native CI lanes before the live
+differential ran. The old capture is retained as historical evidence; it was
+not rewritten.
+
+A fresh branch from `main` at `2f995ca721f87d525324c0241835a588d6421966`
+now records that reachable revision before its fixture changes are committed.
+The regenerated source manifest has 68 files and SHA-256
+`b1486fa30b58154f820d73e2b8496b12d78181e50113dc04613ae786f8de6774`.
+The new native macOS arm64 report is
+`testdata/rust-port/sqlite/differential-macos-bound-rust006-post-squash-20260917.json`
+(SHA-256 `8e3d6b0c099e3ba83ae9699ca6cac29c69498079881f3e6533a173aa86861641`):
+six case IDs, 42 checked fields, zero unresolved differences and nine explicit
+typed-contract differences.
+
+The CI-equivalent package checks passed locally: 25 Rust integration tests plus
+one doctest, package Clippy with `-D warnings`, 71 SQLite Python tests and one
+provenance test. The `dev-external` preflight reported only an unrelated missing
+Brain `target` link; the capture used its explicit target directory on the
+mounted NVMe and did not modify Brain. This restores a valid source-bound
+fixture for review and a fresh CoreKit CI run only. It does not complete a
+cross-platform native gate, consumer adoption, cost/value evidence, RUST-006,
+release work or a Go cutover.

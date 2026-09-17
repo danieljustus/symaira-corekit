@@ -68,7 +68,7 @@ impl MigrationSource for RemovedMigrationAfterListing<'_> {
 
 fn oracle_sql006() -> Value {
     let fixture: Value = serde_json::from_str(include_str!(
-        "../../../testdata/rust-port/sqlite/differential-macos-bound-rust006-20260916.json"
+        "../../../testdata/rust-port/sqlite/differential-macos-bound-rust006-post-squash-20260917.json"
     ))
     .expect("source-bound SQLite capture must be valid JSON");
     assert_eq!(fixture["go"]["cases"][5]["id"], "SQL-006");
