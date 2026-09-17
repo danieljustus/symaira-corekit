@@ -97,7 +97,7 @@ emits computed per-case success and compiled OS/architecture identity.
 manifest. Capture checks the exact source inventory before building and after
 execution; it verifies base ancestry and records the actual revision separately.
 `candidate.py` is an explicit freeze operation, never run automatically by CI.
-The frozen `candidate-source.json` and fresh `differential-macos-bound-rust014.json`
+The frozen `candidate-source.json` and fresh `differential-macos-bound-rust006-20260916.json`
 must receive independent review together before being acceptance evidence.
 The old state-only comparator is private and used only by historical regression
 tests, not the live acceptance entrypoint.
@@ -221,3 +221,120 @@ These results certify the existing base only, not the forthcoming SQLite impleme
 4. Native locking/migration/rollback tests, two consumer integrations removing duplication, and 10-run cost evidence. Keep RUST-006 non-complete until these pass.
 
 Owned worktree: `.worktrees/rust-006-sqlite`; branch `rust/rust-006-sqlite`; base as above. No publication, Go removal, production data access or sibling-repository changes are authorized by this slice. RUST-007 through RUST-012 remain deferred pending their own demand evidence. RUST-014 still lacks authorized registry evidence; RUST-015 still requires released consumer and rollback evidence.
+
+## Bounded SQL-006 execution checkpoint — 2026-09-16
+
+This section is the current handoff for the assigned worktree. Earlier capture
+sections remain historical evidence and were not relabeled or overwritten.
+
+### Candidate decision and preserved delta
+
+- Worktree: `/Volumes/1TB_NVMe_SN850X/Dev/Symaira_Dev/Repos/symaira-corekit/.worktrees/rust-batch-20260916`; branch `migration/rust-batch-20260916`; base and candidate revision `82968b4fc9537daf62c2008331f5e5ce5d32b6c6`.
+- Canonical candidate: the current assigned integration source at that exact
+  base, after the bounded acceptance/provenance repairs. It was selected over
+  retained `migration/rust-integration-20260913` (`62edd99`),
+  `migration/rust-watch-sql006-errors-20260913` (`91c9ff9`),
+  `repair/checkpoint-provenance-repair` (`2b4d51b`) and
+  `migration/rust-watch-sql006-review-repair-20260913` (`3c3dfad`) because
+  those trees are older/divergent and their actual diffs either remove
+  regression controls or carry stale acceptance references. No whole retained
+  stack was transplanted; the audit is `/private/tmp/sql006-candidate-diff-audit.txt`.
+- The pre-existing `docs/rust-port/work-items.json` delta was preserved and
+  audited, not reverted: it replaces the invalid
+  `python3 scripts/rust-port/diff.py --suite sqlite --native` and unavailable
+  `cargo nextest run -p symaira-core-sqlite` references with the existing
+  `make rust-sqlite-contract` command and the actual `rust-sqlite-native` CI
+  lane. Its SQL-006 status remains `in_progress` pending native and consumer
+  gates.
+
+The fresh source manifest is `testdata/rust-port/sqlite/candidate-source.json`
+(SHA-256 `c130f8099d637d2cb4e5be23218bff877847824d2aa595c4577b1d6fbc35044e`,
+68 source files). The Go oracle is pinned to
+`f3d3eb79b9b1f31b4f973d2ed518a8292cedf588` (7 source files); the helper
+provenance inventory has 22 files. Acceptance now recomputes both candidate
+source hashes and Go oracle/helper hashes, validates the pinned isolation
+contract, and rejects co-mutated reports/manifests. `typed_contract.py` treats
+missing or malformed causes as failed controls rather than raising an
+unvalidated attribute error.
+
+### Fresh evidence and exact local results
+
+| Step | Command | Result / counts | Absolute logs or artifact |
+|---|---|---|---|
+| Freeze | `python3 scripts/rust-port/sqlite/candidate.py --output testdata/rust-port/sqlite/candidate-source.json` | exit 0; base `82968b4fc9537daf62c2008331f5e5ce5d32b6c6`; 68 source files | `/private/tmp/sql006-freeze.S0whFe/stdout`, `/private/tmp/sql006-freeze.S0whFe/stderr` |
+| Strict differential | `python3 scripts/rust-port/sqlite/diff.py --output testdata/rust-port/sqlite/differential-macos-bound-rust006-20260916-strict.json` | exit 1, intentional `partial`; 6 case IDs, 42 checked fields, 9 retained differences | report SHA-256 `8633ce9697de55677e2a0d692973329b45989572c899315b5277b1807dcc7bdf`; `target/sql006-run/logs/capture-strict-private-tmp.{stdout,stderr}` |
+| Typed differential | `python3 scripts/rust-port/sqlite/diff.py --typed-errors --output testdata/rust-port/sqlite/differential-macos-bound-rust006-20260916.json` | exit 0, `passed`; 6 case IDs, 42 checked fields, 9 explicitly accepted differences, 0 remaining | report SHA-256 `8879ac65e7abbad13720d6d6a5c98430e69a1f89159be6a5eb694ccb5d4710b2`; `target/sql006-run/logs/capture-typed-private-tmp.{stdout,stderr}` |
+| Required Python SQLite suite | `python3 -m unittest discover -s scripts/rust-port/sqlite -p 'test_*.py'` | exit 0; 69 tests | `target/sql006-run/logs/python-sqlite-post-provenance.{stdout,stderr}` |
+| Required provenance suite | `python3 -m unittest discover -s scripts/rust-port -p 'test_rust_sqlite_provenance.py'` | exit 0; 1 test | `target/sql006-run/logs/python-provenance-post-repair.{stdout,stderr}` |
+| Docs validator | `python3 docs/rust-port/validate.py` | exit 0; 124 contracts, 15 work items, 110 Go test patterns, 0 ready items | `target/sql006-run/logs/docs-validate-post-repair.{stdout,stderr}` |
+| Whitespace check | `git diff --check` | exit 0 after final docs edit | `target/sql006-run/logs/git-diff-check-final.{stdout,stderr}` |
+| Go oracle acceptance reference | `GOTOOLCHAIN=go1.26.6 go test -count=1 ./sqlitekit -run 'TestMigrate_ReadDirFailure|TestMigrate_VersionQueryFailure|TestMigrate_CreateTableFailure|TestMigrate_InMemory'` | exit 0; 4 selected Go tests | `/private/tmp/sql006-go-oracle.0J8l32/{stdout,stderr}` |
+| Focused Make entrypoint | `make rust-sqlite-contract` | exit 0; 25 Rust integration tests + 1 doctest, 69 Python tests, 1 provenance test, typed report passed with 9 accepted/0 remaining | `target/sql006-run/logs/make-rust-sqlite-contract-rerun.{stdout,stderr}`; generated `target/sqlite-contract-report.json` is ignored |
+
+Successful Go/Cargo runner invocations used these resolved paths (all `0700`):
+`/Volumes/1TB_NVMe_SN850X/Dev/Symaira_Dev/Repos/symaira-corekit/.worktrees/rust-batch-20260916/target/sql006-run/{tmp,go-tmp,home,go-caches,cargo-home,cargo-target,logs}`
+on `/Volumes/1TB_NVMe_SN850X`, with runtime `TMPDIR`
+`/private/tmp/sql006-capture-20260916-final` (`0700`) because CoreFS rejects
+the group-writable `/Volumes` ancestor. `dev-external --status` was PASS
+(`mounted=true`, `verified_links=0`); `df -h` reported 43 GiB available on `/`
+and 242 GiB on `/Volumes/1TB_NVMe_SN850X`. `PATH=/Users/daniel/sdk/go1.26.6/bin:$PATH`
+was used only to discover the preinstalled pinned Go toolchain; runner
+subprocesses had isolated HOME/XDG and explicit Go/Cargo caches.
+
+The strict nonzero differential is retained as real evidence; no diagnostic
+wording was normalized away. The named typed-error/consuming-close exception
+is the only acceptance waiver. Existing historical failure/capture files were
+left unchanged. The local run does not prove native Linux/macOS/Windows
+runtime behavior, consumer integration/release, or value/cost gates.
+
+### Read-only consumer demand and cost-gate proposal
+
+The following was read from the current consumer checkouts; neither checkout
+was edited and no real user store was opened.
+
+| Consumer / current HEAD | Source and API demand | Exact SQLite dependency observed |
+|---|---|---|
+| Desktop `18373cd42eca63fbf74c7d6dc48027c031b3184d` | `crates/symdesk-index/src/lib.rs:271-281` calls `symaira_core_sqlite::open_with_existing_parent`, then the consumer's `migrate` and `backfill_norm_index`; the crate also uses `rusqlite::Connection` directly. | Root `Cargo.toml` pins CoreKit SQLite to git rev `62edd9903983d9369373565cc1e50da3fef43176`; `rusqlite = "=0.40.2"`, `default-features = false`, `bundled`; `Cargo.lock` resolves `0.40.2`. |
+| EraseMe `85cf1223d90879453f10eb0a9afccbc335fec323` | `crates/symeraseme-core/src/storage/mod.rs:23-41` owns `open`, parent creation, `Connection::open`, 5-second `busy_timeout`, `foreign_keys` and WAL; `storage/store.rs:17-73` owns `Store::open`, `user_version`, schema initialization and `SCHEMA_VERSION = 2`. | Root workspace `Cargo.toml` uses `rusqlite = "0.37"` with `backup` and `bundled`; `Cargo.lock` resolves `0.37.0`. This `Connection`/schema lifecycle is not interchangeable with Desktop's API. |
+
+Concrete proposal, not executed here: after a separately approved candidate
+pin in disposable consumer worktrees, run these existing commands without
+editing this repository:
+
+```sh
+# symaira-desktop
+cargo test --manifest-path Cargo.toml -p symdesk-index --locked
+cargo build --release --manifest-path Cargo.toml -p symdesk-index --locked
+
+# symaira-eraseme
+cargo test --manifest-path Cargo.toml -p symeraseme-core --locked
+cargo build --release --manifest-path Cargo.toml -p symeraseme-core --locked
+```
+
+The value gate is four green consumer commands plus standalone-first behavior
+and schema/API compatibility. The cost gate compares clean and warm release
+builds and release artifact sizes against each consumer's prior exact pin, with
+the existing 110-% regression limit. Those comparisons, native runs, released
+consumer pins and release evidence remain open; no benchmark was run in this
+checkpoint.
+
+## Native macOS gate — 2026-09-17
+
+The exact candidate was rechecked on the real macOS arm64 host without changing the SQL-006 implementation or resetting the pre-existing WIP. The checked-out branch is `migration/rust-batch-20260916` at `82968b4fc9537daf62c2008331f5e5ce5d32b6c6`; the Go oracle remains `f3d3eb79b9b1f31b4f973d2ed518a8292cedf588`. The current Makefile has no `rust-sqlite-native` target; the native path is the CI-equivalent command sequence in `.github/workflows/ci.yml` (`cargo test`, package Clippy, Python SQLite tests, typed differential). Status snapshot: before and after were both 17 tracked modified files plus 2 untracked non-ignored differential artifacts; the final HEAD tree is `d140d69bdb170c7ac44da8854be8fa3a91518bc8`, and the final non-ledger tracked diff SHA-256 is `291f0f1f199a0aa39a88c3002aa85132808b606ab589cc50e8956e4aab8eecbe`.
+
+The first all-NVMe runtime attempt intentionally exercised the macOS path contract and failed before acceptance: `cargo test` exit 101, with 4 of 6 `contracts.rs` tests passing and 2 failing on `Directory(InsecureDirectory(...))` because the NVMe volume ancestor is mode `0775`. This is retained at `target/sql006-native-macos-20260917/logs/cargo-test.stderr`; it was not normalized away. The successful rerun kept HOME/XDG/Go/Cargo caches and `CARGO_TARGET_DIR` in the mode-0700 NVMe run root, while using mode-0700 `/private/tmp/sql006-native-macos-20260917` for runtime temp files, the secure macOS location required by CoreKit's existing parent-security contract.
+
+| Check | Result | Evidence |
+|---|---|---|
+| Cargo SQLite package tests | exit 0; 25 integration tests + 1 doctest | `target/sql006-native-macos-20260917/logs/cargo-test-private-tmp.stdout` / `.stderr` |
+| Cargo Clippy package gate | exit 0; `--all-targets --all-features --locked -- -D warnings` | `target/sql006-native-macos-20260917/logs/cargo-clippy.stdout` / `.stderr` |
+| Python SQLite helper suite | exit 0; 69 tests | `target/sql006-native-macos-20260917/logs/python-sqlite.stderr` |
+| SQLite provenance suite | exit 0; 1 test | `target/sql006-native-macos-20260917/logs/python-provenance.stderr` |
+| Go SQL-006 oracle focus | exit 0; 4 selected tests | `target/sql006-native-macos-20260917/logs/go-sqlite-focused.stdout` / `.stderr` |
+| Typed Go↔Rust differential | exit 0; 6 cases, 42 fields, 9 explicitly accepted differences, 0 remaining | `target/sql006-native-macos-20260917/sqlite-native-report.json`, SHA-256 `036f6333c72fc6195b58c3ff49f34739839c36f09914face9a38fc9c3eddd30a` |
+| Formatting / whitespace | `cargo fmt --all --check` and `git diff --check`, both exit 0 | `target/sql006-native-macos-20260917/logs/cargo-fmt.stdout`, `git-diff-check.stdout` |
+| Documentation validator | exit 0 | `target/sql006-native-macos-20260917/logs/docs-validate.stdout` |
+
+The differential report records native identity `darwin/arm64`, candidate base and revision equal to `82968b4fc9537daf62c2008331f5e5ce5d32b6c6`, and measured busy contention of 5.062894375 seconds. `dev-external --status` was PASS before each heavy run (`mounted=true`); the NVMe run root, HOME/XDG roots, caches and runtime exception were mode 0700. No real stores or secrets were accessed.
+
+This closes only the local native macOS gate for the dirty candidate; SQL-006/RUST-006 remains `in_progress`. Native Linux and Windows runtime lanes remain open and cannot be inferred from this host. Consumer pins/smokes, Value, Cost, RUST-006 promotion and RUST-014/015 release/consumer gates remain open. No consumer, release, PR, push, cutover, Go deletion, benchmark or `Arbeitsstand.md` change was made.

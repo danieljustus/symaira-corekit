@@ -68,7 +68,7 @@ impl MigrationSource for RemovedMigrationAfterListing<'_> {
 
 fn oracle_sql006() -> Value {
     let fixture: Value = serde_json::from_str(include_str!(
-        "../../../testdata/rust-port/sqlite/differential-macos-bound-rust014.json"
+        "../../../testdata/rust-port/sqlite/differential-macos-bound-rust006-20260916.json"
     ))
     .expect("source-bound SQLite capture must be valid JSON");
     assert_eq!(fixture["go"]["cases"][5]["id"], "SQL-006");
@@ -203,6 +203,14 @@ fn migration_file_read_surfaces_typed_error_before_sql_execution() {
     assert_eq!(name, "001_test.sql");
     assert_eq!(cause.kind(), io::ErrorKind::NotFound);
     assert!(!migration.exists());
+    let created = connection
+        .query_row(
+            "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = 'must_not_run'",
+            [],
+            |row| row.get::<_, i64>(0),
+        )
+        .unwrap();
+    assert_eq!(created, 0, "read failure must not execute migration SQL");
     assert!(
         error.to_string().starts_with(
             oracle["state"]["read_file_error"]

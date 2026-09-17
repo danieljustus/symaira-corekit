@@ -18,6 +18,39 @@ MANIFEST = ROOT / "Cargo.toml"
 TARGET = Path(os.environ.get("CARGO_TARGET_DIR", ROOT / "target")).resolve()
 
 
+def _same_json(left, right):
+    """Compare JSON values without Python's bool/int equality shortcut."""
+    return json.dumps(left, sort_keys=True, allow_nan=False) == json.dumps(right, sort_keys=True, allow_nan=False)
+
+
+def validate_oracle_provenance(report):
+    """Bind a stored Go observation to the real pinned source and helpers."""
+    oracle = report.get('oracle')
+    if not isinstance(oracle, dict):
+        raise ValueError('missing Go oracle provenance')
+    if oracle.get('commit') != generate.ORACLE_COMMIT:
+        raise ValueError('Go oracle revision differs from pinned source')
+    if oracle.get('implementation') != 'sqlitekit.Open/Migrate':
+        raise ValueError('Go oracle implementation identity differs from pinned source')
+    expected_source = {path: generate.sha(data) for path, data in generate.source_snapshot().items()}
+    if not _same_json(oracle.get('source_hashes'), expected_source):
+        raise ValueError('Go oracle source provenance differs from pinned source')
+    expected_helpers = {path: generate.sha(data) for path, data in generate.helper_snapshot().items()}
+    if not _same_json(oracle.get('artifact_hashes'), expected_helpers):
+        raise ValueError('Go oracle helper provenance differs from current acceptance helpers')
+    expected_isolation = {
+        'locale': 'C',
+        'timezone': 'UTC',
+        'umask': '0077' if os.name != 'nt' else 'not-applicable',
+        'os_sandbox': False,
+    }
+    if not _same_json(oracle.get('isolation'), expected_isolation):
+        raise ValueError('Go oracle isolation provenance differs from the capture contract')
+    if not isinstance(oracle.get('dependencies'), dict):
+        raise ValueError('missing Go oracle dependency provenance')
+
+
+
 def rust_capture(manifest):
     candidate.validate_base(manifest)
     before = candidate.snapshot()
@@ -39,11 +72,12 @@ def rust_capture(manifest):
         sandbox = Path(tmp)
         env = generate.isolated_env(sandbox)
         data = sandbox / "databases"
-        data.mkdir()
+        data.mkdir(mode=0o700)
+        data.chmod(0o700)
         start = int(time.time())
         raw = generate.run([str(binary), str(data), str(generate.HELPER)], cwd=data, env=env, timeout=30)
         # The only diagnostic path rewrite substitutes this run-owned root.
-        report = json.loads(raw.decode().replace(str(data), "<temp-root>"))
+        report = generate.normalize_temp_root(json.loads(raw.decode()), data)
         report["capture_interval"] = [start, int(time.time())]
     if candidate.snapshot() != before:
         raise ValueError('candidate source changed during build/capture')
@@ -67,8 +101,9 @@ def evaluate(go, rust, manifest, manifest_sha256):
     generate.validate(go)
     generate.validate_observations(rust, require_busy_measurement=True)
     candidate.verify(rust, manifest, manifest_sha256)
-    # Validate Go's case IDs before indexing its positional platform observation.
-    generate.validate(go)
+    # Stored captures must prove the pinned Go source and the exact helper
+    # bytes used to produce them; otherwise a co-mutated report can look valid.
+    validate_oracle_provenance(go)
     native = rust.get('native', {})
     go_state = go['cases'][0]['state']
     if (native.get('goos') != go_state['native_goos']

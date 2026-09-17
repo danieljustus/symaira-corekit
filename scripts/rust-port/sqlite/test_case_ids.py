@@ -15,7 +15,7 @@ ID_ERROR = r'case IDs/order mismatch|Rust executed case IDs differ from declared
 
 class CaseIdControls(unittest.TestCase):
     def setUp(self):
-        self.record = json.loads((diff.ROOT / 'testdata/rust-port/sqlite/differential-macos-bound-rust014.json').read_text())
+        self.record = json.loads((diff.ROOT / 'testdata/rust-port/sqlite/differential-macos-bound-rust006-20260916.json').read_text())
         self.manifest, self.manifest_sha = candidate.load()
 
     def compare(self, entrypoint, go, rust):
@@ -41,15 +41,16 @@ class CaseIdControls(unittest.TestCase):
             with self.subTest(side=side):
                 self.assertEqual([c['id'] for c in self.record[side]['cases']], EXPECTED_IDS)
         go, rust = self.record['go'], self.record['rust']
-        # Give the retained record the current manifest digest, so the digest
-        # check cannot be what rejects it; this keeps asserting the
-        # source-hash binding, which is the property under test here.
-        rust = copy.deepcopy(rust)
-        rust['candidate_manifest_sha256'] = self.manifest_sha
-        with self.assertRaisesRegex(ValueError, 'Rust report differs from frozen source manifest'):
-            self.compare('acceptance', go, rust)
-        verdict = self.compare('historical', go, rust)
+        verdict = self.compare('acceptance', go, rust)
         self.assertEqual(verdict['case_ids'], EXPECTED_IDS)
+        historical = json.loads((diff.ROOT / 'testdata/rust-port/sqlite/differential-macos-bound-rust014.json').read_text())
+        historical_rust = copy.deepcopy(historical['rust'])
+        # Give the retained historical record the current manifest digest, so
+        # this control specifically asserts source binding rather than digest
+        # mismatch.
+        historical_rust['candidate_manifest_sha256'] = self.manifest_sha
+        with self.assertRaisesRegex(ValueError, 'Rust report differs from frozen source manifest'):
+            self.compare('acceptance', historical['go'], historical_rust)
         self.assertEqual(typed_contract.apply(go, rust, verdict), self.record['verdict'])
 
     def test_zero_executed_cases_rejected(self):
