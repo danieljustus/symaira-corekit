@@ -371,17 +371,19 @@ release work or a Go cutover.
 SQL-006 adds `cost_gate.py` and `test_cost_gate.py` to the SQLite helper tree,
 which the source-bound contract deliberately freezes. The active manifest was
 therefore refreshed from 68 to 70 files (SHA-256
-`60837e2968153ae5f6ce786fdda565d0f2903c285974581616f56ed3c67a9ba3`),
+`0c8521af782798e8d8df2e1cc5292798d37d5779c03728e3d6af9120c04feda6`),
 and the active post-squash capture was recaptured at reachable candidate
-revision `f185f413169b6ae5c2ed1b6a4449c286fa944fe1`. Its Go oracle now binds
+revision `8747ec7857c07367e08d330ab1ed75025c6e4900`. Its Go oracle now binds
 24 helper files; the typed differential remains six cases, 42 checked fields,
 nine explicit differences and zero unresolved differences. Older historical
 captures remain unchanged.
 
 The synthetic Windows self-check no longer treats unavailable POSIX mode bits
 as a privacy proof; a non-test SQL-006 validation still fails closed there.
-The real frozen runtime remains the private macOS NVMe mount. The affected
-Rust package tests, Clippy, 73 SQLite Python controls, provenance control and
-a fresh typed live differential all passed on that mount. This fixes only the
-CI provenance and portable self-test path; it does not rerun or change the
-80-build cost evidence, its thresholds, promotion, release or Go cutover.
+Resolved runtime aliases are also compared canonically, so macOS `/var` aliases
+and Windows path normalization cannot reject the portable self-test. The real
+frozen runtime remains the private macOS NVMe mount. The affected Rust package
+tests, Clippy, 73 SQLite Python controls, provenance control and a fresh typed
+live differential all passed on that mount. This fixes only the CI provenance
+and portable self-test path; it does not rerun or change the 80-build cost
+evidence, its thresholds, promotion, release or Go cutover.

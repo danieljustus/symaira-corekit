@@ -50,7 +50,7 @@
     "rust/test-support/symaira-core-foundation/tests/version.rs": "84a4741ba4b90def1415c13d946fdd494ff1fe0088317027d0589d56d3c7df67",
     "scripts/rust-port/sqlite/candidate.py": "da990cce48a619086299b446ca09f8b50199a55794d97cb2039b20b6c902d114",
     "scripts/rust-port/sqlite/cause_test.go": "82899fbc9f001a03ffb005aa22330b4615be07b23af84d61f4a841f77a422bc5",
-    "scripts/rust-port/sqlite/cost_gate.py": "11b80734a144fbea734450613c89f7bc4a900004606d785c292d1d93b5defec6",
+    "scripts/rust-port/sqlite/cost_gate.py": "0511d1b792cbd3808869ed1442c7665072058362d775475400f15b61f2c13ad0",
     "scripts/rust-port/sqlite/diff.py": "bf9d23f9f0ca9affda1f5efc421e5712ca5a031c791d21a24367f813b6e48e4b",
     "scripts/rust-port/sqlite/generate.py": "876a6127007bf90e90e6c9493d7ef54e3a713e4bc9cfdfbf3564806ef800040a",
     "scripts/rust-port/sqlite/go.mod": "ca0dac8ac8d3f259ebf6fd50de3178b16f1f82c7d2ac3e9345d3f071615e3b58",

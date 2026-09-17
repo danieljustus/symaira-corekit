@@ -432,6 +432,7 @@ def validate_report(report: dict[str, Any], report_path: Path | None = None, all
             fail("report Go oracle differs from the frozen secure-runtime toolchain")
     under(run_root, runtime, "run root")
     cache_root = under(Path(report.get("cache_root", "")), runtime, "cache root")
+    short_temp_parent = (runtime / "t").resolve(strict=False)
     if os.name == "nt":
         if not allow_test_runtime:
             fail("SQL-006 private runtime requires POSIX permission checks")
@@ -483,7 +484,7 @@ def validate_report(report: dict[str, Any], report_path: Path | None = None, all
         if record.get("env", {}).get("CARGO_NET_OFFLINE") != "true":
             fail("value preflight must be offline")
         temp_root = under(Path(record.get("env", {}).get("TMPDIR", "")), runtime, "value preflight TMPDIR")
-        if temp_root.parent != runtime / "t":
+        if temp_root.parent != short_temp_parent:
             fail("value preflight TMPDIR is not the short secure-runtime path")
         if not isinstance(record.get("exit_code"), int):
             fail("value preflight exit evidence is malformed")
@@ -522,9 +523,10 @@ def validate_report(report: dict[str, Any], report_path: Path | None = None, all
                 temp_root = under(Path(probe.get("env", {}).get("TMPDIR", "")), runtime, "TMPDIR")
                 for key in ("HOME", "USERPROFILE", "XDG_CONFIG_HOME", "XDG_CACHE_HOME", "XDG_DATA_HOME", "XDG_STATE_HOME", "GOCACHE", "GOMODCACHE", "GOPATH"):
                     under(Path(probe.get("env", {}).get(key, "")), run_root, key)
-                if temp_root.parent != runtime / "t":
+                if temp_root.parent != short_temp_parent:
                     fail("timed build TMPDIR is not the short secure-runtime path")
-                if probe.get("env", {}).get("CARGO_TARGET_DIR") != str(target) or probe.get("env", {}).get("CARGO_HOME") != str(cargo_home):
+                if (under(Path(probe.get("env", {}).get("CARGO_TARGET_DIR", "")), run_root, "CARGO_TARGET_DIR") != target
+                        or under(Path(probe.get("env", {}).get("CARGO_HOME", "")), runtime, "CARGO_HOME") != cargo_home):
                     fail("timed build paths differ from recorded environment")
                 if entry["mode"] == "clean":
                     if str(target).find("clean-") < 0:
