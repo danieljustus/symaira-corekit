@@ -127,7 +127,7 @@ class AcceptanceControls(unittest.TestCase):
 
     def test_co_mutated_valid_ancestor_baseline_is_rejected(self):
         ancestor = candidate.generate.run(
-            ['git', 'rev-parse', 'HEAD^'], cwd=candidate.ROOT
+            ['git', 'rev-parse', 'HEAD~2'], cwd=candidate.ROOT
         ).decode().strip()
         manifest = copy.deepcopy(self.manifest)
         manifest['base'] = ancestor
