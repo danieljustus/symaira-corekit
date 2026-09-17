@@ -432,7 +432,10 @@ def validate_report(report: dict[str, Any], report_path: Path | None = None, all
             fail("report Go oracle differs from the frozen secure-runtime toolchain")
     under(run_root, runtime, "run root")
     cache_root = under(Path(report.get("cache_root", "")), runtime, "cache root")
-    if run_root.stat().st_mode & 0o077 or cache_root.stat().st_mode & 0o077:
+    if os.name == "nt":
+        if not allow_test_runtime:
+            fail("SQL-006 private runtime requires POSIX permission checks")
+    elif run_root.stat().st_mode & 0o077 or cache_root.stat().st_mode & 0o077:
         fail("run/cache roots are not private")
     archives = report.get("archives")
     if not isinstance(archives, list) or len(archives) != 4:
