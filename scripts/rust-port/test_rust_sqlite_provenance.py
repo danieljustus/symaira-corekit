@@ -35,7 +35,7 @@ diff = load("diff")
 class SqliteProvenanceControls(unittest.TestCase):
     def setUp(self):
         record = json.loads(
-            (candidate.ROOT / "testdata/rust-port/sqlite/differential-macos-bound-rust006-20260916.json").read_text()
+            (candidate.ROOT / "testdata/rust-port/sqlite/differential-macos-bound-rust006-post-squash-20260917.json").read_text()
         )
         self.go = record["go"]
         self.rust = copy.deepcopy(record["rust"])
