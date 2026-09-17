@@ -38,10 +38,19 @@ def validate_oracle_provenance(report):
     expected_helpers = {path: generate.sha(data) for path, data in generate.helper_snapshot().items()}
     if not _same_json(oracle.get('artifact_hashes'), expected_helpers):
         raise ValueError('Go oracle helper provenance differs from current acceptance helpers')
+    cases = report.get('cases')
+    if not isinstance(cases, list) or not cases or not isinstance(cases[0], dict):
+        raise ValueError('missing Go oracle case state')
+    go_state = cases[0].get('state')
+    if not isinstance(go_state, dict):
+        raise ValueError('missing Go oracle case state')
+    goos = go_state.get('native_goos')
+    if not isinstance(goos, str) or not goos:
+        raise ValueError('missing Go oracle native platform identity')
     expected_isolation = {
         'locale': 'C',
         'timezone': 'UTC',
-        'umask': '0077' if os.name != 'nt' else 'not-applicable',
+        'umask': 'not-applicable' if goos == 'windows' else '0077',
         'os_sandbox': False,
     }
     if not _same_json(oracle.get('isolation'), expected_isolation):

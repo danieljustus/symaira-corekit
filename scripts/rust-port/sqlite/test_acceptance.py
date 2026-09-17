@@ -73,6 +73,32 @@ class AcceptanceControls(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'Go oracle helper provenance'):
             diff.evaluate(self.go, self.rust, self.manifest, self.manifest_sha)
 
+    def test_go_oracle_isolation_provenance_platform_branches(self):
+        # Exercises validator provenance platform branches; simulated Windows
+        # observation does not claim to serve as native Windows runtime evidence.
+        # 1. Unix branch (e.g. self.go on darwin): requires umask '0077'.
+        diff.validate_oracle_provenance(self.go)
+        mismatched_unix = copy.deepcopy(self.go)
+        mismatched_unix['oracle']['isolation']['umask'] = 'not-applicable'
+        with self.assertRaisesRegex(ValueError, 'Go oracle isolation provenance'):
+            diff.validate_oracle_provenance(mismatched_unix)
+
+        # 2. Windows branch: requires umask 'not-applicable'.
+        simulated_win = copy.deepcopy(self.go)
+        simulated_win['cases'][0]['state']['native_goos'] = 'windows'
+        simulated_win['oracle']['isolation']['umask'] = 'not-applicable'
+        diff.validate_oracle_provenance(simulated_win)
+        mismatched_win = copy.deepcopy(simulated_win)
+        mismatched_win['oracle']['isolation']['umask'] = '0077'
+        with self.assertRaisesRegex(ValueError, 'Go oracle isolation provenance'):
+            diff.validate_oracle_provenance(mismatched_win)
+
+        # 3. Fail-closed on missing native platform identity.
+        missing_platform = copy.deepcopy(self.go)
+        del missing_platform['cases'][0]['state']['native_goos']
+        with self.assertRaisesRegex(ValueError, 'native platform identity'):
+            diff.validate_oracle_provenance(missing_platform)
+
     def test_co_mutated_candidate_manifest_and_report_rejected(self):
         manifest = copy.deepcopy(self.manifest)
         name = next(iter(manifest['source_hashes']))
