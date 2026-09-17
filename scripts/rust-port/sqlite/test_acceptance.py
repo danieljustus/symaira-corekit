@@ -9,8 +9,10 @@ import typed_contract
 
 
 class AcceptanceControls(unittest.TestCase):
+    CURRENT_CAPTURE = 'testdata/rust-port/sqlite/differential-macos-bound-rust006-20260916.json'
+
     def setUp(self):
-        self.record = json.loads((diff.ROOT / 'testdata/rust-port/sqlite/differential-checkpoint-provenance-repair.json').read_text())
+        self.record = json.loads((diff.ROOT / self.CURRENT_CAPTURE).read_text())
         self.go = self.record['go']
         self.rust = copy.deepcopy(self.record['rust'])
         historical = json.loads((diff.ROOT / 'testdata/rust-port/sqlite/differential-macos-bound-rust014.json').read_text())
@@ -26,8 +28,8 @@ class AcceptanceControls(unittest.TestCase):
         base = self.manifest['base']
         checkout = candidate.generate.run(['git', 'rev-parse', 'HEAD'], cwd=candidate.ROOT).decode().strip()
         self.assertEqual(self.rust['candidate_base'], base)
-        self.assertEqual(self.rust['candidate_revision'], base)
-        candidate.generate.run(['git', 'merge-base', '--is-ancestor', base, checkout], cwd=candidate.ROOT)
+        candidate.generate.run(['git', 'merge-base', '--is-ancestor', base, self.rust['candidate_revision']], cwd=candidate.ROOT)
+        candidate.generate.run(['git', 'merge-base', '--is-ancestor', self.rust['candidate_revision'], checkout], cwd=candidate.ROOT)
 
     def test_historical_capture_is_rejected_for_current_source(self):
         # This retained capture is bound to the prior Rust-014 candidate. It
@@ -58,6 +60,55 @@ class AcceptanceControls(unittest.TestCase):
         self.rust['source_hashes'][name] = '0' * 64
         with self.assertRaisesRegex(ValueError, 'frozen source'):
             diff.evaluate(self.go, self.rust, self.manifest, self.manifest_sha)
+
+    def test_go_source_provenance_mutation_rejected(self):
+        name = next(iter(self.go['oracle']['source_hashes']))
+        self.go['oracle']['source_hashes'][name] = '0' * 64
+        with self.assertRaisesRegex(ValueError, 'Go oracle source provenance'):
+            diff.evaluate(self.go, self.rust, self.manifest, self.manifest_sha)
+
+    def test_go_helper_provenance_mutation_rejected(self):
+        name = next(iter(self.go['oracle']['artifact_hashes']))
+        self.go['oracle']['artifact_hashes'][name] = '0' * 64
+        with self.assertRaisesRegex(ValueError, 'Go oracle helper provenance'):
+            diff.evaluate(self.go, self.rust, self.manifest, self.manifest_sha)
+
+    def test_go_oracle_isolation_provenance_platform_branches(self):
+        # Exercises validator provenance platform branches; simulated Windows
+        # observation does not claim to serve as native Windows runtime evidence.
+        # 1. Unix branch (e.g. self.go on darwin): requires umask '0077'.
+        diff.validate_oracle_provenance(self.go)
+        mismatched_unix = copy.deepcopy(self.go)
+        mismatched_unix['oracle']['isolation']['umask'] = 'not-applicable'
+        with self.assertRaisesRegex(ValueError, 'Go oracle isolation provenance'):
+            diff.validate_oracle_provenance(mismatched_unix)
+
+        # 2. Windows branch: requires umask 'not-applicable'.
+        simulated_win = copy.deepcopy(self.go)
+        simulated_win['cases'][0]['state']['native_goos'] = 'windows'
+        simulated_win['oracle']['isolation']['umask'] = 'not-applicable'
+        diff.validate_oracle_provenance(simulated_win)
+        mismatched_win = copy.deepcopy(simulated_win)
+        mismatched_win['oracle']['isolation']['umask'] = '0077'
+        with self.assertRaisesRegex(ValueError, 'Go oracle isolation provenance'):
+            diff.validate_oracle_provenance(mismatched_win)
+
+        # 3. Fail-closed on missing native platform identity.
+        missing_platform = copy.deepcopy(self.go)
+        del missing_platform['cases'][0]['state']['native_goos']
+        with self.assertRaisesRegex(ValueError, 'native platform identity'):
+            diff.validate_oracle_provenance(missing_platform)
+
+    def test_co_mutated_candidate_manifest_and_report_rejected(self):
+        manifest = copy.deepcopy(self.manifest)
+        name = next(iter(manifest['source_hashes']))
+        manifest['source_hashes'][name] = '0' * 64
+        rust = copy.deepcopy(self.rust)
+        rust['source_hashes'] = copy.deepcopy(manifest['source_hashes'])
+        # Even matching report/manifest fields cannot replace the real source.
+        rust['candidate_manifest_sha256'] = self.manifest_sha
+        with self.assertRaisesRegex(ValueError, 'not bound to the current candidate source'):
+            diff.evaluate(self.go, rust, manifest, self.manifest_sha)
 
     def test_candidate_base_mutation_rejected(self):
         self.rust['candidate_base'] = '0' * 40
@@ -92,6 +143,35 @@ class AcceptanceControls(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'verified descendant'):
             diff.evaluate(self.go, self.rust, self.manifest, self.manifest_sha)
 
+    def test_baseline_ancestor_revision_is_rejected(self):
+        ancestor = candidate.generate.run(
+            ['git', 'rev-parse', f"{self.manifest['base']}^"], cwd=candidate.ROOT
+        ).decode().strip()
+        self.rust['candidate_revision'] = ancestor
+        with self.assertRaisesRegex(ValueError, 'verified descendant'):
+            diff.evaluate(self.go, self.rust, self.manifest, self.manifest_sha)
+
+    def test_non_ancestor_revision_rejected_for_current_checkout(self):
+        with patch.object(candidate.generate, 'run') as mock_run:
+            def side_effect(cmd, **kwargs):
+                if cmd[:3] == ['git', 'merge-base', '--is-ancestor'] and cmd[4] == 'HEAD':
+                    raise RuntimeError('not ancestor')
+                return b''
+            mock_run.side_effect = side_effect
+            with self.assertRaisesRegex(ValueError, 'ancestor of the actual checkout'):
+                diff.evaluate(self.go, self.rust, self.manifest, self.manifest_sha)
+
+    def test_co_mutated_valid_ancestor_baseline_is_rejected(self):
+        ancestor = candidate.generate.run(
+            ['git', 'rev-parse', f"{candidate.EXPECTED_BASE}^"], cwd=candidate.ROOT
+        ).decode().strip()
+        manifest = copy.deepcopy(self.manifest)
+        manifest['base'] = ancestor
+        rust = copy.deepcopy(self.rust)
+        rust['candidate_base'] = ancestor
+        with self.assertRaisesRegex(ValueError, 'immutable expected base'):
+            candidate.verify(rust, manifest, self.manifest_sha)
+
     def test_old_capture_is_not_current_acceptance(self):
         old = json.loads((diff.ROOT / 'testdata/rust-port/sqlite/differential-macos-typed.json').read_text())
         with self.assertRaises(ValueError):
@@ -115,7 +195,7 @@ class AcceptanceControls(unittest.TestCase):
         rust = copy.deepcopy(self.rust)
         rust['candidate_base'] = manifest['base']
         rust['candidate_revision'] = manifest['base']
-        with self.assertRaisesRegex(ValueError, 'candidate base is not a verified commit'):
+        with self.assertRaisesRegex(ValueError, 'immutable expected base'):
             candidate.verify(rust, manifest, self.manifest_sha)
 
     def test_manifest_base_rejected_before_git(self):
@@ -137,7 +217,7 @@ class AcceptanceControls(unittest.TestCase):
         rust = copy.deepcopy(self.rust)
         rust['candidate_base'] = non_commit
         rust['candidate_revision'] = non_commit
-        with self.assertRaisesRegex(ValueError, 'candidate base is not a verified commit'):
+        with self.assertRaisesRegex(ValueError, 'candidate base'):
             diff.evaluate(self.go, rust, manifest, self.manifest_sha)
 
 

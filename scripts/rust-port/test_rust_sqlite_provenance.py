@@ -11,7 +11,6 @@ import sys
 import tempfile
 import unittest
 from typing import Any
-from unittest.mock import patch
 
 SQLITE_ROOT = Path(__file__).resolve().parent / "sqlite"
 
@@ -36,15 +35,15 @@ diff = load("diff")
 class SqliteProvenanceControls(unittest.TestCase):
     def setUp(self):
         record = json.loads(
-            (candidate.ROOT / "testdata/rust-port/sqlite/differential-checkpoint-provenance-repair.json").read_text()
+            (candidate.ROOT / "testdata/rust-port/sqlite/differential-macos-bound-rust006-20260916.json").read_text()
         )
         self.go = record["go"]
         self.rust = copy.deepcopy(record["rust"])
         self.manifest, self.manifest_sha = candidate.load()
 
-    def test_valid_existing_unrelated_revision_rejected(self):
-        # Build an isolated repository with two root commits and a matching
-        # temporary manifest. Frozen captures/manifests remain untouched.
+    def test_valid_existing_unrelated_baseline_rejected(self):
+        # A valid commit from another repository must not become an accepted
+        # baseline merely because it is available to Git.
         with tempfile.TemporaryDirectory(prefix="sqlite-provenance-") as directory:
             repo = Path(directory)
             git_env = {
@@ -83,14 +82,8 @@ class SqliteProvenanceControls(unittest.TestCase):
             manifest_path.write_bytes(
                 (json.dumps(manifest, indent=2, sort_keys=True) + "\n").encode()
             )
-            manifest, manifest_sha = candidate.load(manifest_path)
-            rust = copy.deepcopy(self.rust)
-            rust["candidate_base"] = base
-            rust["candidate_revision"] = unrelated
-            rust["candidate_manifest_sha256"] = manifest_sha
-            with patch.object(candidate, "ROOT", repo):
-                with self.assertRaisesRegex(ValueError, "verified descendant"):
-                    diff.evaluate(self.go, rust, manifest, manifest_sha)
+            with self.assertRaisesRegex(ValueError, "immutable expected base"):
+                candidate.load(manifest_path)
 
 
 if __name__ == "__main__":
