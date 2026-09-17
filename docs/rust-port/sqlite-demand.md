@@ -348,10 +348,12 @@ differential ran. The old capture is retained as historical evidence; it was
 not rewritten.
 
 A fresh branch from `main` at `2f995ca721f87d525324c0241835a588d6421966`
-now records that reachable revision before its fixture changes are committed.
-The regenerated source manifest has 68 files and SHA-256
+recorded that reachable revision before its fixture changes were committed.
+This 68-file manifest and report are retained historical predecessor evidence;
+they are superseded by the active 70-file capture below. Its source manifest had
+SHA-256
 `b1486fa30b58154f820d73e2b8496b12d78181e50113dc04613ae786f8de6774`.
-The new native macOS arm64 report is
+Its native macOS arm64 report was
 `testdata/rust-port/sqlite/differential-macos-bound-rust006-post-squash-20260917.json`
 (SHA-256 `8e3d6b0c099e3ba83ae9699ca6cac29c69498079881f3e6533a173aa86861641`):
 six case IDs, 42 checked fields, zero unresolved differences and nine explicit
