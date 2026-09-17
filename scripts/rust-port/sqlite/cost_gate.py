@@ -43,6 +43,13 @@ def canonical(value: Any) -> bytes:
     return (json.dumps(value, sort_keys=True, separators=(",", ":"), allow_nan=False) + "\n").encode()
 
 
+def p95(values: list[float]) -> float:
+    if not values:
+        fail("cannot calculate p95 from no samples")
+    ordered = sorted(values)
+    return ordered[max(0, math.ceil(len(ordered) * 0.95) - 1)]
+
+
 def load_contract() -> dict[str, Any]:
     value = json.loads(CONTRACT_PATH.read_text(encoding="utf-8"))
     if value.get("schema_version") != 1 or value.get("gate_id") != "SQL-006-80-BUILD":
@@ -397,7 +404,7 @@ def cell(item: dict[str, Any], mode: str, revisions: dict[str, dict[str, Any]], 
         pairs.append({"index": index, "order": order, "baseline_ms": probes["baseline"]["elapsed_ms"], "candidate_ms": probes["candidate"]["elapsed_ms"], "ratio": probes["candidate"]["elapsed_ms"] / probes["baseline"]["elapsed_ms"], "probes": probes})
     ratios = [pair["ratio"] for pair in pairs]
     sizes = {side: [pair["probes"][side]["artifact"]["size"] for pair in pairs] for side in ("baseline", "candidate")}
-    summary = {"time_ratio_median": statistics.median(ratios), "time_ratio_p95": sorted(ratios)[8], "time_ratio_min": min(ratios), "time_ratio_max": max(ratios), "artifact_size_baseline_median": statistics.median(sizes["baseline"]), "artifact_size_candidate_median": statistics.median(sizes["candidate"]), "artifact_size_ratio": statistics.median(sizes["candidate"]) / statistics.median(sizes["baseline"])}
+    summary = {"time_ratio_median": statistics.median(ratios), "time_ratio_p95": p95(ratios), "time_ratio_min": min(ratios), "time_ratio_max": max(ratios), "artifact_size_baseline_median": statistics.median(sizes["baseline"]), "artifact_size_candidate_median": statistics.median(sizes["candidate"]), "artifact_size_ratio": statistics.median(sizes["candidate"]) / statistics.median(sizes["baseline"])}
     return {"consumer": item["name"], "mode": mode, "pairs": pairs, "summary": summary}
 
 
@@ -558,7 +565,7 @@ def validate_report(report: dict[str, Any], report_path: Path | None = None, all
             ratios.append(ratio)
             seen += 2
         summary = entry.get("summary", {})
-        expected_summary = {"time_ratio_median": statistics.median(ratios), "time_ratio_p95": sorted(ratios)[8], "time_ratio_min": min(ratios), "time_ratio_max": max(ratios), "artifact_size_baseline_median": statistics.median(sizes["baseline"]), "artifact_size_candidate_median": statistics.median(sizes["candidate"]), "artifact_size_ratio": statistics.median(sizes["candidate"]) / statistics.median(sizes["baseline"])}
+        expected_summary = {"time_ratio_median": statistics.median(ratios), "time_ratio_p95": p95(ratios), "time_ratio_min": min(ratios), "time_ratio_max": max(ratios), "artifact_size_baseline_median": statistics.median(sizes["baseline"]), "artifact_size_candidate_median": statistics.median(sizes["candidate"]), "artifact_size_ratio": statistics.median(sizes["candidate"]) / statistics.median(sizes["baseline"])}
         for key, value in expected_summary.items():
             if not math.isclose(float(summary.get(key)), value, rel_tol=1e-12):
                 fail(f"stale summary: {entry['consumer']}/{entry['mode']}/{key}")

@@ -16,6 +16,9 @@ SPEC.loader.exec_module(gate)
 
 
 class Sql006CostGateTests(unittest.TestCase):
+    def test_p95_uses_95th_percentile_rank_for_ten_samples(self):
+        self.assertEqual(gate.p95([float(value) for value in range(10)]), 9.0)
+
     def test_self_test_runs_without_cargo(self):
         result = subprocess.run(
             [sys.executable, str(HERE / "cost_gate.py"), "--self-test"],
