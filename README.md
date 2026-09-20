@@ -112,6 +112,12 @@ own next release. Pinning is for stability between releases, not a license to
 fall permanently behind. See [`docs/migrations.md`](docs/migrations.md) for
 what changed in each minor release since v0.3.0.
 
+`.github/workflows/consumer-pin-drift.yml` compares every consumer in
+`docs/consumers.json` against the latest CoreKit release on each CoreKit
+release and on a monthly schedule, and opens or updates one tracking issue when
+any of them lag. The workflow needs the `CONSUMER_READ_TOKEN` secret and
+degrades to a logged warning when it is absent.
+
 Run `make consumer-drift` (or `scripts/consumer-drift.sh`) from this repo to
 list every sibling Symaira repo checked out alongside it and the corekit
 version each one currently pins.

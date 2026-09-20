@@ -141,6 +141,36 @@ def validate_base(manifest):
         raise ValueError('candidate base differs from immutable expected base')
 
 
+def merge_survival(revision=None):
+    """Whether a capture generated at this revision still verifies after a merge.
+
+    A capture records ``candidate_revision = rev-parse HEAD``, and verification
+    requires that revision to be an ancestor of the checkout. Squash-merging the
+    branch that generated the capture destroys that commit, so every ancestry
+    control fails on the base branch afterwards while the branch CI was green
+    (#300). Resolve by generating the capture with HEAD on the base branch, with
+    the enforced edits still uncommitted, or by merging without squashing.
+
+    Returns ``(survives, base_tip)``; ``base_tip`` is ``None`` when no base ref
+    is resolvable locally, which is an unavailable check rather than a failure.
+    """
+    for ref in ('refs/remotes/origin/main', 'refs/heads/main'):
+        try:
+            base_tip = generate.run(['git', 'rev-parse', '--verify', ref], cwd=ROOT).decode().strip()
+        except RuntimeError:
+            continue
+        if revision is None:
+            revision = generate.run(['git', 'rev-parse', 'HEAD'], cwd=ROOT).decode().strip()
+        if revision == base_tip:
+            return True, base_tip
+        try:
+            generate.run(['git', 'merge-base', '--is-ancestor', revision, base_tip], cwd=ROOT)
+        except RuntimeError:
+            return False, base_tip
+        return True, base_tip
+    return True, None
+
+
 def verify(report, manifest, manifest_sha256):
     # Validate the baseline representation before any Git command can resolve
     # a moving ref, abbreviation, revision expression, or other input.
