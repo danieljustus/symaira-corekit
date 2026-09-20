@@ -466,17 +466,43 @@ Supporting evidence:
   and `rust-toolchain.toml` is empty — the adopted bytes are the bytes on `main`.
 - **Representative cost:** the `SQL-006-80-BUILD` gate (limit 1.10, contract and
   runner in-repo and unit-tested) passed on 2026-09-17 against the frozen
-  secure-runtime NVMe.
+  secure-runtime NVMe, and was **re-measured on 2026-09-20** — see below.
 
-Explicit limitation: the measured cost report
-(`/Volumes/SymairaSecureRuntime/BuildTargets/reports/sql006-consumer-cost-20260917-v1.json`)
-lives on the secure-runtime volume, which is currently detached, so its measured
-numbers were **not** re-verified in this session. The promotion relies on the
-previously validated report plus the byte-identical crate revision; re-read the
-report when that volume is mounted again.
+Cost evidence, re-measured: the 2026-09-17 report cannot be re-validated at any
+revision of `main`, because it binds `runner_sha256` to the bytes of
+`cost_gate.py` at measurement time (`9e7b46c3…`) while that file changed inside
+PR #286 after the measurement (`6da087b9…` today); the contract hash still
+matches. `cost_gate.py --check` therefore failed with `runner/validator hash
+mismatch`. The gate was re-run over 80 builds (2 consumers × clean/warm × 10
+samples, Rust 1.98.0, Go 1.26.6) against the same frozen contract:
+
+```
+$ NVME_RUNTIME=/Volumes/SymairaSecureRuntime NVME_STORAGE=/Volumes/1TB_NVMe_SN850X/Dev/Symaira_Dev \
+  python3 scripts/rust-port/sqlite/cost_gate.py --check \
+  --report /Volumes/SymairaSecureRuntime/BuildTargets/reports/sql006-consumer-cost-20260920-v1.json
+{"report": "…/sql006-consumer-cost-20260920-v1.json", "status": "passed"}
+```
+
+Report SHA-256 `ecfcb3700f86a8c09db708f009ddabd641a8aa97294076f4eca7de1c0c66f961`,
+80 of 80 cells observed, all six thresholds passed with headroom — desktop time
+`0.989` clean / `0.979` warm, desktop artifact size `1.000004`, eraseme time
+`0.990` clean / `1.005` warm, eraseme artifact size `1.000`, against the `1.10`
+limit. The earlier report is retained unchanged as historical evidence.
+
+Two environment repairs were needed to make the re-measurement possible at all:
+the secure-runtime disk image was detached (mounted again from
+`BuildTargets/SymairaSecureRuntime.sparsebundle`), and
+`dev-external --status` rejected the dev-storage layout because
+`Repos/symaira-corekit/target` and `Repos/symaira-vault/target` had been replaced
+by real directories; those trees were moved to
+`/Volumes/1TB_NVMe_SN850X/AI/Hermes Workspace/dev-cache-repair-20260920/` and the
+symlinks restored. The symlink exposed a `.gitignore` defect — `target/` matches
+only real directories, so the symlink showed up as untracked and the release
+verifier rejected the checkout as dirty — fixed by `/target` plus `/fuzz/target/`.
 
 Not claimed: `RUST-014` stays `in_progress` (its non-registry acceptance runs in
 the green `Rust release manifest` CI job; registry evidence still does not
-exist), `RUST-015` stays `blocked` on released-consumer evidence, `RUST-007`
-through `RUST-012` stay demand-driven `deferred`, and no release, registry
-publication, Go removal or product cutover follows from this promotion.
+exist), `RUST-015` stays `blocked` on released-consumer evidence,
+`RUST-007`/`RUST-008`/`RUST-009`/`RUST-011`/`RUST-012` stay demand-driven
+`deferred` with the searches recorded in `demand-assessment.md`, and no release,
+registry publication, Go removal or product cutover follows from this promotion.

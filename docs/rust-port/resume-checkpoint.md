@@ -30,26 +30,33 @@ dry-run now prints `semver baseline: none … API compatibility stays unverified
 migration, consumer rollout and registry evidence are complete, so no
 publication decision is available yet.
 
-## SQLite cost evidence (re-measurement in progress)
+## SQLite cost evidence (re-measured 2026-09-20)
 
-The `SQL-006-80-BUILD` cost report of 2026-09-17 lives on the secure-runtime disk
-image and is **not** re-readable as-is: the volume was detached, and after
-mounting it the verifier still rejects the report —
+The `SQL-006-80-BUILD` cost report of 2026-09-17 cannot be re-validated at any
+revision of `main`: it binds `runner_sha256` to the bytes of `cost_gate.py` at
+measurement time (`9e7b46c3…`) while that file changed inside PR #286 after the
+measurement (`6da087b9…` today), so `cost_gate.py --check` failed with
+`runner/validator hash mismatch`. The contract hash still matches (`3889439…`).
+
+The gate was re-run over 80 builds (2 consumers × clean/warm × 10 samples, Rust
+1.98.0, Go 1.26.6) and the new report validates:
 
 ```
 $ NVME_RUNTIME=/Volumes/SymairaSecureRuntime NVME_STORAGE=/Volumes/1TB_NVMe_SN850X/Dev/Symaira_Dev \
   python3 scripts/rust-port/sqlite/cost_gate.py --check \
-  --report /Volumes/SymairaSecureRuntime/BuildTargets/reports/sql006-consumer-cost-20260917-v1.json
-FAIL SQL-006 cost gate: runner/validator hash mismatch
+  --report /Volumes/SymairaSecureRuntime/BuildTargets/reports/sql006-consumer-cost-20260920-v1.json
+{"report": "…/sql006-consumer-cost-20260920-v1.json", "status": "passed"}
 ```
 
-The report binds `runner_sha256` to the bytes of `cost_gate.py` at measurement
-time (`9e7b46c3…`); the current runner is `6da087b9…`, because that file changed
-inside PR #286 after the measurement. The contract hash still matches
-(`3889439…`). The report therefore cannot be re-validated at any revision of
-`main`; a fresh measurement is required.
+- Report SHA-256 `ecfcb3700f86a8c09db708f009ddabd641a8aa97294076f4eca7de1c0c66f961`,
+  80 of 80 cells, all six thresholds passed against the `1.10` limit: desktop
+  time `0.989` clean / `0.979` warm, desktop artifact size `1.000004`, eraseme
+  time `0.990` clean / `1.005` warm, eraseme artifact size `1.000`.
+- The 2026-09-17 report stays on the volume as historical evidence.
+- Re-measurement command: the `--check` line above; the run itself is
+  `cost_gate.py --run --report <path>` with the same two environment variables.
 
-Two repairs were needed before a re-run could start at all:
+Two environment repairs were required first:
 
 1. The secure-runtime disk image
    (`BuildTargets/SymairaSecureRuntime.sparsebundle` on the Dev NVMe) was
@@ -61,14 +68,11 @@ Two repairs were needed before a re-run could start at all:
    `/Volumes/1TB_NVMe_SN850X/AI/Hermes Workspace/dev-cache-repair-20260920/` and
    the symlinks to `Symaira_Dev/builds/<repo>/target` were restored;
    `dev-external --status` now reports `mounted: true, verified_links: 9`.
-
-The 80-build re-run (`cost_gate.py --run`) writes
-`BuildTargets/reports/sql006-consumer-cost-20260920-v1.json` and was still
-running when this checkpoint was written. Until it passes, the promotion of
-`RUST-006` rests on the earlier validated report plus the byte-identical crate
-revision (consumers pin `0f441fb`; `git diff 0f441fb..541683a` over the crate,
-its path dependency and the build inputs is empty). Update this section with the
-new report path, hash and verdict when the run finishes.
+3. That symlink exposed a `.gitignore` defect: `target/` matches only real
+   directories, so the symlink showed as untracked and the release verifier
+   rejected the checkout as dirty. `.gitignore` now uses `/target` plus
+   `/fuzz/target/`. `symaira-vault/.gitignore` has the same defect (`/target/`)
+   and is reported on vault#1080.
 
 ## Candidate-source scope (integrated)
 
