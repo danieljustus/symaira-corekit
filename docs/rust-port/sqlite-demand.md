@@ -418,9 +418,9 @@ them, so a new workspace path dependency forces a scope decision.
 |---|---|---|
 | Re-freeze | `python3 scripts/rust-port/sqlite/candidate.py --output testdata/rust-port/sqlite/candidate-source.json` | exit 0; 70 recorded files, 39 enforced; SHA-256 `33af092cff62dd6e7012ef9d2c94c1c42bb10e81baf4eea15fa292fb56116e1f` |
 | Fresh typed capture | `GOTOOLCHAIN=go1.26.6 python3 scripts/rust-port/sqlite/diff.py --typed-errors --output testdata/rust-port/sqlite/differential-macos-bound-candidate-scope-20260920.json` | exit 0, `passed`; candidate revision `896eac148dfc44232f8763be08d45e7ee795de6e`, base `82968b4fc9537daf62c2008331f5e5ce5d32b6c6`, native darwin/arm64, six cases, 42 checked fields, nine explicitly accepted differences, zero unresolved; SHA-256 `943aa645577fe3040a50687f7764865f0c98525959d7bff847898003a640775f` |
-| Acceptance suite | `python3 -m unittest discover -s scripts/rust-port/sqlite -p 'test_*.py'` | exit 0; 78 tests |
+| Acceptance suite | `python3 -m unittest discover -s scripts/rust-port/sqlite -p 'test_*.py'` | exit 0; 79 tests |
 | Provenance suite | `python3 -m unittest discover -s scripts/rust-port -p 'test_rust_sqlite_provenance.py'` | exit 0; 1 test |
-| Scope negative control | comment appended to `.github/workflows/ci.yml`, `.gitattributes` and `rust/symaira-core-config/src/lib.rs`, then the acceptance suite | exit 0; 78 tests — the reported defect no longer invalidates retained evidence |
+| Scope negative control | comment appended to `.github/workflows/ci.yml`, `.gitattributes` and `rust/symaira-core-config/src/lib.rs`, then the acceptance suite | exit 0; 79 tests — the reported defect no longer invalidates retained evidence |
 | Binding control | comment appended to `rust/symaira-core-sqlite/src/lib.rs`, then the acceptance suite | exit 1; 10 failures + 2 errors — enforced port inputs still invalidate the capture |
 
 The prior capture `differential-macos-bound-rust006-upload-artifact-v7-20260920.json`

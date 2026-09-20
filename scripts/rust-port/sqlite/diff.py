@@ -179,6 +179,14 @@ def main():
     manifest, manifest_sha = candidate.load(args.candidate_manifest)
     if candidate.enforced(candidate.snapshot()) != candidate.enforced(manifest['source_hashes']):
         raise ValueError('candidate changed since explicit source freeze')
+    survives, base_tip = candidate.merge_survival()
+    if not survives:
+        # #300: a capture generated here records the branch tip, which a squash
+        # merge destroys; the ancestry controls then fail on the base branch
+        # although this branch's CI is green.
+        print(f"WARNING: HEAD is not reachable from {base_tip}; a squash merge of this "
+              f"branch makes this capture unverifiable on the base branch (#300). "
+              f"Re-freeze with HEAD on the base branch before merging.")
     go = generate.capture()
     rust = rust_capture(manifest)
     rust['candidate_manifest_sha256'] = manifest_sha

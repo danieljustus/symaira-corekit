@@ -81,6 +81,18 @@ class AcceptanceControls(unittest.TestCase):
         candidate.generate.run(['git', 'merge-base', '--is-ancestor', base, self.rust['candidate_revision']], cwd=candidate.ROOT)
         candidate.generate.run(['git', 'merge-base', '--is-ancestor', self.rust['candidate_revision'], checkout], cwd=candidate.ROOT)
 
+    def test_current_capture_revision_survives_a_squash_merge(self):
+        # #300: the capture must name a revision that stays an ancestor of the
+        # base branch. Generated on a feature branch that is later squash-merged,
+        # the recorded revision is destroyed and every ancestry control fails on
+        # `main` although this branch's CI was green. Asserting it here makes the
+        # defect visible before the merge instead of after it.
+        survives, base_tip = candidate.merge_survival(self.rust['candidate_revision'])
+        self.assertIsNotNone(base_tip, 'no base ref resolvable to check merge survival')
+        self.assertTrue(survives,
+                        f"capture revision {self.rust['candidate_revision']} is not reachable "
+                        f"from {base_tip}; re-freeze with HEAD on the base branch (#300)")
+
     def test_historical_capture_is_rejected_for_current_source(self):
         # This retained capture is bound to the prior Rust-014 candidate. It
         # remains useful evidence, but cannot certify the current source.

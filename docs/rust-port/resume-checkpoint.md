@@ -145,27 +145,32 @@ were repointed to the final capture name *before* the manifest was written,
 because `scripts/rust-port/sqlite/**` is itself enforced.
 
 - `testdata/rust-port/sqlite/candidate-source.json`, SHA-256
-  `fe68e798076dd4e6c348e7dd4c5f9999894a2dc1fcc2cbd3cf11a397301a3496`
+  `39cc0a4def6d3705dcd91e410cd07a388440572e75cc580f951caa078201c257`
   (74 recorded files, 39 enforced).
 - `testdata/rust-port/sqlite/differential-macos-refreeze-20260920T175852Z.json`,
-  SHA-256 `2b5242e91b9cbfb358d6bef4642242cbcc21440b58a49da4e94353f9e282d839`,
-  typed verdict `passed` at revision `5850bd1…` (regenerated on `main` after the
-  squash merge, see below), native darwin/arm64, six cases, 42 checked fields,
-  nine explicitly accepted differences, zero unresolved.
-- 78 SQLite acceptance tests and the provenance test pass against the re-frozen
+  SHA-256 `5f4903b0dd7dad967600b3891e101041c72146019107f48f6b4381c5a4cf7597`,
+  typed verdict `passed` at revision `3b9ed28…` (regenerated on `main` after the
+  squash merge and again for the merge-survival guard, see below), native
+  darwin/arm64, six cases, 42 checked fields, nine explicitly accepted
+  differences, zero unresolved.
+- 79 SQLite acceptance tests and the provenance test pass against the re-frozen
   pair; the five files that name the current capture were repointed in the same
   commit.
 
-**Merge-survival correction (#299).** The capture was first generated inside the
-`migration/rust-010-mcpcfg` worktree, so it recorded that branch commit as
-`candidate_revision`. Squash-merging #298 destroyed the commit and every ancestry
-control failed on `main` at `b529bde` while the branch CI had been green.
-Regenerated with HEAD on `main` under the *same* capture file name and re-run
-through the full lineage: candidate source `fe68e798…` unchanged, capture
-`2b5242e9…`, revision `5850bd1…`. Tracked as #300 with the suggested generator
-guard.
+**Merge-survival correction (#299, guard from #300).** The capture was first
+generated inside the `migration/rust-010-mcpcfg` worktree, so it recorded that
+branch commit as `candidate_revision`. Squash-merging #298 destroyed the commit
+and every ancestry control failed on `main` at `b529bde` while the branch CI had
+been green. Regenerated with HEAD on `main` under the *same* capture file name
+and re-run through the full lineage.
 
-Verification of that change: 78 SQLite acceptance tests and 1 provenance test
+The generator now detects the situation instead of relying on review:
+`candidate.merge_survival()` reports whether the recorded revision is reachable
+from the base branch, `diff.py` prints an explicit warning when it is not, and
+`test_acceptance.test_current_capture_revision_survives_a_squash_merge` asserts
+it — so PR CI fails *before* the merge rather than `main` failing after it.
+
+Verification of that change: 79 SQLite acceptance tests and 1 provenance test
 passed; the scope negative control (workflow, `.gitattributes` and
 unrelated-crate edits) stayed green while the binding control (edit to
 `rust/symaira-core-sqlite/src/lib.rs`) still failed; `cargo fmt --all --check`,
