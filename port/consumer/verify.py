@@ -150,7 +150,37 @@ def _add(findings: list[Finding], repository: str, code: str, message: str) -> N
     findings.append(Finding(repository, code, message))
 
 
-FORBIDDEN_PATH_PARTS = frozenset({".worktrees", "target", "vendor"})
+# Generated/dependency trees are not checkout source and can contain millions
+# of files. Exclude them from the ignored-source scan just like worktrees and
+# target output; tracked files in these trees are still checked below via
+# ``git ls-files``.
+FORBIDDEN_PATH_PARTS = frozenset({
+    ".agentsroom",
+    ".app-test-build",
+    ".build",
+    ".claude",
+    ".coverage-html",
+    ".cursor",
+    ".mypy_cache",
+    ".omo",
+    ".opencode",
+    ".phase0-evidence",
+    ".playwright-cli",
+    ".playwright-mcp",
+    ".pytest_cache",
+    ".ruff_cache",
+    ".sisyphus",
+    ".swiftpm",
+    ".venv",
+    ".worktrees",
+    "build",
+    "coverage",
+    "dist",
+    "node_modules",
+    "target",
+    "target-run",
+    "vendor",
+})
 
 
 def _validate_relative_path(relative: str) -> tuple[str, ...]:
@@ -215,6 +245,10 @@ def _check_checkout_snapshot(
         _add(findings, repository, "checkout.status", f"cannot inspect checkout status: {error or 'git failed'}")
     elif status:
         _add(findings, repository, "checkout.dirty", "consumer checkout has tracked or untracked changes")
+        # Once the snapshot is dirty, the verifier is already blocked. Avoid
+        # walking ignored build/test trees merely to produce more findings;
+        # the trusted checkout identity is the security boundary.
+        return
 
     # Git status omits ignored files. Scan source-shaped files as well so an
     # ignored untracked Go/Rust source file cannot alter the verified input.
@@ -302,14 +336,23 @@ def _tracked_cargo_files(checkout: Path) -> tuple[bool, list[Path]]:
     return True, paths
 
 
-def _cargo_contains_package(document: Any, package: str) -> bool:
-    if isinstance(document, dict):
-        if package in document or document.get("name") == package:
-            return True
-        return any(_cargo_contains_package(value, package) for value in document.values())
-    if isinstance(document, list):
-        return any(_cargo_contains_package(value, package) for value in document)
+def _cargo_manifest_contains_package(document: dict[str, Any], package: str) -> bool:
+    """Find a package only in Cargo dependency declarations, not metadata."""
+    for table in _dependency_tables(document):
+        for dependency, spec in table.items():
+            if dependency == package:
+                return True
+            if isinstance(spec, dict) and spec.get("package") == package:
+                return True
     return False
+
+
+def _cargo_lock_contains_package(document: dict[str, Any], package: str) -> bool:
+    """Find a resolved package in Cargo.lock's package records."""
+    packages = document.get("package")
+    return isinstance(packages, list) and any(
+        isinstance(item, dict) and item.get("name") == package for item in packages
+    )
 
 
 def _check_not_adopted_rust(
@@ -329,7 +372,12 @@ def _check_not_adopted_rust(
         except (OSError, UnicodeDecodeError, ValueError, tomllib.TOMLDecodeError) as error:
             _add(findings, repository, "rust.manifest.read", f"cannot inspect tracked {relative}: {error}")
             continue
-        if _cargo_contains_package(document, COREKIT_PACKAGE):
+        contains_package = (
+            _cargo_lock_contains_package(document, COREKIT_PACKAGE)
+            if path.name == "Cargo.lock"
+            else _cargo_manifest_contains_package(document, COREKIT_PACKAGE)
+        )
+        if contains_package:
             _add(
                 findings,
                 repository,

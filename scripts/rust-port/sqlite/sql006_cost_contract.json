@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "gate_id": "SQL-006-80-BUILD",
+  "limit": 1.1,
+  "samples_per_cell": 10,
+  "runtime": {
+    "storage_env": "NVME_STORAGE",
+    "runtime_env": "NVME_RUNTIME",
+    "runtime_mount": "/Volumes/SymairaSecureRuntime",
+    "storage_root": "/Volumes/1TB_NVMe_SN850X/Dev/Symaira_Dev",
+    "toolchain": "1.98.0-aarch64-apple-darwin",
+    "go_toolchain": "1.26.6",
+    "run_relative": "BuildTargets/sql006-consumer-cost",
+    "cache_relative": "BuildCaches/sql006-consumer-cost"
+  },
+  "consumers": [
+    {
+      "name": "desktop",
+      "repository": "danieljustus/symaira-desktop",
+      "checkout": "symaira-desktop",
+      "baseline_commit": "1f250c11f516a59d650c3770f649f3519ae6b7bf",
+      "baseline_corekit": "62edd9903983d9369373565cc1e50da3fef43176",
+      "candidate_commit": "5cd4472feb49c6e43bbe3b05a4b62a737ce00c9c",
+      "candidate_corekit": "0f441fb27872da7edd65244e4fcbd0890f0b7174",
+      "test_package": "symdesk-index",
+      "binary_package": "symdesk-cli",
+      "binary": "symdesk",
+      "canary_tool": "symdesk"
+    },
+    {
+      "name": "eraseme",
+      "repository": "danieljustus/symaira-eraseme",
+      "checkout": "symaira-eraseme",
+      "baseline_commit": "47bb03099efc36b9f04bc85e5696c50295f5979c",
+      "baseline_corekit": "7a1a9d11b38797537cf20761aa7121773447bad2",
+      "candidate_commit": "97f834d6025d36c8b4f359454754759304972ef3",
+      "candidate_corekit": "0f441fb27872da7edd65244e4fcbd0890f0b7174",
+      "test_package": "symeraseme-core",
+      "binary_package": "symeraseme-cli",
+      "binary": "symeraseme-rust",
+      "canary_tool": "symeraseme"
+    }
+  ],
+  "modes": ["clean", "warm"],
+  "build_command": [
+    "cargo", "build", "--release", "--manifest-path", "Cargo.toml",
+    "--locked", "--frozen"
+  ],
+  "canary_command": ["version", "--json"],
+  "value_commands": {
+    "desktop": [
+      ["cargo", "test", "--manifest-path", "Cargo.toml", "-p", "symdesk-index", "--locked", "--frozen"],
+      ["cargo", "build", "--release", "--manifest-path", "Cargo.toml", "-p", "symdesk-cli", "--bin", "symdesk", "--locked", "--frozen"]
+    ],
+    "eraseme": [
+      ["cargo", "test", "--manifest-path", "Cargo.toml", "-p", "symeraseme-core", "--locked", "--frozen"],
+      ["cargo", "build", "--release", "--manifest-path", "Cargo.toml", "-p", "symeraseme-cli", "--bin", "symeraseme-rust", "--locked", "--frozen"]
+    ]
+  }
+}
