@@ -9,7 +9,9 @@ import typed_contract
 
 
 class AcceptanceControls(unittest.TestCase):
-    CURRENT_CAPTURE = 'testdata/rust-port/sqlite/differential-macos-bound-rust006-upload-artifact-v7-20260920.json'
+    CURRENT_CAPTURE = 'testdata/rust-port/sqlite/differential-macos-bound-candidate-scope-20260920.json'
+    # A file that genuinely determines the built artifact and its observations.
+    ENFORCED_KEY = 'rust/symaira-core-sqlite/src/lib.rs'
 
     def setUp(self):
         self.record = json.loads((diff.ROOT / self.CURRENT_CAPTURE).read_text())
@@ -20,9 +22,57 @@ class AcceptanceControls(unittest.TestCase):
         self.manifest, self.manifest_sha = candidate.load()
 
     def test_source_bound_current_capture_passes(self):
-        self.assertEqual(candidate.snapshot(), self.manifest['source_hashes'])
+        self.assertEqual(candidate.enforced(candidate.snapshot()),
+                         candidate.enforced(self.manifest['source_hashes']))
         verdict = diff.evaluate(self.go, self.rust, self.manifest, self.manifest_sha)
         self.assertEqual(typed_contract.apply(self.go, self.rust, verdict)['status'], 'passed')
+
+    def test_enforced_scope_is_the_port_input_class(self):
+        # Build inputs and the port sources are enforced; CI orchestration,
+        # checkout attributes and crates outside the dependency closure are
+        # recorded forensics only, so routine maintenance cannot invalidate
+        # retained evidence (docs/rust-port/adr-rust-003-candidate-source-scope.md).
+        for path in (self.ENFORCED_KEY, 'rust/symaira-core-sqlite/Cargo.toml',
+                     'rust/symaira-core-fs/src/lib.rs', 'Cargo.toml', 'Cargo.lock',
+                     'rust-toolchain.toml', 'scripts/rust-port/sqlite/main.go',
+                     'scripts/rust-port/sqlite/test_acceptance.py'):
+            with self.subTest(enforced=path):
+                self.assertTrue(candidate.is_enforced(path))
+        for path in ('.gitattributes', '.github/workflows/ci.yml',
+                     'rust/symaira-core-config/src/lib.rs',
+                     'rust/symaira-core-log/src/lib.rs',
+                     'rust/test-support/symaira-contract-fixtures/src/lib.rs'):
+            with self.subTest(forensic=path):
+                self.assertFalse(candidate.is_enforced(path))
+        recorded = set(self.manifest['source_hashes'])
+        self.assertTrue(recorded - set(candidate.enforced(self.manifest['source_hashes'])))
+
+    def test_scope_covers_the_crate_dependency_closure(self):
+        self.assertEqual(candidate.port_path_dependencies(), ['rust/symaira-core-fs'])
+        candidate.validate_scope()
+        with patch.object(candidate, 'port_path_dependencies',
+                          return_value=['rust/symaira-core-log']):
+            with self.assertRaisesRegex(ValueError, 'does not cover path dependency'):
+                candidate.validate_scope()
+
+    def test_workflow_and_unrelated_class_drift_does_not_invalidate_capture(self):
+        # The reported defect: a workflow-only edit invalidated the whole
+        # suite even though it cannot change the built bytes or observations.
+        drifted = copy.deepcopy(self.manifest)
+        for path in ('.gitattributes', '.github/workflows/ci.yml',
+                     'rust/symaira-core-config/src/lib.rs'):
+            drifted['source_hashes'][path] = '0' * 64
+        verdict = diff.evaluate(self.go, self.rust, drifted, self.manifest_sha)
+        self.assertEqual(typed_contract.apply(self.go, self.rust, verdict)['status'], 'passed')
+
+    def test_enforced_class_drift_invalidates_capture(self):
+        drifted = copy.deepcopy(self.manifest)
+        drifted['source_hashes'][self.ENFORCED_KEY] = '0' * 64
+        rust = copy.deepcopy(self.rust)
+        rust['source_hashes'] = copy.deepcopy(drifted['source_hashes'])
+        rust['candidate_manifest_sha256'] = self.manifest_sha
+        with self.assertRaisesRegex(ValueError, 'not bound to the current candidate source'):
+            diff.evaluate(self.go, rust, drifted, self.manifest_sha)
 
     def test_current_capture_is_bound_to_post_squash_checkout(self):
         base = self.manifest['base']
@@ -56,7 +106,7 @@ class AcceptanceControls(unittest.TestCase):
             diff.evaluate(self.go, self.rust, self.manifest, self.manifest_sha)
 
     def test_source_hash_mutation_rejected(self):
-        name = next(iter(self.rust['source_hashes']))
+        name = self.ENFORCED_KEY
         self.rust['source_hashes'][name] = '0' * 64
         with self.assertRaisesRegex(ValueError, 'frozen source'):
             diff.evaluate(self.go, self.rust, self.manifest, self.manifest_sha)
@@ -101,7 +151,7 @@ class AcceptanceControls(unittest.TestCase):
 
     def test_co_mutated_candidate_manifest_and_report_rejected(self):
         manifest = copy.deepcopy(self.manifest)
-        name = next(iter(manifest['source_hashes']))
+        name = self.ENFORCED_KEY
         manifest['source_hashes'][name] = '0' * 64
         rust = copy.deepcopy(self.rust)
         rust['source_hashes'] = copy.deepcopy(manifest['source_hashes'])
