@@ -430,3 +430,53 @@ harness, so they require independent review before they count as acceptance
 evidence. No SQL matrix row is promoted, no native Linux/Windows runtime
 evidence is claimed from this local macOS run, and no release, cutover or Go
 removal follows from this decision.
+
+## SQL-006 promotion decision — 2026-09-20
+
+`RUST-006` is marked `complete` and SQL-001 through SQL-006 move from `todo` to
+`parity`. The decision rests on the evidence below, not on a green build alone.
+
+| Contract | Rust evidence | Go oracle command (all exit 0, `go1.26.6`) |
+|---|---|---|
+| SQL-001 | `rust/symaira-core-sqlite/tests/open_policy.rs` | `go test -count=1 ./sqlitekit -run "TestOpen\|TestOpen_CreatesParentDir"` |
+| SQL-002 | `rust/symaira-core-sqlite/tests/contracts.rs` | `go test -count=1 ./sqlitekit -run "TestOpen_PragmasOnEveryConnection"` |
+| SQL-003 | `rust/symaira-core-sqlite/tests/migration_selection.rs` | `go test -count=1 ./sqlitekit -run "TestMigrate$"` |
+| SQL-004 | `rust/symaira-core-sqlite/tests/contracts.rs` | `go test -count=1 ./sqlitekit -run "TestMigrate_Idempotent"` |
+| SQL-005 | `rust/symaira-core-sqlite/tests/contracts.rs` | `go test -count=1 ./sqlitekit -run "TestMigrate_ExecFailure\|TestMigrate_InsertFailure"` |
+| SQL-006 | `rust/symaira-core-sqlite/tests/sql006.rs` | `go test -count=1 ./sqlitekit -run "TestMigrate_ReadDirFailure\|TestMigrate_VersionQueryFailure\|TestMigrate_CreateTableFailure\|TestMigrate_InMemory"` |
+
+Supporting evidence:
+
+- **Typed differential:** six cases, 42 checked fields, nine explicitly accepted
+  differences and zero unresolved, captured at revision `896eac1` (macOS arm64)
+  and reproduced independently by an adversarial review at the integrated
+  revision — verdict, case IDs, checked fields, accepted differences, native
+  identity and the enforced source subset all identical.
+- **Native gates:** `rust-sqlite-native` passed on ubuntu-latest, macos-latest and
+  windows-latest in the PR #291 run and again on `main` `541683a`. Local
+  `cargo test -p symaira-core-sqlite`, Clippy with `-D warnings` and the
+  consuming-close compile-fail doctest pass.
+- **Negative controls:** provenance, observation-shape, case-ID, rollback,
+  locking and co-mutated manifest/report mutations all fail as required.
+- **Two consumers:** `symaira-desktop` PR #942 (`5cd4472f`) and
+  `symaira-eraseme` PR #946 (`97f834d6`) both pin `symaira-core-sqlite` at
+  `0f441fb27872da7edd65244e4fcbd0890f0b7174`; their main CI (including EraseMe's
+  `Rust SQLite target proof`) is green, and `git diff 0f441fb..541683a` over
+  `rust/symaira-core-sqlite`, `rust/symaira-core-fs`, `Cargo.toml`, `Cargo.lock`
+  and `rust-toolchain.toml` is empty — the adopted bytes are the bytes on `main`.
+- **Representative cost:** the `SQL-006-80-BUILD` gate (limit 1.10, contract and
+  runner in-repo and unit-tested) passed on 2026-09-17 against the frozen
+  secure-runtime NVMe.
+
+Explicit limitation: the measured cost report
+(`/Volumes/SymairaSecureRuntime/BuildTargets/reports/sql006-consumer-cost-20260917-v1.json`)
+lives on the secure-runtime volume, which is currently detached, so its measured
+numbers were **not** re-verified in this session. The promotion relies on the
+previously validated report plus the byte-identical crate revision; re-read the
+report when that volume is mounted again.
+
+Not claimed: `RUST-014` stays `in_progress` (its non-registry acceptance runs in
+the green `Rust release manifest` CI job; registry evidence still does not
+exist), `RUST-015` stays `blocked` on released-consumer evidence, `RUST-007`
+through `RUST-012` stay demand-driven `deferred`, and no release, registry
+publication, Go removal or product cutover follows from this promotion.
