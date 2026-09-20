@@ -176,7 +176,7 @@
         "SQL-005",
         "SQL-006"
       ],
-      "status": "in_progress",
+      "status": "complete",
       "demand_evidence": "sqlite-demand.md",
       "demand_class": "demand_driven",
       "acceptance_commands": [
