@@ -1,4 +1,4 @@
-.PHONY: build test lint fmt-check clean consumer-drift port-consumer-verify consumer-pin-regression golangci-lint rust-port-validate port-fixture-source-check port-oracle-selftest port-contract rust-lint rust-test rust-foundation-contract rust-fs-secret-contract rust-mcp-contract rust-release-contract rust-miri rust-hardening mcp-differential mcp-fuzz-smoke port-consumer-smoke
+.PHONY: build test lint fmt-check clean consumer-drift port-consumer-verify consumer-pin-regression golangci-lint rust-port-validate port-fixture-source-check port-oracle-selftest port-contract rust-lint rust-test rust-foundation-contract rust-fs-secret-contract rust-mcp-contract rust-release-contract rust-miri rust-hardening mcp-differential mcp-fuzz-smoke port-consumer-smoke rust-sqlite-refreeze
 
 build:
 	CGO_ENABLED=0 go build ./...
@@ -57,6 +57,19 @@ rust-sqlite-contract:
 	python3 -m unittest discover -s scripts/rust-port/sqlite -p 'test_*.py'
 	python3 -m unittest discover -s scripts/rust-port -p 'test_rust_sqlite_provenance.py'
 	python3 scripts/rust-port/sqlite/diff.py --typed-errors --output target/sqlite-contract-report.json
+
+# Documented recapture path for a genuine port-input change (see
+# docs/rust-port/adr-rust-003-candidate-source-scope.md). Never run
+# automatically: it regenerates the frozen manifest and writes a new
+# differential capture, and generation is not approval. The new manifest and
+# capture require independent review, and the acceptance tests are repointed in
+# a separate reviewed change.
+.PHONY: rust-sqlite-refreeze
+rust-sqlite-refreeze:
+	@echo "REFREEZE: regenerates the frozen manifest and a new capture; review is still required."
+	python3 scripts/rust-port/sqlite/candidate.py --output testdata/rust-port/sqlite/candidate-source.json
+	python3 scripts/rust-port/sqlite/diff.py --typed-errors --output testdata/rust-port/sqlite/differential-macos-refreeze-$$(date -u +%Y%m%dT%H%M%SZ).json
+	@echo "REFROZEN: review both artifacts independently, then repoint the acceptance tests."
 
 rust-fs-secret-contract:
 	cargo fmt --all --check

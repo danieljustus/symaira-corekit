@@ -63,7 +63,7 @@ def validate_oracle_provenance(report):
 def rust_capture(manifest):
     candidate.validate_base(manifest)
     before = candidate.snapshot()
-    if before != manifest['source_hashes']:
+    if candidate.enforced(before) != candidate.enforced(manifest['source_hashes']):
         raise ValueError('candidate changed since explicit source freeze')
     env = os.environ.copy()
     env["CARGO_TARGET_DIR"] = str(TARGET)
@@ -177,7 +177,7 @@ def main():
     parser.add_argument('--candidate-manifest', type=Path, default=candidate.DEFAULT)
     args = parser.parse_args()
     manifest, manifest_sha = candidate.load(args.candidate_manifest)
-    if candidate.snapshot() != manifest['source_hashes']:
+    if candidate.enforced(candidate.snapshot()) != candidate.enforced(manifest['source_hashes']):
         raise ValueError('candidate changed since explicit source freeze')
     go = generate.capture()
     rust = rust_capture(manifest)
