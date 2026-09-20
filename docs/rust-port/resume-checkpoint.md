@@ -148,12 +148,22 @@ because `scripts/rust-port/sqlite/**` is itself enforced.
   `fe68e798076dd4e6c348e7dd4c5f9999894a2dc1fcc2cbd3cf11a397301a3496`
   (74 recorded files, 39 enforced).
 - `testdata/rust-port/sqlite/differential-macos-refreeze-20260920T175852Z.json`,
-  SHA-256 `b3455f44fc38dea426220f0f0a2bef6a9f434dcea055f47205f926be1a4f2797`,
-  typed verdict `passed` at revision `6e79b58…`, native darwin/arm64, six cases,
-  42 checked fields, nine explicitly accepted differences, zero unresolved.
+  SHA-256 `2b5242e91b9cbfb358d6bef4642242cbcc21440b58a49da4e94353f9e282d839`,
+  typed verdict `passed` at revision `5850bd1…` (regenerated on `main` after the
+  squash merge, see below), native darwin/arm64, six cases, 42 checked fields,
+  nine explicitly accepted differences, zero unresolved.
 - 78 SQLite acceptance tests and the provenance test pass against the re-frozen
   pair; the five files that name the current capture were repointed in the same
   commit.
+
+**Merge-survival correction (#299).** The capture was first generated inside the
+`migration/rust-010-mcpcfg` worktree, so it recorded that branch commit as
+`candidate_revision`. Squash-merging #298 destroyed the commit and every ancestry
+control failed on `main` at `b529bde` while the branch CI had been green.
+Regenerated with HEAD on `main` under the *same* capture file name and re-run
+through the full lineage: candidate source `fe68e798…` unchanged, capture
+`2b5242e9…`, revision `5850bd1…`. Tracked as #300 with the suggested generator
+guard.
 
 Verification of that change: 78 SQLite acceptance tests and 1 provenance test
 passed; the scope negative control (workflow, `.gitattributes` and
