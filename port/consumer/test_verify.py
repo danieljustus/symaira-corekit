@@ -652,6 +652,35 @@ import (
             present = [item for item in report["findings"] if item["code"] == "rust.not_adopted.present"]
             self.assertEqual({item["message"].rsplit(" ", 1)[-1] for item in present}, {"Cargo.toml", "Cargo.lock"}, report)
 
+    def test_not_adopted_rejects_aliased_dependency_without_lockfile(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            root = Path(raw)
+            manifest, corekit, consumer, _, _ = make_fixture(root)
+            cargo_path = consumer / "Cargo.toml"
+            cargo_path.write_text(
+                cargo_path.read_text(encoding="utf-8").replace(
+                    'symaira-core-version = {',
+                    'core_version = { package = "symaira-core-version",',
+                ),
+                encoding="utf-8",
+            )
+            git(consumer, "rm", "Cargo.lock")
+            git(consumer, "add", "Cargo.toml")
+            git(consumer, "commit", "-qm", "alias-without-lockfile")
+            document = json.loads(manifest.read_text(encoding="utf-8"))
+            document["consumers"][0]["rust"] = {"status": "not_adopted"}
+            document["consumers"][0]["checkout_commit"] = git(consumer, "rev-parse", "HEAD")
+            manifest.write_text(json.dumps(document), encoding="utf-8")
+
+            report = verify.verify_manifest(manifest, workspace_root=root, corekit_root=corekit)
+            self.assertEqual(report["status"], "blocked", report)
+            self.assertEqual(
+                [item["code"] for item in report["findings"]],
+                ["rust.not_adopted.present"],
+                report,
+            )
+            self.assertTrue(report["findings"][0]["message"].endswith("Cargo.toml"), report)
+
     def test_declared_cargo_paths_reject_forbidden_components_and_symlinks(self) -> None:
         for relative in ("vendor/Cargo.toml", "target/Cargo.toml", ".worktrees/Cargo.toml"):
             with self.subTest(relative=relative), tempfile.TemporaryDirectory() as raw:
@@ -730,6 +759,90 @@ import (
                 manifest.write_text(json.dumps(document), encoding="utf-8")
                 report = verify.verify_manifest(manifest, workspace_root=root, corekit_root=corekit)
                 self.assertTrue(any(item["code"] == "go.replace.forbidden" for item in report["findings"]), report)
+
+
+    def test_not_adopted_ignores_unrelated_manifest_metadata(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            root = Path(raw)
+            manifest, corekit, consumer, _, _ = make_fixture(root)
+            (consumer / "Cargo.toml").write_text(
+                '[package]\nname = "fixture"\nversion = "1.0.0"\n'
+                '[package.metadata]\nsymaira-core-version = "informational metadata"\n',
+                encoding="utf-8",
+            )
+            git(consumer, "rm", "Cargo.lock")
+            git(consumer, "add", "Cargo.toml")
+            git(consumer, "commit", "-qm", "metadata-only-package-name")
+            document = json.loads(manifest.read_text(encoding="utf-8"))
+            document["consumers"][0]["rust"] = {"status": "not_adopted"}
+            document["consumers"][0]["checkout_commit"] = git(consumer, "rev-parse", "HEAD")
+            manifest.write_text(json.dumps(document), encoding="utf-8")
+
+            report = verify.verify_manifest(manifest, workspace_root=root, corekit_root=corekit)
+            self.assertEqual(report["status"], "passed", report)
+            self.assertFalse(
+                any(item["code"] == "rust.not_adopted.present" for item in report["findings"]),
+                report,
+            )
+
+
+    def test_not_adopted_rejects_workspace_dependency_alias(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            root = Path(raw)
+            manifest, corekit, consumer, _, _ = make_fixture(root)
+            cargo_path = consumer / "Cargo.toml"
+            cargo_path.write_text(
+                "[workspace]\n"
+                "members = [\".\"]\n\n"
+                "[workspace.dependencies]\n"
+                "core_version = { package = \"symaira-core-version\", version = \"=0.0.0\" }\n",
+                encoding="utf-8",
+            )
+            git(consumer, "rm", "Cargo.lock")
+            git(consumer, "add", "Cargo.toml")
+            git(consumer, "commit", "-qm", "workspace-alias-without-lockfile")
+            document = json.loads(manifest.read_text(encoding="utf-8"))
+            document["consumers"][0]["rust"] = {"status": "not_adopted"}
+            document["consumers"][0]["checkout_commit"] = git(consumer, "rev-parse", "HEAD")
+            manifest.write_text(json.dumps(document), encoding="utf-8")
+
+            report = verify.verify_manifest(manifest, workspace_root=root, corekit_root=corekit)
+            self.assertEqual(report["status"], "blocked", report)
+            self.assertEqual(
+                [item["code"] for item in report["findings"]],
+                ["rust.not_adopted.present"],
+                report,
+            )
+            self.assertTrue(report["findings"][0]["message"].endswith("Cargo.toml"), report)
+
+    def test_generated_trees_are_excluded_from_ignored_source_scan(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            root = Path(raw)
+            manifest, corekit, consumer, _, _ = make_fixture(root)
+            generated = (
+                ".agentsroom", ".app-test-build", ".build", ".claude",
+                ".coverage-html", ".cursor", ".mypy_cache", ".omo", ".opencode",
+                ".phase0-evidence", ".playwright-cli", ".playwright-mcp",
+                ".pytest_cache", ".ruff_cache", ".sisyphus", ".swiftpm", ".venv",
+                ".worktrees", "build", "coverage", "dist", "node_modules", "target",
+                "target-run", "vendor",
+            )
+            (consumer / ".gitignore").write_text("\n".join(generated) + "\n", encoding="utf-8")
+            for directory in generated:
+                path = consumer / directory
+                path.mkdir(parents=True)
+                (path / "generated.go").write_text(
+                    'package generated\nimport _ "github.com/danieljustus/symaira-corekit/versionkit"\n',
+                    encoding="utf-8",
+                )
+            subprocess.run(["git", "-C", str(consumer), "add", ".gitignore"], check=True)
+            subprocess.run(["git", "-C", str(consumer), "commit", "-qm", "ignore-generated-trees"], check=True)
+            document = json.loads(manifest.read_text(encoding="utf-8"))
+            document["consumers"][0]["checkout_commit"] = git(consumer, "rev-parse", "HEAD")
+            manifest.write_text(json.dumps(document), encoding="utf-8")
+
+            report = verify.verify_manifest(manifest, workspace_root=root, corekit_root=corekit)
+            self.assertEqual(report["status"], "passed", report)
 
 
 if __name__ == "__main__":

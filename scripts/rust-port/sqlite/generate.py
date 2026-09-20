@@ -18,6 +18,7 @@ import signal
 import subprocess
 import tempfile
 import time
+from typing import Any
 
 ROOT = Path(__file__).resolve().parents[3]
 HELPER = ROOT / "scripts/rust-port/sqlite"
@@ -108,7 +109,8 @@ def compiler_executable(directory: Path, platform: str | None = None) -> Path:
 
 
 def isolated_env(root: Path) -> dict[str, str]:
-    # Cache paths are shared for downloads only; built artifacts remain isolated.
+    # Temporary paths stay in this run-owned root. Callers may place Go caches
+    # in a separate, explicitly verified run directory on the same volume.
     # Resolve the pinned compiler before replacing HOME. With Go's downloader
     # wrapper still first on PATH, an isolated HOME makes a locally installed
     # go1.26.6 look absent and turns the oracle into a network-dependent test.
@@ -121,23 +123,26 @@ def isolated_env(root: Path) -> dict[str, str]:
     executable = compiler_executable(compiler)
     if not executable.is_file():
         raise RuntimeError(f"pinned Go compiler is unavailable: {executable}")
-    goenv = json.loads(run(["go", "env", "-json", "GOPATH", "GOMODCACHE"], cwd=ROOT,
-                           env=toolchain_env))
     env = {k: os.environ[k] for k in ("PATH", "SystemRoot", "WINDIR", "COMSPEC",
                                     "PATHEXT", "SYSTEMDRIVE") if k in os.environ}
     env["PATH"] = str(compiler) + os.pathsep + env.get("PATH", "")
     env.update({"GOTOOLCHAIN": TOOLCHAIN, "GOWORK": "off", "GOENV": "off",
                 "GOFLAGS": "-mod=readonly", "CGO_ENABLED": "0", "LC_ALL": "C",
                 "LANG": "C", "TZ": "UTC", "GOSUMDB": "sum.golang.org",
-                "GOPROXY": "https://proxy.golang.org,direct",
-                "GOPATH": goenv["GOPATH"], "GOMODCACHE": goenv["GOMODCACHE"]})
+                "GOPROXY": "https://proxy.golang.org,direct"})
+    cache_root = Path(os.environ.get("SQLITE_CAPTURE_CACHE_ROOT", root)).resolve()
+    cache_root.mkdir(parents=True, mode=0o700, exist_ok=True)
+    cache_root.chmod(0o700)
+    cache_keys = {"GOCACHE", "GOPATH", "GOMODCACHE"}
     for key, name in {"HOME": "home", "USERPROFILE": "home", "APPDATA": "config",
                       "LOCALAPPDATA": "data", "XDG_CONFIG_HOME": "config",
                       "XDG_DATA_HOME": "data", "XDG_CACHE_HOME": "cache",
                       "XDG_STATE_HOME": "state", "TMPDIR": "tmp", "TMP": "tmp",
-                      "TEMP": "tmp", "GOCACHE": "go-cache"}.items():
-        path = root / name
+                      "TEMP": "tmp", "GOTMPDIR": "go-tmp", "GOCACHE": "go-cache",
+                      "GOPATH": "go-path", "GOMODCACHE": "go-mod-cache"}.items():
+        path = (cache_root if key in cache_keys else root) / name
         path.mkdir(parents=True, exist_ok=True)
+        path.chmod(0o700)
         env[key] = str(path)
     return env
 
@@ -152,6 +157,21 @@ def json_stream(data: bytes) -> list[dict]:
         result.append(value)
         text = text[end:]
     return result
+
+
+def normalize_temp_root(value: Any, root: Path) -> Any:
+    """Normalize logical temp-root aliases, including macOS /private paths."""
+    aliases = {str(root), str(root.resolve()), os.path.realpath(str(root))}
+    aliases = sorted((alias for alias in aliases if alias), key=len, reverse=True)
+    if isinstance(value, str):
+        for alias in aliases:
+            value = value.replace(alias, "<temp-root>")
+        return value
+    if isinstance(value, list):
+        return [normalize_temp_root(item, root) for item in value]
+    if isinstance(value, dict):
+        return {key: normalize_temp_root(item, root) for key, item in value.items()}
+    return value
 
 
 def capture() -> dict:
@@ -194,7 +214,9 @@ def capture() -> dict:
         binary = root / ("sqlite-oracle.exe" if os.name == "nt" else "sqlite-oracle")
         run(["go", "build", "-trimpath", "-o", str(binary), "."], cwd=helper, env=env, timeout=300)
         started = int(time.time())
-        report = json.loads(run([str(binary)], cwd=helper, env=env, timeout=30))
+        report = normalize_temp_root(
+            json.loads(run([str(binary)], cwd=helper, env=env, timeout=30)), root
+        )
         report["capture_interval"] = [started, int(time.time())]
         validate(report)
         if report["oracle"]["go_version"] != TOOLCHAIN:
