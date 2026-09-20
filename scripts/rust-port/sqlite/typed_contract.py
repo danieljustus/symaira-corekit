@@ -34,10 +34,15 @@ def apply(go, rust, verdict):
     allowed = set()
     failures = []
     for path, text, prefix, cause, observed, phase in checks:
-        valid_cause = isinstance(cause, dict) and (
-            cause.get('type') == 'sqlite' and type(cause.get('code')) is int and cause['code'] in (1, 5, 14)
-            or cause.get('type') == 'io' and cause.get('kind') in ('NotFound', 'NotADirectory'))
-        matches = (valid_cause and text.startswith(prefix) and observed.get('kind') == phase
+        valid_cause = False
+        if isinstance(cause, dict):
+            if cause.get('type') == 'sqlite':
+                valid_cause = type(cause.get('code')) is int and cause['code'] in (1, 5, 14)
+            elif cause.get('type') == 'io':
+                valid_cause = cause.get('kind') in ('NotFound', 'NotADirectory')
+        observed_is_mapping = isinstance(observed, dict)
+        matches = (valid_cause and isinstance(text, str) and text.startswith(prefix)
+                   and observed_is_mapping and observed.get('kind') == phase
                    and bool(observed.get('error'))
                    and json.dumps(cause, sort_keys=True) == json.dumps(observed.get('cause'), sort_keys=True))
         if matches:

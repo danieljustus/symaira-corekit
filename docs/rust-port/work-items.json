@@ -181,8 +181,7 @@
       "demand_class": "demand_driven",
       "acceptance_commands": [
         "make rust-sqlite-contract",
-        "python3 scripts/rust-port/diff.py --suite sqlite --native",
-        "cargo nextest run -p symaira-core-sqlite"
+        "native CI rust-sqlite-native lane"
       ],
       "stop_rule": "Keep deferred until two Rust consumers need the same SQLite policy. Do not claim parity from SQL text alone; stop on DB bytes/schema/pragmas/locking/rollback drift or unacceptable bundled-SQLite cost."
     },

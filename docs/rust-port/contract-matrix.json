@@ -991,7 +991,7 @@
       "id": "SQL-006",
       "seam": "SQLite",
       "fixture": "read/query/create failures and in-memory DB",
-      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./sqlitekit -run \"TestMigrate_Read|TestMigrate_Version|TestMigrate_Create|TestMigrate_InMemory\"",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./sqlitekit -run \"TestMigrate_ReadDirFailure|TestMigrate_VersionQueryFailure|TestMigrate_CreateTableFailure|TestMigrate_InMemory\"",
       "expected": "typed surfaced errors and in-memory behavior match",
       "comparison": "sqlite",
       "platforms": [

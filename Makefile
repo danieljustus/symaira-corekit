@@ -55,6 +55,7 @@ rust-sqlite-contract:
 	cargo fmt --manifest-path "$(CURDIR)/Cargo.toml" --all --check
 	cargo test --manifest-path "$(CURDIR)/Cargo.toml" -p symaira-core-sqlite --all-features --locked
 	python3 -m unittest discover -s scripts/rust-port/sqlite -p 'test_*.py'
+	python3 -m unittest discover -s scripts/rust-port -p 'test_rust_sqlite_provenance.py'
 	python3 scripts/rust-port/sqlite/diff.py --typed-errors --output target/sqlite-contract-report.json
 
 rust-fs-secret-contract:
