@@ -8,7 +8,7 @@
 
 ![Symaira CoreKit social preview](docs/assets/social-preview.png)
 
-> Shared Go library for the Symaira Go tools (`symbrain`, `symdesk`, `symbrowse`, `symvault`, `symfritz`, `symvibe`).
+> Shared Go library for the Symaira Go backends (`symbrain`, `symdesk`, `symbrowse`, `symvault`, `symeraseme`). `symfritz` is Rust-only and no longer imports this module.
 
 **Status:** pre-1.0 — see [CHANGELOG.md](CHANGELOG.md).
 
