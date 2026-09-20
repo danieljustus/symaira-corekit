@@ -1,8 +1,8 @@
 {
   "go": {
     "capture_interval": [
-      1789391027,
-      1789391032
+      1789681035,
+      1789681040
     ],
     "cases": [
       {
@@ -24,7 +24,7 @@
           },
           "open_errors": {
             "missing_directory": "failed to open sqlite database: unable to open database file (14)",
-            "parent_file": "failed to create database directory: mkdir /private<temp-root>/not-a-directory: not a directory"
+            "parent_file": "failed to create database directory: mkdir <temp-root>/not-a-directory: not a directory"
           },
           "parent_exists": true,
           "parent_mode": "0700",
@@ -83,13 +83,13 @@
         "id": "SQL-003",
         "state": {
           "applied_at": [
-            "2026-09-14T13:03:52Z",
-            "2026-09-14T13:03:52Z"
+            "2026-09-17T21:37:20Z",
+            "2026-09-17T21:37:20Z"
           ],
           "applied_at_utc": true,
           "data": [
             {
-              "created_at": "2026-09-14T13:03:52Z",
+              "created_at": "2026-09-17T21:37:20Z",
               "id": "item-1",
               "name": "alpha"
             }
@@ -126,14 +126,14 @@
         "id": "SQL-004",
         "state": {
           "applied_at": [
-            "2026-09-14T13:03:52Z",
-            "2026-09-14T13:03:52Z"
+            "2026-09-17T21:37:20Z",
+            "2026-09-17T21:37:20Z"
           ],
           "applied_at_unchanged": true,
           "applied_at_utc": true,
           "data": [
             {
-              "created_at": "2026-09-14T13:03:52Z",
+              "created_at": "2026-09-17T21:37:20Z",
               "id": "item-1",
               "name": "alpha"
             }
@@ -289,28 +289,30 @@
     ],
     "oracle": {
       "artifact_hashes": {
-        "scripts/rust-port/sqlite/candidate.py": "8266e98f9edf49a93227dbe80d61e4fa21bb4b0a0dd1bdf0fee984dcdf3ecec0",
+        "scripts/rust-port/sqlite/candidate.py": "da990cce48a619086299b446ca09f8b50199a55794d97cb2039b20b6c902d114",
         "scripts/rust-port/sqlite/cause_test.go": "82899fbc9f001a03ffb005aa22330b4615be07b23af84d61f4a841f77a422bc5",
-        "scripts/rust-port/sqlite/diff.py": "d3e7e65c9cfabe84bda14924ac3f09a3f02f984968d6b7b1d9151050b9135177",
-        "scripts/rust-port/sqlite/generate.py": "ff89620f03c5643d8733b5101323060ce5b982c5c95f576a4b2fc297f3ae00e0",
+        "scripts/rust-port/sqlite/cost_gate.py": "6da087b92e93ac92b9b477df6a79538c83881ab53f219614cd7e28a96ee8863f",
+        "scripts/rust-port/sqlite/diff.py": "bf9d23f9f0ca9affda1f5efc421e5712ca5a031c791d21a24367f813b6e48e4b",
+        "scripts/rust-port/sqlite/generate.py": "876a6127007bf90e90e6c9493d7ef54e3a713e4bc9cfdfbf3564806ef800040a",
         "scripts/rust-port/sqlite/go.mod": "ca0dac8ac8d3f259ebf6fd50de3178b16f1f82c7d2ac3e9345d3f071615e3b58",
         "scripts/rust-port/sqlite/go.sum": "9146e7666d70f22e7739e8735d90275a271753977bd21337caf82345fd8f3cd0",
-        "scripts/rust-port/sqlite/main.go": "d255963e150d01af16303fce44a4d48351f6c807159ac0ed728eb71962f51105",
+        "scripts/rust-port/sqlite/main.go": "df4455c4952bb4932f13ad618b8a9920ecb7a901cbceac2eb34850a77bc7cea3",
         "scripts/rust-port/sqlite/main_test.go": "6bead4fe1755c3afb0a0272e2b3ae5d5333072e9d9ef78b11a88fe0b5afed7da",
         "scripts/rust-port/sqlite/migrations/001_test.sql": "31c01d0b463acd6a9f7b4c6b198fe998b26b3309ee31350ea4efff26efd13f79",
         "scripts/rust-port/sqlite/migrations/002_index.sql": "d605a1446f538f11e03213209af02a4f0a319ce82cb3720913b1698088d67449",
-        "scripts/rust-port/sqlite/test_acceptance.py": "e390ea6256a5ff0c9b812c502b1544ab8f6ae3b50f7230faccbaeb2260fa4805",
-        "scripts/rust-port/sqlite/test_case_ids.py": "618c4c67f84647d3c3fe1788625b9752a555fb1a6f1b6330e9fb23797bbb4c5d",
-        "scripts/rust-port/sqlite/test_diff.py": "816cb94d52d69e60dd5d2be7accb3b1bc7d4d69400160323841519926d816b1c",
-        "scripts/rust-port/sqlite/test_failure_capture.py": "f5546d213d3a63e05c9967f3df454b258a7a785b9c837bdab4fb68d8abafc94d",
-        "scripts/rust-port/sqlite/test_generate.py": "ab8ec206614d8a393f0efe57fee87178e7f00939238b62060462bce56ae35db4",
+        "scripts/rust-port/sqlite/test_acceptance.py": "17ac8e8b0a030bc2d42c54e85dee6e0861ab8640279e87e19ed3c8c3cb8ec1b1",
+        "scripts/rust-port/sqlite/test_case_ids.py": "b1a9fd48f7995bd87c899949a2eeff92b8038ca95e63e1faa1fb2710517eb94a",
+        "scripts/rust-port/sqlite/test_cost_gate.py": "62433454e6f75856cbfd8aa119a01ff67d78254141e4c4cb6a2a1a94ae642572",
+        "scripts/rust-port/sqlite/test_diff.py": "acd1989dba1fd354d8f1534d991b044438e64cbb3cc35614613c40fcf0fd0737",
+        "scripts/rust-port/sqlite/test_failure_capture.py": "b74628024bad7d62354c965780396c0fe85c336216b1525b4626b52a5ae39b4b",
+        "scripts/rust-port/sqlite/test_generate.py": "d1f8380387b0f4a39e48e49a265901e13d74d37f9e696729319091b5a176abe2",
         "scripts/rust-port/sqlite/test_typed.py": "c516d8f2e2b01729a55bb9cd7306ae7e1852fa67bfc74b61fe5bb2f7fa1dcc4a",
         "scripts/rust-port/sqlite/testdata/locked-migration/capture.py": "6e8ec1a4f099db8df91d6ed3f1324026727065dbd9d7a6f699132f1cde4f45bd",
         "scripts/rust-port/sqlite/testdata/locked-migration/main.go": "4c411414e1f5a0a7f6878193b96099c273b46d09fcbaea215d170b8a758b4b76",
         "scripts/rust-port/sqlite/testdata/migration-selection/capture.py": "1b535b56f7d4e2f9c18766d89204576a387c81de206474cdd964bd12bfba1e81",
         "scripts/rust-port/sqlite/testdata/migration-selection/main.go": "bfb006694395931f3101ca6bcc0757d1b032795d0eb1b504d86f6efc36482ffc",
         "scripts/rust-port/sqlite/testdata/migration-selection/test_capture.py": "c0c0f3a19d1e68ef648eb16443ce889327a06ae4a2040dd05ce6479634ac3000",
-        "scripts/rust-port/sqlite/typed_contract.py": "a077fcb72f1ba4114daaea7776c1d98d3773bf20eafb11f55658bd39e8b0382b"
+        "scripts/rust-port/sqlite/typed_contract.py": "c63c06a01edebe788affb1dd9ade7a4760839ca06578c773bd08ebf541787265"
       },
       "commit": "f3d3eb79b9b1f31b4f973d2ed518a8292cedf588",
       "dependencies": {
@@ -469,13 +471,13 @@
     }
   },
   "rust": {
-    "binary_sha256": "78300369b8c21b2205d9314f656b89aad37cd028cd7e23a8ccfabdc3ad9fe61e",
-    "candidate_base": "ae129601b409d065b92ce25b22b61af91cc34c4e",
-    "candidate_manifest_sha256": "fb82bd13be83d8ce36b680cb024bdf22975b9028be467242aa11dfbdd4e2c60a",
-    "candidate_revision": "ae129601b409d065b92ce25b22b61af91cc34c4e",
+    "binary_sha256": "379ac1cf3068bbed704222bda0016b04154efc6efb7abc36830b547c8b6ed4f7",
+    "candidate_base": "82968b4fc9537daf62c2008331f5e5ce5d32b6c6",
+    "candidate_manifest_sha256": "f06e39bde1d9f5dcc01d3244f72ee003828e151c3f47a57479f3b565a76511a5",
+    "candidate_revision": "31f61d2d02d83b8ab3d5f3d8f6f08f7a0f3491d7",
     "capture_interval": [
-      1789391033,
-      1789391038
+      1789681044,
+      1789681050
     ],
     "cases": [
       {
@@ -509,7 +511,7 @@
       },
       {
         "id": "SQL-002",
-        "observed_busy_seconds": 5.000181375,
+        "observed_busy_seconds": 5.002414125,
         "state": {
           "connections": [
             {
@@ -559,12 +561,12 @@
         "id": "SQL-003",
         "state": {
           "applied_at": [
-            "2026-09-14T13:03:58Z",
-            "2026-09-14T13:03:58Z"
+            "2026-09-17T21:37:30Z",
+            "2026-09-17T21:37:30Z"
           ],
           "data": [
             {
-              "created_at": "2026-09-14T13:03:58Z",
+              "created_at": "2026-09-17T21:37:30Z",
               "id": "item-1",
               "name": "alpha"
             }
@@ -601,13 +603,13 @@
         "id": "SQL-004",
         "state": {
           "applied_at": [
-            "2026-09-14T13:03:58Z",
-            "2026-09-14T13:03:58Z"
+            "2026-09-17T21:37:30Z",
+            "2026-09-17T21:37:30Z"
           ],
           "applied_at_unchanged": true,
           "data": [
             {
-              "created_at": "2026-09-14T13:03:58Z",
+              "created_at": "2026-09-17T21:37:30Z",
               "id": "item-1",
               "name": "alpha"
             }
@@ -777,7 +779,7 @@
       "rust/symaira-core-sqlite/tests/migration_contention.rs": "e5f5617af96358abb8140b0afdb3f95da116ffd3b2284646ad89c3c97206b070",
       "rust/symaira-core-sqlite/tests/migration_selection.rs": "fb7add90fbe6f4e1fb81b619ee5a0004e44ead7e617ecc3f8169b4d3ece9344f",
       "rust/symaira-core-sqlite/tests/open_policy.rs": "06bb4a8780b6df3485d8c54436e0c6f74fedcc0637f83df227b8e7d96f9dac8e",
-      "rust/symaira-core-sqlite/tests/sql006.rs": "abfa20d268de7cb40999cb3722fdc169021a7f951950371384fbbc71f4434719",
+      "rust/symaira-core-sqlite/tests/sql006.rs": "a43776878f0e04c87a3f207406b3c981649f0321cd612a4cbe8a95eeb95e1716",
       "rust/symaira-core-version/Cargo.toml": "105564028bb4d57e8ca02a59873432c5107e3f266831391bab912a511251baf6",
       "rust/symaira-core-version/src/lib.rs": "77cd98590d6d1d21f99fd812d2464fb0deeccfa052bde555ae077ae853a60b20",
       "rust/test-support/symaira-contract-fixtures/Cargo.toml": "e2fafe830cd528c7a09606e6caf73794d6a0d29e8e9b7540a0e7b8461ec6d377",
@@ -792,28 +794,30 @@
       "rust/test-support/symaira-core-foundation/tests/exitcodes.rs": "52eac5107b6c307549eafdcfcb5e69ddae48c4108f6c806e7206f827868e5deb",
       "rust/test-support/symaira-core-foundation/tests/log.rs": "64dc9a6e06b4db58f7d6742f95b46efed9a881d2dbdc09151f76c7d1cb51d641",
       "rust/test-support/symaira-core-foundation/tests/version.rs": "84a4741ba4b90def1415c13d946fdd494ff1fe0088317027d0589d56d3c7df67",
-      "scripts/rust-port/sqlite/candidate.py": "8266e98f9edf49a93227dbe80d61e4fa21bb4b0a0dd1bdf0fee984dcdf3ecec0",
+      "scripts/rust-port/sqlite/candidate.py": "da990cce48a619086299b446ca09f8b50199a55794d97cb2039b20b6c902d114",
       "scripts/rust-port/sqlite/cause_test.go": "82899fbc9f001a03ffb005aa22330b4615be07b23af84d61f4a841f77a422bc5",
-      "scripts/rust-port/sqlite/diff.py": "d3e7e65c9cfabe84bda14924ac3f09a3f02f984968d6b7b1d9151050b9135177",
-      "scripts/rust-port/sqlite/generate.py": "ff89620f03c5643d8733b5101323060ce5b982c5c95f576a4b2fc297f3ae00e0",
+      "scripts/rust-port/sqlite/cost_gate.py": "6da087b92e93ac92b9b477df6a79538c83881ab53f219614cd7e28a96ee8863f",
+      "scripts/rust-port/sqlite/diff.py": "bf9d23f9f0ca9affda1f5efc421e5712ca5a031c791d21a24367f813b6e48e4b",
+      "scripts/rust-port/sqlite/generate.py": "876a6127007bf90e90e6c9493d7ef54e3a713e4bc9cfdfbf3564806ef800040a",
       "scripts/rust-port/sqlite/go.mod": "ca0dac8ac8d3f259ebf6fd50de3178b16f1f82c7d2ac3e9345d3f071615e3b58",
       "scripts/rust-port/sqlite/go.sum": "9146e7666d70f22e7739e8735d90275a271753977bd21337caf82345fd8f3cd0",
-      "scripts/rust-port/sqlite/main.go": "d255963e150d01af16303fce44a4d48351f6c807159ac0ed728eb71962f51105",
+      "scripts/rust-port/sqlite/main.go": "df4455c4952bb4932f13ad618b8a9920ecb7a901cbceac2eb34850a77bc7cea3",
       "scripts/rust-port/sqlite/main_test.go": "6bead4fe1755c3afb0a0272e2b3ae5d5333072e9d9ef78b11a88fe0b5afed7da",
       "scripts/rust-port/sqlite/migrations/001_test.sql": "31c01d0b463acd6a9f7b4c6b198fe998b26b3309ee31350ea4efff26efd13f79",
       "scripts/rust-port/sqlite/migrations/002_index.sql": "d605a1446f538f11e03213209af02a4f0a319ce82cb3720913b1698088d67449",
-      "scripts/rust-port/sqlite/test_acceptance.py": "e390ea6256a5ff0c9b812c502b1544ab8f6ae3b50f7230faccbaeb2260fa4805",
-      "scripts/rust-port/sqlite/test_case_ids.py": "618c4c67f84647d3c3fe1788625b9752a555fb1a6f1b6330e9fb23797bbb4c5d",
-      "scripts/rust-port/sqlite/test_diff.py": "816cb94d52d69e60dd5d2be7accb3b1bc7d4d69400160323841519926d816b1c",
-      "scripts/rust-port/sqlite/test_failure_capture.py": "f5546d213d3a63e05c9967f3df454b258a7a785b9c837bdab4fb68d8abafc94d",
-      "scripts/rust-port/sqlite/test_generate.py": "ab8ec206614d8a393f0efe57fee87178e7f00939238b62060462bce56ae35db4",
+      "scripts/rust-port/sqlite/test_acceptance.py": "17ac8e8b0a030bc2d42c54e85dee6e0861ab8640279e87e19ed3c8c3cb8ec1b1",
+      "scripts/rust-port/sqlite/test_case_ids.py": "b1a9fd48f7995bd87c899949a2eeff92b8038ca95e63e1faa1fb2710517eb94a",
+      "scripts/rust-port/sqlite/test_cost_gate.py": "62433454e6f75856cbfd8aa119a01ff67d78254141e4c4cb6a2a1a94ae642572",
+      "scripts/rust-port/sqlite/test_diff.py": "acd1989dba1fd354d8f1534d991b044438e64cbb3cc35614613c40fcf0fd0737",
+      "scripts/rust-port/sqlite/test_failure_capture.py": "b74628024bad7d62354c965780396c0fe85c336216b1525b4626b52a5ae39b4b",
+      "scripts/rust-port/sqlite/test_generate.py": "d1f8380387b0f4a39e48e49a265901e13d74d37f9e696729319091b5a176abe2",
       "scripts/rust-port/sqlite/test_typed.py": "c516d8f2e2b01729a55bb9cd7306ae7e1852fa67bfc74b61fe5bb2f7fa1dcc4a",
       "scripts/rust-port/sqlite/testdata/locked-migration/capture.py": "6e8ec1a4f099db8df91d6ed3f1324026727065dbd9d7a6f699132f1cde4f45bd",
       "scripts/rust-port/sqlite/testdata/locked-migration/main.go": "4c411414e1f5a0a7f6878193b96099c273b46d09fcbaea215d170b8a758b4b76",
       "scripts/rust-port/sqlite/testdata/migration-selection/capture.py": "1b535b56f7d4e2f9c18766d89204576a387c81de206474cdd964bd12bfba1e81",
       "scripts/rust-port/sqlite/testdata/migration-selection/main.go": "bfb006694395931f3101ca6bcc0757d1b032795d0eb1b504d86f6efc36482ffc",
       "scripts/rust-port/sqlite/testdata/migration-selection/test_capture.py": "c0c0f3a19d1e68ef648eb16443ce889327a06ae4a2040dd05ce6479634ac3000",
-      "scripts/rust-port/sqlite/typed_contract.py": "a077fcb72f1ba4114daaea7776c1d98d3773bf20eafb11f55658bd39e8b0382b"
+      "scripts/rust-port/sqlite/typed_contract.py": "c63c06a01edebe788affb1dd9ade7a4760839ca06578c773bd08ebf541787265"
     }
   },
   "verdict": {
@@ -824,7 +828,7 @@
         "rust": "failed to open sqlite database: unable to open database file: <temp-root>"
       },
       {
-        "go": "failed to create database directory: mkdir /private<temp-root>/not-a-directory: not a directory",
+        "go": "failed to create database directory: mkdir <temp-root>/not-a-directory: not a directory",
         "path": "SQL-001/open_errors/parent_file",
         "rust": "failed to create database directory: Not a directory (os error 20)"
       },

@@ -1,21 +1,15 @@
 #![deny(unsafe_code)]
 
 use serde_json::{Value, json};
-use std::{cell::Cell, io};
-use symaira_core_sqlite::{Connection, Entry, Error, MigrationSource, migrate};
+use std::{fs, io, path::Path};
+use symaira_core_sqlite::{Connection, DirectorySource, Entry, Error, MigrationSource, migrate};
 
 struct Source {
     entries: Vec<(&'static str, &'static str)>,
-    fail_directory: bool,
-    fail_read: bool,
-    reads: Cell<usize>,
 }
 
 impl MigrationSource for Source {
     fn entries(&self) -> io::Result<Vec<Entry>> {
-        if self.fail_directory {
-            return Err(io::Error::from(io::ErrorKind::NotFound));
-        }
         Ok(self
             .entries
             .iter()
@@ -27,10 +21,6 @@ impl MigrationSource for Source {
     }
 
     fn read(&self, name: &str) -> io::Result<Vec<u8>> {
-        self.reads.set(self.reads.get() + 1);
-        if self.fail_read {
-            return Err(io::Error::from(io::ErrorKind::NotFound));
-        }
         self.entries
             .iter()
             .find(|(entry, _)| *entry == name)
@@ -51,15 +41,34 @@ fn migrations() -> Source {
                 "CREATE INDEX IF NOT EXISTS idx_test_items_name ON test_items(name);",
             ),
         ],
-        fail_directory: false,
-        fail_read: false,
-        reads: Cell::new(0),
+    }
+}
+
+/// Deletes the named migration only after [`DirectorySource`] has listed it.
+///
+/// This models the real filesystem TOCTOU boundary while preserving
+/// `DirectorySource` as the implementation that performs both listing and the
+/// eventual failed file read.
+struct RemovedMigrationAfterListing<'a> {
+    root: &'a Path,
+    migration: &'a Path,
+}
+
+impl MigrationSource for RemovedMigrationAfterListing<'_> {
+    fn entries(&self) -> io::Result<Vec<Entry>> {
+        let entries = DirectorySource(self.root).entries()?;
+        fs::remove_file(self.migration)?;
+        Ok(entries)
+    }
+
+    fn read(&self, name: &str) -> io::Result<Vec<u8>> {
+        DirectorySource(self.root).read(name)
     }
 }
 
 fn oracle_sql006() -> Value {
     let fixture: Value = serde_json::from_str(include_str!(
-        "../../../testdata/rust-port/sqlite/differential-macos-bound-rust014.json"
+        "../../../testdata/rust-port/sqlite/differential-macos-bound-rust006-post-squash-20260917.json"
     ))
     .expect("source-bound SQLite capture must be valid JSON");
     assert_eq!(fixture["go"]["cases"][5]["id"], "SQL-006");
@@ -113,10 +122,8 @@ fn in_memory_schema_and_data_match_go_oracle() {
 fn missing_directory_surfaces_typed_read_directory_error() {
     let oracle = oracle_sql006();
     let mut connection = Connection::open_in_memory().unwrap();
-    let source = Source {
-        fail_directory: true,
-        ..migrations()
-    };
+    let root = tempfile::tempdir().unwrap();
+    let source = DirectorySource(root.path());
 
     let error = migrate(&mut connection, &source).unwrap_err();
     let Error::ReadDirectory(cause) = &error else {
@@ -158,6 +165,7 @@ fn version_query_surfaces_sqlite_phase_and_cause() {
         source.sqlite_error().unwrap().code,
         rusqlite::ErrorCode::Unknown
     );
+    assert_eq!(source.sqlite_error().unwrap().extended_code & 0xff, 1);
     assert!(
         error.to_string().starts_with(
             oracle["state"]["version_query_error"]
@@ -174,9 +182,14 @@ fn version_query_surfaces_sqlite_phase_and_cause() {
 fn migration_file_read_surfaces_typed_error_before_sql_execution() {
     let oracle = oracle_sql006();
     let mut connection = Connection::open_in_memory().unwrap();
-    let source = Source {
-        fail_read: true,
-        ..migrations()
+    let root = tempfile::tempdir().unwrap();
+    let migrations = root.path().join("migrations");
+    fs::create_dir(&migrations).unwrap();
+    let migration = migrations.join("001_test.sql");
+    fs::write(&migration, "CREATE TABLE must_not_run (id INTEGER)").unwrap();
+    let source = RemovedMigrationAfterListing {
+        root: root.path(),
+        migration: &migration,
     };
 
     let error = migrate(&mut connection, &source).unwrap_err();
@@ -189,7 +202,15 @@ fn migration_file_read_surfaces_typed_error_before_sql_execution() {
     };
     assert_eq!(name, "001_test.sql");
     assert_eq!(cause.kind(), io::ErrorKind::NotFound);
-    assert_eq!(source.reads.get(), 1);
+    assert!(!migration.exists());
+    let created = connection
+        .query_row(
+            "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = 'must_not_run'",
+            [],
+            |row| row.get::<_, i64>(0),
+        )
+        .unwrap();
+    assert_eq!(created, 0, "read failure must not execute migration SQL");
     assert!(
         error.to_string().starts_with(
             oracle["state"]["read_file_error"]

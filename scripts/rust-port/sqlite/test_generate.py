@@ -9,6 +9,7 @@ import sys
 import tempfile
 import time
 import unittest
+from unittest.mock import patch
 
 SPEC = importlib.util.spec_from_file_location("sqlite_capture", Path(__file__).with_name("generate.py"))
 assert SPEC is not None and SPEC.loader is not None
@@ -78,6 +79,17 @@ class ValidatorTests(unittest.TestCase):
         compiler = Path("C:/hostedtoolcache/windows/go/1.26.6/x64/bin")
         self.assertEqual(generator.compiler_executable(compiler, "nt").name, "go.exe")
         self.assertEqual(generator.compiler_executable(compiler, "posix").name, "go")
+
+    def test_private_temp_root_alias_matches_go_capture(self):
+        root = Path("/var/folders/sql006")
+        report = {
+            "committed": f"mkdir {root}/not-a-directory",
+            "resolved": f"mkdir /private{root}/not-a-directory",
+        }
+        with patch.object(generator.os.path, "realpath", return_value=f"/private{root}"):
+            normalized = generator.normalize_temp_root(report, root)
+        self.assertEqual(normalized["committed"], "mkdir <temp-root>/not-a-directory")
+        self.assertEqual(normalized["resolved"], "mkdir <temp-root>/not-a-directory")
 
 
 class ProcessTests(unittest.TestCase):
