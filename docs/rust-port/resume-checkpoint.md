@@ -1,10 +1,10 @@
 # Resume checkpoint — SQLite candidate-source scope
 
-Owner: migration coordinator. Active writer worktree:
-`.worktrees/rust-290-candidate-scope`, branch `migration/rust-290-candidate-scope`,
-based on `896eac148dfc44232f8763be08d45e7ee795de6e` (current `main`). Main
-baseline for the SQLite candidate remains
-`82968b4fc9537daf62c2008331f5e5ce5d32b6c6`.
+Owner: migration coordinator. No active CoreKit writer worktree; the scoped
+change is integrated on `main` as squash commit
+`541683a0fc86caee5e2ef3334f1948fda52296a1` (PR #291, based on
+`896eac148dfc44232f8763be08d45e7ee795de6e`). Main baseline for the SQLite
+candidate remains `82968b4fc9537daf62c2008331f5e5ce5d32b6c6`.
 
 ## Current evidence and finding
 
@@ -39,13 +39,18 @@ passed. The earlier capture
 `differential-macos-bound-rust006-upload-artifact-v7-20260920.json` is retained
 unchanged as historical evidence.
 
-Generation is not approval: the new manifest and capture were produced by the
-same process that changed the harness, so they need independent review, and the
-native Linux/Windows lanes and the consumer/value gates remain open.
+Generation is not approval, so the new manifest and capture were independently
+reviewed: an adversarial review reproduced the capture at the integrated
+revision and found the verdict, case IDs, checked fields, accepted differences,
+native identity and the 39-file enforced subset of the 70 recorded files
+identical; only the revision, the example binary digest and the capture
+timestamps differ, as expected. The native SQLite lanes passed on ubuntu-latest,
+macos-latest and windows-latest in the PR #291 run. The consumer/value gates
+remain open.
 
 ## Resume without restarting
 
-From the exact worktree:
+From a fresh worktree of `main`:
 
 ```sh
 python3 -m unittest discover -s scripts/rust-port/sqlite -p 'test_*.py'
@@ -57,7 +62,9 @@ make rust-sqlite-contract
 port-input change. It regenerates the manifest and writes a new capture; it
 never runs automatically, and it does not repoint the acceptance tests.
 
-Next: review the refreshed manifest and capture independently, then run the
-native Linux/Windows SQLite lanes on the merged revision. Remaining CoreKit
-contracts, consumer/value gates and native foreign-platform evidence stay open.
-No PR/release/product cutover; no history rewrite.
+Next: re-confirm the Desktop value gate and the two-consumer cost evidence
+before promoting SQL-001 through SQL-006 in the contract matrix; RUST-014 needs
+an explicit registry authorization and RUST-015 stays blocked on released
+consumer evidence. Remaining CoreKit contracts, consumer/value gates and native
+foreign-platform evidence stay open. No PR/release/product cutover; no history
+rewrite.
