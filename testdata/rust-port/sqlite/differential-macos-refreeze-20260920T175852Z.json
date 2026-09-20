@@ -1,8 +1,8 @@
 {
   "go": {
     "capture_interval": [
-      1789927154,
-      1789927159
+      1789930086,
+      1789930092
     ],
     "cases": [
       {
@@ -83,13 +83,13 @@
         "id": "SQL-003",
         "state": {
           "applied_at": [
-            "2026-09-20T17:59:19Z",
-            "2026-09-20T17:59:19Z"
+            "2026-09-20T18:48:12Z",
+            "2026-09-20T18:48:12Z"
           ],
           "applied_at_utc": true,
           "data": [
             {
-              "created_at": "2026-09-20T17:59:19Z",
+              "created_at": "2026-09-20T18:48:12Z",
               "id": "item-1",
               "name": "alpha"
             }
@@ -126,14 +126,14 @@
         "id": "SQL-004",
         "state": {
           "applied_at": [
-            "2026-09-20T17:59:19Z",
-            "2026-09-20T17:59:19Z"
+            "2026-09-20T18:48:12Z",
+            "2026-09-20T18:48:12Z"
           ],
           "applied_at_unchanged": true,
           "applied_at_utc": true,
           "data": [
             {
-              "created_at": "2026-09-20T17:59:19Z",
+              "created_at": "2026-09-20T18:48:12Z",
               "id": "item-1",
               "name": "alpha"
             }
@@ -471,13 +471,13 @@
     }
   },
   "rust": {
-    "binary_sha256": "91cb7a0c6532dace3507b50780433a0e23bbf30b46901ae5c35fbd0e3a20cf83",
+    "binary_sha256": "e1200b4ac8582b94aaa9d094f7be95a3edb1f661b18485150bb148db029505a6",
     "candidate_base": "82968b4fc9537daf62c2008331f5e5ce5d32b6c6",
     "candidate_manifest_sha256": "fe68e798076dd4e6c348e7dd4c5f9999894a2dc1fcc2cbd3cf11a397301a3496",
-    "candidate_revision": "6e79b58784030d54dcb3b793a8305f261b108072",
+    "candidate_revision": "b529bde384f98feea8b44f05938cb0e4f29f362b",
     "capture_interval": [
-      1789927160,
-      1789927165
+      1789930093,
+      1789930098
     ],
     "cases": [
       {
@@ -511,7 +511,7 @@
       },
       {
         "id": "SQL-002",
-        "observed_busy_seconds": 5.0107875,
+        "observed_busy_seconds": 5.003071209,
         "state": {
           "connections": [
             {
@@ -561,12 +561,12 @@
         "id": "SQL-003",
         "state": {
           "applied_at": [
-            "2026-09-20T17:59:25Z",
-            "2026-09-20T17:59:25Z"
+            "2026-09-20T18:48:18Z",
+            "2026-09-20T18:48:18Z"
           ],
           "data": [
             {
-              "created_at": "2026-09-20T17:59:25Z",
+              "created_at": "2026-09-20T18:48:18Z",
               "id": "item-1",
               "name": "alpha"
             }
@@ -603,13 +603,13 @@
         "id": "SQL-004",
         "state": {
           "applied_at": [
-            "2026-09-20T17:59:25Z",
-            "2026-09-20T17:59:25Z"
+            "2026-09-20T18:48:18Z",
+            "2026-09-20T18:48:18Z"
           ],
           "applied_at_unchanged": true,
           "data": [
             {
-              "created_at": "2026-09-20T17:59:25Z",
+              "created_at": "2026-09-20T18:48:18Z",
               "id": "item-1",
               "name": "alpha"
             }
@@ -769,9 +769,9 @@
       "rust/symaira-core-mcp/src/lib.rs": "1308ced23ad46378ad38d3dbfce527a58d057c9b2ac0e6f6755b8dea68aca6bf",
       "rust/symaira-core-mcp/tests/raw_frames.rs": "ff05be40f6c18a4bfb81c552370c29c426d26e550d3350b2cf3f88ae791c2fea",
       "rust/symaira-core-mcpcfg/Cargo.toml": "11d256991dcb6998a02f45836afaf0dc85c88b5d250537c07c8083eec62a066b",
-      "rust/symaira-core-mcpcfg/src/bin/mcpcfg_fixture.rs": "65eeac51406dd39649e165618c392dd503c15e5813967f1020a19e8a5151ec05",
+      "rust/symaira-core-mcpcfg/src/bin/mcpcfg_fixture.rs": "8f9193a32d5c0cab661611016d846c7bbf38f3c37b3573f8f53c83c747e981cc",
       "rust/symaira-core-mcpcfg/src/lib.rs": "ac00ffeb4fc86193519499f3fe6171118258dd27dd8e8b6929c828f555fdc9ec",
-      "rust/symaira-core-mcpcfg/tests/parity.rs": "2dd9e532dc480abd7dc7006d729eff8cb250403d2078dd12ac070da68605e3b6",
+      "rust/symaira-core-mcpcfg/tests/parity.rs": "a886491a4a1e8f07679e3a98be37b042af80e5c2312ac61122eb5a1343be9549",
       "rust/symaira-core-secretref/Cargo.toml": "8fbe198e5685ed498c0042127e5d4a015a683b4dce9ec35f37b2135ab49fa723",
       "rust/symaira-core-secretref/src/lib.rs": "f3d4c6d9aa0ca500552f21a6807662fdebd9422652579fc7745813f463d67b8b",
       "rust/symaira-core-secretref/tests/parity.rs": "80665d3a6c0cf5543dec10626a1451446318c33df27a80efb86d6bc6410abf85",
