@@ -59,7 +59,12 @@ and MCP-side audit tests. `symaira-brain` shows only unrelated matches
 grounded-evidence algorithm. **Verdict: deferred — one consumer; the
 two-consumer rule is not met.**
 
-## RUST-010 — MCP configuration discovery slice (`MCFG-*`) — **ready**
+## RUST-010 — MCP configuration discovery slice (`MCFG-*`) — **implemented**
+
+Implemented as `rust/symaira-core-mcpcfg` and proven against the pinned Go
+oracle commit `f3d3eb79…` by `scripts/rust-port/mcpcfg-differential.py` over the
+24-case corpus in `testdata/rust-port/mcpcfg-cases.json`; see
+`resume-checkpoint.md` for the observation boundary and the negative controls.
 
 ```sh
 grep -rn --include=*.rs -iE "mcp_config|claude_desktop_config|mcpServers" \

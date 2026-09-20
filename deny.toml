@@ -11,6 +11,16 @@ allow = [
   "Apache-2.0 WITH LLVM-exception",
   "MIT",
   "Unicode-3.0",
+  # The MCP-config discovery crate needs a real YAML parser (the Go package
+  # parses YAML configs and the MCFG-001 contract covers them). yaml-rust2's
+  # closure reaches encoding_rs (BSD-3-Clause) and foldhash (Zlib) through
+  # hashlink/hashbrown. Both are permissive, OSI- and FSF-approved, and
+  # compatible with this repository's Apache-2.0 license; they are allowed here
+  # deliberately, not incidentally. Replacing the parser with a hand-rolled
+  # subset was rejected because it would trade a maintained YAML 1.2
+  # implementation for silent divergence risk.
+  "BSD-3-Clause",
+  "Zlib",
 ]
 
 [bans]

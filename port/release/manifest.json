@@ -73,6 +73,15 @@
         "reason": "No released adopter is recorded."
       },
       {
+        "name": "symaira-core-mcpcfg",
+        "manifest": "rust/symaira-core-mcpcfg/Cargo.toml",
+        "version": "0.0.0",
+        "adopted": false,
+        "publishable": false,
+        "adopters": [],
+        "reason": "No released adopter is recorded."
+      },
+      {
         "name": "symaira-core-fs",
         "manifest": "rust/symaira-core-fs/Cargo.toml",
         "version": "0.0.0",

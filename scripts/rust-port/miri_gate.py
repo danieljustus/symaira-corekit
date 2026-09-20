@@ -32,6 +32,8 @@ PURE_PACKAGES = (
 
 # These tests intentionally exercise filesystem/process/environment boundaries.
 NON_ISOLATED_PACKAGES = (
+    # Discovery reads client config files, and its tests write temporary ones.
+    "symaira-core-mcpcfg",
     "symaira-core-config",
     "symaira-core-fs",
     "symaira-core-secretref",
