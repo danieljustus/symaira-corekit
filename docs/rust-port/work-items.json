@@ -286,13 +286,13 @@
         "MCFG-004",
         "MCFG-005"
       ],
-      "status": "ready",
+      "status": "complete",
       "demand_class": "demand_driven",
       "demand_evidence": "demand-assessment.md",
       "acceptance_commands": [
         "make rust-mcpcfg-contract",
-        "cargo nextest run -p symaira-core-mcpcfg",
-        "python3 scripts/rust-port/diff.py --suite mcpcfg --native"
+        "python3 scripts/rust-port/mcpcfg-differential.py --check",
+        "python3 docs/rust-port/validate.py"
       ],
       "stop_rule": "Keep blocked until second-consumer demand; do not generalize platform paths or silently normalize malformed client configs."
     },

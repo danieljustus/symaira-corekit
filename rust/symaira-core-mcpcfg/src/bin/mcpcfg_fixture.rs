@@ -58,6 +58,7 @@ struct ServerObs {
     config_path: String,
     env: Option<BTreeMap<String, String>>,
     env_keys: Option<Vec<String>>,
+    env_values: Option<Vec<String>>,
 }
 
 #[derive(Debug, Serialize)]
@@ -256,11 +257,38 @@ fn server_obs(server: &Server, with_env_keys: bool) -> ServerObs {
         config_path: clean_path(&server.config_path),
         env: server.env.clone(),
         env_keys: if with_env_keys {
-            Some(server.env_keys.clone())
+            Some(sorted_env_keys(&server.env_keys))
+        } else {
+            None
+        },
+        env_values: if with_env_keys {
+            Some(sorted_env_values(&server.env_keys, &server.env_values))
         } else {
             None
         },
     }
+}
+
+/// Go builds `EnvKeys`/`EnvValues` by iterating a map, so their order is
+/// unspecified; the observation layer sorts the index-aligned pairs by key
+/// instead of comparing an order the Go contract never guaranteed.
+fn sorted_env_keys(keys: &[String]) -> Vec<String> {
+    let mut sorted = keys.to_vec();
+    sorted.sort();
+    sorted
+}
+
+fn sorted_env_values(keys: &[String], values: &[String]) -> Vec<String> {
+    let mut pairs: Vec<(&String, &str)> = keys
+        .iter()
+        .enumerate()
+        .map(|(index, key)| (key, values.get(index).map_or("", String::as_str)))
+        .collect();
+    pairs.sort_by(|left, right| left.0.cmp(right.0));
+    pairs
+        .into_iter()
+        .map(|(_, value)| value.to_owned())
+        .collect()
 }
 
 /// Classifies a `mcpcfgkit` finding message, mirroring the Go oracle helper.

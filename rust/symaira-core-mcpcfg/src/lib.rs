@@ -1148,25 +1148,36 @@ mod tests {
 
     #[test]
     fn default_sources_platform_table_matches_go() {
+        // Expectations are built with the same separator rules as the table, so
+        // this holds on every platform the crate builds for.
+        let claude_darwin = Path::new("/home/u")
+            .join("Library")
+            .join("Application Support")
+            .join("Claude")
+            .join("claude_desktop_config.json")
+            .to_string_lossy()
+            .into_owned();
+        let claude_xdg = Path::new("/xdg")
+            .join("claude")
+            .join("claude_desktop_config.json")
+            .to_string_lossy()
+            .into_owned();
+        let claude_fallback = Path::new("/home/u")
+            .join(".config")
+            .join("claude")
+            .join("claude_desktop_config.json")
+            .to_string_lossy()
+            .into_owned();
         let darwin = default_sources_for_platform("darwin", "/home/u", None);
         assert_eq!(darwin.len(), 5);
-        assert_eq!(
-            darwin[4].path,
-            "/home/u/Library/Application Support/Claude/claude_desktop_config.json"
-        );
+        assert_eq!(darwin[4].path, claude_darwin);
         assert_eq!(darwin[3].key, "mcp");
         let linux = default_sources_for_platform("linux", "/home/u", Some("/xdg"));
-        assert_eq!(linux[4].path, "/xdg/claude/claude_desktop_config.json");
+        assert_eq!(linux[4].path, claude_xdg);
         let fallback = default_sources_for_platform("linux", "/home/u", None);
-        assert_eq!(
-            fallback[4].path,
-            "/home/u/.config/claude/claude_desktop_config.json"
-        );
+        assert_eq!(fallback[4].path, claude_fallback);
         let empty = default_sources_for_platform("linux", "/home/u", Some(""));
-        assert_eq!(
-            empty[4].path,
-            "/home/u/.config/claude/claude_desktop_config.json"
-        );
+        assert_eq!(empty[4].path, claude_fallback);
     }
 
     #[test]

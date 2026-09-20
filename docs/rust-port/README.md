@@ -1,6 +1,6 @@
 # Go→Rust migration handoff
 
-Status: **RUST-001 through RUST-006 and RUST-013 complete; RUST-010 is ready after the demand assessment; RUST-014 remains in progress because registry evidence does not exist; RUST-015 is blocked on released consumer evidence. Go remains the supported executable oracle and no broad cutover is implied**.
+Status: **RUST-001 through RUST-006, RUST-010 and RUST-013 complete; RUST-014 remains in progress because registry evidence does not exist; RUST-015 is blocked on released consumer evidence. Go remains the supported executable oracle and no broad cutover is implied**.
 
 This directory freezes the starting point for a contract-first Rust implementation of `symaira-corekit`. The Go implementation remains supported, buildable and the executable oracle while Go consumers exist. Rust crates are added beside it and are adopted package by package; this is not a flag-day repository rewrite.
 

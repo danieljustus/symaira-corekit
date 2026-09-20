@@ -64,6 +64,7 @@ type serverObs struct {
 	ConfigPath string            `json:"config_path"`
 	Env        map[string]string `json:"env"`
 	EnvKeys    []string          `json:"env_keys"`
+	EnvValues  []string          `json:"env_values"`
 }
 
 type noteObs struct {
@@ -142,6 +143,7 @@ func observe(fixture fixtureCase) (observation, error) {
 		servers := append([]mcpcfgkit.Server(nil), result.Servers...)
 		sortServers(servers)
 		for _, server := range servers {
+			keys, values := sortedEnvPairs(server.EnvKeys, server.EnvValues)
 			out.Servers = append(out.Servers, serverObs{
 				Name:       server.Name,
 				Client:     server.Client,
@@ -151,7 +153,8 @@ func observe(fixture fixtureCase) (observation, error) {
 				URL:        server.URL,
 				ConfigPath: cleanPath(server.ConfigPath),
 				Env:        server.Env,
-				EnvKeys:    nonNil(server.EnvKeys),
+				EnvKeys:    keys,
+				EnvValues:  values,
 			})
 		}
 		findings := append([]mcpcfgkit.Finding(nil), result.Findings...)
@@ -199,6 +202,7 @@ func observe(fixture fixtureCase) (observation, error) {
 				ConfigPath: stripRoot(root, server.ConfigPath),
 				Env:        server.Env,
 				EnvKeys:    nil,
+				EnvValues:  nil,
 			})
 		}
 		noteObsList := make([]noteObs, 0, len(notes))
@@ -323,6 +327,28 @@ func normalizedMessage(message string) string {
 		return strings.SplitN(message, ":", 2)[0]
 	}
 	return message
+}
+
+// sortedEnvPairs re-pairs Go's EnvKeys/EnvValues and sorts by key: Go builds them
+// by iterating a map, so their order is unspecified and must not be compared.
+func sortedEnvPairs(keys, values []string) ([]string, []string) {
+	type pair struct{ key, value string }
+	pairs := make([]pair, 0, len(keys))
+	for index, key := range keys {
+		value := ""
+		if index < len(values) {
+			value = values[index]
+		}
+		pairs = append(pairs, pair{key: key, value: value})
+	}
+	sort.Slice(pairs, func(i, j int) bool { return pairs[i].key < pairs[j].key })
+	outKeys := make([]string, 0, len(pairs))
+	outValues := make([]string, 0, len(pairs))
+	for _, item := range pairs {
+		outKeys = append(outKeys, item.key)
+		outValues = append(outValues, item.value)
+	}
+	return outKeys, outValues
 }
 
 func nonNil(values []string) []string {

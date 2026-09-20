@@ -850,7 +850,7 @@
         "windows"
       ],
       "rust_test": "symaira-core-mcpcfg/tests/parity.rs",
-      "status": "todo"
+      "status": "parity"
     },
     {
       "id": "MCFG-002",
@@ -865,7 +865,7 @@
         "windows"
       ],
       "rust_test": "symaira-core-mcpcfg/tests/parity.rs",
-      "status": "todo"
+      "status": "parity"
     },
     {
       "id": "MCFG-003",
@@ -880,7 +880,7 @@
         "windows"
       ],
       "rust_test": "symaira-core-mcpcfg/tests/parity.rs",
-      "status": "todo"
+      "status": "parity"
     },
     {
       "id": "MCFG-004",
@@ -895,7 +895,7 @@
         "windows"
       ],
       "rust_test": "symaira-core-mcpcfg/tests/parity.rs",
-      "status": "todo"
+      "status": "parity"
     },
     {
       "id": "MCFG-005",
@@ -910,7 +910,7 @@
         "windows"
       ],
       "rust_test": "symaira-core-mcpcfg/tests/parity.rs",
-      "status": "todo"
+      "status": "parity"
     },
     {
       "id": "SQL-001",
@@ -1787,7 +1787,10 @@
         "workflow_run": "34193678917",
         "job": "101956734067",
         "job_url": "https://github.com/danieljustus/symaira-corekit/actions/runs/34193678917/job/101956734067",
-        "commands": ["cargo audit", "cargo deny check"],
+        "commands": [
+          "cargo audit",
+          "cargo deny check"
+        ],
         "conclusion": "success"
       }
     },
