@@ -112,16 +112,30 @@ fn mcfg_001_yaml_normalises_string_only_fields() {
 #[test]
 fn mcfg_002_default_source_table_and_root_key_fallback() {
     assert_eq!(normalize_key(""), vec!["mcpServers", "mcp_servers", "mcp"]);
+    // The fixture files are keyed by the table's own paths, so this stays valid
+    // on every platform the crate builds for.
+    let sources = symaira_core_mcpcfg::default_sources_for_platform("darwin", "/home/u", None);
+    let hermes_path = sources
+        .iter()
+        .find(|source| source.client == Client::Hermes)
+        .expect("hermes source")
+        .path
+        .clone();
+    let opencode_path = sources
+        .iter()
+        .find(|source| source.client == Client::OpenCode)
+        .expect("opencode source")
+        .path
+        .clone();
     let fs = MemFs::new()
         .with_file(
-            "/home/u/.config/hermes/config.json",
+            &hermes_path,
             r#"{"mcp_servers": {"a": {"command": "cmd-a"}}}"#,
         )
         .with_file(
-            "/home/u/.config/opencode/config.json",
+            &opencode_path,
             r#"{"mcp": {"b": {"type": "local", "command": "cmd-b"}}}"#,
         );
-    let sources = symaira_core_mcpcfg::default_sources_for_platform("darwin", "/home/u", None);
     let result = scan_all_with_fs(&fs, &sources);
     assert_eq!(result.servers.len(), 2, "{:?}", result.servers);
     assert!(
