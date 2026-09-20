@@ -8,12 +8,15 @@ as `541683a` (PR #291). Main baseline for the SQLite candidate remains
 
 ## Current state
 
-`RUST-014` stays `in_progress`: its non-registry acceptance (`cargo
-semver-checks check-release`, the release/consumer governance verifier tests and
-`port/release/verify.py --dry-run`) runs green in the `Rust release manifest` CI
-job, but registry evidence does not exist and the Rust crates are still
-`publish = false`. `RUST-015` stays `blocked` on released-consumer evidence, and
-`RUST-007` through `RUST-012` stay demand-driven `deferred`.
+`RUST-014` stays `in_progress`: `python3 port/release/verify.py --dry-run` and the
+release/consumer governance tests pass, but registry evidence does not exist and
+the Rust crates are still `publish = false`. `cargo semver-checks check-release`
+must not be counted as API-compatibility evidence here — it skips every
+candidate (`Skipping <crate> v0.0.0 (current)`) because nothing is published, and
+the dry-run now prints `semver baseline: none … API compatibility stays
+unverified` instead of leaving the vacuum implicit. `RUST-015` stays `blocked` on
+released-consumer evidence, and `RUST-007` through `RUST-012` stay demand-driven
+`deferred`.
 
 One evidence limitation is recorded in `sqlite-demand.md`: the measured
 `SQL-006-80-BUILD` cost report lives on the secure-runtime volume

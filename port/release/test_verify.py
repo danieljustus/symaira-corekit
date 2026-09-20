@@ -106,6 +106,18 @@ class ManifestShapeTests(unittest.TestCase):
         with self.assertRaisesRegex(verify.VerificationError, "forbidden"):
             verify.validate_workspace(manifest["release"], metadata)
 
+    def test_semver_baseline_reports_unverifiable_without_publication(self) -> None:
+        release = verify.validate_manifest_shape(copy.deepcopy(self.manifest))
+        candidates = verify.package_candidates(release)
+        self.assertIn("API compatibility stays unverified", verify.semver_baseline(candidates))
+
+    def test_semver_baseline_lists_released_candidates(self) -> None:
+        release = verify.validate_manifest_shape(copy.deepcopy(self.manifest))
+        candidates = copy.deepcopy(verify.package_candidates(release))
+        candidates[0]["publishable"] = True
+        candidates[0]["version"] = "1.2.3"
+        self.assertIn("symaira-core-version v1.2.3", verify.semver_baseline(candidates))
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -265,6 +265,24 @@ def package_candidates(release: dict[str, Any]) -> list[dict[str, Any]]:
     return [crate for crate in release["crates"] if crate["name"] in release["planned_publish_order"]]
 
 
+def semver_baseline(candidates: list[dict[str, Any]]) -> str:
+    """State whether API compatibility can be checked at all.
+
+    ``cargo semver-checks check-release`` needs a published baseline.  While
+    every candidate is still unpublished the tool skips all of them and exits 0,
+    so a green run of that command is not API-compatibility evidence.
+    """
+    released = [
+        crate for crate in candidates if crate["publishable"] and crate["version"] != "0.0.0"
+    ]
+    if not released:
+        return (
+            "semver baseline: none — every publish candidate is unpublished, so "
+            "cargo semver-checks check-release skips them and API compatibility stays unverified"
+        )
+    return "semver baseline: " + ",".join(f"{crate['name']} v{crate['version']}" for crate in released)
+
+
 def dry_run_packages(candidates: list[dict[str, Any]]) -> list[tuple[str, str]]:
     results: list[tuple[str, str]] = []
     with tempfile.TemporaryDirectory(prefix="corekit-release-") as directory:
@@ -321,6 +339,7 @@ def main(argv: list[str] | None = None) -> int:
     print("ok: package_archives=" + ",".join(f"{name}:{digest}" for name, digest in package_results))
     print(f"ok: sbom=cargo-metadata-json packages={len(metadata['packages'])}")
     print("ok: provenance_inputs=" + ",".join(input_digests))
+    print(semver_baseline(candidates))
     print("external gate: crates.io publication, ownership, and public-byte readback not run")
     return 0
 

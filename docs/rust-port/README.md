@@ -114,12 +114,17 @@ release-manifest slices are being revalidated; later package ports remain
 demand-driven.
 
 RUST-014's local release gate is intentionally non-publishing:
-`cargo semver-checks check-release` and `python3 port/release/verify.py --dry-run`
-validate the adopted-crate order, all workspace package versions, temporary
-`.crate` archives, provenance inputs and Cargo metadata SBOM evidence. The
-crates.io ownership/public-byte read-back gate remains open until a separately
-approved release performs publication. Go tags remain unambiguous module
-releases and Go consumers remain supported.
+`python3 port/release/verify.py --dry-run` validates the adopted-crate order,
+all workspace package versions, temporary `.crate` archives, provenance inputs
+and Cargo metadata SBOM evidence. `cargo semver-checks check-release` currently
+verifies **no** API compatibility: every publish candidate is still `0.0.0` and
+`publish = false`, so the tool skips all of them (`Skipping <crate> v0.0.0
+(current)`) and exits 0. The dry-run states that explicitly
+(`semver baseline: none — … API compatibility stays unverified`); real
+API-compatibility evidence starts with the second release of a published crate.
+The crates.io ownership/public-byte read-back gate remains open until a
+separately approved release performs publication. Go tags remain unambiguous
+module releases and Go consumers remain supported.
 
 RUST-005 evidence is intentionally live and fail-closed:
 
