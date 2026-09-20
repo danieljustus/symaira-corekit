@@ -1,0 +1,359 @@
+{
+  "oracle_commit": "f3d3eb79b9b1f31b4f973d2ed518a8292cedf588",
+  "description": "MCP client configuration discovery corpus (MCFG-001..MCFG-005)",
+  "cases": [
+    {
+      "id": "MCFG-001-jsonc-comments-and-urls",
+      "mode": "discover",
+      "goos": "darwin",
+      "home": "/home/u",
+      "sources": [
+        {
+          "client": "hermes",
+          "path": "/cfg/hermes/config.json",
+          "key": "mcpServers"
+        }
+      ],
+      "files": {
+        "/cfg/hermes/config.json": "{\n  // a line comment with \"quotes\" and // slashes\n  /* block\n     comment */\n  \"mcpServers\": {\n    \"alpha\": {\"command\": \"npx\", \"args\": [\"-y\", \"pkg\"], \"env\": {\"TOKEN\": \"s3cret\"}},\n    \"beta\": {\"url\": \"https://example.test/mcp/*literal*//path\", \"type\": \"sse\"},\n    \"gamma\": {\"command\": \"echo \\\"hi//there\\\"\"}\n  }\n}\n"
+      }
+    },
+    {
+      "id": "MCFG-001-plain-json-entries",
+      "mode": "scan",
+      "goos": "linux",
+      "home": "/home/u",
+      "sources": [
+        {
+          "client": "cursor",
+          "path": "/cfg/cursor/mcp.json",
+          "key": "mcpServers"
+        }
+      ],
+      "files": {
+        "/cfg/cursor/mcp.json": "{\"mcpServers\": {\"a\": {\"command\": \"cmd-a\", \"args\": []}, \"b\": {\"command\": \"cmd-b\", \"unknown_field\": {\"nested\": true}, \"args\": [\"1\", \"2\"]}}}"
+      }
+    },
+    {
+      "id": "MCFG-001-yaml-config",
+      "mode": "scan",
+      "goos": "linux",
+      "home": "/home/u",
+      "sources": [
+        {
+          "client": "hermes",
+          "path": "/cfg/hermes/config.json",
+          "key": "mcpServers"
+        }
+      ],
+      "files": {
+        "/cfg/hermes/config.json": "mcpServers:\n  yaml-stdio:\n    command: \"npx\"\n    args:\n      - \"-y\"\n      - \"pkg\"\n    env:\n      QUOTED: \"1\"\n      UNQUOTED: 2\n  yaml-http:\n    url: https://example.test/sse\n    transport: sse\n"
+      }
+    },
+    {
+      "id": "MCFG-001-jsonc-leading-comment-uses-yaml-path",
+      "mode": "scan",
+      "goos": "linux",
+      "home": "/home/u",
+      "sources": [
+        {
+          "client": "hermes",
+          "path": "/cfg/hermes/config.json",
+          "key": "mcpServers"
+        }
+      ],
+      "files": {
+        "/cfg/hermes/config.json": "// leading comment\n{\"mcpServers\": {\"a\": {\"command\": \"cmd-a\"}}}\n"
+      }
+    },
+    {
+      "id": "MCFG-002-defaults-darwin",
+      "mode": "defaults",
+      "goos": "darwin",
+      "home": "/home/u"
+    },
+    {
+      "id": "MCFG-002-defaults-linux-xdg",
+      "mode": "defaults",
+      "goos": "linux",
+      "home": "/home/u",
+      "env": {
+        "XDG_CONFIG_HOME": "/xdg"
+      }
+    },
+    {
+      "id": "MCFG-002-defaults-linux-fallback",
+      "mode": "defaults",
+      "goos": "linux",
+      "home": "/home/u",
+      "env": {
+        "XDG_CONFIG_HOME": ""
+      }
+    },
+    {
+      "id": "MCFG-002-root-key-fallbacks",
+      "mode": "scan",
+      "goos": "darwin",
+      "home": "/home/u",
+      "use_default_sources": true,
+      "files": {
+        "/home/u/.config/hermes/config.json": "{\"mcp_servers\": {\"via-alternate\": {\"command\": \"cmd-a\"}}}",
+        "/home/u/.cursor/mcp.json": "{\"mcpServers\": {\"declared\": {\"command\": \"cmd-b\"}}}",
+        "/home/u/.config/opencode/config.json": "{\"mcp\": {\"local-one\": {\"type\": \"local\", \"command\": \"cmd-c\"}}}"
+      }
+    },
+    {
+      "id": "MCFG-002-glob-and-root-key",
+      "mode": "discover",
+      "goos": "linux",
+      "home": "/home/u",
+      "sources": [
+        {
+          "client": "vscode",
+          "path": "/cfg/vscode/*.json",
+          "key": "mcpServers"
+        }
+      ],
+      "files": {
+        "/cfg/vscode/one.json": "{\"mcpServers\": {\"one\": {\"command\": \"cmd-one\"}}}",
+        "/cfg/vscode/two.json": "{\"mcp\": {\"two\": {\"command\": \"cmd-two\"}}}"
+      }
+    },
+    {
+      "id": "MCFG-003-transport-and-env-merging",
+      "mode": "scan",
+      "goos": "linux",
+      "home": "/home/u",
+      "sources": [
+        {
+          "client": "opencode",
+          "path": "/cfg/opencode/config.json",
+          "key": "mcp"
+        }
+      ],
+      "files": {
+        "/cfg/opencode/config.json": "{\"mcp\": {\"stdio-plain\": {\"command\": \"cmd-a\", \"args\": [\"--flag\"]}, \"http-url\": {\"url\": \"https://example.test/mcp\"}, \"sse-type\": {\"url\": \"https://example.test/sse\", \"type\": \"sse\"}, \"transport-passthrough\": {\"command\": \"cmd-b\", \"transport\": \"SSE\"}, \"env-merge\": {\"command\": \"cmd-c\", \"env\": {\"SHARED\": \"env\", \"ONLY_ENV\": \"1\"}, \"environment\": {\"SHARED\": \"environment\", \"ONLY_ENVIRONMENT\": \"2\"}}, \"empty-env\": {\"command\": \"cmd-d\", \"env\": {}}}}"
+      }
+    },
+    {
+      "id": "MCFG-003-opencode-local-remote-types",
+      "mode": "scan",
+      "goos": "linux",
+      "home": "/home/u",
+      "sources": [
+        {
+          "client": "opencode",
+          "path": "/cfg/opencode/config.json",
+          "key": "mcp"
+        }
+      ],
+      "files": {
+        "/cfg/opencode/config.json": "{\"mcp\": {\"local-lower\": {\"type\": \"local\", \"command\": \"cmd-a\"}, \"remote-lower\": {\"type\": \"remote\", \"url\": \"https://example.test/r\"}, \"LOCAL-upper\": {\"type\": \"LOCAL\", \"command\": \"cmd-b\"}, \"no-type-with-url\": {\"url\": \"https://example.test/x\"}, \"non-string-fields\": {\"command\": 42, \"args\": \"not-a-list\"}}}"
+      }
+    },
+    {
+      "id": "MCFG-004-missing-file-scan",
+      "mode": "scan",
+      "goos": "linux",
+      "home": "/home/u",
+      "sources": [
+        {
+          "client": "hermes",
+          "path": "/cfg/hermes/config.json",
+          "key": "mcpServers"
+        }
+      ],
+      "files": {}
+    },
+    {
+      "id": "MCFG-004-missing-file-discover",
+      "mode": "discover",
+      "goos": "darwin",
+      "home": "/home/u",
+      "sources": [
+        {
+          "client": "hermes",
+          "path": "/cfg/hermes/config.json",
+          "key": "mcpServers"
+        },
+        {
+          "client": "cursor",
+          "path": "/cfg/cursor/mcp.json",
+          "key": "mcpServers"
+        }
+      ],
+      "files": {}
+    },
+    {
+      "id": "MCFG-004-glob-no-match",
+      "mode": "discover",
+      "goos": "linux",
+      "home": "/home/u",
+      "sources": [
+        {
+          "client": "vscode",
+          "path": "/cfg/vscode/*.json",
+          "key": "mcpServers"
+        }
+      ]
+    },
+    {
+      "id": "MCFG-004-glob-path-in-scan-is-literal",
+      "mode": "scan",
+      "goos": "linux",
+      "home": "/home/u",
+      "sources": [
+        {
+          "client": "vscode",
+          "path": "/cfg/vscode/*.json",
+          "key": "mcpServers"
+        }
+      ],
+      "files": {}
+    },
+    {
+      "id": "MCFG-004-invalid-json",
+      "mode": "discover",
+      "goos": "darwin",
+      "home": "/home/u",
+      "sources": [
+        {
+          "client": "hermes",
+          "path": "/cfg/hermes/config.json",
+          "key": "mcpServers"
+        }
+      ],
+      "files": {
+        "/cfg/hermes/config.json": "{\"mcpServers\": {"
+      }
+    },
+    {
+      "id": "MCFG-004-servers-key-not-an-object-json",
+      "mode": "scan",
+      "goos": "linux",
+      "home": "/home/u",
+      "sources": [
+        {
+          "client": "hermes",
+          "path": "/cfg/hermes/config.json",
+          "key": "mcpServers"
+        }
+      ],
+      "files": {
+        "/cfg/hermes/config.json": "{\"mcpServers\": [1, 2]}"
+      }
+    },
+    {
+      "id": "MCFG-004-key-not-found-falls-through-to-yaml",
+      "mode": "scan",
+      "goos": "linux",
+      "home": "/home/u",
+      "sources": [
+        {
+          "client": "hermes",
+          "path": "/cfg/hermes/config.json",
+          "key": "mcpServers"
+        }
+      ],
+      "files": {
+        "/cfg/hermes/config.json": "{\"somethingElse\": {\"a\": {\"command\": \"cmd-a\"}}}"
+      }
+    },
+    {
+      "id": "MCFG-004-entry-field-type-mismatch-json",
+      "mode": "scan",
+      "goos": "linux",
+      "home": "/home/u",
+      "sources": [
+        {
+          "client": "hermes",
+          "path": "/cfg/hermes/config.json",
+          "key": "mcpServers"
+        }
+      ],
+      "files": {
+        "/cfg/hermes/config.json": "{\"mcpServers\": {\"a\": {\"args\": \"not-a-list\"}}}"
+      }
+    },
+    {
+      "id": "MCFG-004-yaml-servers-key-not-an-object",
+      "mode": "scan",
+      "goos": "linux",
+      "home": "/home/u",
+      "sources": [
+        {
+          "client": "hermes",
+          "path": "/cfg/hermes/config.json",
+          "key": "mcpServers"
+        }
+      ],
+      "files": {
+        "/cfg/hermes/config.json": "mcpServers:\n  - a\n  - b\n"
+      }
+    },
+    {
+      "id": "MCFG-004-yaml-skips-malformed-entries",
+      "mode": "scan",
+      "goos": "linux",
+      "home": "/home/u",
+      "sources": [
+        {
+          "client": "hermes",
+          "path": "/cfg/hermes/config.json",
+          "key": "mcpServers"
+        }
+      ],
+      "files": {
+        "/cfg/hermes/config.json": "mcpServers:\n  good:\n    command: \"cmd-good\"\n  bad-scalar: just-a-string\n  bad-list:\n    - a\n"
+      }
+    },
+    {
+      "id": "MCFG-005-opencode-unknown-type",
+      "mode": "scan",
+      "goos": "linux",
+      "home": "/home/u",
+      "sources": [
+        {
+          "client": "opencode",
+          "path": "/cfg/opencode/config.json",
+          "key": "mcp"
+        }
+      ],
+      "files": {
+        "/cfg/opencode/config.json": "{\"mcp\": {\"mystery\": {\"type\": \"websocket\", \"command\": \"cmd-a\"}, \"empty-type\": {\"type\": \"\", \"command\": \"cmd-b\"}}}"
+      }
+    },
+    {
+      "id": "MCFG-005-missing-command-and-url",
+      "mode": "scan",
+      "goos": "linux",
+      "home": "/home/u",
+      "sources": [
+        {
+          "client": "hermes",
+          "path": "/cfg/hermes/config.json",
+          "key": "mcpServers"
+        }
+      ],
+      "files": {
+        "/cfg/hermes/config.json": "{\"mcpServers\": {\"naked\": {}, \"env-only\": {\"env\": {\"A\": \"1\"}}, \"ok\": {\"command\": \"cmd-ok\"}}}"
+      }
+    },
+    {
+      "id": "MCFG-005-empty-servers-map",
+      "mode": "scan",
+      "goos": "darwin",
+      "home": "/home/u",
+      "sources": [
+        {
+          "client": "hermes",
+          "path": "/cfg/hermes/config.json",
+          "key": "mcpServers"
+        }
+      ],
+      "files": {
+        "/cfg/hermes/config.json": "{\"mcpServers\": {}}"
+      }
+    }
+  ]
+}

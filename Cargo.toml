@@ -6,6 +6,7 @@ members = [
   "rust/symaira-core-log",
   "rust/symaira-core-config",
   "rust/symaira-core-mcp",
+  "rust/symaira-core-mcpcfg",
   "rust/symaira-core-fs",
   "rust/symaira-core-secretref",
   "rust/symaira-core-sqlite",
@@ -29,3 +30,4 @@ serde_ignored = "=0.1.14"
 thiserror = "=2.0.20"
 toml = "=1.1.5"
 tracing = "=0.1.41"
+yaml-rust2 = "=0.13.0"

@@ -1,0 +1,19 @@
+[package]
+name = "symaira-core-mcpcfg"
+version = "0.0.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+publish = false
+
+description = "Client MCP configuration discovery for Symaira CoreKit"
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+yaml-rust2.workspace = true
+
+[[bin]]
+name = "symaira-mcpcfg-fixture"
+path = "src/bin/mcpcfg_fixture.rs"

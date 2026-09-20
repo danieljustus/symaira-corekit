@@ -1,4 +1,4 @@
-.PHONY: build test lint fmt-check clean consumer-drift port-consumer-verify consumer-pin-regression golangci-lint rust-port-validate port-fixture-source-check port-oracle-selftest port-contract rust-lint rust-test rust-foundation-contract rust-fs-secret-contract rust-mcp-contract rust-release-contract rust-miri rust-hardening mcp-differential mcp-fuzz-smoke port-consumer-smoke rust-sqlite-refreeze
+.PHONY: build test lint fmt-check clean consumer-drift port-consumer-verify consumer-pin-regression golangci-lint rust-port-validate port-fixture-source-check port-oracle-selftest port-contract rust-lint rust-test rust-foundation-contract rust-fs-secret-contract rust-mcp-contract rust-mcpcfg-contract rust-release-contract rust-miri rust-hardening mcp-differential mcp-fuzz-smoke port-consumer-smoke rust-sqlite-refreeze
 
 build:
 	CGO_ENABLED=0 go build ./...
@@ -87,6 +87,12 @@ rust-mcp-contract:
 	cargo check -p symaira-core-mcp --all-targets --all-features --locked
 	cargo clippy -p symaira-core-mcp --all-targets --all-features --locked -- -D warnings
 	cargo test -p symaira-core-mcp --all-features --locked
+
+rust-mcpcfg-contract:
+	cargo fmt --all --check
+	cargo check -p symaira-core-mcpcfg --all-targets --all-features --locked
+	cargo clippy -p symaira-core-mcpcfg --all-targets --all-features --locked -- -D warnings
+	cargo test -p symaira-core-mcpcfg --all-features --locked
 
 rust-release-contract: consumer-pin-regression
 	cargo semver-checks check-release
