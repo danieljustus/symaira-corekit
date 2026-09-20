@@ -1,4 +1,4 @@
-# Resume checkpoint — SQLite slice complete, RUST-014/015 open
+# Resume checkpoint — SQLite slice complete, RUST-010 ready, RUST-014/015 open
 
 Owner: migration coordinator. No active CoreKit writer worktree. `RUST-006` is
 `complete` and SQL-001 through SQL-006 are `parity` since the promotion decision
@@ -8,22 +8,67 @@ as `541683a` (PR #291). Main baseline for the SQLite candidate remains
 
 ## Current state
 
-`RUST-014` stays `in_progress`: `python3 port/release/verify.py --dry-run` and the
-release/consumer governance tests pass, but registry evidence does not exist and
-the Rust crates are still `publish = false`. `cargo semver-checks check-release`
-must not be counted as API-compatibility evidence here — it skips every
-candidate (`Skipping <crate> v0.0.0 (current)`) because nothing is published, and
-the dry-run now prints `semver baseline: none … API compatibility stays
-unverified` instead of leaving the vacuum implicit. `RUST-015` stays `blocked` on
-released-consumer evidence, and `RUST-007` through `RUST-012` stay demand-driven
-`deferred`.
+`RUST-010` (MCP configuration discovery) is `ready`: `demand-assessment.md`
+records the two Rust consumers that duplicate the concern and the searches that
+show why `RUST-007`, `RUST-008`, `RUST-009`, `RUST-011` and `RUST-012` stay
+`deferred`. Every demand-driven item now points at that document through
+`demand_evidence`.
 
-One evidence limitation is recorded in `sqlite-demand.md`: the measured
-`SQL-006-80-BUILD` cost report lives on the secure-runtime volume
-(`/Volumes/SymairaSecureRuntime`), which is currently detached, so its numbers
-were not re-read during the promotion. Re-read that report when the volume is
-mounted again; the promoted crate bytes are unchanged since the consumers
-adopted `0f441fb`.
+`RUST-015` stays `blocked`, but no longer for an unexamined reason:
+`consumer-rollout-findings.md` splits the 32 verifier findings into stale
+`checkout_commit` records, stale `rust.status`, consumer checkout hygiene, and
+the genuine missing `evidence.standalone`/`rollback` for eraseme and vault.
+Tracked in corekit#295 plus eraseme#993, desktop#984 and vault#1080.
+
+`RUST-014` stays `in_progress`. `python3 port/release/verify.py --dry-run` passes
+and the release/consumer governance tests pass, but registry evidence does not
+exist and the crates stay `publish = false`. `cargo semver-checks check-release`
+must not be counted as API-compatibility evidence — it skips every candidate
+(`Skipping <crate> v0.0.0 (current)`) because nothing is published, and the
+dry-run now prints `semver baseline: none … API compatibility stays unverified`.
+`release-manifest.md` fixes the sequencing: no publication before the full
+migration, consumer rollout and registry evidence are complete, so no
+publication decision is available yet.
+
+## SQLite cost evidence (re-measurement in progress)
+
+The `SQL-006-80-BUILD` cost report of 2026-09-17 lives on the secure-runtime disk
+image and is **not** re-readable as-is: the volume was detached, and after
+mounting it the verifier still rejects the report —
+
+```
+$ NVME_RUNTIME=/Volumes/SymairaSecureRuntime NVME_STORAGE=/Volumes/1TB_NVMe_SN850X/Dev/Symaira_Dev \
+  python3 scripts/rust-port/sqlite/cost_gate.py --check \
+  --report /Volumes/SymairaSecureRuntime/BuildTargets/reports/sql006-consumer-cost-20260917-v1.json
+FAIL SQL-006 cost gate: runner/validator hash mismatch
+```
+
+The report binds `runner_sha256` to the bytes of `cost_gate.py` at measurement
+time (`9e7b46c3…`); the current runner is `6da087b9…`, because that file changed
+inside PR #286 after the measurement. The contract hash still matches
+(`3889439…`). The report therefore cannot be re-validated at any revision of
+`main`; a fresh measurement is required.
+
+Two repairs were needed before a re-run could start at all:
+
+1. The secure-runtime disk image
+   (`BuildTargets/SymairaSecureRuntime.sparsebundle` on the Dev NVMe) was
+   detached; it is mounted again at `/Volumes/SymairaSecureRuntime`.
+2. `dev-external --status` rejected the dev-storage layout because
+   `Repos/symaira-corekit/target` and `Repos/symaira-vault/target` had been
+   replaced by real directories instead of symlinks. The two replaced trees were
+   moved (not deleted) to
+   `/Volumes/1TB_NVMe_SN850X/AI/Hermes Workspace/dev-cache-repair-20260920/` and
+   the symlinks to `Symaira_Dev/builds/<repo>/target` were restored;
+   `dev-external --status` now reports `mounted: true, verified_links: 9`.
+
+The 80-build re-run (`cost_gate.py --run`) writes
+`BuildTargets/reports/sql006-consumer-cost-20260920-v1.json` and was still
+running when this checkpoint was written. Until it passes, the promotion of
+`RUST-006` rests on the earlier validated report plus the byte-identical crate
+revision (consumers pin `0f441fb`; `git diff 0f441fb..541683a` over the crate,
+its path dependency and the build inputs is empty). Update this section with the
+new report path, hash and verdict when the run finishes.
 
 ## Candidate-source scope (integrated)
 
@@ -77,7 +122,8 @@ make rust-sqlite-contract
 port-input change. It regenerates the manifest and writes a new capture; it
 never runs automatically, and it does not repoint the acceptance tests.
 
-Next: `RUST-014` needs an explicit decision to publish the adopted Rust crates
-(version/order/provenance and a registry account) before registry evidence can
-exist; `RUST-015` needs released-consumer evidence and stays blocked until then.
-No release, publication, Go removal or product cutover is authorized here.
+Next: `RUST-010` is the only `ready` item — its slice needs the contract fixtures
+and differential suite that its acceptance commands name. `RUST-014` needs an
+explicit publication decision plus registry evidence; `RUST-015` needs the four
+classes in `consumer-rollout-findings.md` closed. No release, publication, Go
+removal or product cutover is authorized here.

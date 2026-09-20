@@ -1,6 +1,6 @@
 # Go→Rust migration handoff
 
-Status: **RUST-001 through RUST-006 and RUST-013 complete; RUST-014 remains in progress because registry evidence does not exist; RUST-015 is blocked on released consumer evidence. Go remains the supported executable oracle and no broad cutover is implied**.
+Status: **RUST-001 through RUST-006 and RUST-013 complete; RUST-010 is ready after the demand assessment; RUST-014 remains in progress because registry evidence does not exist; RUST-015 is blocked on released consumer evidence. Go remains the supported executable oracle and no broad cutover is implied**.
 
 This directory freezes the starting point for a contract-first Rust implementation of `symaira-corekit`. The Go implementation remains supported, buildable and the executable oracle while Go consumers exist. Rust crates are added beside it and are adopted package by package; this is not a flag-day repository rewrite.
 
@@ -91,6 +91,8 @@ Stop and reassess when any of these holds:
 - [`contract-matrix.json`](contract-matrix.json) — stable observable-contract IDs.
 - [`implementation-plan.md`](implementation-plan.md) — ordered vertical slices.
 - [`release-manifest.md`](release-manifest.md) — RUST-014 tag, package, provenance and publication contract.
+- [`demand-assessment.md`](demand-assessment.md) — search evidence and verdicts for the demand-driven slices (`RUST-007` through `RUST-012`).
+- [`consumer-rollout-findings.md`](consumer-rollout-findings.md) — the four classes that block the RUST-015 released-consumer gate.
 - [`work-items.json`](work-items.json) — machine-readable acyclic work graph.
 - [`validate.py`](validate.py) — validates schemas, IDs, links, coverage and graph barriers.
 - [`../../testdata/rust-port/`](../../testdata/rust-port/) — generated public API, contract fixtures, neutral cases, isolation limits, paired-consumer canaries, and RUST-005 adoption evidence/reports.

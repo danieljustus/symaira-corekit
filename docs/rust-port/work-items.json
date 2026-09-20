@@ -207,6 +207,7 @@
       ],
       "status": "deferred",
       "demand_class": "demand_driven",
+      "demand_evidence": "demand-assessment.md",
       "acceptance_commands": [
         "make rust-update-contract",
         "python3 scripts/rust-port/diff.py --suite update --native",
@@ -236,6 +237,7 @@
       ],
       "status": "deferred",
       "demand_class": "demand_driven",
+      "demand_evidence": "demand-assessment.md",
       "acceptance_commands": [
         "make rust-llm-contract",
         "python3 scripts/rust-port/diff.py --suite llm",
@@ -263,6 +265,7 @@
       ],
       "status": "deferred",
       "demand_class": "demand_driven",
+      "demand_evidence": "demand-assessment.md",
       "acceptance_commands": [
         "make rust-audit-evidence-contract",
         "cargo +nightly miri test -p symaira-core-audit -p symaira-core-evidence",
@@ -283,8 +286,9 @@
         "MCFG-004",
         "MCFG-005"
       ],
-      "status": "deferred",
+      "status": "ready",
       "demand_class": "demand_driven",
+      "demand_evidence": "demand-assessment.md",
       "acceptance_commands": [
         "make rust-mcpcfg-contract",
         "cargo nextest run -p symaira-core-mcpcfg",
@@ -309,6 +313,7 @@
       ],
       "status": "deferred",
       "demand_class": "demand_driven",
+      "demand_evidence": "demand-assessment.md",
       "acceptance_commands": [
         "make rust-dom-contract",
         "python3 scripts/rust-port/diff.py --suite dom --comparison bytes",
@@ -334,6 +339,7 @@
       ],
       "status": "deferred",
       "demand_class": "demand_driven",
+      "demand_evidence": "demand-assessment.md",
       "acceptance_commands": [
         "make rust-vector-contract",
         "cargo bench -p symaira-core-vector",
