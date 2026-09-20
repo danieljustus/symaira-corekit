@@ -16,7 +16,12 @@ symaira-corekit
 vendor/
 __pycache__/
 *.py[cod]
-target/
+# `/target` (not `target/`) also matches the symlinked build directory that the
+# dev-storage convention places here; the trailing-slash form matches only real
+# directories, which left the symlink untracked and made the release verifier
+# reject the checkout as dirty.
+/target
+/fuzz/target/
 
 # IDE
 .idea/
