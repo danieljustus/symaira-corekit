@@ -16,7 +16,7 @@ do not.
 | --- | --- | --- |
 | 1 — stale `checkout_commit` | 5 | all five records |
 | 2 — wrong `rust.status` | 0 — fixed | — |
-| 3 — consumer checkout hygiene | 7 | brain (4), eraseme (2), vault (1) |
+| 3 — consumer checkout hygiene | 5 | brain (3), eraseme (2) |
 | 4 — missing standalone/rollback evidence | 10 | all five consumers |
 
 ## 1. Stale `checkout_commit` — deliberately re-pinned at closure, not now
@@ -60,7 +60,7 @@ evaluates the real pins.
 
 ## 3. Consumer checkout hygiene — consumer-side, moving
 
-Snapshot of the 2026-09-21 run:
+Snapshot of the 2026-09-21 run, *before* the generated-tree rule below:
 
 - `symaira-brain` (4): a `target` symlink directory plus tracked paths under
   `.cursor/` (`.cursor/rules/symbrain.mdc`, `cmd/symbrain/.cursor/rules/symbrain.mdc`)
@@ -76,12 +76,36 @@ Snapshot of the 2026-09-21 run:
 - `symaira-desktop`: none this run; the 2026-09-20 `.build` findings are gone —
   [desktop#984](https://github.com/danieljustus/symaira-desktop/issues/984).
 
+### Decided 2026-09-21: the gate gains the generated-tree rule
+
 `target` symlink directories are this machine's dev-storage layout
 (`dev-external` symlinks build trees onto the NVMe), not tracked consumer
-source. The gate rejects any symlink directory inside a checkout, so a consumer
-cannot pass while such a symlink exists; whether closure removes the symlinks
-on the verifying checkout or the gate gains an explicit generated-tree rule is
-still open and recorded here.
+source. The open question — remove the symlinks on the verifying checkout, or
+give the gate an explicit generated-tree rule — is decided in favour of the
+gate, because the checkout layout is not the consumer's and would have to be
+un-done on every verifying machine.
+
+The walk already pruned `FORBIDDEN_PATH_PARTS` (`target`, `.cursor`, `.build`,
+`node_modules`, …) for real directories; the symlink check simply ran first, so
+the same tree produced a finding when it was a symlink. `_check_checkout_snapshot`
+now prunes the forbidden name first and rejects symlink directories only outside
+that set. The security boundary is unchanged: every *tracked* path is still
+resolved and rejected if it is a symlink or contains a forbidden component, and
+a non-generated symlink directory (e.g. an ignored `rustlink` pointing at a
+hidden Cargo source tree) is still a finding — both covered by existing tests,
+plus `test_symlinked_generated_tree_is_excluded_like_a_real_one`.
+
+Effect on the 2026-09-21 run: 22 → 20 findings. The three `target` findings are
+gone. What remains in class 3 is genuinely consumer-side:
+
+- `symaira-brain` (3): tracked files under forbidden tooling paths
+  (`.cursor/rules/symbrain.mdc`, `cmd/symbrain/.cursor/rules/symbrain.mdc`,
+  `.phase0-evidence/PHASE0_REPORT.md`) — the consumer tracks source-shaped files
+  in trees the gate treats as generated. Consumer-side, symaira-brain#635.
+- `symaira-eraseme` (2): `.agents/skills/symaira-eraseme` and
+  `.windsurf/skills/symaira-eraseme` symlink out of the checkout into an
+  external skills source. Deliberately *not* added to the generated-tree set:
+  they point at content outside the pinned snapshot. eraseme#993.
 
 ## 4. The genuine released-consumer evidence — five consumers, 10 findings
 

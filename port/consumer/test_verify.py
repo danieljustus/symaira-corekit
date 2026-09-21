@@ -911,6 +911,24 @@ import (
             report = verify.verify_manifest(manifest, workspace_root=root, corekit_root=corekit)
             self.assertEqual(report["status"], "passed", report)
 
+    def test_symlinked_generated_tree_is_excluded_like_a_real_one(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            root = Path(raw)
+            manifest, corekit, consumer, _, _ = make_fixture(root)
+            external = root / "external-build-volume"
+            external.mkdir()
+            (external / "generated.rs").write_text("fn main() {}\n", encoding="utf-8")
+            (consumer / ".gitignore").write_text("target\n", encoding="utf-8")
+            os.symlink(external, consumer / "target")
+            subprocess.run(["git", "-C", str(consumer), "add", ".gitignore"], check=True)
+            subprocess.run(["git", "-C", str(consumer), "commit", "-qm", "ignore-target"], check=True)
+            document = json.loads(manifest.read_text(encoding="utf-8"))
+            document["consumers"][0]["checkout_commit"] = git(consumer, "rev-parse", "HEAD")
+            manifest.write_text(json.dumps(document), encoding="utf-8")
+
+            report = verify.verify_manifest(manifest, workspace_root=root, corekit_root=corekit)
+            self.assertEqual(report["status"], "passed", report)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -260,14 +260,19 @@ def _check_checkout_snapshot(
             path = Path(directory) / name
             if name == ".git":
                 continue
+            # A generated or tooling tree is excluded whether it is a real
+            # directory or a symlink: this machine's dev-storage layout points
+            # `target` at an external build volume. Tracked paths are still
+            # resolved and rejected below, so a symlink cannot substitute
+            # verified source.
+            if name in FORBIDDEN_PATH_PARTS:
+                continue
             try:
                 is_symlink = stat.S_ISLNK(path.lstat().st_mode)
             except OSError:
                 is_symlink = False
             if is_symlink:
                 _add(findings, repository, "checkout.path", f"checkout contains a symlink directory: {path.relative_to(checkout).as_posix()}")
-                continue
-            if name in FORBIDDEN_PATH_PARTS:
                 continue
             kept_directories.append(name)
         directories[:] = kept_directories
