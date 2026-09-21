@@ -18,7 +18,17 @@ demand-driven item is `ready` any more.
 
 `RUST-015` stays `blocked`. `consumer-rollout-findings.md` splits the verifier
 findings into four classes; the stale-`rust.status` class is fixed as of
-2026-09-21: brain, browse and desktop now record their real Git adoption
+2026-09-21, and the class-3 open question (remove the dev-storage symlinks or
+give the gate a generated-tree rule) is decided the same day in favour of the
+gate: `_check_checkout_snapshot` prunes `FORBIDDEN_PATH_PARTS` before the
+symlink check, so a `target` tree is excluded whether it is a real directory or
+a symlink. Tracked paths are still resolved and rejected, and a non-generated
+symlink directory is still a finding. The workspace run moved 22 → 20 findings;
+the remaining class-3 findings (brain 3, eraseme 2) are consumer-side. Evidence:
+48 tests in `port/consumer`, including the new
+`test_symlinked_generated_tree_is_excluded_like_a_real_one`.
+
+Earlier the same day: brain, browse and desktop now record their real Git adoption
 (revision `d382b861`, `symaira-core-version`, `=0.0.0`) and the verifier reads
 brain's nested `browse/` Cargo workspace through the record's new `cargo_root`
 field. Remaining: stale `checkout_commit` records (deliberately re-pinned at
