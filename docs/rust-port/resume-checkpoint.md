@@ -16,11 +16,15 @@ consumers that duplicated the concern and the searches that show why `RUST-007`,
 demand-driven item points at that document through `demand_evidence`; no
 demand-driven item is `ready` any more.
 
-`RUST-015` stays `blocked`, but no longer for an unexamined reason:
-`consumer-rollout-findings.md` splits the 32 verifier findings into stale
-`checkout_commit` records, stale `rust.status`, consumer checkout hygiene, and
-the genuine missing `evidence.standalone`/`rollback` for eraseme and vault.
-Tracked in corekit#295 plus eraseme#993, desktop#984 and vault#1080.
+`RUST-015` stays `blocked`. `consumer-rollout-findings.md` splits the verifier
+findings into four classes; the stale-`rust.status` class is fixed as of
+2026-09-21: brain, browse and desktop now record their real Git adoption
+(revision `d382b861`, `symaira-core-version`, `=0.0.0`) and the verifier reads
+brain's nested `browse/` Cargo workspace through the record's new `cargo_root`
+field. Remaining: stale `checkout_commit` records (deliberately re-pinned at
+the evidence snapshot), consumer checkout hygiene, and the missing
+`evidence.standalone`/`rollback` for all five records. Tracked in corekit#249
+plus eraseme#993, desktop#984, vault#1080 and symaira-brain#635.
 
 `RUST-014` stays `in_progress`. `python3 port/release/verify.py --dry-run` passes
 and the release/consumer governance tests pass, but registry evidence does not
@@ -31,6 +35,25 @@ dry-run now prints `semver baseline: none … API compatibility stays unverified
 `release-manifest.md` fixes the sequencing: no publication before the full
 migration, consumer rollout and registry evidence are complete, so no
 publication decision is available yet.
+
+## Consumer-record refresh (2026-09-21)
+
+`docs/consumers.json` records for `symaira-brain`, `symaira-browse` and
+`symaira-desktop` said `rust.status: not_adopted` while their tracked Cargo
+manifests and locks pin `symaira-core-version` from CoreKit git revision
+`d382b861` (`v0.17.0-20-gd382b861`). The refresh records the verified facts and
+adds `cargo_root` support to `port/consumer/verify.py` so brain's nested
+`browse/` Cargo workspace is read where the pin actually lives; three
+regression tests cover the nested lock, the missing-`cargo_root` negative
+control and the path-escape checks.
+
+Evidence: `python3 -m unittest discover -s port/consumer -p 'test_*.py'` — 47
+tests pass. The verifier run against the workspace moved from 25 to 22
+findings: all nine `rust.not_adopted.present` findings are gone, no `rust.*`
+finding replaced them, and the remaining findings are the open classes in
+`consumer-rollout-findings.md`. Consumer checkouts move constantly (several
+branch switches during the run), so `checkout.commit` and `checkout.path`
+messages are a snapshot, not a stable list.
 
 ## MCP-config discovery slice (RUST-010)
 
@@ -197,7 +220,8 @@ port-input change. It regenerates the manifest and writes a new capture; it
 never runs automatically, and it does not repoint the acceptance tests.
 
 Next: no demand-driven item is `ready`. `RUST-014` needs an explicit publication
-decision plus registry evidence; `RUST-015` needs the four classes in
-`consumer-rollout-findings.md` closed. A further slice requires new
-two-consumer demand evidence in `demand-assessment.md`. No release, publication,
-Go removal or product cutover is authorized here.
+decision plus registry evidence; `RUST-015` needs the remaining classes in
+`consumer-rollout-findings.md` closed (class 2 is fixed; class 1 is deliberately
+re-pinned at the evidence snapshot). A further slice requires new two-consumer
+demand evidence in `demand-assessment.md`. No release, publication, Go removal
+or product cutover is authorized here.
