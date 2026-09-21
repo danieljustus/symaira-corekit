@@ -667,6 +667,21 @@ def _check_rust(
     expected_package = rust.get("package", COREKIT_PACKAGE)
     expected_version = rust.get("version")
     expected_revision = rust.get("revision")
+    # A consumer can pin CoreKit from a nested Cargo workspace below its
+    # checkout root. ``cargo_root`` names that directory so workspace
+    # dependency tables and the lockfile are read from the workspace that
+    # actually declares the pin; the path must stay inside the checkout.
+    cargo_root_value = rust.get("cargo_root")
+    cargo_root = checkout
+    if cargo_root_value is not None:
+        try:
+            cargo_root = _safe_non_symlink_child(checkout, cargo_root_value)
+        except (OSError, ValueError) as error:
+            _add(findings, repository, "rust.cargo_root", f"invalid cargo_root: {error}")
+            return
+        if not (cargo_root / "Cargo.toml").is_file():
+            _add(findings, repository, "rust.cargo_root", f"cargo_root has no Cargo.toml: {cargo_root_value!r}")
+            return
     pins: list[tuple[Path, Any]] = []
     for relative in manifest_paths:
         if not isinstance(relative, str) or Path(relative).name != "Cargo.toml":
@@ -688,7 +703,7 @@ def _check_rust(
                 _add(findings, repository, "rust.version", f"{relative}: package version is {package.get('version')!r}, expected {expected_version!r}")
         for dependency, spec in cargo_specs(path):
             if isinstance(spec, dict) and spec.get("workspace") is True:
-                workspace_manifest = checkout / "Cargo.toml"
+                workspace_manifest = cargo_root / "Cargo.toml"
                 if workspace_manifest.is_file():
                     try:
                         workspace_document = tomllib.loads(workspace_manifest.read_text(encoding="utf-8"))
@@ -728,7 +743,7 @@ def _check_rust(
             if version is not None and version != registry_version:
                 _add(findings, repository, "rust.pin.registry_version", f"{relative}: registry version {version!r} != ={registry_version}")
     try:
-        lock_path = _safe_non_symlink_child(checkout, "Cargo.lock")
+        lock_path = _safe_non_symlink_child(checkout, (cargo_root / "Cargo.lock").relative_to(checkout).as_posix())
     except ValueError:
         _add(findings, repository, "rust.lock.path", "Cargo.lock path is unsafe or forbidden")
         _check_release_ancestry(repository, rust, corekit_root, findings)

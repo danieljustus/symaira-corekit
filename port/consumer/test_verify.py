@@ -373,6 +373,73 @@ import (
             report = verify.verify_manifest(manifest, workspace_root=root, corekit_root=corekit)
             self.assertTrue(any(item["code"] == "rust.lock.checksum" for item in report["findings"]))
 
+    def test_cargo_root_reads_a_nested_workspace_lock(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            root = Path(raw)
+            manifest, corekit, consumer, _, adoption_commit = make_fixture(root, status="git")
+            nested = consumer / "browse"
+            nested.mkdir()
+            (consumer / "Cargo.toml").unlink()
+            (consumer / "Cargo.lock").rename(nested / "Cargo.lock")
+            spec = (
+                f'symaira-core-version = {{ git = "{verify.COREKIT_URL}", '
+                f'rev = "{adoption_commit}", version = "=0.0.0" }}'
+            )
+            (nested / "Cargo.toml").write_text(
+                '[workspace]\nmembers = ["protocol"]\nresolver = "2"\n\n'
+                f"[workspace.dependencies]\n{spec}\n",
+                encoding="utf-8",
+            )
+            (nested / "protocol").mkdir()
+            (nested / "protocol" / "Cargo.toml").write_text(
+                '[package]\nname = "nested-protocol"\nversion = "0.0.0"\n\n'
+                '[dependencies]\nsymaira-core-version.workspace = true\n',
+                encoding="utf-8",
+            )
+            (consumer / "Cargo.toml").write_text("[workspace]\nmembers = []\n", encoding="utf-8")
+            (consumer / "Cargo.lock").write_text("version = 4\n", encoding="utf-8")
+            document = json.loads(manifest.read_text(encoding="utf-8"))
+            rust = document["consumers"][0]["rust"]
+            rust["cargo_root"] = "browse"
+            rust["manifest_paths"] = ["browse/Cargo.toml", "browse/protocol/Cargo.toml"]
+            subprocess.run(["git", "-C", str(consumer), "add", "-A"], check=True)
+            subprocess.run(["git", "-C", str(consumer), "commit", "-qm", "nested-workspace"], check=True)
+            document["consumers"][0]["checkout_commit"] = git(consumer, "rev-parse", "HEAD")
+            manifest.write_text(json.dumps(document), encoding="utf-8")
+            report = verify.verify_manifest(manifest, workspace_root=root, corekit_root=corekit)
+            self.assertEqual(report["status"], "passed", report)
+
+    def test_nested_lock_is_not_guessed_without_cargo_root(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            root = Path(raw)
+            manifest, corekit, consumer, _, _ = make_fixture(root, status="git")
+            nested = consumer / "browse"
+            nested.mkdir()
+            (consumer / "Cargo.toml").rename(nested / "Cargo.toml")
+            (consumer / "Cargo.lock").rename(nested / "Cargo.lock")
+            (consumer / "Cargo.toml").write_text("[workspace]\nmembers = []\n", encoding="utf-8")
+            (consumer / "Cargo.lock").write_text("version = 4\n", encoding="utf-8")
+            document = json.loads(manifest.read_text(encoding="utf-8"))
+            document["consumers"][0]["rust"]["manifest_paths"] = ["browse/Cargo.toml"]
+            subprocess.run(["git", "-C", str(consumer), "add", "-A"], check=True)
+            subprocess.run(["git", "-C", str(consumer), "commit", "-qm", "nested-without-cargo-root"], check=True)
+            document["consumers"][0]["checkout_commit"] = git(consumer, "rev-parse", "HEAD")
+            manifest.write_text(json.dumps(document), encoding="utf-8")
+            report = verify.verify_manifest(manifest, workspace_root=root, corekit_root=corekit)
+            codes = [item["code"] for item in report["findings"]]
+            self.assertIn("rust.lock.unique", codes, report)
+
+    def test_cargo_root_must_stay_inside_the_checkout(self) -> None:
+        for cargo_root in ("../outside", "target", 7):
+            with self.subTest(cargo_root=cargo_root), tempfile.TemporaryDirectory() as raw:
+                root = Path(raw)
+                manifest, corekit, _, _, _ = make_fixture(root, status="git")
+                document = json.loads(manifest.read_text(encoding="utf-8"))
+                document["consumers"][0]["rust"]["cargo_root"] = cargo_root
+                manifest.write_text(json.dumps(document), encoding="utf-8")
+                report = verify.verify_manifest(manifest, workspace_root=root, corekit_root=corekit)
+                self.assertTrue(any(item["code"] == "rust.cargo_root" for item in report["findings"]), report)
+
     def test_command_text_without_structured_report_is_blocked(self) -> None:
         with tempfile.TemporaryDirectory() as raw:
             root = Path(raw)

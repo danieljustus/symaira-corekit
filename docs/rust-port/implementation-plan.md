@@ -246,7 +246,7 @@ Git-revision consumer support remain unchanged.
 
 **Objective:** Finish adoption without pretending Rust crate availability removes the Go API.
 
-**Executable gate:** `python3 port/consumer/verify.py --released-consumers` checks every `docs/consumers.json` record. It distinguishes released Git revisions from registry pins, exact Cargo.toml versions, Cargo.lock source/checksum, release-tag ancestry, Go imports, and explicit standalone/rollback evidence. The current run is expected to exit 1 with blockers; `make consumer-drift` runs the same verifier from the canonical checkout even when invoked from a registered worktree.
+**Executable gate:** `python3 port/consumer/verify.py --released-consumers` checks every `docs/consumers.json` record. It distinguishes released Git revisions from registry pins, exact Cargo.toml versions, Cargo.lock source/checksum, release-tag ancestry, Go imports, and explicit standalone/rollback evidence, and it reads a consumer's nested Cargo workspace through the record's `cargo_root` field. The current run is expected to exit 1 with blockers; `make consumer-drift` runs the same verifier from the canonical checkout even when invoked from a registered worktree.
 
 **Steps:** Track every released Go and Rust consumer, exact pin and package use; migrate consumer by consumer with its own suite; retain Go releases while any released consumer imports a package. Any Go removal is a later, separate major-version proposal with rollback evidence.
 
