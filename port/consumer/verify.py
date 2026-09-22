@@ -520,13 +520,19 @@ def _check_evidence(record: dict[str, Any], checkout: Path, findings: list[Findi
             _evidence_error(findings, repository, name, "report", f"{name} report does not match the committed HEAD: {report_relative}")
             continue
         try:
-            report = json.loads(report_path.read_text(encoding="utf-8"))
+            report_bytes = report_path.read_bytes()
+            report = json.loads(report_bytes.decode("utf-8"))
         except (OSError, UnicodeDecodeError, json.JSONDecodeError) as error:
             _evidence_error(findings, repository, name, "report", f"{name} report is not valid JSON: {error}")
             continue
         if not isinstance(report, dict):
             _evidence_error(findings, repository, name, "report", f"{name} report must contain an object")
             continue
+        report_digest = item.get("report_sha256")
+        if not isinstance(report_digest, str) or not re.fullmatch(r"[0-9a-f]{64}", report_digest):
+            _evidence_error(findings, repository, name, "report.sha256", f"{name} evidence must pin a 64-hex report_sha256 in the consumer manifest")
+        elif hashlib.sha256(report_bytes).hexdigest() != report_digest:
+            _evidence_error(findings, repository, name, "report.sha256", f"{name} report bytes do not match the reviewed manifest digest")
         if report.get("tag") != release_tag or report.get("commit") != release_commit:
             _evidence_error(findings, repository, name, "release", f"{name} report does not contain the exact release tag and commit")
         if report.get("artifact") != artifact_relative:

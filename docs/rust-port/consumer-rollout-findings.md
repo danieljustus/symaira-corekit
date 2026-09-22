@@ -1,5 +1,27 @@
 # RUST-015 released-consumer gate: what actually blocks it
 
+## Current correction — report integrity anchor (2026-09-22)
+
+At integrated CoreKit `d31603ff042392fd8cee2dd0284dd2667123d703` (PR #318),
+a disposable structural fixture still passes after replacing its binary,
+recomputing both committed reports' `artifact_sha256`, and refreshing its
+consumer snapshot/tag. The command/result stays unchanged. The artifact and
+sidecar agree internally, but no independent report anchor is checked (#319).
+
+The corrected verifier requires `report_sha256` on each verified evidence record
+in the separately reviewed CoreKit consumer manifest. It hashes exact report
+bytes, rejects missing/malformed/mismatched anchors for both report kinds, and
+retains the existing semantic, release and artifact checks. The regression first
+proves a valid fixture passes, then requires the coordinated replacement to fail
+with the two specific report-digest findings. A separate byte-only mutation
+proves JSON value equality cannot hide changed capture bytes.
+
+These are synthetic validator-integrity tests, not consumer runtime evidence.
+No historical capture or production consumer record is rewritten or assigned a
+new anchor. The manifest remains the trust root; modifying it together with the
+report requires a new review. Source-bound Rust execution, an actual rollback
+transition and public release readback remain separate unresolved obligations.
+
 ## Current correction — consumer release identity (2026-09-22)
 
 At integrated CoreKit `05d3702f468c8a2817483385373ca229e157ce22`, the gate
