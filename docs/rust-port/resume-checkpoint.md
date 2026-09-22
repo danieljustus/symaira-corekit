@@ -242,9 +242,69 @@ make rust-sqlite-contract
 port-input change. It regenerates the manifest and writes a new capture; it
 never runs automatically, and it does not repoint the acceptance tests.
 
+## Stop checkpoint (2026-09-22, user-requested clean stop)
+
+Fourth consumer-evidence wave + release-wave state at interruption. Every SHA
+below was read back from `gh pr view`, `gh run` or `git ls-remote` at stop time;
+the background process list is empty (no watchers remain — restart them with
+`gh run watch` / `gh pr checks --watch`).
+
+Integrated, verified MERGED:
+
+- corekit #312 `05d3702f` — browse record removed from `docs/consumers.json`,
+  records re-pinned to corekit tag `v0.17.0`, consumer-count test expects 4/4.
+  Checkout clean on `main`.
+- brain #657 `7ea853d3` (standalone+rollback evidence), #661 `a92385d2`
+  (release prep v0.12.0). Head runs: Rust guard parity SUCCESS, `CI` still
+  in_progress at stop. Tag `v0.12.0` NOT pushed.
+- desktop #1020 `49468514` (evidence), #1022 `4c0c246b` (release prep v0.13.0,
+  head CodeQL success). Tag `v0.13.0` NOT pushed.
+- eraseme #1029 `300d9c38` (evidence), #1031 `305b394b` (windows clippy
+  needless-return fix), #1033 OPEN (windows round 2: `cfg_attr(windows, …)`
+  allows for the two unix-only `modes` bindings in
+  `crates/symeraseme-engine/tests/scheduler_install_parity.rs`), #1032 OPEN
+  (release prep v0.13.0). Local `origin/main` was observed at `8986a3db`
+  without this checkout's own fetch — run `git fetch` and reconcile first.
+- vault #1113 `2b363517` (evidence binary re-tracked via force-add + reports
+  corrected to the real corekit tag `v0.17.0`; `v0.17.1` does not exist), head
+  CI run 35768635050 SUCCESS. Milestone renamed to `v0.23.0` (#30). Tag
+  `v0.23.0` NOT pushed; the release-prep script's direct-to-main attempt was
+  not fully observed — verify with `git log origin/main -3` first.
+
+Known non-blockers, issues open: brain#660 (HIGH CodeQL rest), desktop#1021
+(HIGH), eraseme#1030 (PR gate has no windows leg), vault#1114 (zip-slip HIGHs
+in fixture generators), vault#1115 (CHANGELOG sections for v0.21.0–v0.22.1
+missing; v0.23.0 section created locally, part of release prep).
+
+Next actions, in order:
+
+1. eraseme: `git fetch` + reconcile `origin/main`, merge #1033, confirm the
+   windows Rust CI leg passes post-merge (it only runs on main pushes), merge
+   #1032, tag `v0.13.0`.
+2. brain: wait for `CI` at `a92385d2`, tag `v0.12.0`, verify the release
+   workflow (assets, tap, notes); local prerelease report
+   `.github/prerelease/20260922T2110+0200-symaira-brain-v0.12.0.md`.
+3. desktop: confirm head CI/Container for `4c0c246b`, tag `v0.13.0`, verify the
+   release workflow; local report
+   `.github/prerelease/20260922T2125+0200-symaira-desktop-v0.13.0.md`.
+4. vault: reconcile main, verify/finish release prep, tag `v0.23.0`.
+5. After all four tags: refresh the four consumer records' `checkout_commit`
+   (plus vault's `evidence.standalone` command/result for the #1113 re-run),
+   then `python3 port/consumer/verify.py --released-consumers` and
+   `./scripts/consumer-drift.sh` must report `0/13`; close the class-1/class-4
+   rows in `consumer-rollout-findings.md` and close RUST-015.
+6. RUST-014 stays blocked on Daniel's explicit crates.io publication approval
+   (two-consumer demand is recorded; no publish without it).
+
+Loaded this run: go-to-rust-migration, go-rust-port-parity + references
+(workflow, rust-stack, contract-matrix, porting-pitfalls, differential-testing,
+worker-dispatch), parallel-repo-agents, nonblocking-delivery,
+autonomous-coding-agents, code-editing, symaira/00-sync, 01-code-review,
+03-gh-go, 04-gh-pr-go, 05-gh-security-fix, 06-gh-prerelease, 07-gh-release.
+
 Next: no demand-driven item is `ready`. `RUST-014` needs an explicit publication
-decision plus registry evidence; `RUST-015` needs classes 1 and 4 in
-`consumer-rollout-findings.md` closed (classes 2 and 3 are fixed; class 1 is
-deliberately re-pinned at the evidence snapshot). A further slice requires new
-two-consumer demand evidence in `demand-assessment.md`. No release, publication,
-Go removal or product cutover is authorized here.
+decision plus registry evidence; `RUST-015` needs the record refresh and
+closeout listed above (evidence itself is merged for all four consumers; class 1
+is deliberately re-pinned at the evidence snapshot). A further slice requires
+new two-consumer demand evidence in `demand-assessment.md`. No publication, Go
+removal or product cutover is authorized here.
