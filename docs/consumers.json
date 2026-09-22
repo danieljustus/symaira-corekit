@@ -36,28 +36,6 @@
       }
     },
     {
-      "repo": "danieljustus/symaira-browse",
-      "checkout_commit": "5f98dfa78effc790886bd68ba6a8700453938885",
-      "pins": ["go.mod"],
-      "rust": {
-        "status": "git",
-        "package": "symaira-core-version",
-        "version": "0.0.0",
-        "revision": "d382b8615ce879bac6f23c7250e13667934e8f93",
-        "manifest_paths": ["Cargo.toml", "crates/symbrowse-protocol/Cargo.toml"],
-        "release": {
-          "tag": "v0.17.0",
-          "commit": "0c2c7769ac6074264e1c02fcdf903188b4f3fa08"
-        },
-        "release_source": "corekit",
-        "registry": {"status": "not_released"},
-        "evidence": {
-          "standalone": {"status": "missing", "command": ""},
-          "rollback": {"status": "missing", "command": ""}
-        }
-      }
-    },
-    {
       "repo": "danieljustus/symaira-desktop",
       "checkout_commit": "2de1ba0a8a0a7f54000dd64b969482fd9b00849a",
       "pins": ["go.mod"],

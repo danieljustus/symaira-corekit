@@ -42,9 +42,12 @@ Earlier the same day: brain, browse and desktop now record their real Git adopti
 brain's nested `browse/` Cargo workspace through the record's new `cargo_root`
 field. Remaining: stale `checkout_commit` records (deliberately re-pinned at
 the evidence snapshot) and the missing `evidence.standalone`/`rollback` for all
-five records; consumer checkout hygiene closed 2026-09-22 (see above). Tracked
+four records; consumer checkout hygiene closed 2026-09-22 (see above). Tracked
 in corekit#249; eraseme#993, desktop#984, vault#1080 and symaira-brain#635 are
-closed.
+closed. `danieljustus/symaira-browse` was removed from `docs/consumers.json`
+the same day: the repository is gone from GitHub and Browse lives on as the
+optional module `symaira-brain/browse/` (product-boundaries.md, confirmed by
+the user) — gate scope is four released consumers.
 
 `RUST-014` stays `in_progress`. `python3 port/release/verify.py --dry-run` passes
 and the release/consumer governance tests pass, but registry evidence does not

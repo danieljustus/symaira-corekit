@@ -211,7 +211,7 @@ import (
             workspace_root=Path("/definitely/missing/workspace"),
             corekit_root=verify.ROOT,
         )
-        self.assertEqual(report["consumer_count"], 5)
+        self.assertEqual(report["consumer_count"], 4)
         self.assertEqual(report["status"], "blocked")
         finding_repositories = {item["repository"] for item in report["findings"]}
         self.assertTrue(finding_repositories.issubset(set(report["checked_repositories"])))
