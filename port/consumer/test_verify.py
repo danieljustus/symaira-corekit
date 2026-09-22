@@ -112,6 +112,7 @@ def make_fixture(root: Path, *, status: str = "git") -> tuple[Path, Path, Path, 
         return {
             "status": "verified",
             "report": report_path,
+            "report_sha256": hashlib.sha256((consumer / report_path).read_bytes()).hexdigest(),
             "artifact": "bin/fixture",
             "command": command,
             "result": result,
@@ -509,6 +510,68 @@ import (
             manifest.write_text(json.dumps(document), encoding="utf-8")
             report = verify.verify_manifest(manifest, workspace_root=root, corekit_root=corekit)
             self.assertTrue(any(item["code"].startswith("evidence.standalone") for item in report["findings"]))
+
+    def test_report_anchor_is_required_and_checks_exact_bytes(self) -> None:
+        for name in ("standalone", "rollback"):
+            with self.subTest(name=name), tempfile.TemporaryDirectory() as raw:
+                root = Path(raw)
+                manifest, corekit, consumer, _, _ = make_fixture(root)
+                original = json.loads(manifest.read_text(encoding="utf-8"))
+                self.assertEqual(verify.verify_manifest(manifest, workspace_root=root, corekit_root=corekit)["status"], "passed")
+                for digest in (None, "", "a" * 63, "A" * 64, "g" * 64, True, 42, [], "0" * 64):
+                    with self.subTest(digest=digest):
+                        document = copy.deepcopy(original)
+                        item = document["consumers"][0]["rust"]["evidence"][name]
+                        if digest is None:
+                            item.pop("report_sha256")
+                        else:
+                            item["report_sha256"] = digest
+                        manifest.write_text(json.dumps(document), encoding="utf-8")
+                        report = verify.verify_manifest(manifest, workspace_root=root, corekit_root=corekit)
+                        self.assertEqual({finding["code"] for finding in report["findings"]}, {f"evidence.{name}.report.sha256"})
+
+                # Equal JSON values do not imply the same captured bytes.
+                item = original["consumers"][0]["rust"]["evidence"][name]
+                report_path = consumer / item["report"]
+                payload = report_path.read_bytes()
+                report_path.write_bytes(payload + b"\r\n")
+                git(consumer, "add", item["report"])
+                git(consumer, "commit", "-qm", "change report bytes only")
+                pin_consumer_release(original, consumer)
+                manifest.write_text(json.dumps(original), encoding="utf-8")
+                report = verify.verify_manifest(manifest, workspace_root=root, corekit_root=corekit)
+                self.assertEqual({finding["code"] for finding in report["findings"]}, {f"evidence.{name}.report.sha256"})
+
+    def test_report_anchor_rejects_coordinated_artifact_replacement(self) -> None:
+        """Synthetic integrity fixture, not a Rust-runtime or rollback capture."""
+        with tempfile.TemporaryDirectory() as raw:
+            root = Path(raw)
+            manifest, corekit, consumer, _, _ = make_fixture(root)
+            self.assertEqual(verify.verify_manifest(manifest, workspace_root=root, corekit_root=corekit)["status"], "passed")
+            document = json.loads(manifest.read_text(encoding="utf-8"))
+            artifact = consumer / "bin/fixture"
+            artifact.write_bytes(b"replacement artifact\n")
+            evidence = document["consumers"][0]["rust"]["evidence"]
+            for item in evidence.values():
+                report_path = consumer / item["report"]
+                report = json.loads(report_path.read_text(encoding="utf-8"))
+                report["artifact_sha256"] = hashlib.sha256(artifact.read_bytes()).hexdigest()
+                report_path.write_text(json.dumps(report), encoding="utf-8")
+            git(consumer, "add", ".")
+            git(consumer, "commit", "-qm", "replace artifact and matching sidecars")
+            pin_consumer_release(document, consumer)
+            manifest.write_text(json.dumps(document), encoding="utf-8")
+            report = verify.verify_manifest(manifest, workspace_root=root, corekit_root=corekit)
+            self.assertEqual({finding["code"] for finding in report["findings"]}, {
+                "evidence.standalone.report.sha256", "evidence.rollback.report.sha256",
+            })
+
+            # A separately reviewed new anchor is an explicit trust decision.
+            # Updating it is fixture setup only, never an automatic verifier action.
+            for item in evidence.values():
+                item["report_sha256"] = hashlib.sha256((consumer / item["report"]).read_bytes()).hexdigest()
+            manifest.write_text(json.dumps(document), encoding="utf-8")
+            self.assertEqual(verify.verify_manifest(manifest, workspace_root=root, corekit_root=corekit)["status"], "passed")
 
     def test_report_content_tampering_is_blocked(self) -> None:
         with tempfile.TemporaryDirectory() as raw:

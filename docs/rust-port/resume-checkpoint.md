@@ -1,40 +1,48 @@
 # Resume checkpoint — SQLite and MCP-config slices complete, RUST-014/015 open
 
-## Active checkpoint — RUST-015 release identity (2026-09-22)
+## Active checkpoint — RUST-015 evidence integrity (2026-09-22)
 
 - Mode/status: execute / running. Integrated base
-  `05d3702f468c8a2817483385373ca229e157ce22`.
+  `d31603ff042392fd8cee2dd0284dd2667123d703` (PR #318 merged; #316/#317 closed).
 - Item/owner: RUST-015 prerequisite, migration coordinator; branch
-  `migration/rust015-consumer-release`, worktree
-  `.worktrees/rust015-consumer-release` at that base. Owned paths:
-  `port/consumer/{verify,test_verify}.py`, `scripts/test-check-consumer-pins.sh`,
+  `migration/rust015-evidence-binding`, reusing the owned isolated worktree
+  `.worktrees/rust015-consumer-release`. Active slice: bind standalone/rollback
+  report bytes to an independently reviewed manifest digest; prove coordinated
+  binary/report replacement is rejected. Owned paths:
+  `port/consumer/{verify,test_verify}.py`,
   `docs/rust-port/{release-manifest,consumer-rollout-findings,resume-checkpoint}.md`.
-- Implemented: distinct consumer release tag/commit bound to the exact checkout
-  snapshot (CoreKit #316); isolated pin-classification fixtures after Browse's
-  removal broke the existing regression (CoreKit #317). Production consumer
-  records, retained artifacts and release tags are unchanged.
-- Verified: focused regression red before the fix (11 false acceptances), green
-  afterward; real four-consumer record-only refresh changes from false PASS to
-  exactly four `consumer.release.missing` findings. All 51 consumer tests and 14
-  release-governance tests pass; ledger validator passes (124 contracts, 15 work
-  items); shell syntax and pin-classification regression pass after #317's fix.
-- Reconciled: `proc_1b62f6125bd4` exited 1 with three stale test-fixture release
-  pins. These were repaired without weakening assertions; the full 51-test run
-  above is green. A subsequent pin-test failure was independently traced to
-  the removed Browse row and fixed with synthetic records, not restored demand.
-- Candidate source hashes:
-  `port/consumer/verify.py`: `390f5d3bdfdcec3343b918aa47a2aeeadbf2a0e6f2955e5a8f2cf1b5fa749913`.
-  `port/consumer/test_verify.py`: `35db72e1971f4bb1035e8cd181f1577c68ab63ed2c4cab8a5c2bf60af552df62`.
-  `scripts/test-check-consumer-pins.sh`: `225878cfd2fdfc1552e2d99099d091e6efface5bcf1b43970084de287bec1ad9`.
-- Async: read-only audit/review `sa-0-f74d1396` / `deleg_8b3eed22` still pending.
-  Its earlier review input predates three fixture-pin repairs and #317's isolated
-  shell fixture; final-candidate/delta review is required before promotion.
-  No background gate, release or CI watcher remains.
-- Next: commit locally, run `make rust-release-contract` on the clean candidate
-  (SemVer skips are not API evidence), reconcile independent review, then continue
-  executable evidence prerequisites. RUST-014/015 stay non-complete. PR #313's
-  historical release suggestions grant no approval. No release, publication,
-  Go removal or cutover is authorized by this run.
+- Implemented (#319): required manifest-side `report_sha256` for both report
+  kinds, exact-byte hashing, existing semantic/artifact validation preserved.
+  No production consumer record, retained artifact or release tag was changed.
+- Verified locally: the coordinated-replacement regression failed on the
+  unchanged integrated verifier, then both new tests passed (2 tests, exit 0).
+  Cases cover missing/malformed/wrong digests, coordinated binary+sidecar edits,
+  a byte-only CRLF mutation, and explicit fixture-only re-anchoring. These are
+  synthetic integrity tests, not Rust/rollback runtime captures.
+- Frozen review inputs:
+  `port/consumer/verify.py`: `62cb9c4cf12472dcf58ac146804d92ff9fcca8f4529957c996a0021067a82e48`.
+  `port/consumer/test_verify.py`: `f07a5e87ad7c2451ecd8a7cfc25f310f35b4d8d41f3c31faa2e7c206473922bb`.
+  `docs/rust-port/release-manifest.md`: `be0dca2f4c3bcd60dab59a4ed9e964a59d61fd848d6f6fb13c8f3e2970d1cb64`.
+  `docs/rust-port/consumer-rollout-findings.md`: `9bd3e7e53cecf40d769b5d3ad8b102ee9eedac9e425404cd492ab4d563ad9f60`.
+- Async: full consumer/release tests, ledger and pin regression
+  `proc_4117ff70ebbf`; independent review `deleg_27a7df23` / `sa-0-cc32a9b0`.
+  Results are pending delivery. No remote CI for this new slice yet.
+- Previous slice: both independent reviews and the clean release wrapper
+  (`proc_faf6bb8498d7`, exit 0) passed for PR #318. CI `35780231128`, attempt 1, head
+  `11e4f6d189108cf8ff48515c622ecf29baf49c2a`; all 36 jobs succeeded, watcher
+  `proc_ffbbf679b3df` exited 0. Exact-head checks and empty review threads were
+  read back before the regular squash merge. These receipts do not certify #319.
+- Residuals: public consumer releases, artifact/source-bound Rust runtime
+  execution, actual rollback transitions, and Vault's missing historical
+  standalone artifact are not proven. Local evidence tooling/consumer adapters
+  are implementation prerequisites, not external walls; publication/registry
+  readback additionally requires explicit authorization. Findings are in #249.
+- Next: commit the focused verified slice, reconcile the full local gate, run
+  `make rust-release-contract` on the clean commit, and reconcile the independent
+  review. Require exact-head CI before integration, then continue source-bound
+  Rust-runtime and rollback evidence work. SemVer skips are not compatibility
+  proof. RUST-014/015 stay non-complete. PR #313's historical release suggestions
+  grant no approval. No release, publication, Go removal or cutover is authorized.
 
 ## Previously integrated state
 
