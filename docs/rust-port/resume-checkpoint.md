@@ -24,17 +24,27 @@ gate: `_check_checkout_snapshot` prunes `FORBIDDEN_PATH_PARTS` before the
 symlink check, so a `target` tree is excluded whether it is a real directory or
 a symlink. Tracked paths are still resolved and rejected, and a non-generated
 symlink directory is still a finding. The workspace run moved 22 → 20 findings;
-the remaining class-3 findings (brain 3, eraseme 2) are consumer-side. Evidence:
-48 tests in `port/consumer`, including the new
-`test_symlinked_generated_tree_is_excluded_like_a_real_one`.
+the remaining class-3 findings (brain 3, eraseme 2) were consumer-side. Class 3
+closed 2026-09-22: symaira-brain PR #651 (merged `a7002cc1`, closes brain#635)
+untracked the three `.cursor`/`.phase0-evidence` paths — `git ls-tree` at the
+merged revision lists none — and `.agents`/`.windsurf` joined
+`FORBIDDEN_PATH_PARTS` in corekit PR #310 (merged `df8659e3`) after `readlink`
+proved the eraseme links resolve *inside* the checkout to the tracked `skills/`
+tree (the earlier "points outside" premise in `consumer-rollout-findings.md`
+is corrected there). The 2026-09-22 run reports 17 findings (5 stale
+`checkout_commit`, 10 missing evidence, 2 transient `checkout.dirty`) and zero
+`checkout.path`. Evidence: 50 tests in `port/consumer` — exclusion, a
+non-forbidden-symlink negative control and tracked-path rejection under the new
+names.
 
 Earlier the same day: brain, browse and desktop now record their real Git adoption
 (revision `d382b861`, `symaira-core-version`, `=0.0.0`) and the verifier reads
 brain's nested `browse/` Cargo workspace through the record's new `cargo_root`
 field. Remaining: stale `checkout_commit` records (deliberately re-pinned at
-the evidence snapshot), consumer checkout hygiene, and the missing
-`evidence.standalone`/`rollback` for all five records. Tracked in corekit#249
-plus eraseme#993, desktop#984, vault#1080 and symaira-brain#635.
+the evidence snapshot) and the missing `evidence.standalone`/`rollback` for all
+five records; consumer checkout hygiene closed 2026-09-22 (see above). Tracked
+in corekit#249; eraseme#993, desktop#984, vault#1080 and symaira-brain#635 are
+closed.
 
 `RUST-014` stays `in_progress`. `python3 port/release/verify.py --dry-run` passes
 and the release/consumer governance tests pass, but registry evidence does not
@@ -230,8 +240,8 @@ port-input change. It regenerates the manifest and writes a new capture; it
 never runs automatically, and it does not repoint the acceptance tests.
 
 Next: no demand-driven item is `ready`. `RUST-014` needs an explicit publication
-decision plus registry evidence; `RUST-015` needs the remaining classes in
-`consumer-rollout-findings.md` closed (class 2 is fixed; class 1 is deliberately
-re-pinned at the evidence snapshot). A further slice requires new two-consumer
-demand evidence in `demand-assessment.md`. No release, publication, Go removal
-or product cutover is authorized here.
+decision plus registry evidence; `RUST-015` needs classes 1 and 4 in
+`consumer-rollout-findings.md` closed (classes 2 and 3 are fixed; class 1 is
+deliberately re-pinned at the evidence snapshot). A further slice requires new
+two-consumer demand evidence in `demand-assessment.md`. No release, publication,
+Go removal or product cutover is authorized here.
