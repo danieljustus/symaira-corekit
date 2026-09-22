@@ -155,6 +155,7 @@ def _add(findings: list[Finding], repository: str, code: str, message: str) -> N
 # target output; tracked files in these trees are still checked below via
 # ``git ls-files``.
 FORBIDDEN_PATH_PARTS = frozenset({
+    ".agents",
     ".agentsroom",
     ".app-test-build",
     ".build",
@@ -172,6 +173,7 @@ FORBIDDEN_PATH_PARTS = frozenset({
     ".sisyphus",
     ".swiftpm",
     ".venv",
+    ".windsurf",
     ".worktrees",
     "build",
     "coverage",
