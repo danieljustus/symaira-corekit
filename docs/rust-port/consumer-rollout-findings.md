@@ -3,8 +3,8 @@
 `python3 port/consumer/verify.py --released-consumers` returns `status: blocked`
 for CoreKit. The findings are not one missing artefact; they fall into four
 classes, and only class 4 is the genuine "no released consumer yet" work.
-Class 2 is closed as of 2026-09-21; classes 1, 3 and 4 remain open with the
-reasons below.
+Classes 2 and 3 are closed (2026-09-21 and 2026-09-22); classes 1 and 4
+remain open with the reasons below.
 
 Run 2026-09-21 (corekit `main` `53aee98` with the record refresh applied),
 consumers at their then-current heads: brain `46d2c1b5`, browse `c9ab83cc`,
@@ -12,11 +12,16 @@ desktop `4ea77f3c`, eraseme `91343c6f`, vault `a28b6a09`. Consumer checkouts
 are actively moving, so the per-repo counts differ between runs; the classes
 do not.
 
+Run 2026-09-22 (corekit `main` `df8659e3`): 17 findings — 5 stale
+`checkout_commit`, 10 missing evidence and 2 transient `checkout.dirty`
+(brain and vault hold another session's uncommitted work; a working-tree
+state, not a committed-state class). Zero `checkout.path` findings remain.
+
 | Class | Findings | Where |
 | --- | --- | --- |
 | 1 — stale `checkout_commit` | 5 | all five records |
 | 2 — wrong `rust.status` | 0 — fixed | — |
-| 3 — consumer checkout hygiene | 5 | brain (3), eraseme (2) |
+| 3 — consumer checkout hygiene | 0 — fixed 2026-09-22 | — |
 | 4 — missing standalone/rollback evidence | 10 | all five consumers |
 
 ## 1. Stale `checkout_commit` — deliberately re-pinned at closure, not now
@@ -58,7 +63,7 @@ refresh records what the checkouts contain:
 Effect: the nine `rust.not_adopted.present` findings are gone and the gate now
 evaluates the real pins.
 
-## 3. Consumer checkout hygiene — consumer-side, moving
+## 3. Consumer checkout hygiene — closed 2026-09-22
 
 Snapshot of the 2026-09-21 run, *before* the generated-tree rule below:
 
@@ -96,16 +101,41 @@ hidden Cargo source tree) is still a finding — both covered by existing tests,
 plus `test_symlinked_generated_tree_is_excluded_like_a_real_one`.
 
 Effect on the 2026-09-21 run: 22 → 20 findings. The three `target` findings are
-gone. What remains in class 3 is genuinely consumer-side:
+gone. What remained after that rule was:
 
 - `symaira-brain` (3): tracked files under forbidden tooling paths
   (`.cursor/rules/symbrain.mdc`, `cmd/symbrain/.cursor/rules/symbrain.mdc`,
   `.phase0-evidence/PHASE0_REPORT.md`) — the consumer tracks source-shaped files
   in trees the gate treats as generated. Consumer-side, symaira-brain#635.
-- `symaira-eraseme` (2): `.agents/skills/symaira-eraseme` and
-  `.windsurf/skills/symaira-eraseme` symlink out of the checkout into an
-  external skills source. Deliberately *not* added to the generated-tree set:
-  they point at content outside the pinned snapshot. eraseme#993.
+- `symaira-eraseme` (2): the symlink directories
+  `.agents/skills/symaira-eraseme` and `.windsurf/skills/symaira-eraseme`.
+
+### Closed 2026-09-22 — and one correction
+
+**Correction:** the eraseme links do *not* point outside the checkout. The
+earlier claim in this document ("symlink out of the checkout into an external
+skills source … they point at content outside the pinned snapshot") was wrong:
+`readlink` shows `../../skills`, which resolves to `<checkout>/skills`, a
+tracked in-repo directory, and both links are untracked and gitignored
+(eraseme#998). The decision not to treat them as generated trees rested on
+that false premise. They are agent-tooling links created by
+`scripts/setup-agents.sh` — the same script that creates the already-excluded
+`.claude`/`.cursor` links — so `.agents` and `.windsurf` join
+`FORBIDDEN_PATH_PARTS` (corekit PR #310, merged `df8659e3`), with tests for
+the exclusion, a non-forbidden-symlink negative control, and tracked-path
+rejection under the new names.
+
+**brain:** the three tracked paths are untracked with `.gitignore` entries and
+stay on disk (symaira-brain PR #651, merged `a7002cc1`, closes
+[symaira-brain#635](https://github.com/danieljustus/symaira-brain/issues/635)).
+`git ls-tree -r a7002cc1` lists zero paths under `.cursor/` or
+`.phase0-evidence/`. The local brain checkout has not pulled that revision yet
+(its working tree is owned by another session), so the gate has not re-read a
+clean checkout at `a7002cc1`; the merged revision itself is verified empty.
+
+Effect: zero `checkout.path` findings in the 2026-09-22 run. Class 3 is closed;
+the issues it tracked (symaira-brain#635, eraseme#993, desktop#984,
+vault#1080) are all closed.
 
 ## 4. The genuine released-consumer evidence — five consumers, 10 findings
 
@@ -121,11 +151,12 @@ commit (class 1) → standalone/rollback reports committed there → gate re-run
 
 ## Decision
 
-- `RUST-015` stays `blocked`. Class 2 is closed; classes 1, 3 and 4 remain, and
-  class 1 is deliberately coupled to class 4 rather than refreshed mid-flight.
-- Class 3 is consumer-side work tracked in the affected repositories
-  (symaira-brain#635, eraseme#993, desktop#984, vault#1080) and in the CoreKit
-  tracking issue danieljustus/symaira-corekit#249.
+- `RUST-015` stays `blocked`. Classes 2 and 3 are closed; classes 1 and 4
+  remain, and class 1 is deliberately coupled to class 4 rather than refreshed
+  mid-flight.
+- Class 3's fixes live in symaira-brain#635 (closed) and CoreKit PR #310; the
+  CoreKit tracking issue danieljustus/symaira-corekit#249 stays open for
+  classes 1 and 4.
 - No CoreKit release, registry publication, Go removal or consumer rollout is
   authorised by this document. `RUST-014` remains `in_progress` for the same
   reason: `port/release/manifest.json` may not move off `not-run` before this
