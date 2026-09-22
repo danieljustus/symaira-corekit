@@ -14,15 +14,21 @@ do not.
 
 Run 2026-09-22 (corekit `main` `df8659e3`): 17 findings — 5 stale
 `checkout_commit`, 10 missing evidence and 2 transient `checkout.dirty`
-(brain and vault hold another session's uncommitted work; a working-tree
+(brain and vault held another session's uncommitted work; a working-tree
 state, not a committed-state class). Zero `checkout.path` findings remain.
+
+Run 2026-09-22, later the same day, after the browse record removal (see
+Decision): 12 findings — 4 stale `checkout_commit`, 8 missing evidence.
+`symaira-browse` left `docs/consumers.json` together with its three findings,
+and the last transient `checkout.dirty` cleared when brain and vault committed
+their work.
 
 | Class | Findings | Where |
 | --- | --- | --- |
-| 1 — stale `checkout_commit` | 5 | all five records |
+| 1 — stale `checkout_commit` | 4 | all four records |
 | 2 — wrong `rust.status` | 0 — fixed | — |
 | 3 — consumer checkout hygiene | 0 — fixed 2026-09-22 | — |
-| 4 — missing standalone/rollback evidence | 10 | all five consumers |
+| 4 — missing standalone/rollback evidence | 8 | all four consumers |
 
 ## 1. Stale `checkout_commit` — deliberately re-pinned at closure, not now
 
@@ -137,14 +143,14 @@ Effect: zero `checkout.path` findings in the 2026-09-22 run. Class 3 is closed;
 the issues it tracked (symaira-brain#635, eraseme#993, desktop#984,
 vault#1080) are all closed.
 
-## 4. The genuine released-consumer evidence — five consumers, 10 findings
+## 4. The genuine released-consumer evidence — four consumers, 8 findings
 
 `rust.evidence.standalone` and `rust.evidence.rollback` read `missing` for all
-five records now that brain, browse and desktop carry honest adoption records.
-This is the class the gate is really about: a *released* consumer that runs
-standalone and can roll back, with the verifier hashing the artifact and
-matching the committed report at the pinned checkout. It needs those
-consumers' own release runs; CoreKit cannot manufacture it.
+four records now that brain and desktop carry honest adoption records. This is
+the class the gate is really about: a *released* consumer that runs standalone
+and can roll back, with the verifier hashing the artifact and matching the
+committed report at the pinned checkout. It needs those consumers' own release
+runs; CoreKit cannot manufacture it.
 
 Closure sequence: consumers released → checkout re-pinned to the released
 commit (class 1) → standalone/rollback reports committed there → gate re-run.
@@ -157,6 +163,12 @@ commit (class 1) → standalone/rollback reports committed there → gate re-run
 - Class 3's fixes live in symaira-brain#635 (closed) and CoreKit PR #310; the
   CoreKit tracking issue danieljustus/symaira-corekit#249 stays open for
   classes 1 and 4.
+- Scope change 2026-09-22: `danieljustus/symaira-browse` removed from
+  `docs/consumers.json`. The repository no longer exists on GitHub (API 404
+  without redirect, absent from the owner's full `repo`-scope listing and from
+  global search), and `docs/product-boundaries.md` already records the archive:
+  Browse ships as the optional module `symaira-brain/browse/`. Confirmed by the
+  user; the gate's scope is four released consumers.
 - No CoreKit release, registry publication, Go removal or consumer rollout is
   authorised by this document. `RUST-014` remains `in_progress` for the same
   reason: `port/release/manifest.json` may not move off `not-run` before this
