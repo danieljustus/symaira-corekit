@@ -1,6 +1,44 @@
 # Resume checkpoint — SQLite and MCP-config slices complete, RUST-014/015 open
 
-Owner: migration coordinator. No active CoreKit writer worktree. `RUST-006` is
+## Active checkpoint — RUST-015 release identity (2026-09-22)
+
+- Mode/status: execute / running. Integrated base
+  `05d3702f468c8a2817483385373ca229e157ce22`.
+- Item/owner: RUST-015 prerequisite, migration coordinator; branch
+  `migration/rust015-consumer-release`, worktree
+  `.worktrees/rust015-consumer-release` at that base. Owned paths:
+  `port/consumer/{verify,test_verify}.py`, `scripts/test-check-consumer-pins.sh`,
+  `docs/rust-port/{release-manifest,consumer-rollout-findings,resume-checkpoint}.md`.
+- Implemented: distinct consumer release tag/commit bound to the exact checkout
+  snapshot (CoreKit #316); isolated pin-classification fixtures after Browse's
+  removal broke the existing regression (CoreKit #317). Production consumer
+  records, retained artifacts and release tags are unchanged.
+- Verified: focused regression red before the fix (11 false acceptances), green
+  afterward; real four-consumer record-only refresh changes from false PASS to
+  exactly four `consumer.release.missing` findings. All 51 consumer tests and 14
+  release-governance tests pass; ledger validator passes (124 contracts, 15 work
+  items); shell syntax and pin-classification regression pass after #317's fix.
+- Reconciled: `proc_1b62f6125bd4` exited 1 with three stale test-fixture release
+  pins. These were repaired without weakening assertions; the full 51-test run
+  above is green. A subsequent pin-test failure was independently traced to
+  the removed Browse row and fixed with synthetic records, not restored demand.
+- Candidate source hashes:
+  `port/consumer/verify.py`: `390f5d3bdfdcec3343b918aa47a2aeeadbf2a0e6f2955e5a8f2cf1b5fa749913`.
+  `port/consumer/test_verify.py`: `35db72e1971f4bb1035e8cd181f1577c68ab63ed2c4cab8a5c2bf60af552df62`.
+  `scripts/test-check-consumer-pins.sh`: `225878cfd2fdfc1552e2d99099d091e6efface5bcf1b43970084de287bec1ad9`.
+- Async: read-only audit/review `sa-0-f74d1396` / `deleg_8b3eed22` still pending.
+  Its earlier review input predates three fixture-pin repairs and #317's isolated
+  shell fixture; final-candidate/delta review is required before promotion.
+  No background gate, release or CI watcher remains.
+- Next: commit locally, run `make rust-release-contract` on the clean candidate
+  (SemVer skips are not API evidence), reconcile independent review, then continue
+  executable evidence prerequisites. RUST-014/015 stay non-complete. PR #313's
+  historical release suggestions grant no approval. No release, publication,
+  Go removal or cutover is authorized by this run.
+
+## Previously integrated state
+
+Owner: migration coordinator. `RUST-006` is
 `complete` and SQL-001 through SQL-006 are `parity` since the promotion decision
 recorded in `sqlite-demand.md`; the scoped candidate-source change is integrated
 as `541683a` (PR #291). Main baseline for the SQLite candidate remains

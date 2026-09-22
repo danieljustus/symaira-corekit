@@ -228,6 +228,26 @@ def _regular_non_symlink(path: Path) -> bool:
         return False
 
 
+def _check_consumer_release(
+    record: dict[str, Any], checkout: Path, findings: list[Finding],
+) -> None:
+    """Bind the snapshot to a consumer tag, not the library's release namespace."""
+    repository = str(record.get("repo", "unknown"))
+    release = record.get("consumer_release")
+    if not isinstance(release, dict):
+        _add(findings, repository, "consumer.release.missing", "consumer snapshot has no consumer_release tag/commit evidence")
+        return
+    tag, commit = release.get("tag"), release.get("commit")
+    if not isinstance(tag, str) or not RELEASE_TAG_RE.fullmatch(tag) or not isinstance(commit, str) or not REVISION_RE.fullmatch(commit):
+        _add(findings, repository, "consumer.release.shape", "consumer_release needs a stable vMAJOR.MINOR.PATCH tag and 40-hex commit")
+        return
+    code, resolved, _ = _git(["rev-parse", "--verify", f"refs/tags/{tag}^{{commit}}"], checkout)
+    if code or resolved != commit:
+        _add(findings, repository, "consumer.release.tag", f"consumer tag {tag} does not resolve to its recorded commit in the consumer checkout")
+    if commit != record.get("checkout_commit"):
+        _add(findings, repository, "consumer.release.snapshot", "consumer release commit must equal checkout_commit; an ancestor or later snapshot is not the released source")
+
+
 def _check_checkout_snapshot(
     record: dict[str, Any], checkout: Path, findings: list[Finding],
 ) -> None:
@@ -1101,6 +1121,7 @@ def verify_manifest(
             _add(findings, repository, "checkout.missing", f"canonical checkout is missing: {checkout}")
             continue
         _check_checkout_snapshot(record, checkout, findings)
+        _check_consumer_release(record, checkout, findings)
         _check_go(record, checkout, findings)
         _check_rust(record, checkout, corekit_root, findings, registry)
         _check_evidence(record, checkout, findings)
