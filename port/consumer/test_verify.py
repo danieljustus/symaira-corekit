@@ -887,12 +887,12 @@ import (
             root = Path(raw)
             manifest, corekit, consumer, _, _ = make_fixture(root)
             generated = (
-                ".agentsroom", ".app-test-build", ".build", ".claude",
+                ".agents", ".agentsroom", ".app-test-build", ".build", ".claude",
                 ".coverage-html", ".cursor", ".mypy_cache", ".omo", ".opencode",
                 ".phase0-evidence", ".playwright-cli", ".playwright-mcp",
                 ".pytest_cache", ".ruff_cache", ".sisyphus", ".swiftpm", ".venv",
-                ".worktrees", "build", "coverage", "dist", "node_modules", "target",
-                "target-run", "vendor",
+                ".windsurf", ".worktrees", "build", "coverage", "dist",
+                "node_modules", "target", "target-run", "vendor",
             )
             (consumer / ".gitignore").write_text("\n".join(generated) + "\n", encoding="utf-8")
             for directory in generated:
@@ -928,6 +928,79 @@ import (
 
             report = verify.verify_manifest(manifest, workspace_root=root, corekit_root=corekit)
             self.assertEqual(report["status"], "passed", report)
+
+    def test_agent_tooling_symlink_trees_are_excluded_from_the_walk(self) -> None:
+        """Untracked tooling symlinks under .agents/.windsurf are not findings."""
+        for shape in ("symlink-dir", "nested-symlink"):
+            with self.subTest(shape=shape), tempfile.TemporaryDirectory() as raw:
+                root = Path(raw)
+                manifest, corekit, consumer, _, _ = make_fixture(root)
+                (consumer / "skills").mkdir()
+                (consumer / "skills" / "skill.md").write_text("name: fixture\n", encoding="utf-8")
+                (consumer / ".gitignore").write_text(".agents\n.windsurf\nrustlink\n", encoding="utf-8")
+                subprocess.run(["git", "-C", str(consumer), "add", ".gitignore", "skills"], check=True)
+                subprocess.run(["git", "-C", str(consumer), "commit", "-qm", "ignore-agent-tooling"], check=True)
+                document = json.loads(manifest.read_text(encoding="utf-8"))
+                document["consumers"][0]["checkout_commit"] = git(consumer, "rev-parse", "HEAD")
+                manifest.write_text(json.dumps(document), encoding="utf-8")
+                for name in (".agents", ".windsurf"):
+                    path = consumer / name
+                    if shape == "symlink-dir":
+                        os.symlink("skills", path)
+                    else:
+                        (path / "skills").mkdir(parents=True)
+                        os.symlink("../../skills", path / "skills" / "symaira-eraseme")
+                # The walk only runs on a clean snapshot: prove the fixture is
+                # clean so a missing finding cannot come from an early return.
+                self.assertEqual(git(consumer, "status", "--porcelain=v1", "--untracked-files=all"), "")
+                report = verify.verify_manifest(manifest, workspace_root=root, corekit_root=corekit)
+                self.assertFalse(
+                    [item for item in report["findings"] if item["code"] == "checkout.path"],
+                    report,
+                )
+                self.assertEqual(report["status"], "passed", report)
+
+                # Negative control: an equally ignored symlink directory that
+                # is not in the forbidden set must still be reported, so the
+                # exclusion above is name-scoped rather than walk-wide.
+                os.symlink("skills", consumer / "rustlink")
+                self.assertEqual(git(consumer, "status", "--porcelain=v1", "--untracked-files=all"), "")
+                blocked = verify.verify_manifest(manifest, workspace_root=root, corekit_root=corekit)
+                path_findings = [
+                    item for item in blocked["findings"] if item["code"] == "checkout.path"
+                ]
+                self.assertEqual(
+                    [item["message"] for item in path_findings],
+                    ["checkout contains a symlink directory: rustlink"],
+                    blocked,
+                )
+                self.assertEqual(len(blocked["findings"]), 1, blocked)
+
+    def test_tracked_paths_under_agent_tooling_dirs_are_rejected(self) -> None:
+        """Excluding a tree from the walk must not exempt its tracked paths."""
+        with tempfile.TemporaryDirectory() as raw:
+            root = Path(raw)
+            manifest, corekit, consumer, _, _ = make_fixture(root)
+            planted = (
+                ".agents/skills/planted.md",
+                ".windsurf/rules/planted.md",
+            )
+            for relative in planted:
+                path = consumer / relative
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text("tracked\n", encoding="utf-8")
+            subprocess.run(["git", "-C", str(consumer), "add", ".agents", ".windsurf"], check=True)
+            subprocess.run(["git", "-C", str(consumer), "commit", "-qm", "tracked-agent-tooling"], check=True)
+            document = json.loads(manifest.read_text(encoding="utf-8"))
+            document["consumers"][0]["checkout_commit"] = git(consumer, "rev-parse", "HEAD")
+            manifest.write_text(json.dumps(document), encoding="utf-8")
+
+            report = verify.verify_manifest(manifest, workspace_root=root, corekit_root=corekit)
+            self.assertEqual(report["status"], "blocked", report)
+            self.assertEqual({item["code"] for item in report["findings"]}, {"checkout.path"}, report)
+            messages = {item["message"] for item in report["findings"]}
+            for relative in planted:
+                self.assertIn(f"tracked path is unsafe or forbidden: {relative}", messages)
 
 
 if __name__ == "__main__":
