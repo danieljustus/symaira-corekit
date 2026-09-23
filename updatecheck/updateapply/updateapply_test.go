@@ -26,11 +26,11 @@ func TestMain(m *testing.M) {
 			os.Exit(2)
 		}
 		capturePath := os.Getenv("COSIGN_CONTENT_CAPTURE")
-		content, err := os.ReadFile(os.Args[len(os.Args)-1])
+		content, err := os.ReadFile(os.Args[len(os.Args)-1]) //nolint:gosec // test stub reads the verifier's supplied fixture path
 		if err != nil {
 			os.Exit(1)
 		}
-		if err := os.WriteFile(capturePath, content, 0o600); err != nil {
+		if err := os.WriteFile(capturePath, content, 0o600); err != nil { //nolint:gosec // test-only capture path
 			os.Exit(1)
 		}
 		os.Exit(0)
@@ -759,11 +759,11 @@ func TestApplyVerifiesCosignOverExactChecksumsBytes(t *testing.T) {
 			t.Fatalf("locate test executable: %v", err)
 		}
 		fakeCosign += ".exe"
-		binary, err := os.ReadFile(executable)
+		binary, err := os.ReadFile(executable) //nolint:gosec // copy this test executable as the Windows cosign stub
 		if err != nil {
 			t.Fatalf("read test executable: %v", err)
 		}
-		if err := os.WriteFile(fakeCosign, binary, 0o700); err != nil {
+		if err := os.WriteFile(fakeCosign, binary, 0o700); err != nil { //nolint:gosec // test stub must be executable
 			t.Fatalf("write fake cosign executable: %v", err)
 		}
 		t.Setenv("UPDATEAPPLY_COSIGN_STUB", "1")
