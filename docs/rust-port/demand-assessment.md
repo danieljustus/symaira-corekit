@@ -17,7 +17,7 @@ in the workspace (`symaira-desktop`, `symaira-eraseme`, `symaira-vault`,
 
 ```sh
 rg -l -i -g '*.rs' "updatecheck|update_check|latest release|self_update|cosign|atomic.apply" \
-  symaira-brain/rust symaira-desktop/crates symaira-eraseme/crates symaira-vault/crates
+  symaira-brain/rust symaira-brain/browse/crates symaira-desktop/crates symaira-eraseme/crates symaira-vault/crates
 ```
 
 Brain's `rust/symbrain-managed/src/install.rs` implements release download,
@@ -31,7 +31,7 @@ the full pipeline; nothing to de-duplicate yet.**
 
 ```sh
 rg -l -i -g '*.rs' "openai|anthropic|ollama|provider|llm" \
-  symaira-brain/rust symaira-desktop/crates symaira-eraseme/crates
+  symaira-brain/rust symaira-brain/browse/crates symaira-desktop/crates symaira-eraseme/crates
 ```
 
 Two consumers carry the *surface*: `symaira-desktop/crates/symdesk-core/src/config.rs`
@@ -45,15 +45,16 @@ out of scope for that slice; the CLI exposes `--provider`/`--model` overrides
 EraseMe now has a Rust LLM error/retry/provider-resolution surface in
 `crates/symeraseme-core/src/llm/mod.rs`, but it explicitly leaves provider
 transport unported. Brain's `rust/symbrain-usage/src/provider_requests.rs`
-builds account/quota usage requests, not generation requests. No two Rust
-consumers duplicate the proposed generation transport. **Verdict: deferred —
-no shared transport to de-duplicate yet.**
+builds account/quota usage requests, not generation requests. Brain memory's
+`rust/symbrain-memory/src/embedding.rs` does make Ollama embedding requests;
+no second Rust consumer duplicates that embedding transport. **Verdict:
+deferred — no shared generation or embedding transport to de-duplicate yet.**
 
 ## RUST-009 — Audit and grounded-evidence algorithm slices (`AUD-*`, `EVID-*`) — deferred
 
 ```sh
-rg -l -i -g '*.rs' "auditkit|evidencekit|evidence_bundle|audit_log|hash.chained" \
-  symaira-brain/rust symaira-desktop/crates symaira-eraseme/crates symaira-vault/crates
+rg -l -i -g '*.rs' "auditkit|evidencekit|evidence_bundle|grounded.evidence|audit_log|hash.chained" \
+  symaira-brain/rust symaira-brain/browse/crates symaira-desktop/crates symaira-eraseme/crates symaira-vault/crates
 ```
 
 `symaira-brain/rust/symbrain-audit/src/sink.rs` implements a CoreKit-compatible
@@ -115,7 +116,7 @@ deferred — one Rust consumer.**
 
 ```sh
 rg -l -i -g '*.rs' "turboquant|vector_quant|quantiz" \
-  symaira-brain/rust symaira-desktop/crates symaira-eraseme/crates symaira-vault/crates
+  symaira-brain/rust symaira-brain/browse/crates symaira-desktop/crates symaira-eraseme/crates symaira-vault/crates
 ```
 
 `symaira-brain/rust/symbrain-memory` carries vector storage and quantization
