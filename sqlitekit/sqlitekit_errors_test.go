@@ -15,19 +15,15 @@ import (
 )
 
 func TestOpen_MkdirFailure(t *testing.T) {
-	if os.Geteuid() == 0 {
-		t.Skip("running as root; permission checks are meaningless")
-	}
-	parent := t.TempDir()
-	if err := os.Chmod(parent, 0500); err != nil {
+	parent := filepath.Join(t.TempDir(), "file")
+	if err := os.WriteFile(parent, []byte("not a directory"), 0600); err != nil {
 		t.Fatal(err)
 	}
-	defer os.Chmod(parent, 0700)
 
 	db, err := Open(filepath.Join(parent, "sub", "test.db"))
 	if err == nil {
 		db.Close()
-		t.Fatal("Open under a read-only parent = nil, want error")
+		t.Fatal("Open under a file parent = nil, want error")
 	}
 	if !strings.Contains(err.Error(), "failed to create database directory") {
 		t.Fatalf("error = %v, want directory-creation wrap", err)
