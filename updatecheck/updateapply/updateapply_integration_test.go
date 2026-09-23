@@ -52,6 +52,7 @@ func testBuildZip(entries map[string]string) []byte {
 
 func TestApplyRejectsHomebrewInstall(t *testing.T) {
 	tmp := t.TempDir()
+	t.Setenv("HOMEBREW_PREFIX", tmp)
 	cellarDir := filepath.Join(tmp, "Cellar", "tool", "1.0.0", "bin")
 	if err := os.MkdirAll(cellarDir, 0755); err != nil {
 		t.Fatal(err)
