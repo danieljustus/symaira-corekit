@@ -1,12 +1,57 @@
 # Resume checkpoint — SQLite and MCP-config slices complete, RUST-014/015 open
 
-## Active checkpoint — RUST-015 local reviews reconciled (2026-09-23)
+## Active checkpoint — native Browse prerequisites integrated (2026-09-23)
 
-- Mode/status: execute / running; local evidence reviews reconciled, migration
-  **not complete**. Checkpoint integration is the current gate.
-  Integrated base `a3b1b24b8de779fb4c5710544b98250f1bc8e1ae`; coordinator owns
+- Mode/status: execute / running; migration **not complete**. CoreKit integrated
+  base `7b8811a224450c78638e5c3d77bafbfe1e3bf9b7`; coordinator owns the docs-only
+  branch `migration/rust015-parity-reconciliation` in the existing isolated
+  `.worktrees/rust015-consumer-release`. Only this checkpoint is modified.
+  RUST-014 remains `in_progress`, RUST-015 `blocked`; no release/consumer anchor changes.
+  Candidate checks passed: ledger/link validation, 53 consumer tests, 14 release
+  tests, consumer-pin classification regression and `git diff --check`.
+- Verified Brain prerequisite: PR #665 regularly squash-merged as
+  `2de1c89d1ca571bf1bbfa012b53824d035ebece3`; #663 read back CLOSED/COMPLETED.
+  Its tree equals reviewed/tested `337b654d7c353794bd8de8ea13c7eeb96da78517`.
+  Native profile run `35804452141`, attempt 1: all 48 cases on each of Linux,
+  macOS and Windows; native flow-list run `35804451693`: all three cases on each OS.
+  Each job executed one intended test, none failed/ignored. CI `35804451833`
+  completed: 23 successful jobs, only coverage-data publication skipped; all four
+  ruleset-required contexts passed. The earlier #662 fix remains integrated at
+  `2b54c381e73e59f7bcaf0a999a2e689c49699570` (PR #664).
+- Evidence: external `brain-663-regression-001/native-ci-001/native-and-required-ci.json`,
+  SHA-256 `0e87bc7b1c5c2e6cc3ffed27d913310cddb873359e485a0046e77162e13b79d5`.
+  Six native logs and all three profile artifact ZIPs are retained; ZIP hashes and
+  sizes match GitHub, and 192 unique stream files per OS were independently compared
+  for the exact 48-case inventory. CI merge ref `c143dcdf3271b4ee8c7d3aef002f8dd97f34ad97`
+  has the candidate tree. Source review `deleg_24ef9f2e` remains valid;
+  `merge.json` records the final gate/merge/issue readback, and PR comment
+  `5787282253` was read back exactly. No full Browse or released-artifact claim.
+- Residuals: EraseMe's approved `switchback-001` is plain-store, local diagnostic
+  evidence only: its existing compatible Go binary was built with Go 1.27.1/CGO enabled.
+  A pinned-toolchain, CGO-free source build and replay remain executable local work,
+  not an external blocker. Historical schema-v1 fallback failure stays retained;
+  #1035 remains open. Release-bound recovery, broader encrypted/native recovery,
+  published consumers/registry readback and a published SemVer baseline remain unproved.
+- Async: both Brain native/PR CI runs above are fully reconciled; later notices
+  for `proc_b515f95423b8` or `proc_ee68e09dde42` are redundant. Next: verify and
+  publish this docs-only reconciliation for CoreKit CI, then rebuild the source-bound
+  EraseMe Go oracle with its pinned toolchain/CGO disabled and repeat the bounded
+  post-Rust-write switchback without restoring state. Preserve #313's older docs
+  branch; no tags, publication, installed cutover, Go removal or destructive cleanup.
+
+## Prerequisite evidence history — capture-time states (2026-09-23)
+
+The chronological observations below retain intermediate states and failures.
+The active checkpoint above supersedes their historical pending/next-action statements.
+
+- Mode/status: execute / waiting; local evidence reviews reconciled, later
+  checkpoint updates remain WIP; migration **not complete**. Integrated CoreKit revision
+  `7b8811a224450c78638e5c3d77bafbfe1e3bf9b7` (PR #321 merged); coordinator owns
   `migration/rust015-runtime-capture` in `.worktrees/rust015-consumer-release`.
-  Repository WIP is this checkpoint only; consumer checkouts remain read-only.
+  Published docs-only candidate `38e656b8844b0a83426af465e0d2674aef554c68`,
+  reviewed/merged PR #321. CoreKit WIP is this resumption note only. Primary
+  consumer checkouts and frozen captures remain read-only. CoreKit #249 update was read back as
+  `issuecomment-5785583090`.
 - Verified: Vault source `5851a5e8c63fcd34a083b8e28930b47158d1dee8`, local
   native macOS arm64 Rust/Go builds; 11 runtime cases and 26 encrypted-switchback
   cases passed, with seven complete semantic JSON comparisons. Go reads both
@@ -25,16 +70,204 @@
   Receipt: `vault-5851a5e/review-deleg_2754d646.md` beside the frozen index.
   Browse review `deleg_e14b7382` / `sa-0-84da9b44` is reconciled: APPROVE for
   evidence validity only; the genuine flow-list parity failure is not waived.
-- Async: no evidence review remains pending. Vault Rust build
+- Async: all five local evidence reviews, including the later EraseMe
+  switchback review below, are consumed. Brain #663 source review and final
+  local gates are consumed; its exact-head native/PR CI below awaits delivery. Vault Rust build
   `proc_9771a4765e26` is consumed. Go build
   `proc_c4b4201c90d4` has a verified successful final report and executed artifact;
   a later process notice is duplicate evidence, not a reason to rebuild.
-- Next: integrate this documentation-only capture checkpoint after its focused
-  validation and exact-head CI, then reconcile the consumer-owned prerequisites
-  before any new capture. Existing stop-checkpoint PR #313 is older overlapping
-  documentation, not release authorization; its branch is preserved unchanged.
-  Brain #662 and EraseMe #1035 remain consumer implementation defects, not
-  environmental walls. RUST-014/015 and consumer release anchors stay unchanged:
+- CI: run `35794729982`, attempt 1, candidate `38e656b8844b0a83426af465e0d2674aef554c68`.
+  Required-check watcher `proc_e008d0b7b80f` exited 0 and is consumed. The exact
+  head, all five required checks, complete review/issue connections and regular
+  merge were read back. The full 36-job run subsequently completed successfully;
+  no failed or unfinished jobs remain. `git diff --exit-code` confirms identical
+  candidate and integrated trees; migration ledger validation passes.
+- Integrated prerequisite: Brain #662, retained coordinator-owned isolated worktree
+  `symaira-brain/.worktrees/browse-flow-list-json-662`, branch
+  `fix/browse-flow-list-json-662`, base `a92385d2deecc08d1fd96869908b81b7abd355fe`.
+  Four open Brain PRs have no `browse/` file overlap. Allowed writes are the
+  Browse CLI flow-list handler, its new executable regression and a separate
+  `browse-flow-list.yml` native three-OS CI gate. Existing shared CI is untouched.
+  No shared manifests, release configuration, consumer pins or historical captures.
+- Verified Brain slice: expected-red gate `proc_9e54c88949ad` executed one test
+  and failed on the exact array-versus-`data.flows` mismatch (exit 101). A one-line
+  handler fix now passes that test, including both empty and populated real-Go
+  comparisons, plus pinned Rust 1.98.0 formatting. Evidence: external
+  `brain-662-regression-001/red-test.log` and `green-test-001.json`. This is a
+  committed candidate `f45605af1c59437f0c752d0545829042074ecc9c`, pushed and read
+  back in draft Brain PR #664. This is not integrated or native three-OS approval.
+- Affected gate `proc_4b23c492b89e` is consumed: 15 CLI tests passed (9 unit,
+  1 flow-list regression, 5 version tests), none failed/ignored; all-target and
+  all-feature strict Clippy passed. Both logs and exits are retained in
+  `brain-662-regression-001/affected-gates.json`. Candidate files still match
+  the independent review hashes. Explicit per-worktree Cargo target and test
+  TMPDIR are outside the repo. Earlier terminal exports did not persist, and the
+  backend reported an OS temporary
+  directory, so subsequent gates set these variables explicitly; no stale output
+  is relabeled. Historical consumer capture remains frozen.
+- Additional finding: Brain #663 records a separate, reproduced profiles-command
+  routing mismatch (`profiles --json`: Go exit 0 versus Rust exit 2). It is not
+  silently included in the flow-list envelope fix or counted as passing parity.
+- Independent review: `deleg_16f7de81` / `sa-0-41df0f5f` APPROVE is consumed for
+  the three frozen Brain files; manifest `brain-662-regression-001/candidate-001.json`,
+  SHA-256 `f124c6cc932732e2254dadd19c16e4fb7238fa02de18192244e5ac7859cdde63`.
+  Parent verified all file hashes/sizes against the worktree and exact commit,
+  plus clean state and unchanged PR head. Receipt `review-deleg_16f7de81.md` is
+  beside the manifest. PR review summary was read back as `issuecomment-5786119326`.
+  Approval remains source-bound and limited to #662, not release/full-CLI parity.
+- Brain PR #664 old-head CI: `f45605af1c59437f0c752d0545829042074ecc9c`.
+  Required watcher `proc_096dd62fbdff` is consumed. Fresh readback confirms all
+  four ruleset checks (`build-test`, `stdio-hygiene`, `govulncheck`, `gui`) passed,
+  and CI run `35797442569` attempt 1 completed successfully. The watcher itself
+  returned after only three checks and was not used as full-set proof.
+  Native run `35797442633` attempt 1 completed **failed**: Linux/macOS passed,
+  Windows job `106979897184` returned mixed path separators for project flows.
+  Its raw log is retained with SHA-256
+  `28d878848d4fbb6d532c0afac2daaa5ead8c34a7db5b62b7288a1798a957225b`.
+  A later `proc_be715d872176` notice is already-covered old-head evidence.
+- Reviewed correction (now integrated): native path-component joins for project/global roots;
+  regression covers empty/project/global and rejects identical binaries. Real Go
+  global output is retained in external `brain-662-regression-002/`. Candidate
+  manifest `candidate-002.json` SHA-256
+  `9151f89fde14a8939aff9df7cc5e425a3ac92e11410700e1350e3e55b9f11d89` freezes
+  the two changed files plus unchanged workflow on base `f45605af…ecc9c`.
+  Local gate `proc_5fbc8df1aa32` exited 0 and is consumed: 15 tests passed,
+  zero failed/ignored; all three Go/Rust case markers appeared; fmt, strict
+  all-target/all-feature Clippy and Windows compile precheck passed. The
+  identical-binary control failed at its intended assertion (exit 101).
+  Cross-compilation is not native evidence. Parent parsed all raw logs.
+  Delta review `deleg_a2802a43` / `sa-0-7c5352fc` APPROVE is reconciled;
+  `review-deleg_a2802a43.md` records scope and limits. Commit
+  `1eb13e61b080463f049500290d97f0e699ace9e2` preserves the exact reviewed bytes;
+  branch and then-draft PR #664 head were read back after push. At that point,
+  native gates were pending; their subsequent successful reconciliation follows.
+- Reconciled exact-head Brain CI: native run `35799572050`, attempt 1,
+  `proc_ee7fc81b4a94` exited 0 and is consumed. Independently retrieved native
+  logs for jobs `106986572010` (macOS), `106986572132` (Windows) and
+  `106986572210` (Linux) each contain exactly empty/project/global markers and
+  one passed integration test, zero failed/ignored. Main CI `35799572068`,
+  attempt 1, completed successfully: 23 successful jobs, only coverage-data
+  publication skipped; all four ruleset checks passed. Watcher
+  `proc_ffb8a66f4491` notifications are now redundant with this exact-run readback.
+  Both runs bind `1eb13e61b080463f049500290d97f0e699ace9e2`. Raw-log manifest
+  `brain-662-regression-002/native-and-required-ci.json` SHA-256
+  `a1b3a5b736506c1a199d17cb8d01676fbd288655800536c3a6d5ca1c7e3a98bf`.
+  Fresh review/issue/file pagination and required/native checks were reconciled,
+  then PR #664 was undrafted and regularly squash-merged (no bypass) as
+  `2b54c381e73e59f7bcaf0a999a2e689c49699570`. Parent read back MERGED and
+  #662 CLOSED/COMPLETED; integrated tree equals the tested candidate exactly.
+  Receipt: `brain-662-regression-002/merge.json`. No tag/release/cutover occurred.
+- Active prerequisite: Brain #663, coordinator-owned native Git worktree
+  `symaira-brain/.worktrees/browse-profiles-json-663`, branch
+  `fix/browse-profiles-json-663`, integrated base
+  `2b54c381e73e59f7bcaf0a999a2e689c49699570`. Four open PRs have no Browse
+  overlap. Allowed scope: browser-profile CLI routing, existing core discovery
+  helper, focused real-CLI regression and dedicated native CI. Reuse
+  `symbrowse-core/src/profiles.rs`; keep `mcp --list-profiles` separate.
+  Source inspection found the helper's Preferences regular-file restriction
+  differs from Go's successful-stat marker. Real Go probes are retained in
+  `brain-663-regression-001/`; new oracle was built from the integrated base.
+  No operator profile access, browser launch or shared Cargo/lockfile edits.
+  New artifact: `browse/crates/symbrowse-cli/tests/profiles.rs`, testing isolated
+  missing/empty/populated/non-directory/empty-home roots, flag ordering, argument
+  failures, distinct browser/MCP profiles and unchanged recursive fixture state.
+  Expected-red gate `proc_016f43523874` runs external `brain-663-regression-001/run_gate.py red`
+  against this base with explicit candidate Cargo metadata, Rust 1.98.0,
+  run-owned target/TMPDIR and the real Go oracle. It is consumed: one test ran
+  and failed as expected, exit 101, on `missing/json-after` (Rust CLI exit 2
+  rather than Go exit 0). Parent rechecked source/oracle hashes and raw log
+  `9c78afcadd311e10d40006916ea82d85a0a1829ff7967fb121c21aab8f0db1aa`.
+  Original producer and test are retained as `red-producer.py` / `red-profiles.rs`.
+- Brain #663 implementation now routes bare `profiles` to the existing native
+  browser discovery helper instead of the MCP catalog. It preserves null/empty
+  JSON, text and Go struct YAML, native OS path components, marker stat semantics
+  and the tested argument-error precedence. No dependency/lock changes.
+  First local green gate `proc_ec4df60f08e0` is consumed: exit 0, one real test,
+  exact set of 48 Go/Rust comparisons; recursive fixture state stays unchanged.
+  Raw `green-test.log` SHA-256
+  `381c836498b73b47067d0fa2c6f6404b40088b73f87b737d3d8ef32c49c1357c`.
+  Only redundant test HOME/USERPROFILE setup was then simplified, preserving the
+  same corpus and keeping the new test below 400 lines; that final test is verified below.
+  Dedicated `.github/workflows/browse-profiles.yml` adds all three native targets
+  and retains synthetic fixtures/raw streams; its exact-head run below is in progress.
+  Final candidate: `brain-663-regression-001/final-001/candidate.json`, SHA-256
+  `acbf88bcefa1ed6879c651e43b8d372b32aef82cf1255595282506d718dbd936`,
+  binding 650 source entries on the unchanged base above. Source is frozen.
+  Final gate `proc_17eb917ae853` / `final_gates.py` completed exit 0 and is
+  independently reconciled: 137 affected core/CLI tests passed, none failed or
+  ignored, with the exact 48 profile comparisons. All-target/all-feature strict
+  Clippy, fmt, Windows MSVC compilation and actionlint passed. The identical-binary
+  negative control executed and failed at its intended assertion, exit 101.
+  Parent rechecked all six raw logs, producer/oracle identity, all 650 source
+  entries and native binary SHA-256
+  `f8b34fb7bed946e2a81646d07dc43eb79d7603bfa0d816f6f93e0207ef1122ff`.
+  `final-001/gates.json` SHA-256
+  `c0a80deda3d7fba118e49bceda4d8d312ceea5a87c4ec5a0d902877bc425fdca`.
+  Native host is `aarch64-apple-darwin`; Windows compilation does not establish
+  native Windows parity.
+  Independent bounded source/regression review `deleg_24ef9f2e` /
+  `sa-0-e6d00c6a` APPROVE is reconciled on that exact manifest, no blocking findings.
+  Receipt: `brain-663-regression-001/review-deleg_24ef9f2e.md`. The parent checked
+  all 650 source entries again before committing and against every committed blob.
+  Verified commit `337b654d7c353794bd8de8ea13c7eeb96da78517` is pushed and the
+  remote ref was read back; working tree is clean. Draft PR #665 targets `main`;
+  exact body, five changed files and head were read back. Four other open PRs have
+  no owned-path overlap. Main still equals the reviewed base above.
+  Sync was fetch-only (`--no-prune --no-tags`): the generic sync helper prunes
+  refs/tags even on a dirty tree, outside this run's cleanup authorization.
+  Native profile workflow `35804452141`, attempt 1, is watched once by
+  `proc_b515f95423b8`; CI workflow `35804451833`, attempt 1, by
+  `proc_ee68e09dde42`, both bound to `337b654d7c353794bd8de8ea13c7eeb96da78517`
+  with 900-second deadlines. Required branch-rule contexts read back:
+  `build-test`, `stdio-hygiene`, `govulncheck`, `gui` (strict/up-to-date policy).
+  Flow-list workflow `35804451693` also targets this head. No current-head native
+  or required-CI success is claimed before the completion/readback gate.
+- EraseMe diagnosis `deleg_2c48cdea` / `sa-0-6f4b8408` is consumed. Parent
+  verified current Go/Rust schema 2, old-tag schema 1, v2-migration ancestry,
+  unchanged storage sources between the retained current-Go revision and source
+  `8986a3db3d60d37b89368d37e15f1e98c60672f2`, and both Go artifact hashes/build
+  metadata. Receipt: external `eraseme-8986a3d/diagnosis-deleg_2c48cdea.md`;
+  issue #1035 comment `5786401839` was read back; issue remains OPEN.
+  The immediate prerequisite is a source-bound fallback compatibility test,
+  not a missing schema migration. Existing current-Go candidate SHA-256
+  `6b67b14732b699526d2cffa6a1f18afdb8d9be56205bde136259b11c8e094f3f`
+  embeds `cb35ccf036bf7fbf5853067068da6bb0474c428d`, unmodified, but was built
+  with Go 1.27.1 and CGO enabled: diagnostic candidate, not release acceptance.
+  Current Go itself upgrades a v1 baseline; do not misattribute that migration
+  to Rust or replace the historical old-fallback failure.
+- New EraseMe diagnostic `eraseme-8986a3d/switchback-001/` executed six real
+  commands through an atomically switched executable on one plain fixture DB.
+  Schema sequence 1 -> 2 -> 2 -> 2; Rust created one new campaign/request after
+  the current-Go baseline. Restored current Go read that write and all three
+  pre-existing requests, with full semantic JSON and post-write table/schema
+  equality; no DB restore or pragma rewrite. Parent independently checked raw
+  stream hashes/sizes/exits, exact case inventory and final executable identity.
+  New index binds 35 regular files, SHA-256
+  `c3773844a1ed57a9fdd0137d82381b1d4fd678726dd510dfeb492ac771daf9e7`.
+  Producer `switchback_eraseme.py` and reused helpers are frozen in `producers/`.
+  Original 87-file evidence/index is unchanged; consumer primary is clean.
+  Review `deleg_2e9d0b77` / `sa-0-49a3aef2` APPROVE is reconciled for the
+  narrow claim. Parent's `eraseme-8986a3d/verify_switchback_review.py` exited 0:
+  all 35 files, six exact successful cases, 2052 source/archive entries, both
+  artifact identities, complete JSON and immutable SQLite table readback agree.
+  Receipt: `eraseme-8986a3d/review-deleg_2e9d0b77.md`. No historical capture changed.
+  Review reconciliation posted to #1035 and exact body/state read back at
+  `issuecomment-5786986203`; the issue remains OPEN.
+  Fresh sandbox negative controls were not repeated. Runtime `CGO_ENABLED=0`
+  does not change the Go artifact's verified Go 1.27.1/CGO_ENABLED=1 build.
+  This is unpublished local macOS arm64 diagnostic evidence, not repository-gate
+  or release acceptance; encrypted-store, native Linux/Windows, crash/concurrency
+  and production recovery remain unproved.
+- Next: consume `proc_b515f95423b8` / `proc_ee68e09dde42` for Brain #663;
+  reconcile all dedicated native legs and exact-head required checks for PR #665
+  before promotion/merge. Preserve any actual CI failures. Then integrate the
+  reviewed Brain/EraseMe reconciliation into a verified CoreKit docs candidate.
+  EraseMe's narrow diagnostic is reconciled, not promoted into release tooling.
+  PR #313 is older overlapping documentation, not release authorization; preserve
+  its branch. #1035 remains open for verified compatible fallback acceptance,
+  not a reason to weaken schema guards. No schema implementation patch is needed
+  for the observed plain-store version mismatch.
+  RUST-014/015 and consumer release anchors stay unchanged:
   released-artifact provenance, required native targets and release-bound recovery
   remain open. No tags, publication, installed cutover or Go removal is authorized.
 
