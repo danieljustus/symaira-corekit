@@ -8,4 +8,5 @@
 /rust/**/Cargo.toml text eol=lf
 /scripts/rust-port/sqlite/** text eol=lf
 /testdata/rust-port/sqlite/*.json text eol=lf
+/assets/branding/SymairaCoreKit/** -text
 /.gitattributes text eol=lf
