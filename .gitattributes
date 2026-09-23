@@ -9,4 +9,5 @@
 /scripts/rust-port/sqlite/** text eol=lf
 /testdata/rust-port/sqlite/*.json text eol=lf
 /assets/branding/SymairaCoreKit/** -text
+/llmkit/providers.json text eol=lf
 /.gitattributes text eol=lf
