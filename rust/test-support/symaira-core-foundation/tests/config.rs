@@ -193,8 +193,10 @@ fn cfg_004_types_bool_duration_and_slices_match_go_fixture() {
 }
 
 #[test]
-fn cfg_005_zero_toml_values_do_not_override_defaults() {
-    let expected = fixture("CFG-005");
+fn cfg_005_present_zero_values_override_defaults() {
+    // The immutable v0.17.0 oracle records the old behavior. The target
+    // contract changed in Go #330; do not rewrite that historical capture.
+    assert!(fixture("CFG-005")["zero_preserved"].as_bool().unwrap());
     let file = tempfile_dir().join("zero.toml");
     std::fs::write(
         &file,
@@ -202,9 +204,27 @@ fn cfg_005_zero_toml_values_do_not_override_defaults() {
     )
     .unwrap();
     let mut config = defaults();
+    config.debug = true;
     merge_file(&mut config, &file).unwrap();
-    assert_eq!(config, defaults());
-    assert!(expected["zero_preserved"].as_bool().unwrap());
+    assert!(!config.debug);
+    assert_eq!(config.timeout, 0);
+    assert_eq!(config.rate, 0.0);
+    assert_eq!(config.name, "");
+    assert_eq!(config.server.port, 0);
+    assert_eq!(config.server.host, "");
+    assert_eq!(config.tags, ["default"]); // absent field
+
+    let mut env_config = defaults();
+    apply_env_overrides_from(
+        &mut env_config,
+        "APP",
+        [("APP_NAME", ""), ("APP_TAGS", ""), ("APP_TIMEOUT", "0")],
+    )
+    .unwrap();
+    assert_eq!(env_config.name, "");
+    assert_eq!(env_config.timeout, 0);
+    assert_eq!(env_config.tags, ["default"]); // empty slice env stays ignored
+    assert!(apply_env_overrides_from(&mut env_config, "APP", [("APP_TIMEOUT", "")]).is_err());
 }
 
 #[test]
