@@ -1,6 +1,6 @@
 # Go→Rust migration handoff
 
-Status: **RUST-001 through RUST-006, RUST-010 and RUST-013 complete; RUST-014 remains in progress because registry evidence does not exist; RUST-015 is blocked on released consumer evidence. Go remains the supported executable oracle and no broad cutover is implied**.
+Status: **RUST-001 through RUST-006, RUST-010 and RUST-013 complete; RUST-016 is ready for Git-pinned consumer releases, RUST-014 remains in progress without registry evidence, and RUST-015 is blocked on both. Go remains the supported executable oracle and no broad cutover is implied**.
 
 This directory freezes the starting point for a contract-first Rust implementation of `symaira-corekit`. The Go implementation remains supported, buildable and the executable oracle while Go consumers exist. Rust crates are added beside it and are adopted package by package; this is not a flag-day repository rewrite.
 
@@ -68,7 +68,7 @@ Non-goals:
 
 ## Migration and rollback rule
 
-The repository remains dual-language. Go tags and APIs continue under existing SemVer. Rust crates begin at `0.x`, use exact internal versions, and are consumed first by exact Git revision plus `Cargo.lock`. No Rust crate may be published to crates.io before the full migration is complete, all required Rust/Go gates are green, every released consumer has an explicit rollout decision, and a separately approved release records external registry read-back evidence. A Rust crate may be removed before 1.0 if it fails adoption; a Go package may be removed only in a separate major-version decision after repository-wide released-consumer evidence says it is unused.
+The repository remains dual-language. Go tags and APIs continue under existing SemVer. Rust crates begin at `0.x`, use exact internal versions, and are consumed first by exact Git revision plus `Cargo.lock`. The sequence is **released Git-pinned consumer snapshots with real standalone/rollback evidence (RUST-016) → separately approved crates.io publication after all required Rust/Go, migration and security gates, with external registry read-back (RUST-014) → new released consumer snapshots pinned to exact registry versions (RUST-015)**. Publication remains forbidden before the first stage is verified; its release approval does not follow automatically from a planning change. A Rust crate may be removed before 1.0 if it fails adoption; a Go package may be removed only in a separate major-version decision after repository-wide released-consumer evidence says it is unused.
 
 ## Stop rules
 
@@ -92,7 +92,7 @@ Stop and reassess when any of these holds:
 - [`implementation-plan.md`](implementation-plan.md) — ordered vertical slices.
 - [`release-manifest.md`](release-manifest.md) — RUST-014 tag, package, provenance and publication contract.
 - [`demand-assessment.md`](demand-assessment.md) — search evidence and verdicts for the demand-driven slices (`RUST-007` through `RUST-012`).
-- [`consumer-rollout-findings.md`](consumer-rollout-findings.md) — the four classes that block the RUST-015 released-consumer gate.
+- [`consumer-rollout-findings.md`](consumer-rollout-findings.md) — historical findings now assigned to the pre-registry RUST-016 release gate.
 - [`work-items.json`](work-items.json) — machine-readable acyclic work graph.
 - [`validate.py`](validate.py) — validates schemas, IDs, links, coverage and graph barriers.
 - [`../../testdata/rust-port/`](../../testdata/rust-port/) — generated public API, contract fixtures, neutral cases, isolation limits, paired-consumer canaries, and RUST-005 adoption evidence/reports.
@@ -107,7 +107,8 @@ python3 -m unittest discover -s port/release -p 'test_*.py'
 python3 -m unittest discover -s port/consumer -p 'test_*.py'
 cargo semver-checks check-release
 python3 port/release/verify.py --dry-run
-python3 port/consumer/verify.py --released-consumers  # expected blocked until canonical consumer evidence exists
+python3 port/consumer/verify.py --git-pinned-consumers # RUST-016; expected blocked until Git-pinned releases exist
+python3 port/consumer/verify.py --released-consumers  # final RUST-015 gate; expected blocked until registry-pin releases exist
 make consumer-drift                              # canonical workspace + registered worktree safe
 ```
 

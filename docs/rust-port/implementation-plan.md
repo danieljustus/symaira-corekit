@@ -1,6 +1,6 @@
 # Symaira CoreKit Go→Rust implementation plan
 
-> **Execution rule:** implement one work item per reviewed PR. Keep Go green and released. Rust crates remain Git-pinned and non-publishing until the full migration, consumer rollout, and external registry-evidence gates are complete. Begin only with the first `ready` item in [`work-items.json`](work-items.json); update statuses only after every acceptance command really passes.
+> **Execution rule:** implement one work item per reviewed PR. Keep Go green and released. First release Git-pinned consumers with independently verified standalone/rollback evidence (RUST-016); only then, after required migration and native gates, separately approve and verify crates.io publication (RUST-014); finally release exact registry-pinned consumers (RUST-015). Begin only with a `ready` item in [`work-items.json`](work-items.json); update statuses only after every acceptance command really passes.
 
 **Goal:** Add adopted, idiomatic Rust CoreKit crates beside the stable Go module, preserving all observable contracts and removing duplicate foundations from active Rust consumers without a flag-day rewrite.
 
@@ -208,9 +208,15 @@ All RUST-006+ work depends transitively on this graph barrier.
 
 **Acceptance evidence:** The historical hardening gate was merged through PR #246 at exact head `b3f189f6ac4c78986c48be510805663906cce876`; GitHub reports the `Rust RUST-013 hardening` job successful in run `34193678917` (job `101956734067`). Its log contains successful `cargo audit` and `cargo deny check` commands, which is the bound evidence for `REL-004` parity. Revalidation on 2026-09-08 at `d382b8615ce879bac6f23c7250e13667934e8f93`: the local gate set (`cargo fmt --all --check`, `cargo check/clippy/nextest/doctest --locked`, `cargo hack --each-feature`, `cargo audit`, `cargo deny check`, `miri_gate.py --self-test`) passed on macOS, and native CI run `34231886903` (push to main) for that commit is green on ubuntu-latest, macos-latest and windows-latest including the RUST-013 native, Miri gate and hardening jobs. RUST-013 is complete; no crate publication, Go cutover or Go-oracle removal occurred.
 
+## RUST-016: Released Git-pinned consumer snapshots — READY
+
+**Objective:** Break the release dependency cycle without weakening publication checks. Each consumer in `docs/consumers.json` first ships a real release of its exact CoreKit Git-pinned Rust snapshot, alongside the supported Go fallback.
+
+**Gate:** Run `python3 port/consumer/verify.py --git-pinned-consumers` against clean, immutable release checkouts; verify each consumer tag, published release and downloaded artifact independently. The local verifier checks exact Cargo pins and lock resolution, Go imports, committed standalone/rollback reports and independently reviewed artifact/report digests. Its local tag check does **not** prove GitHub publication or actual Rust execution: obtain source-bound runtime and rollback-transition evidence from each consumer, and preserve the public read-back record. Do not call a version-only smoke a product cutover. Four consumer releases and their evidence remain outstanding; no registry publication follows from this planning change alone.
+
 ## RUST-014: SemVer, publishing manifest and release verification — IN PROGRESS (non-publishing local gate)
 
-**Objective:** Keep the release contract executable without publishing. No crates.io publication is permitted until the full migration and consumer rollout are complete, followed by separately approved external registry evidence.
+**Objective:** Keep the release contract executable without publishing. No crates.io publication is permitted until RUST-016 is complete, all required migration/native/security gates are green, and a separately approved release can read back real registry ownership, index and public bytes. RUST-015's later registry-pin releases cannot precede that publication.
 
 **Create:** `port/release/manifest.json`, `port/release/verify.py`, and focused
 stdlib-only verifier tests. The manifest classifies every workspace package,
@@ -242,13 +248,13 @@ crates.io ownership, public-byte readback, or external OIDC/publishing evidence
 exists while every crate stays `publish = false`. Go build/test/lint and exact
 Git-revision consumer support remain unchanged.
 
-## RUST-015: Consumer rollout and Go-retention review — BLOCKED (verifier implemented)
+## RUST-015: Registry-pinned consumer rollout and Go-retention review — BLOCKED (verifier implemented)
 
 **Objective:** Finish adoption without pretending Rust crate availability removes the Go API.
 
 **Executable gate:** `python3 port/consumer/verify.py --released-consumers` checks every `docs/consumers.json` record. It distinguishes released Git revisions from registry pins, exact Cargo.toml versions, Cargo.lock source/checksum, release-tag ancestry, Go imports, and explicit standalone/rollback evidence, and it reads a consumer's nested Cargo workspace through the record's `cargo_root` field. The current run is expected to exit 1 with blockers; `make consumer-drift` runs the same verifier from the canonical checkout even when invoked from a registered worktree.
 
-**Steps:** Track every released Go and Rust consumer, exact pin and package use; migrate consumer by consumer with its own suite; retain Go releases while any released consumer imports a package. Any Go removal is a later, separate major-version proposal with rollback evidence.
+**Steps:** After RUST-014's verified registry publication, migrate each consumer from the Git revision to an exact crates.io version and `Cargo.lock` checksum, run its own full suite, publish a **new** consumer release and read back its artifacts and rollback evidence. Track every remaining Go import and retain Go releases while any released consumer imports a package. Any Go removal is a later, separate major-version proposal with rollback evidence.
 
 ## Final handoff verification
 

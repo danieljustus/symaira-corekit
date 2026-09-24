@@ -5,7 +5,7 @@ RUST-014 adds a release plan at [`../../port/release/manifest.json`](../../port/
 ## Tag and version rules
 
 - Repository `vMAJOR.MINOR.PATCH` tags continue to mean Go module releases.
-- Rust crates do not receive a second repository tag. The manifest's `planned_publish_order` records a future ordering only; it is not a tag namespace or an authorization to publish. No crates.io publication is allowed before the full migration, consumer rollout and external registry-evidence gates are complete.
+- Rust crates do not receive a second repository tag. The manifest's `planned_publish_order` records a future ordering only; it is not a tag namespace or an authorization to publish. No crates.io publication is allowed before RUST-016's released Git-pinned consumer evidence, required migration/native/security gates and a separately approved registry release. RUST-015's subsequent registry-pinned consumer releases cannot be a prerequisite of the first registry publication.
 - Every workspace package is classified in the manifest. Only adopted crates may appear in `planned_publish_order`; private test-support crates and non-adopted crates remain non-publishable.
 - The manifest records the exact Cargo manifest path and version for every workspace package and checks both against `cargo metadata`.
 - Every repository release reference in `docs/consumers.json` uses the immutable stable tag form `^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$`; `HEAD`, branches, and `refs/*` are never accepted. Its `release.commit` must resolve from `refs/tags/<tag>` in CoreKit, and `release_source: "corekit"` makes that namespace mapping explicit.
@@ -27,6 +27,7 @@ cargo semver-checks check-release
 python3 port/release/verify.py --dry-run
 python3 -m unittest discover -s port/release -p 'test_*.py'
 python3 -m unittest discover -s port/consumer -p 'test_*.py'
+python3 port/consumer/verify.py --git-pinned-consumers # RUST-016, required before publication
 python3 port/consumer/verify.py --released-consumers  # expected blocked until evidence exists
 ```
 
@@ -48,4 +49,4 @@ Local RUST-014 tooling is complete and wired into normal CI only. The Go-only ta
 - crates.io ownership, index visibility, downloaded public bytes and registry checksums cannot be verified locally before publication;
 - signing/provenance attestations from an external registry or GitHub OIDC run remain release-time evidence.
 
-Those external checks are the hard gate before changing the manifest from `not-run` or moving any consumer from exact Git revisions to an exact crates.io version. Go build, test, lint, API compatibility, tags and consumer support remain independent and unchanged.
+RUST-016's released Git-pinned consumer evidence and the external registry checks are hard gates before changing the manifest from `not-run` or moving any consumer from exact Git revisions to an exact crates.io version. A local consumer-verifier pass is necessary but does not establish GitHub release publication, downloaded artifacts, source-bound Rust execution or a real rollback transition. Go build, test, lint, API compatibility, tags and consumer support remain independent and unchanged.

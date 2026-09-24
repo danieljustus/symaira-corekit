@@ -1,6 +1,16 @@
-# RUST-015 released-consumer gate: what actually blocks it
+# Released-consumer rollout: historical findings and staged gates
 
-## Current correction — report integrity anchor (2026-09-22)
+## Current release order (2026-09-24)
+
+The Git-pinned release evidence formerly conflated with RUST-015 is now the
+explicit RUST-016 prerequisite to RUST-014 registry publication. The final
+RUST-015 gate instead requires *new* exact registry-pinned consumer releases.
+Run `python3 port/consumer/verify.py --git-pinned-consumers` for the first
+stage; its pass is not public-release or rollback-transition proof. The
+historical findings below describe pre-registry consumer checkouts, not a
+completed first stage. Keep their observed results and dates unchanged.
+
+## Historical correction — report integrity anchor (2026-09-22)
 
 At integrated CoreKit `d31603ff042392fd8cee2dd0284dd2667123d703` (PR #318),
 a disposable structural fixture still passes after replacing its binary,
@@ -199,7 +209,7 @@ runs; CoreKit cannot manufacture it.
 Closure sequence: consumers released → checkout re-pinned to the released
 commit (class 1) → standalone/rollback reports committed there → gate re-run.
 
-## Decision
+## Historical decision (2026-09-22; superseded sequencing)
 
 - `RUST-015` stays `blocked`. Classes 2 and 3 are closed; classes 1 and 4
   remain, and class 1 is deliberately coupled to class 4 rather than refreshed
@@ -213,7 +223,8 @@ commit (class 1) → standalone/rollback reports committed there → gate re-run
   global search), and `docs/product-boundaries.md` already records the archive:
   Browse ships as the optional module `symaira-brain/browse/`. Confirmed by the
   user; the gate's scope is four released consumers.
-- No CoreKit release, registry publication, Go removal or consumer rollout is
-  authorised by this document. `RUST-014` remains `in_progress` for the same
-  reason: `port/release/manifest.json` may not move off `not-run` before this
-  gate is complete.
+- No CoreKit release, registry publication, Go removal or consumer rollout was
+  authorised by this historical decision. Its requirement to finish the
+  registry-pinned RUST-015 gate before first publication was circular; the
+  current order is RUST-016 → RUST-014 → RUST-015. The manifest stays `not-run`
+  until the first stage and the independent publication gates pass.

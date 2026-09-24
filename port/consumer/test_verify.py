@@ -185,6 +185,14 @@ def release_registry(manifest: Path, consumer: Path) -> None:
 
 
 class ConsumerVerifierTests(unittest.TestCase):
+    def test_release_work_items_enforce_staged_order(self) -> None:
+        work = json.loads((verify.ROOT / "docs/rust-port/work-items.json").read_text(encoding="utf-8"))
+        items = {item["id"]: item for item in work["items"]}
+        for prerequisite, stage in (("RUST-016", "RUST-014"), ("RUST-014", "RUST-015")):
+            self.assertIn(prerequisite, items[stage]["depends_on"])
+            if items[stage]["status"] == "complete":
+                self.assertEqual(items[prerequisite]["status"], "complete")
+
     def test_pseudoversion_is_preserved_exactly(self) -> None:
         text = "module example.invalid/tool\n\nrequire (\n\tgithub.com/danieljustus/symaira-corekit v0.0.0-20260908091500-0123456789ab\n)\n"
         self.assertEqual(verify.parse_go_pin(text), "v0.0.0-20260908091500-0123456789ab")
@@ -232,6 +240,49 @@ import (
             manifest, corekit, _, release_commit, adoption_commit = make_fixture(Path(raw), status="git")
             self.assertNotEqual(release_commit, adoption_commit)
             report = verify.verify_manifest(manifest, workspace_root=Path(raw), corekit_root=corekit)
+            self.assertEqual(report["status"], "passed", report)
+
+    def test_git_release_stage_rejects_registry_or_missing_git_pin(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            root = Path(raw)
+            manifest, corekit, _, _, _ = make_fixture(root)
+            original = json.loads(manifest.read_text(encoding="utf-8"))
+            self.assertEqual(verify.verify_manifest(
+                manifest, workspace_root=root, corekit_root=corekit,
+                git_release_stage=True,
+            )["status"], "passed")
+            for change, code in (("registry", "stage.registry"), ("pin", "stage.pin")):
+                with self.subTest(change=change):
+                    document = copy.deepcopy(original)
+                    if change == "registry":
+                        document["corekit"]["rust_registry"]["status"] = "released"
+                    else:
+                        document["consumers"][0]["rust"]["status"] = "not_adopted"
+                    manifest.write_text(json.dumps(document), encoding="utf-8")
+                    report = verify.verify_manifest(
+                        manifest, workspace_root=root, corekit_root=corekit,
+                        git_release_stage=True,
+                    )
+                    self.assertEqual(report["status"], "blocked", report)
+                    self.assertIn(code, {finding["code"] for finding in report["findings"]})
+
+    def test_final_release_stage_requires_registry_and_exact_pins(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            root = Path(raw)
+            manifest, corekit, _, _, _ = make_fixture(root)
+            blocked = verify.verify_manifest(
+                manifest, workspace_root=root, corekit_root=corekit,
+                registry_release_stage=True,
+            )
+            self.assertEqual({finding["code"] for finding in blocked["findings"]}, {"stage.registry", "stage.pin"})
+        with tempfile.TemporaryDirectory() as raw:
+            root = Path(raw)
+            manifest, corekit, consumer, _, _ = make_fixture(root, status="registry")
+            release_registry(manifest, consumer)
+            report = verify.verify_manifest(
+                manifest, workspace_root=root, corekit_root=corekit,
+                registry_release_stage=True,
+            )
             self.assertEqual(report["status"], "passed", report)
 
     def test_consumer_release_binds_the_exact_consumer_snapshot(self) -> None:

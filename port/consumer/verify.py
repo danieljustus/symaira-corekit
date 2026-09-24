@@ -1062,6 +1062,8 @@ def verify_manifest(
     *,
     workspace_root: Path | None = None,
     corekit_root: Path | None = None,
+    git_release_stage: bool = False,
+    registry_release_stage: bool = False,
 ) -> dict[str, Any]:
     document = json.loads(manifest_path.read_text(encoding="utf-8"))
     records = document.get("consumers") if isinstance(document, dict) else None
@@ -1072,6 +1074,10 @@ def verify_manifest(
     registry = corekit.get("rust_registry")
     if not isinstance(registry, dict) or registry.get("package") != COREKIT_PACKAGE or registry.get("status") not in REGISTRY_STATUSES:
         raise ValueError("docs/consumers.json Rust registry status must be not_released or released")
+    if git_release_stage and registry["status"] != "not_released":
+        _add(findings, "corekit", "stage.registry", "Git-pinned consumer releases must precede CoreKit registry publication")
+    if registry_release_stage and registry["status"] != "released":
+        _add(findings, "corekit", "stage.registry", "Registry-pinned consumer releases require verified CoreKit registry publication")
     if not isinstance(records, list) or not records:
         raise ValueError("docs/consumers.json must contain a non-empty consumers array")
     repositories: set[str] = set()
@@ -1113,6 +1119,11 @@ def verify_manifest(
             continue
         repositories.add(repository)
         _validate_rust_status(record, findings)
+        rust = record.get("rust")
+        if git_release_stage and (not isinstance(rust, dict) or rust.get("status") != "git"):
+            _add(findings, repository, "stage.pin", "Git-pinned release stage requires an exact CoreKit Git revision in every consumer")
+        if registry_release_stage and (not isinstance(rust, dict) or rust.get("status") != "registry"):
+            _add(findings, repository, "stage.pin", "Final release stage requires an exact crates.io version in every consumer")
         checkout_name = repository.rsplit("/", 1)[1]
         checkout_link = workspace_root / checkout_name
         if checkout_link.is_symlink():
@@ -1144,18 +1155,22 @@ def verify_manifest(
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--released-consumers", action="store_true", help="verify every record in docs/consumers.json")
+    stage = parser.add_mutually_exclusive_group(required=True)
+    stage.add_argument("--released-consumers", action="store_true", help="verify every record in docs/consumers.json")
+    stage.add_argument("--git-pinned-consumers", action="store_true", help="verify the pre-registry Git-pinned consumer release stage")
     parser.add_argument("--manifest", type=Path, default=MANIFEST)
     parser.add_argument("--workspace-root", type=Path)
     parser.add_argument("--corekit-root", type=Path)
     parser.add_argument("--report", type=Path)
     args = parser.parse_args(argv)
-    if not args.released_consumers:
-        parser.error("--released-consumers is required; verification is never implicit")
     try:
         workspace = args.workspace_root.resolve() if args.workspace_root else None
         corekit = args.corekit_root.resolve() if args.corekit_root else canonical_checkout(ROOT)
-        report = verify_manifest(args.manifest.resolve(), workspace_root=workspace, corekit_root=corekit)
+        report = verify_manifest(
+            args.manifest.resolve(), workspace_root=workspace, corekit_root=corekit,
+            git_release_stage=args.git_pinned_consumers,
+            registry_release_stage=args.released_consumers,
+        )
     except (OSError, RuntimeError, ValueError, json.JSONDecodeError, tomllib.TOMLDecodeError) as error:
         print(f"error: consumer verification unavailable: {error}", file=sys.stderr)
         return 2
