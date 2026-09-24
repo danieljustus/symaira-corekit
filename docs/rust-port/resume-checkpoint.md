@@ -1,14 +1,188 @@
-# Resume checkpoint — SQLite and MCP-config slices complete, RUST-014/015 open
+# Resume checkpoint — Rust consumer release gates open
 
-## Active checkpoint — native Browse prerequisites integrated (2026-09-23)
+## Active checkpoint — staged release contract and EraseMe parity (2026-09-24)
 
-- Mode/status: execute / running; migration **not complete**. CoreKit integrated
-  base `7b8811a224450c78638e5c3d77bafbfe1e3bf9b7`; coordinator owns the docs-only
-  branch `migration/rust015-parity-reconciliation` in the existing isolated
+- Mode/status: EraseMe #1039 is integrated with green post-merge main CI.
+  CoreKit `d80ab64f09e205dce329f525850cfc41d58ccae3` (#334) now requires
+  **RUST-016 Git-pinned consumer releases → separately gated RUST-014 registry
+  publication → RUST-015 new registry-pinned consumer releases**. RUST-016 is
+  ready but its four public consumer releases and source-bound standalone/rollback
+  evidence remain outstanding; RUST-014 is `in_progress`, RUST-015 `blocked`.
+  The local EraseMe plain-store switchback is not released-artifact rollback
+  evidence. No CoreKit crate publication, Go removal or installed cutover follows
+  from this checkpoint. See issue #249 and `implementation-plan.md` for the gates.
+- EraseMe #1036 merged normally at `5ed76275eeb2c510a75dc9f18c28484e55e4be1c`.
+  Main CI `35840088165`, CodeQL `35840088299`, and six native SQLite smoke jobs
+  `35840088333` passed. Initial Rust CI `35840088131` failed Windows Clippy.
+  PR #1033 exact head `69009e6af21a61207edb291a67a1e7c45666a117` passed all
+  six required up-to-date PR checks (run `35840812954`), and its native run
+  `35840860760` passed Clippy but failed four Windows CLI `command_surface`
+  tests. PR #1033 merged regularly at `75a006dfcea6e9d86e96509da10b3f33f280c08d`;
+  issue #1038 tracks the separate native path/JSON fixture defects. That earlier
+  native run was not green; the current-head native run below passed. #1035 remains open.
+- Completed PR item: EraseMe #1038, coordinator-owned isolated worktree
+  `.worktrees/windows-cli-parity-1038`, branch `fix/windows-cli-parity-1038`,
+  based on integrated #1033 main `75a006dfcea6e9d86e96509da10b3f33f280c08d`.
+  PR #1039 exact head `0b63dda18b3153038a8161a8f13237c88dea0551`
+  was regularly squash-merged as `286c7caef08d28bf68abcbf0d09d96db0d514b56`;
+  candidate and `origin/main` tree both equal `235dcd3ac34becd50a7d9430cbe431fbfc5d8c66`.
+  Touched paths: CLI test/oracle,
+  scheduler ExecRunner, CLI `validate_roots`, `.gitattributes` for #1040, and
+  scheduler install parity test for #1042.
+  Separate `rust/cli024-engine`
+  changes that same CLI file and removes `validate_roots`; its worktree remains
+  untouched. Forward-port requirement and merged SHA are read back on phase-7
+  issue #809, updated comment `5793022287`, before CLI-024 integration.
+- Prior native run `35844837259` (`5812ede`) failed Unix-frozen
+  `operate-migrate` and Windows `%PATH%` wording. `35846830619` on `5197b74`
+  passed Linux/macOS and Windows lint, then 15/16 Windows CLI cases: pinned
+  native Go `os.Lstat` reports `GetFileAttributesEx <path>: The system cannot
+  find the path specified.` while Rust wrote `lstat <path>: the system ...`.
+  Exact log: `eraseme-1035-regression-001/issue1038-native-windows-5197b74.log`.
+  PR fast gate `35846899085` passed at that superseded SHA; independent review
+  `codex-review-5197b74.log` found no actionable bug but did not run Windows.
+- Next native run `35847774986` (`3f79f3f`) passed Windows compilation and
+  15/16 Windows CLI cases, then exposed frozen Unix `operate-schedule-install`
+  output with Windows JSON-escaped paths. Exact log:
+  `eraseme-1035-regression-001/issue1038-native-windows-3f79f3f.log`.
+  PR fast gate `35847778507` passed at that superseded head; read-only review
+  `codex-review-3f79f3f.log` found no actionable bug but did not run Windows.
+- Candidate `7ac06d1` preserves the 163/3 frozen CLI inventory, compares
+  Windows migration and schedule commands to Go 1.26.6 binaries from pinned
+  source `4e582f28`, and maps native missing-source Win32 Lstat text. Local 16
+  CLI tests, Rust 1.98 fmt and all-target strict Clippy passed; read-only review
+  `codex-review-7ac06d1.log` found no actionable regressions (no Windows run).
+  Native dispatch `35848601097` passed Linux/macOS and Windows lint but failed
+  `symeraseme-core --test triage_corpus`: `ack_gdpr.txt` was CRLF-rewritten on
+  Windows (`85125c…` vs recorded LF digest `093c4e…`). Exact Windows log:
+  `eraseme-1035-regression-001/issue1038-native-windows-7ac06d1.log`.
+- #1040 tracks the verified checkout defect. Candidate `e22bea4` pins all six
+  `tests/fixtures/broker_replies/*.txt` files to `text eol=lf` in `.gitattributes`;
+  the six Git blobs already match their recorded SHA-256 and simulated CRLF
+  exactly matches the Windows failure. Local `cargo +1.98.0 test --locked -p
+  symeraseme-core --test triage_corpus` ran 5/5; `git check-attr` reports LF for
+  six files, and a disposable `core.autocrlf=true/core.eol=crlf` checkout
+  reproduced all six recorded hashes without CRLF. Fmt/diff checks pass.
+  Duplicate issue #1041 was opened concurrently; a read-back-verified comment
+  there points to PR #1039 and asks to avoid a second implementation. The PR
+  body at `e22bea4` referenced #1038/#1040/#1041 (GraphQL readback verified).
+  PR auto-run `35849505699` passed the Rust PR fast gate at `e22bea4`
+  (GraphQL status-rollup readback); native jobs were skipped under PR event.
+  Read-only review `proc_8c7562c2ca01` found one P2: absolute Windows archive
+  paths may be read as remote by Git Bash tar. Relative archive/extract paths
+  are committed at `a0d39a9`; a disposable pinned-source tar extraction and
+  focused CLI test passed. Full review log:
+  `eraseme-1035-regression-001/codex-review-e22bea4.log`.
+- Native dispatch for `e22bea4` did **not start**: `gh workflow run rust-ci.yml`
+  returned HTTP 403 rate-limit twice (at 10:33:41 and 10:35:51 UTC); the
+  `rate_limit` read reported 5000/5000. At 10:52:20 UTC after the recorded
+  primary reset, `gh workflow run` again returned 403; direct POST to the
+  documented `.../workflows/rust-ci.yml/dispatches` endpoint also returned 403
+  at 10:54:04 UTC, so the CLI's preliminary GET is not the sole cause.
+  GraphQL still works; this is consistent with a secondary REST limit, but
+  the precise GitHub limit is unconfirmed. Safari public page is
+  unauthenticated and cannot dispatch; local real-profile browser is unavailable
+  (non-Chromium default). Daniel manually dispatched exact-head native run
+  `35852972138` on `06959d350147dd7262164c08fd4e6fa64452a1fb` at
+  11:10 UTC. `gh run view` verified `workflow_dispatch`, correct branch/SHA,
+  Windows and Ubuntu in progress, macOS queued; PR-only jobs skipped on the
+  dispatch event. One `gh run watch --exit-status` owns the asynchronous gate:
+  `proc_44ab56d7b480`. That run completed with Ubuntu/macOS success, Windows
+  failure at `scheduler_install_parity.rs:312`: across 20 native Windows Go
+  cases, differences from the Unix-frozen fixture were 116 file-mode fields and 18
+  generated `install.sh`/`uninstall.sh` hashes. The 16 Windows CLI cases and
+  5 `triage_corpus` cases passed. Full native Windows log:
+  `eraseme-1035-regression-001/native-35852972138-windows.log`.
+- Issue #1042 records the scheduler test defect. Commit `0ae202f9` projects
+  only those observed Unix↔Windows fixture fields for the frozen-fixture check,
+  retains all other fields, case/file inventory and runner script, and still
+  compares the Rust replay against the complete live native Go observation.
+  Negative control changes an unrelated hash and is rejected. Local Go oracle
+  package build, 15 engine unit, 4 install parity, 6 scheduler parity tests,
+  Rust 1.98 fmt and workspace strict Clippy passed. Exact-head PR fast gate
+  `35854435603` succeeded; native run `35854457332` on `0ae202f9` passed
+  Ubuntu/macOS and all Windows CLI/corpus tests, but failed at the first Rust
+  replay payload (`scheduler_install_parity.rs:502`): Rust paths used Windows
+  backslashes, while native Go's `filepath.ToSlash` used `/`. Log:
+  `eraseme-1035-regression-001/native-35854457332-windows.log`. Independent
+  review `proc_5643f60184d8` found no actionable issue on that superseded SHA.
+- Commit `0b63dda1` adjusts the test observation normalizer, including HOME,
+  run root and temp paths, to match Go's OS-specific `filepath.ToSlash`; Unix
+  preserves literal backslashes. A focused simulated-Windows/Unix test, 15
+  engine unit, 5 install parity and 6 scheduler parity tests, full-workspace
+  strict Clippy and Rust 1.98 fmt passed locally. Direct native dispatch
+  `35855526191` completed successfully on this exact SHA: Windows, macOS,
+  Ubuntu native jobs all passed. Windows log
+  `eraseme-1035-regression-001/native-35855526191-windows.log` shows 16/16
+  CLI cases, 5/5 `triage_corpus` including recorded digest, and 5/5 install
+  parity cases including real native-Go replay. Independent review
+  `proc_f12d9d3ac33c` completed without actionable regressions (macOS
+  execution and Windows static inspection). Separate plain-store gate
+  `35855509572` passed all six real cases on this head. PR auto-run
+  `35855509446` attempt 1 failed after 49 minutes: Tests/Doctests succeeded,
+  coverage step remained in progress, and check-run annotation reports that the
+  hosted runner lost communication. Direct job-log download returns
+  `BlobNotFound` (HTTP 404), so whether the host starved or failed for another
+  reason is unproven; do not attribute this to code or waive the gate. The same
+  coverage step passed in 3m17s on superseded head `0ae202f9` (run
+  `35854435603`). Exact-head failed-job rerun `35855509446`, attempt 2, job
+  `107180061338`, passed in 8m1s, including line coverage, feature combinations,
+  dependency gates and neutral parity. All six ruleset-required PR checks passed;
+  review-thread pagination returned zero, closing issues #1038/#1040/#1042
+  were explicit, and the PR was promoted and squash-merged without a bypass.
+  Readback: `state=MERGED`, `mergedAt=2026-09-23T12:40:42Z`, merge SHA above;
+  #1038/#1040/#1042 `CLOSED/COMPLETED`, #1041 duplicate `CLOSED/NOT_PLANNED`,
+  rollback issue #1035 still `OPEN`. No release, Go removal or cutover.
+- Post-merge `main` workflows on exact squash SHA
+  `286c7caef08d28bf68abcbf0d09d96db0d514b56` all completed `success`:
+  Rust CI `35862003127` (native Windows, macOS and Ubuntu checks, lint, tests
+  and doctests); SQLite proof `35862003197` (six native OS/arch smoke jobs);
+  CI `35862003116` (all six jobs, including queued-then-successful `macos-26`
+  app icon, tests, schema, lint and scans); Go CI `35862003164` (test and lint);
+  CodeQL `35862003183`. Each run was read back on this squash SHA; all five
+  watchers completed exit 0. PR-only Rust fast-gate jobs skipped on the
+  `push` event and were separately passed on the PR head above. No new release
+  or published-consumer acceptance follows from the green merge CI.
+- `main` advanced by two unrelated Dependabot commits: `2b9217fa` changes only
+  `Cargo.lock`, `cbf65457` changes CI and test-trufflehog script. They were
+  merged without history rewrite in the isolated branch as `06959d35`; origin
+  branch and GraphQL PR head read back to this exact SHA. This head passed
+  Go cli-schedule oracle test, 16 CLI cases, 5 triage-corpus cases, 15 engine
+  unit and 9 scheduler integration tests, Rust 1.98 fmt and all-target strict
+  Clippy. PR run `35850762107` and full status rollup passed on exact head
+  (GraphQL readback at 10:56:53 UTC; native jobs skipped on PR events).
+  Final-head read-only review
+  `proc_a638a7813fec` completed exit 0 with no actionable regressions; native
+  Windows was not exercised there. Log:
+  `eraseme-1035-regression-001/codex-review-06959d35.log`.
+- Residual: this EraseMe native-parity slice is integrated and post-merge CI
+  verified, not the whole migration. CLI-024's engine must forward-port the
+  Windows diagnostic from #1039 (issue #809); its other worktree remains untouched. RUST-015
+  remains blocked on published-consumer rollback, encrypted/native recovery and
+  release-bound evidence; local plain-store switchback is insufficient. No tag,
+  publication, Go removal or cutover authorization.
+
+## Prior checkpoint — EraseMe build verified; merge protection decision pending (2026-09-23)
+
+The states and next actions in this section are historical; the active checkpoint
+above supersedes them, including the former instruction to preserve PR #313's
+obsolete stop branch.
+
+- Mode/status: execute / blocked on owner authorization for EraseMe merge protection;
+  final-head build, native gate and source/security review passed; migration
+  **not complete**. CoreKit integrated
+  base `5c9df6dfb3c51d893bc2a5ffd218802c09176835`; coordinator owns the docs-only
+  branch `migration/rust015-fallback-acceptance` in the existing isolated
   `.worktrees/rust015-consumer-release`. Only this checkpoint is modified.
   RUST-014 remains `in_progress`, RUST-015 `blocked`; no release/consumer anchor changes.
   Candidate checks passed: ledger/link validation, 53 consumer tests, 14 release
   tests, consumer-pin classification regression and `git diff --check`.
+  PR #322 is read back MERGED through the regular squash path; its tree equals
+  tested candidate `2b40296815a5c9f62ba98e797e9573e1ccec1b13`. CI run
+  `35806003863`, attempt 1, completed with all 36 jobs successful, including all
+  five required contexts. Full review/thread/file/issue pagination was complete;
+  no issue was closed. Receipt: external `corekit-reconciliation-001/merge.json`.
+  Only the later local checkpoint remains WIP; existing branches are preserved.
 - Verified Brain prerequisite: PR #665 regularly squash-merged as
   `2de1c89d1ca571bf1bbfa012b53824d035ebece3`; #663 read back CLOSED/COMPLETED.
   Its tree equals reviewed/tested `337b654d7c353794bd8de8ea13c7eeb96da78517`.
@@ -26,18 +200,117 @@
   has the candidate tree. Source review `deleg_24ef9f2e` remains valid;
   `merge.json` records the final gate/merge/issue readback, and PR comment
   `5787282253` was read back exactly. No full Browse or released-artifact claim.
-- Residuals: EraseMe's approved `switchback-001` is plain-store, local diagnostic
-  evidence only: its existing compatible Go binary was built with Go 1.27.1/CGO enabled.
-  A pinned-toolchain, CGO-free source build and replay remain executable local work,
-  not an external blocker. Historical schema-v1 fallback failure stays retained;
-  #1035 remains open. Release-bound recovery, broader encrypted/native recovery,
-  published consumers/registry readback and a published SemVer baseline remain unproved.
-- Async: both Brain native/PR CI runs above are fully reconciled; later notices
-  for `proc_b515f95423b8` or `proc_ee68e09dde42` are redundant. Next: verify and
-  publish this docs-only reconciliation for CoreKit CI, then rebuild the source-bound
-  EraseMe Go oracle with its pinned toolchain/CGO disabled and repeat the bounded
-  post-Rust-write switchback without restoring state. Preserve #313's older docs
-  branch; no tags, publication, installed cutover, Go removal or destructive cleanup.
+- New EraseMe result: `go-build-001` independently read back as Go 1.26.6,
+  `CGO_ENABLED=0`, darwin/arm64, exact source `8986a3db3d60d37b89368d37e15f1e98c60672f2`;
+  Go artifact SHA-256 `f3ba1f985c7755c74dfacaa6df443e8b9ad2d4082ca4c929928b4720c32febcc`.
+  `switchback-pinned-002` passed all six real steps, four fresh sandbox denial
+  controls and the failing-wrapper control. Current Go read all three preexisting
+  requests and the Rust-created request after executable-only switchback; all
+  tables/schema and complete JSON match, schema sequence 1 -> 2 -> 2 -> 2, no restore.
+  Its 63-file index SHA-256 is
+  `ceae1721336d6a682345d51f1dd4bcd966a53845e3005c8f4a3ebf38e1582da1`.
+  Parent read-only `eraseme-8986a3d/verify_switchback_pinned.py` passed: all indexed
+  bytes, 2052 source/archive entries, actual compiler/artifacts, case inventory and
+  immutable SQLite readback agree. Independent review `deleg_f4fa108e` APPROVE
+  is reconciled after another parent verification of the unchanged capture.
+  Receipt: `eraseme-8986a3d/review-deleg_f4fa108e.md`. The old
+  schema-v1 fallback failure and Go 1.27.1/CGO-enabled diagnostic are unchanged.
+  #1035 remains open: this is local plain-store evidence, not repository/release
+  acceptance. Release-bound, encrypted/native recovery, public consumer/registry
+  readback and a published SemVer baseline remain unproved.
+### EraseMe #1035 / draft PR #1036
+
+- Current implementation: clean candidate `c183cd880ad0f0440f86fe2e3746af50006ec067`,
+  coordinator-owned `symaira-eraseme/.worktrees/switchback-1036-sandbox`, branch
+  `fix/plain-store-sandbox-1036`, parent `d0998032effa90af6789a40b30a1556d9dab01df`.
+  Fast-forward pushed to owned remote `test/plain-store-switchback-1035`; PR #1036
+  head/body/draft state read back exactly. The old `.worktrees/switchback-1035`
+  remains unchanged at d099803 for its bounded review. Allowed paths remain the
+  runner, its unittest, `.github/workflows/plain-store-switchback.yml` and
+  `docs/rust-port/plain-store-switchback.md`. No production/schema/lockfile/fixture
+  or historical fallback edits. #1035 and CUT-003 remain open.
+- Reconciled prior build: `proc_2c03dadfb34e` exited 0 at exact d099803. Parent
+  `verify_standalone.py` passed: 2056 source/archive files, actual Go metadata,
+  all six cases, five controls tests, nine tables and immutable final SQLite.
+  External `eraseme-1035-regression-001/standalone-d099803-index.json` contains
+  82 declared evidence files, SHA-256
+  `4b9a3e8f9529e6f0d8729ea0ac6c2222fe89cb8d3f74be8382cad4bcdcba7aed`.
+  The earlier nested-worktree Go binary stamped parent/main rather than candidate
+  and stays diagnostic only. Standalone `.git` directory, `-buildvcs=true` and
+  an explicit clean embedded-revision assertion resolved that provenance defect.
+  CI now enforces the same assertion; its wrong-revision negative check passed.
+- Native final-head gate: run `35814011394`, attempt 1, passed six real CLI cases,
+  six harness tests and four denial probes on Darwin arm64. All five workflows
+  for c183cd8 finished success; GitHub reports no branch-required checks. The
+  checkout `9502f5c6093f1d4c0d19bb99d52bc02f749fd31e` has exactly c183cd8's tree
+  `5e9e8ce36df151978ffea6651b1ceafd5a3c2a61`. Parent
+  `verify_native_c183cd8.py` independently checked the 51-file ZIP, source/runner,
+  actual archived Go binary metadata, stream hashes, complete JSON and immutable
+  final SQLite: nine tables agree, WAL empty, schema 1 -> 2 -> 2 -> 2, no restore.
+  Artifact `10730363007` ZIP SHA-256:
+  `5c797f9672ec274a9cebcefba99b13762d377fc37d8f3899fba8a326fdc40ec8`.
+  External `eraseme-1035-regression-001/native-c183cd8-index.json` binds seven
+  evidence files, SHA-256
+  `3a377c970fd8dd5adb7b5afca9fa621cf0617a2a32001a2b6dcee67cc7b94205`.
+- CI fix and review scope: initial native run `35812403399` failed Go baseline
+  SQLite opening below HOME; the exact layout reproduced locally. Permit only
+  metadata of exact run ancestors, while retaining protected sibling contents,
+  HOME enumeration, network and other-executable denials. New layout regression
+  first failed under synthetic HOME/checkout, then all six tests passed. Real
+  six-case runs passed inside/outside HOME using unchanged d099803 production
+  binaries; this is diagnostic reuse, not a new-head build claim. Their 88-file
+  `sandbox-fixed-index.json` hash is
+  `09211a1e020ae3655d408d535fdcb708b355a726edddadd84d58dda1c2ccdb2c`.
+  The authoritative fixture remains `tests/fixtures/event-store/golden-campaign.db`,
+  SHA-256 `595a4840dbe6a52324b40778c53016b0c809e01451ba4fa5f20c3fd3447e0120`.
+  The earlier review packet's wrong path is corrected in `review-fixture-correction.md`;
+  legacy follow-up `deleg_27d2463f` / `sa-0-d45852bc` is reconciled as APPROVE
+  for the corrected d099803 fixture contract only. Parent rechecked that clean
+  historical tree, fixture bytes and frozen-index digest; receipt:
+  `eraseme-1035-regression-001/review-deleg_27d2463f.md`. No current-head gate changed.
+- Review: final c183cd8 source/security review `deleg_d5c28ef7`, worker
+  `sa-0-aa95c5c2`, returned APPROVE with no blocking finding. Parent verified the
+  unchanged clean candidate and rehashed all 88 diagnostic and seven native-index
+  files. Review receipt: `eraseme-1035-regression-001/review-deleg_d5c28ef7.md`;
+  parent receipt: `review-reconciliation-d5c28ef7.json`. The reviewer also reported
+  three passing adversarial layout probes; this is not a parent rerun claim.
+- Fresh build reconciled: `proc_4c791795f83c` exited 0 at exact
+  `c183cd880ad0f0440f86fe2e3746af50006ec067`. Driver
+  `build_standalone_c183cd8.py` retained `standalone-c183cd8/build-and-test.json`.
+  Parent `verify_standalone_c183cd8.py` independently passed: 2056 source/archive
+  files, actual clean Go VCS identity, wrong-revision rejection, six real CLI
+  cases, six harness tests, nine complete tables, four requests and immutable
+  final SQLite readback. Source archive SHA-256:
+  `256825c92486db85cdb0efb5edd13af09622a97f78cbb39948727ccefbe8f702`.
+  `standalone-c183cd8-index.json` freezes 82 regular evidence files, all rehashed
+  with zero mismatches; index SHA-256:
+  `85cb0d30398f975a8e62af2d39ed3e3fc1124019a22ea84aa6c4adf716c93d62`.
+  Both parent verifiers passed again against retained standalone/native evidence;
+  native checkout/tree distinction above remains explicit. The general Rust
+  native-matrix job was skipped and is not counted as Linux/Windows evidence.
+- Merge gate: PR #1036 remains OPEN/DRAFT at exact c183cd8, cleanly mergeable;
+  all review/thread/comment/file/issue connections were completely read. However,
+  classic `main` protection returns 404 and effective branch rules are empty.
+  Active ruleset `23428309` has an empty include list and only deletion/non-FF
+  rules: no enforced PR, required-check or conversation-resolution policy.
+  Evidence: `repository-safety.json`, `repository-safety-detail.json` and
+  `pr-preflight-c183cd8.json` in `eraseme-1035-regression-001/`.
+  New EraseMe #1037 records the defect and owner-authorization requirement;
+  creation/body/OPEN state were read back. The authorization prompt timed out
+  unanswered; no settings, promotion, merge or bypass was performed.
+  The PR description now records the fresh build and bounded CI claims.
+  Its earlier negated closing phrase unexpectedly linked #1035 for closure;
+  replaced with neutral `Refs` wording. Final readback proves zero closing-issue
+  references and #1035 still OPEN (`pr-body-verified-readback.json`).
+- Async/next: all build/review notices for this slice are consumed; no watcher
+  or rebuild is pending. Await authorization for the protection repair in #1037;
+  then verify effective rules, complete exact-head merge gates and regular merge
+  before integrating the consumer receipt. Required contexts must be derived
+  from actual workflow triggers; do not globally require a path-filtered job.
+  Historical d099803 reviews cannot approve the changed sandbox. Production,
+  encrypted/Linux/Windows/crash/concurrency and released-artifact recovery remain
+  separate unproved gates. Preserve #313's branch and all worktrees; no tags,
+  publication, installed cutover, Go removal or cleanup is authorized.
 
 ## Prerequisite evidence history — capture-time states (2026-09-23)
 
@@ -470,7 +743,7 @@ recorded in `sqlite-demand.md`; the scoped candidate-source change is integrated
 as `541683a` (PR #291). Main baseline for the SQLite candidate remains
 `82968b4fc9537daf62c2008331f5e5ce5d32b6c6`.
 
-## Current state
+## Earlier migration state (2026-09-23)
 
 `RUST-010` (MCP configuration discovery) is `complete`: the crate, the pinned
 oracle harness and the corpus exist and the MCFG-001…MCFG-005 rows are `parity`
@@ -706,9 +979,8 @@ make rust-sqlite-contract
 port-input change. It regenerates the manifest and writes a new capture; it
 never runs automatically, and it does not repoint the acceptance tests.
 
-Next: no demand-driven item is `ready`. `RUST-014` needs an explicit publication
-decision plus registry evidence; `RUST-015` needs classes 1 and 4 in
-`consumer-rollout-findings.md` closed (classes 2 and 3 are fixed; class 1 is
-deliberately re-pinned at the evidence snapshot). A further slice requires new
-two-consumer demand evidence in `demand-assessment.md`. No release, publication,
-Go removal or product cutover is authorized here.
+The earlier next-action list is superseded by the active checkpoint: no
+demand-driven implementation item is `ready`, but RUST-016 is ready for
+Git-pinned consumer release evidence. Publication still requires its own
+separate approval after that gate. No Go removal or product cutover is
+authorized here.
