@@ -11,6 +11,7 @@
     "RUST-011",
     "RUST-012",
     "RUST-013",
+    "RUST-016",
     "RUST-014",
     "RUST-015"
   ],
@@ -376,10 +377,31 @@
       "stop_rule": "No crate proceeds with untriaged advisories/licenses, missing native runtime proof, unfuzzed untrusted parsers or broken Go gates."
     },
     {
+      "id": "RUST-016",
+      "title": "Released Git-pinned consumers and standalone/rollback evidence",
+      "depends_on": [
+        "RUST-013"
+      ],
+      "contracts": [
+        "REL-001",
+        "REL-006",
+        "PERF-004"
+      ],
+      "status": "ready",
+      "demand_class": "required",
+      "acceptance_commands": [
+        "python3 -m unittest discover -s port/consumer -p 'test_*.py'",
+        "python3 port/consumer/verify.py --git-pinned-consumers",
+        "python3 scripts/rust-port/adoption.py --check --min-consumers 2"
+      ],
+      "stop_rule": "Before any crates.io publication, each recorded consumer must have a real public release of its exact Git-pinned Rust snapshot, source-bound standalone/rollback reports, artifact and report digests, and independent release-artifact readback. A local tag or verifier pass alone is insufficient; retain Go support."
+    },
+    {
       "id": "RUST-014",
       "title": "SemVer, publishing manifest and release verification",
       "depends_on": [
-        "RUST-013"
+        "RUST-013",
+        "RUST-016"
       ],
       "contracts": [
         "REL-002",
@@ -393,11 +415,11 @@
         "python3 port/release/verify.py --dry-run",
         "python3 docs/rust-port/validate.py"
       ],
-      "stop_rule": "Publish only adopted crates with explicit versions/order/provenance; repository tags must remain unambiguous for Go consumers."
+      "stop_rule": "Do not publish before RUST-016 release and artifact evidence, required migration/native/security gates and a separate release approval. Publish only adopted crates with explicit versions/order/provenance and external registry read-back; repository tags must remain unambiguous for Go consumers."
     },
     {
       "id": "RUST-015",
-      "title": "Consumer rollout and Go-retention review",
+      "title": "Registry-pinned consumer rollout and Go-retention review",
       "depends_on": [
         "RUST-014"
       ],
@@ -414,7 +436,7 @@
         "make consumer-drift",
         "python3 scripts/rust-port/adoption.py --check"
       ],
-      "stop_rule": "No Go package removal while a released consumer imports it; retirement is a separate major-version decision with a tested rollback."
+      "stop_rule": "Do not pass this gate without new releases pinned to exact registry versions and verified lockfiles/artifacts. No Go package removal while a released consumer imports it; retirement is a separate major-version decision with a tested rollback."
     }
   ]
 }
