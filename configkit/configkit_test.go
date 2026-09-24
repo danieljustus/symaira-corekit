@@ -435,7 +435,7 @@ func TestDurationFromEnv(t *testing.T) {
 	}
 }
 
-func TestZeroValuesNotOverridden(t *testing.T) {
+func TestZeroValuesOverrideDefaults(t *testing.T) {
 	dir := t.TempDir()
 	tomlPath := filepath.Join(dir, "config.toml")
 	content := `
@@ -452,12 +452,69 @@ host = ""
 		t.Fatalf("mergeFile() error = %v", err)
 	}
 
-	// Zero values in TOML should NOT override non-zero defaults.
-	if cfg.Server.Port != 8080 {
-		t.Errorf("Server.Port = %d, want 8080 (zero TOML should not override)", cfg.Server.Port)
+	// Present zero values override defaults; absent fields retain them.
+	if cfg.Server.Port != 0 {
+		t.Errorf("Server.Port = %d, want 0", cfg.Server.Port)
 	}
-	if cfg.Server.Host != "localhost" {
-		t.Errorf("Server.Host = %q, want %q (zero TOML should not override)", cfg.Server.Host, "localhost")
+	if cfg.Server.Host != "" {
+		t.Errorf("Server.Host = %q, want empty", cfg.Server.Host)
+	}
+}
+
+func TestZeroValuePrecedence(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("XDG_CONFIG_HOME", dir)
+	orig, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = os.Chdir(orig) })
+	if err := os.Chdir(dir); err != nil {
+		t.Fatal(err)
+	}
+	global := filepath.Join(dir, "zero-precedence", "config.toml")
+	if err := os.MkdirAll(filepath.Dir(global), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(global, []byte("debug = true\nname = \"global\"\ntimeout = 9\n[server]\nport = 8\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	project := filepath.Join(dir, ".zero-precedence.toml")
+	if err := os.WriteFile(project, []byte("debug = false\nname = \"\"\ntimeout = 0\n[server]\nport = 0\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	defaults := func() *testConfig { cfg := testDefaults(); cfg.Debug = true; return cfg }
+	loader := NewLoader(Options{AppName: "zero-precedence", EnvPrefix: "ZP"}, defaults)
+	cfg, err := loader.Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.Debug || cfg.Name != "" || cfg.Timeout != 0 || cfg.Server.Port != 0 || cfg.Server.Host != "localhost" {
+		t.Fatalf("project zeros did not override global/defaults, or absent nested field changed: %+v", cfg)
+	}
+	t.Setenv("ZP_DEBUG", "true")
+	t.Setenv("ZP_NAME", "env")
+	t.Setenv("ZP_TIMEOUT", "10")
+	t.Setenv("ZP_SERVER_PORT", "12")
+	loader.ResetCache()
+	cfg, err = loader.Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !cfg.Debug || cfg.Name != "env" || cfg.Timeout != 10 || cfg.Server.Port != 12 {
+		t.Fatalf("environment did not override project zeros: %+v", cfg)
+	}
+	t.Setenv("ZP_DEBUG", "false")
+	t.Setenv("ZP_NAME", "")
+	t.Setenv("ZP_TIMEOUT", "0")
+	t.Setenv("ZP_SERVER_PORT", "0")
+	loader.ResetCache()
+	cfg, err = loader.Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.Debug || cfg.Name != "" || cfg.Timeout != 0 || cfg.Server.Port != 0 {
+		t.Fatalf("environment zeros did not override project/global: %+v", cfg)
 	}
 }
 

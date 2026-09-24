@@ -163,7 +163,7 @@ func (l *Loader[T]) loadOnce() (*T, error) {
 	return cfg, nil
 }
 
-// mergeFile reads a TOML file and applies non-zero values to cfg using json tags.
+// mergeFile reads a TOML file and applies present values to cfg using json tags.
 // Missing files are silently skipped.
 func mergeFile[T any](cfg *T, path string) error {
 	if _, err := os.Stat(path); os.IsNotExist(err) {
@@ -207,7 +207,7 @@ func walkStructFields(val reflect.Value, fn func(field reflect.Value, tag string
 }
 
 // applyMapToStruct applies values from a TOML-decoded map to a struct using json tags.
-// Only non-zero values are applied (except pointer fields, which are set when present).
+// Present values are applied, including false, zero, and empty strings.
 // A value whose type cannot be converted to the target field returns an error
 // instead of being silently ignored.
 func applyMapToStruct(val reflect.Value, raw map[string]interface{}) error {
@@ -234,10 +234,8 @@ func applyMapToStruct(val reflect.Value, raw map[string]interface{}) error {
 				}
 			}
 		default:
-			if !isZeroInterface(rawVal) {
-				if err := setFieldValue(field, rawVal); err != nil {
-					return fmt.Errorf("field %q: %w", tag, err)
-				}
+			if err := setFieldValue(field, rawVal); err != nil {
+				return fmt.Errorf("field %q: %w", tag, err)
 			}
 		}
 		return nil
@@ -257,7 +255,7 @@ func applyEnvToFields(val reflect.Value, prefix string) error {
 
 		switch field.Kind() {
 		case reflect.Ptr: //nolint:govet // reflect.Kind constants not inlined; stdlib limitation
-			if v := os.Getenv(envKey); v != "" {
+			if v, ok := os.LookupEnv(envKey); ok {
 				ptrVal := reflect.New(field.Type().Elem())
 				if err := setFieldValue(ptrVal.Elem(), v); err != nil {
 					return fmt.Errorf("env %s: %w", envKey, err)
@@ -282,7 +280,7 @@ func applyEnvToFields(val reflect.Value, prefix string) error {
 		case reflect.Map:
 			// Not supported for env var overrides; skip silently.
 		default:
-			if v := os.Getenv(envKey); v != "" {
+			if v, ok := os.LookupEnv(envKey); ok {
 				if err := setFieldValue(field, v); err != nil {
 					return fmt.Errorf("env %s: %w", envKey, err)
 				}
@@ -301,24 +299,6 @@ func jsonTag(fieldType reflect.StructField) string {
 		tag = tag[:idx]
 	}
 	return tag
-}
-
-func isZeroInterface(v interface{}) bool {
-	if v == nil {
-		return true
-	}
-	switch val := v.(type) {
-	case string:
-		return val == ""
-	case int64:
-		return val == 0
-	case float64:
-		return val == 0
-	case bool:
-		return !val
-	default:
-		return false
-	}
 }
 
 // setFieldValue sets a reflect.Value from a decoded TOML interface{} or env string value.
