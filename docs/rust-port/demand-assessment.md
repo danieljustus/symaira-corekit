@@ -10,26 +10,28 @@ rather than an unexamined default.
 
 Method: read-only searches over the Rust sources of every current Rust consumer
 in the workspace (`symaira-desktop`, `symaira-eraseme`, `symaira-vault`,
-`symaira-brain`, `symbrowse`), on 2026-09-20. Paths are relative to
+`symaira-brain`, including its `browse/` module), rechecked 2026-09-23. Paths are relative to
 `/Volumes/1TB_NVMe_SN850X/Dev/Symaira_Dev/Repos`.
 
 ## RUST-007 — Update, archive, Cosign and atomic apply (`UPD-*`) — deferred
 
 ```sh
-grep -rln --include=*.rs -iE "updatecheck|update_check|latest release|self_update|cosign|atomic apply" \
-  symaira-desktop symaira-eraseme symaira-vault symbrowse | grep -v /target/
+rg -l -i -g '*.rs' "updatecheck|update_check|latest release|self_update|cosign|atomic.apply" \
+  symaira-brain/rust symaira-brain/browse/crates symaira-desktop/crates symaira-eraseme/crates symaira-vault/crates
 ```
 
-No Rust consumer implements an update-check, archive-verification, Cosign or
-atomic-apply path. The single hit was a CoreKit checkout inside a consumer's
-build cache, not consumer source. **Verdict: deferred — no Rust consumer needs
-this slice; nothing to de-duplicate.**
+Brain's `rust/symbrain-managed/src/install.rs` implements release download,
+publisher verification, extraction and atomic installation. Vault's
+`crates/symvault-cli/src/update_commands.rs` explicitly keeps `update check`
+and `update apply` unavailable; its `update info` reports the installation
+method, not the same pipeline. **Verdict: deferred — one Rust consumer needs
+the full pipeline; nothing to de-duplicate yet.**
 
 ## RUST-008 — Descriptor-driven LLM provider slice (`LLM-*`) — deferred
 
 ```sh
-grep -rn --include=*.rs -iE "openai|anthropic|ollama|provider|llm" \
-  symaira-desktop/crates symaira-eraseme/crates | head
+rg -l -i -g '*.rs' "openai|anthropic|ollama|provider|llm" \
+  symaira-brain/rust symaira-brain/browse/crates symaira-desktop/crates symaira-eraseme/crates
 ```
 
 Two consumers carry the *surface*: `symaira-desktop/crates/symdesk-core/src/config.rs`
@@ -40,24 +42,28 @@ LLM prompts while `triage_contract.rs` states that LLM transport is explicitly
 out of scope for that slice; the CLI exposes `--provider`/`--model` overrides
 (`symeraseme-cli/src/command_surface.rs:186-192, 334-340`).
 
-Both consumers have *config and prompt plumbing* only. Neither has a provider
-client, so a shared descriptor-driven provider module would remove no
-duplication yet. **Verdict: deferred — two surfaces, zero duplicated transport;
-re-assess when the first consumer implements a provider client.**
+EraseMe now has a Rust LLM error/retry/provider-resolution surface in
+`crates/symeraseme-core/src/llm/mod.rs`, but it explicitly leaves provider
+transport unported. Brain's `rust/symbrain-usage/src/provider_requests.rs`
+builds account/quota usage requests, not generation requests. Brain memory's
+`rust/symbrain-memory/src/embedding.rs` does make Ollama embedding requests;
+no second Rust consumer duplicates that embedding transport. **Verdict:
+deferred — no shared generation or embedding transport to de-duplicate yet.**
 
 ## RUST-009 — Audit and grounded-evidence algorithm slices (`AUD-*`, `EVID-*`) — deferred
 
 ```sh
-grep -rln --include=*.rs -iE "auditkit|evidencekit|evidence_bundle|audit_log" \
-  symaira-desktop/crates symaira-eraseme/crates symaira-vault/crates symaira-brain | head
+rg -l -i -g '*.rs' "auditkit|evidencekit|evidence_bundle|grounded.evidence|audit_log|hash.chained" \
+  symaira-brain/rust symaira-brain/browse/crates symaira-desktop/crates symaira-eraseme/crates symaira-vault/crates
 ```
 
-`symaira-vault` has a real Rust audit surface: `symvault-cli/src/agent_audit_commands.rs`
-reads and writes per-agent `audit-<agent>.log` files, with `symvault-cli/tests/audit.rs`
-and MCP-side audit tests. `symaira-brain` shows only unrelated matches
-(`audit`/`evidence` inside policy and skills metadata), not an audit-log or
-grounded-evidence algorithm. **Verdict: deferred — one consumer; the
-two-consumer rule is not met.**
+`symaira-brain/rust/symbrain-audit/src/sink.rs` implements a CoreKit-compatible
+SHA-256 hash-chained JSONL sink. Vault's
+`crates/symvault-store/src/audit.rs` implements a keyed HMAC-SHA256 chain with
+Vault key lifecycle; its format and trust boundary differ. Brain's other audit
+crates are part of the same product, not a second consumer. No second Rust
+consumer needs the same generic audit algorithm, and no second grounded-evidence
+algorithm was found. **Verdict: deferred — no shared semantics to extract.**
 
 ## RUST-010 — MCP configuration discovery slice (`MCFG-*`) — **implemented**
 
@@ -97,26 +103,26 @@ part of the slice, exactly as the SQLite suite was built with `RUST-006`.
 ## RUST-011 — DOM selection and rendering feasibility (`DOM-*`) — deferred
 
 ```sh
-grep -rln --include=*.rs -iE "domkit|dom_selector|dom_query|readability" \
-  symaira-desktop/crates symaira-eraseme/crates symaira-vault/crates symbrowse/crates symaira-brain | head
+rg -l -i -g '*.rs' "domkit|dom_selector|dom_query|readability|html5ever" \
+  symaira-brain/browse/crates symaira-desktop/crates symaira-eraseme/crates symaira-vault/crates
 ```
 
-No matches. `symaira-browse` — the only DOM consumer — is still Go, and its Rust
-port has not reached the DOM slice. **Verdict: deferred — no Rust consumer.**
+Brain's `browse/crates/symbrowse-fetch/src/dom.rs` implements HTML5 parsing,
+cleanup, selection and serialization in Rust. Browse is a module of Brain, so
+this is one Rust product consumer, not a second independent one. **Verdict:
+deferred — one Rust consumer.**
 
 ## RUST-012 — TurboQuant codec and performance slice (`VEC-*`, `PERF-003`) — deferred
 
 ```sh
-grep -rln --include=*.rs -iE "turboquant|vector_quant|quantiz" \
-  symaira-desktop/crates symaira-eraseme/crates symaira-vault/crates symbrowse/crates symaira-brain | head
+rg -l -i -g '*.rs' "turboquant|vector_quant|quantiz" \
+  symaira-brain/rust symaira-brain/browse/crates symaira-desktop/crates symaira-eraseme/crates symaira-vault/crates
 ```
 
-`symaira-brain/rust/symbrain-memory` carries vector storage and retrieval with
-quantization (`src/store.rs`, `src/retrieval.rs`, `src/search_rows.rs`,
-`src/schema.rs`). `symaira-desktop` matches only on unrelated similarity and
-retention code (`symdesk-core/src/simhash.rs` is text simhash, not a vector
-codec). **Verdict: deferred — one consumer; re-assess when a second Rust
-consumer needs the codec.**
+`symaira-brain/rust/symbrain-memory` carries vector storage and quantization
+metadata, but no TurboQuant codec. `symaira-desktop` matches only on unrelated
+text simhash. **Verdict: deferred — no demonstrated shared codec; re-assess
+when two Rust consumers need it.**
 
 ## Re-assessment rule
 

@@ -30,6 +30,15 @@ def init_git(path: Path) -> None:
     subprocess.run(["git", "-C", str(path), "config", "user.email", "fixture@example.invalid"], check=True)
 
 
+def pin_consumer_release(document: dict, consumer: Path) -> None:
+    """Tag only a disposable fixture snapshot; never a real consumer checkout."""
+    snapshot = git(consumer, "rev-parse", "HEAD")
+    tag = "v1.0." + git(consumer, "rev-list", "--count", "HEAD")
+    git(consumer, "tag", tag)
+    document["consumers"][0]["checkout_commit"] = snapshot
+    document["consumers"][0]["consumer_release"] = {"tag": tag, "commit": snapshot}
+
+
 def make_fixture(root: Path, *, status: str = "git") -> tuple[Path, Path, Path, str, str]:
     corekit = root / "symaira-corekit"
     consumer = root / "fixture"
@@ -103,6 +112,7 @@ def make_fixture(root: Path, *, status: str = "git") -> tuple[Path, Path, Path, 
         return {
             "status": "verified",
             "report": report_path,
+            "report_sha256": hashlib.sha256((consumer / report_path).read_bytes()).hexdigest(),
             "artifact": "bin/fixture",
             "command": command,
             "result": result,
@@ -141,7 +151,7 @@ def make_fixture(root: Path, *, status: str = "git") -> tuple[Path, Path, Path, 
     init_git(consumer)
     subprocess.run(["git", "-C", str(consumer), "add", "."], check=True)
     subprocess.run(["git", "-C", str(consumer), "commit", "-qm", "fixture"], check=True)
-    manifest["consumers"][0]["checkout_commit"] = git(consumer, "rev-parse", "HEAD")
+    pin_consumer_release(manifest, consumer)
     manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
     return manifest_path, corekit, consumer, release_commit, adoption_commit
 
@@ -170,7 +180,7 @@ def release_registry(manifest: Path, consumer: Path) -> None:
             "source": f"https://crates.io/api/v1/crates/{verify.COREKIT_PACKAGE}/0.0.0",
         },
     }
-    document["consumers"][0]["checkout_commit"] = git(consumer, "rev-parse", "HEAD")
+    pin_consumer_release(document, consumer)
     manifest.write_text(json.dumps(document), encoding="utf-8")
 
 
@@ -223,6 +233,55 @@ import (
             self.assertNotEqual(release_commit, adoption_commit)
             report = verify.verify_manifest(manifest, workspace_root=Path(raw), corekit_root=corekit)
             self.assertEqual(report["status"], "passed", report)
+
+    def test_consumer_release_binds_the_exact_consumer_snapshot(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            root = Path(raw)
+            manifest, corekit, consumer, _, _ = make_fixture(root)
+            original = json.loads(manifest.read_text(encoding="utf-8"))
+            snapshot = original["consumers"][0]["checkout_commit"]
+            git(consumer, "tag", "v1.2.3")
+            git(consumer, "tag", "-a", "v1.2.4", "-m", "annotated fixture release")
+            git(consumer, "branch", "v9.9.9")
+            git(consumer, "commit", "--allow-empty", "-qm", "post-release")
+            later = git(consumer, "rev-parse", "HEAD")
+            git(consumer, "tag", "v1.3.0")
+            git(consumer, "checkout", "-q", "--detach", snapshot)
+            cases = [
+                ("lightweight tag", {"tag": "v1.2.3", "commit": snapshot}, None),
+                ("annotated tag", {"tag": "v1.2.4", "commit": snapshot}, None),
+                ("missing", None, "consumer.release.missing"),
+                ("malformed", [], "consumer.release.missing"),
+                ("head alias", {"tag": "HEAD", "commit": snapshot}, "consumer.release.shape"),
+                ("branch ref", {"tag": "refs/heads/main", "commit": snapshot}, "consumer.release.shape"),
+                ("tag ref", {"tag": "refs/tags/v1.2.3", "commit": snapshot}, "consumer.release.shape"),
+                ("short revision", {"tag": "v1.2.3", "commit": snapshot[:12]}, "consumer.release.shape"),
+                ("branch only", {"tag": "v9.9.9", "commit": snapshot}, "consumer.release.tag"),
+                ("library namespace", copy.deepcopy(original["consumers"][0]["rust"]["release"]), "consumer.release.tag"),
+                ("wrong target", {"tag": "v1.2.3", "commit": later}, "consumer.release.tag"),
+                ("different snapshot", {"tag": "v1.3.0", "commit": later}, "consumer.release.snapshot"),
+            ]
+            for name, release, expected in cases:
+                with self.subTest(case=name):
+                    document = copy.deepcopy(original)
+                    if release is None:
+                        document["consumers"][0].pop("consumer_release", None)
+                    else:
+                        document["consumers"][0]["consumer_release"] = release
+                    manifest.write_text(json.dumps(document), encoding="utf-8")
+                    report = verify.verify_manifest(manifest, workspace_root=root, corekit_root=corekit)
+                    if expected is None:
+                        self.assertEqual(report["status"], "passed", report)
+                    else:
+                        self.assertEqual(report["status"], "blocked", report)
+                        self.assertIn(expected, {item["code"] for item in report["findings"]}, report)
+            # A record-only refresh cannot relabel post-release HEAD as released.
+            git(consumer, "checkout", "-q", "--detach", later)
+            original["consumers"][0]["checkout_commit"] = later
+            original["consumers"][0]["consumer_release"] = {"tag": "v1.2.3", "commit": snapshot}
+            manifest.write_text(json.dumps(original), encoding="utf-8")
+            report = verify.verify_manifest(manifest, workspace_root=root, corekit_root=corekit)
+            self.assertEqual([item["code"] for item in report["findings"]], ["consumer.release.snapshot"])
 
     def test_git_adoption_before_or_unrelated_to_release_is_blocked(self) -> None:
         with tempfile.TemporaryDirectory() as raw:
@@ -404,7 +463,7 @@ import (
             rust["manifest_paths"] = ["browse/Cargo.toml", "browse/protocol/Cargo.toml"]
             subprocess.run(["git", "-C", str(consumer), "add", "-A"], check=True)
             subprocess.run(["git", "-C", str(consumer), "commit", "-qm", "nested-workspace"], check=True)
-            document["consumers"][0]["checkout_commit"] = git(consumer, "rev-parse", "HEAD")
+            pin_consumer_release(document, consumer)
             manifest.write_text(json.dumps(document), encoding="utf-8")
             report = verify.verify_manifest(manifest, workspace_root=root, corekit_root=corekit)
             self.assertEqual(report["status"], "passed", report)
@@ -451,6 +510,68 @@ import (
             manifest.write_text(json.dumps(document), encoding="utf-8")
             report = verify.verify_manifest(manifest, workspace_root=root, corekit_root=corekit)
             self.assertTrue(any(item["code"].startswith("evidence.standalone") for item in report["findings"]))
+
+    def test_report_anchor_is_required_and_checks_exact_bytes(self) -> None:
+        for name in ("standalone", "rollback"):
+            with self.subTest(name=name), tempfile.TemporaryDirectory() as raw:
+                root = Path(raw)
+                manifest, corekit, consumer, _, _ = make_fixture(root)
+                original = json.loads(manifest.read_text(encoding="utf-8"))
+                self.assertEqual(verify.verify_manifest(manifest, workspace_root=root, corekit_root=corekit)["status"], "passed")
+                for digest in (None, "", "a" * 63, "A" * 64, "g" * 64, True, 42, [], "0" * 64):
+                    with self.subTest(digest=digest):
+                        document = copy.deepcopy(original)
+                        item = document["consumers"][0]["rust"]["evidence"][name]
+                        if digest is None:
+                            item.pop("report_sha256")
+                        else:
+                            item["report_sha256"] = digest
+                        manifest.write_text(json.dumps(document), encoding="utf-8")
+                        report = verify.verify_manifest(manifest, workspace_root=root, corekit_root=corekit)
+                        self.assertEqual({finding["code"] for finding in report["findings"]}, {f"evidence.{name}.report.sha256"})
+
+                # Equal JSON values do not imply the same captured bytes.
+                item = original["consumers"][0]["rust"]["evidence"][name]
+                report_path = consumer / item["report"]
+                payload = report_path.read_bytes()
+                report_path.write_bytes(payload + b"\r\n")
+                git(consumer, "add", item["report"])
+                git(consumer, "commit", "-qm", "change report bytes only")
+                pin_consumer_release(original, consumer)
+                manifest.write_text(json.dumps(original), encoding="utf-8")
+                report = verify.verify_manifest(manifest, workspace_root=root, corekit_root=corekit)
+                self.assertEqual({finding["code"] for finding in report["findings"]}, {f"evidence.{name}.report.sha256"})
+
+    def test_report_anchor_rejects_coordinated_artifact_replacement(self) -> None:
+        """Synthetic integrity fixture, not a Rust-runtime or rollback capture."""
+        with tempfile.TemporaryDirectory() as raw:
+            root = Path(raw)
+            manifest, corekit, consumer, _, _ = make_fixture(root)
+            self.assertEqual(verify.verify_manifest(manifest, workspace_root=root, corekit_root=corekit)["status"], "passed")
+            document = json.loads(manifest.read_text(encoding="utf-8"))
+            artifact = consumer / "bin/fixture"
+            artifact.write_bytes(b"replacement artifact\n")
+            evidence = document["consumers"][0]["rust"]["evidence"]
+            for item in evidence.values():
+                report_path = consumer / item["report"]
+                report = json.loads(report_path.read_text(encoding="utf-8"))
+                report["artifact_sha256"] = hashlib.sha256(artifact.read_bytes()).hexdigest()
+                report_path.write_text(json.dumps(report), encoding="utf-8")
+            git(consumer, "add", ".")
+            git(consumer, "commit", "-qm", "replace artifact and matching sidecars")
+            pin_consumer_release(document, consumer)
+            manifest.write_text(json.dumps(document), encoding="utf-8")
+            report = verify.verify_manifest(manifest, workspace_root=root, corekit_root=corekit)
+            self.assertEqual({finding["code"] for finding in report["findings"]}, {
+                "evidence.standalone.report.sha256", "evidence.rollback.report.sha256",
+            })
+
+            # A separately reviewed new anchor is an explicit trust decision.
+            # Updating it is fixture setup only, never an automatic verifier action.
+            for item in evidence.values():
+                item["report_sha256"] = hashlib.sha256((consumer / item["report"]).read_bytes()).hexdigest()
+            manifest.write_text(json.dumps(document), encoding="utf-8")
+            self.assertEqual(verify.verify_manifest(manifest, workspace_root=root, corekit_root=corekit)["status"], "passed")
 
     def test_report_content_tampering_is_blocked(self) -> None:
         with tempfile.TemporaryDirectory() as raw:
@@ -736,7 +857,7 @@ import (
             git(consumer, "commit", "-qm", "alias-without-lockfile")
             document = json.loads(manifest.read_text(encoding="utf-8"))
             document["consumers"][0]["rust"] = {"status": "not_adopted"}
-            document["consumers"][0]["checkout_commit"] = git(consumer, "rev-parse", "HEAD")
+            pin_consumer_release(document, consumer)
             manifest.write_text(json.dumps(document), encoding="utf-8")
 
             report = verify.verify_manifest(manifest, workspace_root=root, corekit_root=corekit)
@@ -842,7 +963,7 @@ import (
             git(consumer, "commit", "-qm", "metadata-only-package-name")
             document = json.loads(manifest.read_text(encoding="utf-8"))
             document["consumers"][0]["rust"] = {"status": "not_adopted"}
-            document["consumers"][0]["checkout_commit"] = git(consumer, "rev-parse", "HEAD")
+            pin_consumer_release(document, consumer)
             manifest.write_text(json.dumps(document), encoding="utf-8")
 
             report = verify.verify_manifest(manifest, workspace_root=root, corekit_root=corekit)
@@ -870,7 +991,7 @@ import (
             git(consumer, "commit", "-qm", "workspace-alias-without-lockfile")
             document = json.loads(manifest.read_text(encoding="utf-8"))
             document["consumers"][0]["rust"] = {"status": "not_adopted"}
-            document["consumers"][0]["checkout_commit"] = git(consumer, "rev-parse", "HEAD")
+            pin_consumer_release(document, consumer)
             manifest.write_text(json.dumps(document), encoding="utf-8")
 
             report = verify.verify_manifest(manifest, workspace_root=root, corekit_root=corekit)
@@ -905,7 +1026,7 @@ import (
             subprocess.run(["git", "-C", str(consumer), "add", ".gitignore"], check=True)
             subprocess.run(["git", "-C", str(consumer), "commit", "-qm", "ignore-generated-trees"], check=True)
             document = json.loads(manifest.read_text(encoding="utf-8"))
-            document["consumers"][0]["checkout_commit"] = git(consumer, "rev-parse", "HEAD")
+            pin_consumer_release(document, consumer)
             manifest.write_text(json.dumps(document), encoding="utf-8")
 
             report = verify.verify_manifest(manifest, workspace_root=root, corekit_root=corekit)
@@ -923,7 +1044,7 @@ import (
             subprocess.run(["git", "-C", str(consumer), "add", ".gitignore"], check=True)
             subprocess.run(["git", "-C", str(consumer), "commit", "-qm", "ignore-target"], check=True)
             document = json.loads(manifest.read_text(encoding="utf-8"))
-            document["consumers"][0]["checkout_commit"] = git(consumer, "rev-parse", "HEAD")
+            pin_consumer_release(document, consumer)
             manifest.write_text(json.dumps(document), encoding="utf-8")
 
             report = verify.verify_manifest(manifest, workspace_root=root, corekit_root=corekit)
@@ -941,7 +1062,7 @@ import (
                 subprocess.run(["git", "-C", str(consumer), "add", ".gitignore", "skills"], check=True)
                 subprocess.run(["git", "-C", str(consumer), "commit", "-qm", "ignore-agent-tooling"], check=True)
                 document = json.loads(manifest.read_text(encoding="utf-8"))
-                document["consumers"][0]["checkout_commit"] = git(consumer, "rev-parse", "HEAD")
+                pin_consumer_release(document, consumer)
                 manifest.write_text(json.dumps(document), encoding="utf-8")
                 for name in (".agents", ".windsurf"):
                     path = consumer / name
@@ -992,7 +1113,7 @@ import (
             subprocess.run(["git", "-C", str(consumer), "add", ".agents", ".windsurf"], check=True)
             subprocess.run(["git", "-C", str(consumer), "commit", "-qm", "tracked-agent-tooling"], check=True)
             document = json.loads(manifest.read_text(encoding="utf-8"))
-            document["consumers"][0]["checkout_commit"] = git(consumer, "rev-parse", "HEAD")
+            pin_consumer_release(document, consumer)
             manifest.write_text(json.dumps(document), encoding="utf-8")
 
             report = verify.verify_manifest(manifest, workspace_root=root, corekit_root=corekit)

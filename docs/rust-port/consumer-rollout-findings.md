@@ -1,10 +1,54 @@
 # RUST-015 released-consumer gate: what actually blocks it
 
-`python3 port/consumer/verify.py --released-consumers` returns `status: blocked`
-for CoreKit. The findings are not one missing artefact; they fall into four
-classes, and only class 4 is the genuine "no released consumer yet" work.
-Classes 2 and 3 are closed (2026-09-21 and 2026-09-22); classes 1 and 4
-remain open with the reasons below.
+## Current correction — report integrity anchor (2026-09-22)
+
+At integrated CoreKit `d31603ff042392fd8cee2dd0284dd2667123d703` (PR #318),
+a disposable structural fixture still passes after replacing its binary,
+recomputing both committed reports' `artifact_sha256`, and refreshing its
+consumer snapshot/tag. The command/result stays unchanged. The artifact and
+sidecar agree internally, but no independent report anchor is checked (#319).
+
+The corrected verifier requires `report_sha256` on each verified evidence record
+in the separately reviewed CoreKit consumer manifest. It hashes exact report
+bytes, rejects missing/malformed/mismatched anchors for both report kinds, and
+retains the existing semantic, release and artifact checks. The regression first
+proves a valid fixture passes, then requires the coordinated replacement to fail
+with the two specific report-digest findings. A separate byte-only mutation
+proves JSON value equality cannot hide changed capture bytes.
+
+These are synthetic validator-integrity tests, not consumer runtime evidence.
+No historical capture or production consumer record is rewritten or assigned a
+new anchor. The manifest remains the trust root; modifying it together with the
+report requires a new review. Source-bound Rust execution, an actual rollback
+transition and public release readback remain separate unresolved obligations.
+
+## Current correction — consumer release identity (2026-09-22)
+
+At integrated CoreKit `05d3702f468c8a2817483385373ca229e157ce22`, the gate
+reports five findings: four stale checkout pins and one Vault standalone-command
+mismatch. The committed reports exist; the historical eight-missing-reports
+count below no longer describes the current checkouts.
+
+A disposable manifest probe refreshed only those pins and copied Vault's
+observed command from its committed report. The unchanged gate then returned
+`passed` with no findings for four **unreleased** consumer heads. No consumer
+file, report, artifact or release tag was modified. The defect is tracked in
+CoreKit #316: `_check_release_ancestry` resolves only the library's tag, so it
+cannot establish that a consumer snapshot was released.
+
+The corrected gate separately requires each record's `consumer_release` tag
+and commit, resolves that tag in the consumer checkout and requires the commit
+to equal `checkout_commit`. The existing CoreKit namespace, pin and artifact
+checks remain intact. No guessed release records are added: RUST-015 remains
+blocked. A local tag check still does not establish remote publication or prove
+that a version-only smoke exercised the Rust adoption or a stateful rollback.
+Those are separate acceptance obligations, not reasons to fabricate evidence.
+
+## Historical finding classes
+
+The following runs split the findings into four classes. Classes 2 and 3 closed
+on 2026-09-21 and 2026-09-22. Class 1 still requires a released snapshot; class 4
+requires applicable runtime/rollback evidence, not merely report presence.
 
 Run 2026-09-21 (corekit `main` `53aee98` with the record refresh applied),
 consumers at their then-current heads: brain `46d2c1b5`, browse `c9ab83cc`,

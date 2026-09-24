@@ -19,7 +19,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest, macos-latest, windows-latest]
         go-version: ["1.26.6"]
     runs-on: ${{ matrix.os }}
     steps:
@@ -28,18 +28,29 @@ jobs:
         uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version: ${{ matrix.go-version }}
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
       - name: Verify vendored brand assets
-        run: python3 scripts/verify-brand-assets.py
+        run: python scripts/verify-brand-assets.py
       - name: Download dependencies
         run: go mod download
       - name: Verify dependencies
         run: go mod verify
       - name: Build
-        run: CGO_ENABLED=0 go build ./...
+        run: go build ./...
+        env:
+          CGO_ENABLED: "0"
       - name: Test with race detector
-        run: CGO_ENABLED=1 go test -race -count=1 -timeout=5m ./...
+        if: runner.os != 'Windows'
+        run: go test -race -count=1 -timeout=5m ./...
+        env:
+          CGO_ENABLED: "1"
       - name: Test without cgo
-        run: CGO_ENABLED=0 go test -count=1 -timeout=5m ./...
+        run: go test -count=1 -timeout=5m ./...
+        env:
+          CGO_ENABLED: "0"
 
   cross-platform:
     name: cross (${{ matrix.goos }}/${{ matrix.goarch }})
@@ -79,6 +90,8 @@ jobs:
         uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
       - name: Validate Rust migration handoff
         run: make rust-port-validate
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
 
   port-contract:
     name: port contract (${{ matrix.os }})
@@ -132,8 +145,14 @@ jobs:
         run: govulncheck ./...
 
   apidiff:
-    name: apidiff
-    runs-on: ubuntu-latest
+    name: ${{ matrix.os == 'ubuntu-latest' && 'apidiff' || format('apidiff ({0})', matrix.os) }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    env:
+      GOBIN: ${{ github.workspace }}/.bin
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
         with:
@@ -149,6 +168,7 @@ jobs:
 
       - name: Check for breaking-change escape hatch
         id: hatch
+        shell: bash
         run: |
           if git log -1 --pretty=%s | grep -q 'BREAKING CHANGE'; then
             echo "Intentional breaking change detected; skipping apidiff."
@@ -157,10 +177,17 @@ jobs:
 
       - name: Install apidiff
         if: steps.hatch.outputs.skip != 'true'
+        shell: bash
         run: go install golang.org/x/exp/cmd/apidiff@v0.0.0-20260727155853-b88d891fe743
+
+      - name: Add apidiff to PATH
+        if: steps.hatch.outputs.skip != 'true'
+        shell: bash
+        run: echo "$GOBIN" >> "$GITHUB_PATH"
 
       - name: Run apidiff against origin/main
         if: steps.hatch.outputs.skip != 'true'
+        shell: bash
         run: |
           set -euo pipefail
           BASE_DIR=.apidiff-base

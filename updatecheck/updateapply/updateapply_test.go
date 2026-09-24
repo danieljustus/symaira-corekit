@@ -20,6 +20,24 @@ import (
 	"github.com/danieljustus/symaira-corekit/updatecheck/cosign"
 )
 
+func TestMain(m *testing.M) {
+	if os.Getenv("UPDATEAPPLY_COSIGN_STUB") == "1" {
+		if len(os.Args) == 0 {
+			os.Exit(2)
+		}
+		capturePath := os.Getenv("COSIGN_CONTENT_CAPTURE")
+		content, err := os.ReadFile(os.Args[len(os.Args)-1]) //nolint:gosec // test stub reads the verifier's supplied fixture path
+		if err != nil {
+			os.Exit(1)
+		}
+		if err := os.WriteFile(capturePath, content, 0o600); err != nil { //nolint:gosec // test-only capture path
+			os.Exit(1)
+		}
+		os.Exit(0)
+	}
+	os.Exit(m.Run())
+}
+
 func sha256Hex(data []byte) string {
 	sum := sha256.Sum256(data)
 	return hex.EncodeToString(sum[:])
@@ -233,7 +251,16 @@ func TestApplyFailsOnNonWritableTarget(t *testing.T) {
 	}
 	defer func() { _ = os.Chmod(dir, 0o700) }() //nolint:gosec
 
-	target := filepath.Join(dir, "mytool")
+	targetDir := dir
+	if runtime.GOOS == "windows" {
+		// Windows chmod does not make a directory unwritable; a regular file
+		// used as the parent is a portable negative control for the write probe.
+		targetDir = filepath.Join(t.TempDir(), "parent-file")
+		if err := os.WriteFile(targetDir, []byte("blocker"), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	target := filepath.Join(targetDir, "mytool")
 
 	a := &Applier{HTTPClient: http.DefaultClient, GOOS: "linux", GOARCH: "amd64"}
 	err := a.Apply(context.Background(), release, target)
@@ -726,9 +753,25 @@ func TestApplyVerifiesCosignOverExactChecksumsBytes(t *testing.T) {
 	captureFile := filepath.Join(dir, "captured-checksums")
 	fakeCosignDir := t.TempDir()
 	fakeCosign := filepath.Join(fakeCosignDir, "cosign")
-	script := "#!/bin/sh\nfor last; do :; done\ncp \"$last\" \"$COSIGN_CONTENT_CAPTURE\"\n"
-	if err := os.WriteFile(fakeCosign, []byte(script), 0o755); err != nil { //nolint:gosec
-		t.Fatalf("write fake cosign binary: %v", err)
+	if runtime.GOOS == "windows" {
+		executable, err := os.Executable()
+		if err != nil {
+			t.Fatalf("locate test executable: %v", err)
+		}
+		fakeCosign += ".exe"
+		binary, err := os.ReadFile(executable) //nolint:gosec // copy this test executable as the Windows cosign stub
+		if err != nil {
+			t.Fatalf("read test executable: %v", err)
+		}
+		if err := os.WriteFile(fakeCosign, binary, 0o700); err != nil { //nolint:gosec // test stub must be executable
+			t.Fatalf("write fake cosign executable: %v", err)
+		}
+		t.Setenv("UPDATEAPPLY_COSIGN_STUB", "1")
+	} else {
+		script := "#!/bin/sh\nfor last; do :; done\ncp \"$last\" \"$COSIGN_CONTENT_CAPTURE\"\n"
+		if err := os.WriteFile(fakeCosign, []byte(script), 0o755); err != nil { //nolint:gosec
+			t.Fatalf("write fake cosign binary: %v", err)
+		}
 	}
 	t.Setenv("PATH", fakeCosignDir+string(os.PathListSeparator)+os.Getenv("PATH"))
 	t.Setenv("COSIGN_CONTENT_CAPTURE", captureFile)
@@ -887,15 +930,23 @@ func TestApplyCleansStagingOnChecksumMismatch(t *testing.T) {
 
 // TestStagingDirFallsBackWhenTargetDirUnwritable covers the fallback branch.
 func TestStagingDirFallsBackWhenTargetDirUnwritable(t *testing.T) {
-	if os.Geteuid() == 0 {
-		t.Skip("running as root — directory permissions are not enforced")
-	}
-
 	dir := t.TempDir()
-	if err := os.Chmod(dir, 0o500); err != nil { //nolint:gosec
-		t.Fatal(err)
+	if runtime.GOOS == "windows" {
+		// chmod does not restrict Windows directory access; use a regular file
+		// as the parent to force CreateTemp to fail portably.
+		dir = filepath.Join(t.TempDir(), "parent-file")
+		if err := os.WriteFile(dir, []byte("blocker"), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	} else {
+		if os.Geteuid() == 0 {
+			t.Skip("running as root — directory permissions are not enforced")
+		}
+		if err := os.Chmod(dir, 0o500); err != nil { //nolint:gosec
+			t.Fatal(err)
+		}
+		t.Cleanup(func() { _ = os.Chmod(dir, 0o700) }) //nolint:gosec
 	}
-	t.Cleanup(func() { _ = os.Chmod(dir, 0o700) }) //nolint:gosec
 
 	if got := stagingDirFor(filepath.Join(dir, "mytool")); got != os.TempDir() {
 		t.Errorf("stagingDirFor() = %q, want the system temp dir for an unwritable install directory", got)
@@ -1008,8 +1059,10 @@ func TestApplyRollsBackWhenBinaryValidationFails(t *testing.T) {
 	if statErr != nil {
 		t.Fatalf("stat target after rollback: %v", statErr)
 	}
-	if gotPerm := info.Mode().Perm(); gotPerm != 0o640 {
-		t.Fatalf("target permissions after rollback = %o, want %o", gotPerm, 0o640)
+	if runtime.GOOS != "windows" {
+		if gotPerm := info.Mode().Perm(); gotPerm != 0o640 {
+			t.Fatalf("target permissions after rollback = %o, want %o", gotPerm, 0o640)
+		}
 	}
 	if _, statErr := os.Stat(target + ".bak"); !os.IsNotExist(statErr) {
 		t.Fatalf("expected backup file to be consumed by rollback, stat err = %v", statErr)
