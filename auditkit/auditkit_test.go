@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 )
@@ -78,8 +79,10 @@ func TestWriteCheckpointAtomicAndPermissive(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if perm := info.Mode().Perm(); perm != 0o600 {
-		t.Errorf("anchor perms = %o, want 600", perm)
+	if runtime.GOOS != "windows" {
+		if perm := info.Mode().Perm(); perm != 0o600 {
+			t.Errorf("anchor perms = %o, want 600", perm)
+		}
 	}
 	anchor, _ := ReadCheckpoint(path)
 	if anchor == nil || anchor.LastEntryHash != "deadbeef" || anchor.EntryCount != 7 {
