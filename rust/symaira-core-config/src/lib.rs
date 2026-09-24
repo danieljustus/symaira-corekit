@@ -244,7 +244,7 @@ where
             "field {field:?}: incompatible TOML value"
         )));
     }
-    merge_nonzero(&mut current, &overlay);
+    merge_present(&mut current, &overlay);
     *config = serde_json::from_value(current)
         .map_err(|error| ConfigError::new(format!("apply {}: {error}", path.display())))?;
     Ok(())
@@ -350,7 +350,7 @@ fn join_path(parent: &str, child: &str) -> String {
     }
 }
 
-fn merge_nonzero(current: &mut Value, overlay: &Value) {
+fn merge_present(current: &mut Value, overlay: &Value) {
     match (current, overlay) {
         (Value::Object(current), Value::Object(overlay)) => {
             for (key, value) in overlay {
@@ -358,24 +358,11 @@ fn merge_nonzero(current: &mut Value, overlay: &Value) {
                     continue;
                 }
                 if let Some(existing) = current.get_mut(key) {
-                    merge_nonzero(existing, value);
+                    merge_present(existing, value);
                 }
             }
         }
-        (current, overlay) if current.is_null() || is_nonzero(overlay) => {
-            *current = overlay.clone()
-        }
-        _ => {}
-    }
-}
-
-fn is_nonzero(value: &Value) -> bool {
-    match value {
-        Value::Null => false,
-        Value::Bool(value) => *value,
-        Value::Number(value) => value.as_f64().is_some_and(|number| number != 0.0),
-        Value::String(value) => !value.is_empty(),
-        Value::Array(_) | Value::Object(_) => true,
+        (current, overlay) => *current = overlay.clone(),
     }
 }
 
@@ -409,7 +396,9 @@ fn apply_env_value(
                 unsigned_fields,
             )?;
         } else if let Some(raw) = environment.get(&env_key) {
-            if raw.is_empty() {
+            // Go keeps empty slice env values unset, but passes an empty
+            // string to scalar conversion (or returns its type error).
+            if raw.is_empty() && field.is_array() {
                 continue;
             }
             *field = parse_env_value(raw, field, &child_path, string_fields, unsigned_fields)

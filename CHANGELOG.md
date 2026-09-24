@@ -7,6 +7,9 @@ The GitHub Releases page is the authoritative source for complete release notes.
 - `configkit`: explicitly present TOML `false`, `0`, and `""` values now override
   earlier sources and defaults. An explicitly set empty string environment
   variable also clears a string field; an unset variable still leaves it alone.
+- `symaira-core-config`: the Rust loader now follows that current zero-value
+  precedence. The original v0.17.0 Go oracle fixture remains immutable as
+  historical evidence of the previous behavior.
 - **Consumer migration:** review existing configuration files that relied on
   zero-value skipping before raising the CoreKit pin. In particular, Symaira
   Desktop's `TestTOMLFalseValueIgnored` asserts the former behavior and must
