@@ -1,0 +1,528 @@
+{
+  "baseline_commit": "05d3702f468c8a2817483385373ca229e157ce22",
+  "binary_sha256": {
+    "baseline": "57b082364ba4702b85b3d4a42b6369ae96a129fa1fd19112337e6079d8c4a163",
+    "candidate": "45dd631f5564f308cc9a3891fda28d5ed2b00f19b444fcf3e4d7bb8834dce97c"
+  },
+  "source_sha256": {
+    "domkit/truncate.go": "20ad549d472dea54429c860bfa110350cb16f2eee723bcb52249f89d24e0e193",
+    "domkit/truncate_benchmark_test.go": "56a9b571b67f2c25ca501b28d0d5d20c17f8428a42f1d4bc9128a9450f97e546",
+    "domkit/truncate_parity_test.go": "8eb67cfcd656481a6aba18f577964550720bfeb97388e7e67647dfe093b13a32",
+    "scripts/bench-domkit.py": "d88cc25cc21a58f3e52a5f21874853c5982a0e25f046803bb740e10d10e021dd",
+    "go.mod": "7d420a885a286343a32582b3304f3aeea9a27baf70f972b4ee8e55400a431bae",
+    "go.sum": "f6e478b32007c9c0d20f1ca4ce6558f3b9f08634c3097f66284e1f4a9aa25f88"
+  },
+  "flags": [
+    "-test.run=^$",
+    "-test.bench=Benchmark(Truncate|RenderTruncated|RenderParseOnce)$",
+    "-test.benchmem",
+    "-test.benchtime=100ms",
+    "-test.cpu=1",
+    "-test.count=1"
+  ],
+  "order": [
+    "warmup-baseline",
+    "warmup-candidate",
+    "run-01-candidate",
+    "run-01-baseline",
+    "run-02-baseline",
+    "run-02-candidate",
+    "run-03-candidate",
+    "run-03-baseline",
+    "run-04-baseline",
+    "run-04-candidate",
+    "run-05-candidate",
+    "run-05-baseline",
+    "run-06-baseline",
+    "run-06-candidate",
+    "run-07-candidate",
+    "run-07-baseline",
+    "run-08-baseline",
+    "run-08-candidate",
+    "run-09-candidate",
+    "run-09-baseline",
+    "run-10-baseline",
+    "run-10-candidate"
+  ]
+}
+
+# Preliminary unchanged baseline (10 repeats in one process; NOT paired result)
+goos: darwin
+goarch: arm64
+pkg: github.com/danieljustus/symaira-corekit/domkit
+cpu: Apple M4 Pro
+BenchmarkRenderParseOnce 	   10000	     12505 ns/op	   13496 B/op	     208 allocs/op
+BenchmarkRenderParseOnce 	   10000	     11897 ns/op	   13496 B/op	     208 allocs/op
+BenchmarkRenderParseOnce 	   10000	     11877 ns/op	   13496 B/op	     208 allocs/op
+BenchmarkRenderParseOnce 	   10000	     11757 ns/op	   13496 B/op	     208 allocs/op
+BenchmarkRenderParseOnce 	   10000	     11699 ns/op	   13496 B/op	     208 allocs/op
+BenchmarkRenderParseOnce 	   10000	     11731 ns/op	   13496 B/op	     208 allocs/op
+BenchmarkRenderParseOnce 	   10000	     11906 ns/op	   13496 B/op	     208 allocs/op
+BenchmarkRenderParseOnce 	   10000	     11671 ns/op	   13496 B/op	     208 allocs/op
+BenchmarkRenderParseOnce 	   10000	     11856 ns/op	   13496 B/op	     208 allocs/op
+BenchmarkRenderParseOnce 	   10000	     11831 ns/op	   13496 B/op	     208 allocs/op
+BenchmarkTruncate/paragraphs=10         	  449774	       275.4 ns/op	2759.87 MB/s	       0 B/op	       0 allocs/op
+BenchmarkTruncate/paragraphs=10         	  418384	       274.8 ns/op	2765.36 MB/s	       0 B/op	       0 allocs/op
+BenchmarkTruncate/paragraphs=10         	  436753	       271.9 ns/op	2795.27 MB/s	       0 B/op	       0 allocs/op
+BenchmarkTruncate/paragraphs=10         	  458912	       275.5 ns/op	2758.58 MB/s	       0 B/op	       0 allocs/op
+BenchmarkTruncate/paragraphs=10         	  427546	       276.2 ns/op	2752.10 MB/s	       0 B/op	       0 allocs/op
+BenchmarkTruncate/paragraphs=10         	  403581	       279.5 ns/op	2719.37 MB/s	       0 B/op	       0 allocs/op
+BenchmarkTruncate/paragraphs=10         	  403185	       283.1 ns/op	2684.17 MB/s	       0 B/op	       0 allocs/op
+BenchmarkTruncate/paragraphs=10         	  439030	       278.1 ns/op	2732.35 MB/s	       0 B/op	       0 allocs/op
+BenchmarkTruncate/paragraphs=10         	  414829	       327.7 ns/op	2319.42 MB/s	       0 B/op	       0 allocs/op
+BenchmarkTruncate/paragraphs=10         	  362113	       284.7 ns/op	2669.83 MB/s	       0 B/op	       0 allocs/op
+BenchmarkTruncate/paragraphs=1000       	     552	    223703 ns/op	 339.74 MB/s	  332648 B/op	      28 allocs/op
+BenchmarkTruncate/paragraphs=1000       	     540	    221873 ns/op	 342.54 MB/s	  332648 B/op	      28 allocs/op
+BenchmarkTruncate/paragraphs=1000       	     544	    219309 ns/op	 346.54 MB/s	  332648 B/op	      28 allocs/op
+BenchmarkTruncate/paragraphs=1000       	     542	    220177 ns/op	 345.18 MB/s	  332648 B/op	      28 allocs/op
+BenchmarkTruncate/paragraphs=1000       	     546	    223097 ns/op	 340.66 MB/s	  332648 B/op	      28 allocs/op
+BenchmarkTruncate/paragraphs=1000       	     544	    220230 ns/op	 345.09 MB/s	  332648 B/op	      28 allocs/op
+BenchmarkTruncate/paragraphs=1000       	     546	    218327 ns/op	 348.10 MB/s	  332648 B/op	      28 allocs/op
+BenchmarkTruncate/paragraphs=1000       	     541	    224374 ns/op	 338.72 MB/s	  332648 B/op	      28 allocs/op
+BenchmarkTruncate/paragraphs=1000       	     547	    220885 ns/op	 344.07 MB/s	  332648 B/op	      28 allocs/op
+BenchmarkTruncate/paragraphs=1000       	     554	    218721 ns/op	 347.48 MB/s	  332648 B/op	      28 allocs/op
+BenchmarkTruncate/paragraphs=16000      	      51	   2338281 ns/op	 520.04 MB/s	 4354958 B/op	      32 allocs/op
+BenchmarkTruncate/paragraphs=16000      	      48	   2347488 ns/op	 518.00 MB/s	 4354959 B/op	      32 allocs/op
+BenchmarkTruncate/paragraphs=16000      	      49	   2371729 ns/op	 512.71 MB/s	 4354959 B/op	      32 allocs/op
+BenchmarkTruncate/paragraphs=16000      	      49	   2381563 ns/op	 510.59 MB/s	 4354959 B/op	      32 allocs/op
+BenchmarkTruncate/paragraphs=16000      	      50	   2381270 ns/op	 510.65 MB/s	 4354959 B/op	      32 allocs/op
+BenchmarkTruncate/paragraphs=16000      	      51	   2396293 ns/op	 507.45 MB/s	 4354958 B/op	      32 allocs/op
+BenchmarkTruncate/paragraphs=16000      	      48	   2350765 ns/op	 517.28 MB/s	 4354959 B/op	      32 allocs/op
+BenchmarkTruncate/paragraphs=16000      	      50	   2380345 ns/op	 510.85 MB/s	 4354959 B/op	      32 allocs/op
+BenchmarkTruncate/paragraphs=16000      	      48	   2408894 ns/op	 504.80 MB/s	 4354959 B/op	      32 allocs/op
+BenchmarkTruncate/paragraphs=16000      	      50	   2447152 ns/op	 496.90 MB/s	 4354958 B/op	      32 allocs/op
+BenchmarkRenderTruncated/paragraphs=10/raw=false         	   13988	      8418 ns/op	  97.41 MB/s	    9592 B/op	      47 allocs/op
+BenchmarkRenderTruncated/paragraphs=10/raw=false         	   14654	      8691 ns/op	  94.36 MB/s	    9592 B/op	      47 allocs/op
+BenchmarkRenderTruncated/paragraphs=10/raw=false         	   14696	     11734 ns/op	  69.88 MB/s	    9592 B/op	      47 allocs/op
+BenchmarkRenderTruncated/paragraphs=10/raw=false         	    6927	     15108 ns/op	  54.28 MB/s	    9592 B/op	      47 allocs/op
+BenchmarkRenderTruncated/paragraphs=10/raw=false         	   12547	     11190 ns/op	  73.28 MB/s	    9592 B/op	      47 allocs/op
+BenchmarkRenderTruncated/paragraphs=10/raw=false         	   13716	      8236 ns/op	  99.56 MB/s	    9592 B/op	      47 allocs/op
+BenchmarkRenderTruncated/paragraphs=10/raw=false         	   14530	      8395 ns/op	  97.67 MB/s	    9592 B/op	      47 allocs/op
+BenchmarkRenderTruncated/paragraphs=10/raw=false         	   14359	      8339 ns/op	  98.33 MB/s	    9592 B/op	      47 allocs/op
+BenchmarkRenderTruncated/paragraphs=10/raw=false         	   14728	      8248 ns/op	  99.42 MB/s	    9592 B/op	      47 allocs/op
+BenchmarkRenderTruncated/paragraphs=10/raw=false         	   14935	      8216 ns/op	  99.80 MB/s	    9592 B/op	      47 allocs/op
+BenchmarkRenderTruncated/paragraphs=10/raw=true          	   24559	      5313 ns/op	 154.34 MB/s	    6752 B/op	      35 allocs/op
+BenchmarkRenderTruncated/paragraphs=10/raw=true          	   23922	      5282 ns/op	 155.26 MB/s	    6752 B/op	      35 allocs/op
+BenchmarkRenderTruncated/paragraphs=10/raw=true          	   24135	      5889 ns/op	 139.25 MB/s	    6752 B/op	      35 allocs/op
+BenchmarkRenderTruncated/paragraphs=10/raw=true          	   26356	      5234 ns/op	 156.68 MB/s	    6752 B/op	      35 allocs/op
+BenchmarkRenderTruncated/paragraphs=10/raw=true          	   26317	      4710 ns/op	 174.11 MB/s	    6752 B/op	      35 allocs/op
+BenchmarkRenderTruncated/paragraphs=10/raw=true          	   26023	      4654 ns/op	 176.20 MB/s	    6752 B/op	      35 allocs/op
+BenchmarkRenderTruncated/paragraphs=10/raw=true          	   26130	      4621 ns/op	 177.46 MB/s	    6752 B/op	      35 allocs/op
+BenchmarkRenderTruncated/paragraphs=10/raw=true          	   25737	      4634 ns/op	 176.96 MB/s	    6752 B/op	      35 allocs/op
+BenchmarkRenderTruncated/paragraphs=10/raw=true          	   25750	      4739 ns/op	 173.03 MB/s	    6752 B/op	      35 allocs/op
+BenchmarkRenderTruncated/paragraphs=10/raw=true          	   25096	      4697 ns/op	 174.59 MB/s	    6752 B/op	      35 allocs/op
+BenchmarkRenderTruncated/paragraphs=1000/raw=false       	     136	    923142 ns/op	  82.39 MB/s	 1140193 B/op	      95 allocs/op
+BenchmarkRenderTruncated/paragraphs=1000/raw=false       	     135	    881904 ns/op	  86.25 MB/s	 1140192 B/op	      95 allocs/op
+BenchmarkRenderTruncated/paragraphs=1000/raw=false       	     136	    866968 ns/op	  87.73 MB/s	 1140192 B/op	      95 allocs/op
+BenchmarkRenderTruncated/paragraphs=1000/raw=false       	     139	    846034 ns/op	  89.90 MB/s	 1140192 B/op	      95 allocs/op
+BenchmarkRenderTruncated/paragraphs=1000/raw=false       	     139	    849781 ns/op	  89.51 MB/s	 1140193 B/op	      95 allocs/op
+BenchmarkRenderTruncated/paragraphs=1000/raw=false       	     140	    857650 ns/op	  88.68 MB/s	 1140193 B/op	      95 allocs/op
+BenchmarkRenderTruncated/paragraphs=1000/raw=false       	     100	   1082742 ns/op	  70.25 MB/s	 1140192 B/op	      95 allocs/op
+BenchmarkRenderTruncated/paragraphs=1000/raw=false       	     138	    861653 ns/op	  88.27 MB/s	 1140193 B/op	      95 allocs/op
+BenchmarkRenderTruncated/paragraphs=1000/raw=false       	     141	    848363 ns/op	  89.65 MB/s	 1140192 B/op	      95 allocs/op
+BenchmarkRenderTruncated/paragraphs=1000/raw=false       	     141	    846363 ns/op	  89.87 MB/s	 1140193 B/op	      95 allocs/op
+BenchmarkRenderTruncated/paragraphs=1000/raw=true        	     259	    461255 ns/op	 164.90 MB/s	  674504 B/op	      68 allocs/op
+BenchmarkRenderTruncated/paragraphs=1000/raw=true        	     256	    469355 ns/op	 162.05 MB/s	  674504 B/op	      68 allocs/op
+BenchmarkRenderTruncated/paragraphs=1000/raw=true        	     253	    481043 ns/op	 158.11 MB/s	  674504 B/op	      68 allocs/op
+BenchmarkRenderTruncated/paragraphs=1000/raw=true        	     254	    467128 ns/op	 162.82 MB/s	  674504 B/op	      68 allocs/op
+BenchmarkRenderTruncated/paragraphs=1000/raw=true        	     250	    539960 ns/op	 140.86 MB/s	  674504 B/op	      68 allocs/op
+BenchmarkRenderTruncated/paragraphs=1000/raw=true        	     252	    474795 ns/op	 160.20 MB/s	  674504 B/op	      68 allocs/op
+BenchmarkRenderTruncated/paragraphs=1000/raw=true        	     250	    470297 ns/op	 161.73 MB/s	  674504 B/op	      68 allocs/op
+BenchmarkRenderTruncated/paragraphs=1000/raw=true        	     250	    467532 ns/op	 162.68 MB/s	  674504 B/op	      68 allocs/op
+BenchmarkRenderTruncated/paragraphs=1000/raw=true        	     252	    478878 ns/op	 158.83 MB/s	  674504 B/op	      68 allocs/op
+BenchmarkRenderTruncated/paragraphs=1000/raw=true        	     252	    470773 ns/op	 161.56 MB/s	  674504 B/op	      68 allocs/op
+BenchmarkRenderTruncated/paragraphs=16000/raw=false      	      10	  11152425 ns/op	 109.04 MB/s	17630734 B/op	     114 allocs/op
+BenchmarkRenderTruncated/paragraphs=16000/raw=false      	       9	  15489301 ns/op	  78.51 MB/s	17630736 B/op	     114 allocs/op
+BenchmarkRenderTruncated/paragraphs=16000/raw=false      	       9	  11658417 ns/op	 104.31 MB/s	17630736 B/op	     114 allocs/op
+BenchmarkRenderTruncated/paragraphs=16000/raw=false      	       9	  11836139 ns/op	 102.74 MB/s	17630734 B/op	     114 allocs/op
+BenchmarkRenderTruncated/paragraphs=16000/raw=false      	       9	  11744403 ns/op	 103.54 MB/s	17630736 B/op	     114 allocs/op
+BenchmarkRenderTruncated/paragraphs=16000/raw=false      	       9	  11337417 ns/op	 107.26 MB/s	17630736 B/op	     114 allocs/op
+BenchmarkRenderTruncated/paragraphs=16000/raw=false      	       9	  11648620 ns/op	 104.40 MB/s	17630728 B/op	     114 allocs/op
+BenchmarkRenderTruncated/paragraphs=16000/raw=false      	       9	  11192963 ns/op	 108.65 MB/s	17630732 B/op	     114 allocs/op
+BenchmarkRenderTruncated/paragraphs=16000/raw=false      	      10	  11008654 ns/op	 110.46 MB/s	17630736 B/op	     114 allocs/op
+BenchmarkRenderTruncated/paragraphs=16000/raw=false      	      10	  11128108 ns/op	 109.28 MB/s	17630736 B/op	     114 allocs/op
+BenchmarkRenderTruncated/paragraphs=16000/raw=true       	      18	   6046065 ns/op	 201.13 MB/s	 9767664 B/op	      76 allocs/op
+BenchmarkRenderTruncated/paragraphs=16000/raw=true       	      18	   6078884 ns/op	 200.05 MB/s	 9767663 B/op	      76 allocs/op
+BenchmarkRenderTruncated/paragraphs=16000/raw=true       	      18	   7067917 ns/op	 172.05 MB/s	 9767664 B/op	      76 allocs/op
+BenchmarkRenderTruncated/paragraphs=16000/raw=true       	      19	   6077792 ns/op	 200.08 MB/s	 9767664 B/op	      76 allocs/op
+BenchmarkRenderTruncated/paragraphs=16000/raw=true       	      18	   6120449 ns/op	 198.69 MB/s	 9767664 B/op	      76 allocs/op
+BenchmarkRenderTruncated/paragraphs=16000/raw=true       	      19	   6105632 ns/op	 199.17 MB/s	 9767664 B/op	      76 allocs/op
+BenchmarkRenderTruncated/paragraphs=16000/raw=true       	      19	   6085765 ns/op	 199.82 MB/s	 9767664 B/op	      76 allocs/op
+BenchmarkRenderTruncated/paragraphs=16000/raw=true       	      19	   6091116 ns/op	 199.64 MB/s	 9767664 B/op	      76 allocs/op
+BenchmarkRenderTruncated/paragraphs=16000/raw=true       	      18	   6108477 ns/op	 199.08 MB/s	 9767664 B/op	      76 allocs/op
+BenchmarkRenderTruncated/paragraphs=16000/raw=true       	      19	   6083121 ns/op	 199.91 MB/s	 9767664 B/op	      76 allocs/op
+PASS
+
+# warmup-baseline
+goos: darwin
+goarch: arm64
+pkg: github.com/danieljustus/symaira-corekit/domkit
+cpu: Apple M4 Pro
+BenchmarkRenderParseOnce 	   10000	     11158 ns/op	   13496 B/op	     208 allocs/op
+BenchmarkTruncate/paragraphs=10         	  426729	       280.4 ns/op	2710.32 MB/s	       0 B/op	       0 allocs/op
+BenchmarkTruncate/paragraphs=1000       	     550	    217232 ns/op	 349.86 MB/s	  332648 B/op	      28 allocs/op
+BenchmarkTruncate/paragraphs=16000      	      54	   2366750 ns/op	 513.78 MB/s	 4354959 B/op	      32 allocs/op
+BenchmarkRenderTruncated/paragraphs=10/raw=false         	   14530	      8328 ns/op	  98.46 MB/s	    9592 B/op	      47 allocs/op
+BenchmarkRenderTruncated/paragraphs=10/raw=true          	   26812	      4599 ns/op	 178.28 MB/s	    6752 B/op	      35 allocs/op
+BenchmarkRenderTruncated/paragraphs=1000/raw=false       	     139	    857066 ns/op	  88.74 MB/s	 1140193 B/op	      95 allocs/op
+BenchmarkRenderTruncated/paragraphs=1000/raw=true        	     255	    469899 ns/op	 161.86 MB/s	  674504 B/op	      68 allocs/op
+BenchmarkRenderTruncated/paragraphs=16000/raw=false      	       9	  11744153 ns/op	 103.55 MB/s	17630734 B/op	     114 allocs/op
+BenchmarkRenderTruncated/paragraphs=16000/raw=true       	      18	   6042137 ns/op	 201.26 MB/s	 9767664 B/op	      76 allocs/op
+PASS
+
+# warmup-candidate
+goos: darwin
+goarch: arm64
+pkg: github.com/danieljustus/symaira-corekit/domkit
+cpu: Apple M4 Pro
+BenchmarkRenderParseOnce 	   10000	     12038 ns/op	   13496 B/op	     208 allocs/op
+BenchmarkTruncate/paragraphs=10         	  429375	       346.5 ns/op	2193.52 MB/s	       0 B/op	       0 allocs/op
+BenchmarkTruncate/paragraphs=1000       	    1017	    129070 ns/op	 588.83 MB/s	   95080 B/op	      28 allocs/op
+BenchmarkTruncate/paragraphs=16000      	     210	    536665 ns/op	2265.85 MB/s	   95112 B/op	      32 allocs/op
+BenchmarkRenderTruncated/paragraphs=10/raw=false         	   13918	      9402 ns/op	  87.21 MB/s	    9592 B/op	      47 allocs/op
+BenchmarkRenderTruncated/paragraphs=10/raw=true          	   22813	      4780 ns/op	 171.53 MB/s	    6752 B/op	      35 allocs/op
+BenchmarkRenderTruncated/paragraphs=1000/raw=false       	     158	    756442 ns/op	 100.55 MB/s	  902624 B/op	      95 allocs/op
+BenchmarkRenderTruncated/paragraphs=1000/raw=true        	     319	    373312 ns/op	 203.74 MB/s	  436936 B/op	      68 allocs/op
+BenchmarkRenderTruncated/paragraphs=16000/raw=false      	      10	  10207004 ns/op	 119.14 MB/s	13370881 B/op	     114 allocs/op
+BenchmarkRenderTruncated/paragraphs=16000/raw=true       	      24	   4589347 ns/op	 264.97 MB/s	 5507824 B/op	      76 allocs/op
+PASS
+
+# run-01-candidate
+goos: darwin
+goarch: arm64
+pkg: github.com/danieljustus/symaira-corekit/domkit
+cpu: Apple M4 Pro
+BenchmarkRenderParseOnce 	   10000	     11791 ns/op	   13496 B/op	     208 allocs/op
+BenchmarkTruncate/paragraphs=10         	  438381	       285.1 ns/op	2665.92 MB/s	       0 B/op	       0 allocs/op
+BenchmarkTruncate/paragraphs=1000       	     945	    150534 ns/op	 504.87 MB/s	   95080 B/op	      28 allocs/op
+BenchmarkTruncate/paragraphs=16000      	     208	    588697 ns/op	2065.58 MB/s	   95112 B/op	      32 allocs/op
+BenchmarkRenderTruncated/paragraphs=10/raw=false         	   14510	      9979 ns/op	  82.17 MB/s	    9592 B/op	      47 allocs/op
+BenchmarkRenderTruncated/paragraphs=10/raw=true          	   25279	      4797 ns/op	 170.92 MB/s	    6752 B/op	      35 allocs/op
+BenchmarkRenderTruncated/paragraphs=1000/raw=false       	     141	   1213910 ns/op	  62.66 MB/s	  902624 B/op	      95 allocs/op
+BenchmarkRenderTruncated/paragraphs=1000/raw=true        	     310	    471208 ns/op	 161.41 MB/s	  436936 B/op	      68 allocs/op
+BenchmarkRenderTruncated/paragraphs=16000/raw=false      	       8	  12776844 ns/op	  95.18 MB/s	13370882 B/op	     114 allocs/op
+BenchmarkRenderTruncated/paragraphs=16000/raw=true       	      20	   5115258 ns/op	 237.73 MB/s	 5507824 B/op	      76 allocs/op
+PASS
+
+# run-01-baseline
+goos: darwin
+goarch: arm64
+pkg: github.com/danieljustus/symaira-corekit/domkit
+cpu: Apple M4 Pro
+BenchmarkRenderParseOnce 	   10000	     29183 ns/op	   13496 B/op	     208 allocs/op
+BenchmarkTruncate/paragraphs=10         	  361636	       429.3 ns/op	1770.28 MB/s	       0 B/op	       0 allocs/op
+BenchmarkTruncate/paragraphs=1000       	     325	    971693 ns/op	  78.21 MB/s	  332648 B/op	      28 allocs/op
+BenchmarkTruncate/paragraphs=16000      	      30	   6982969 ns/op	 174.14 MB/s	 4354956 B/op	      32 allocs/op
+BenchmarkRenderTruncated/paragraphs=10/raw=false         	    8664	     11748 ns/op	  69.80 MB/s	    9592 B/op	      47 allocs/op
+BenchmarkRenderTruncated/paragraphs=10/raw=true          	   12343	     15124 ns/op	  54.22 MB/s	    6752 B/op	      35 allocs/op
+BenchmarkRenderTruncated/paragraphs=1000/raw=false       	     100	   1251871 ns/op	  60.76 MB/s	 1140193 B/op	      95 allocs/op
+BenchmarkRenderTruncated/paragraphs=1000/raw=true        	     226	    696621 ns/op	 109.18 MB/s	  674504 B/op	      68 allocs/op
+BenchmarkRenderTruncated/paragraphs=16000/raw=false      	       8	  13191162 ns/op	  92.19 MB/s	17630730 B/op	     114 allocs/op
+BenchmarkRenderTruncated/paragraphs=16000/raw=true       	      18	   6878067 ns/op	 176.80 MB/s	 9767664 B/op	      76 allocs/op
+PASS
+
+# run-02-baseline
+goos: darwin
+goarch: arm64
+pkg: github.com/danieljustus/symaira-corekit/domkit
+cpu: Apple M4 Pro
+BenchmarkRenderParseOnce 	   10000	     13893 ns/op	   13496 B/op	     208 allocs/op
+BenchmarkTruncate/paragraphs=10         	  420369	       303.3 ns/op	2506.08 MB/s	       0 B/op	       0 allocs/op
+BenchmarkTruncate/paragraphs=1000       	     507	    250334 ns/op	 303.59 MB/s	  332648 B/op	      28 allocs/op
+BenchmarkTruncate/paragraphs=16000      	      46	   2454626 ns/op	 495.39 MB/s	 4354959 B/op	      32 allocs/op
+BenchmarkRenderTruncated/paragraphs=10/raw=false         	   13762	      8608 ns/op	  95.26 MB/s	    9592 B/op	      47 allocs/op
+BenchmarkRenderTruncated/paragraphs=10/raw=true          	   25236	      4653 ns/op	 176.22 MB/s	    6752 B/op	      35 allocs/op
+BenchmarkRenderTruncated/paragraphs=1000/raw=false       	     130	    880476 ns/op	  86.39 MB/s	 1140193 B/op	      95 allocs/op
+BenchmarkRenderTruncated/paragraphs=1000/raw=true        	     248	    492430 ns/op	 154.46 MB/s	  674504 B/op	      68 allocs/op
+BenchmarkRenderTruncated/paragraphs=16000/raw=false      	       9	  11248801 ns/op	 108.11 MB/s	17630734 B/op	     114 allocs/op
+BenchmarkRenderTruncated/paragraphs=16000/raw=true       	      18	   6120861 ns/op	 198.67 MB/s	 9767664 B/op	      76 allocs/op
+PASS
+
+# run-02-candidate
+goos: darwin
+goarch: arm64
+pkg: github.com/danieljustus/symaira-corekit/domkit
+cpu: Apple M4 Pro
+BenchmarkRenderParseOnce 	   10000	     10910 ns/op	   13496 B/op	     208 allocs/op
+BenchmarkTruncate/paragraphs=10         	  420590	       276.5 ns/op	2748.36 MB/s	       0 B/op	       0 allocs/op
+BenchmarkTruncate/paragraphs=1000       	    1006	    117602 ns/op	 646.25 MB/s	   95080 B/op	      28 allocs/op
+BenchmarkTruncate/paragraphs=16000      	     218	    536580 ns/op	2266.21 MB/s	   95112 B/op	      32 allocs/op
+BenchmarkRenderTruncated/paragraphs=10/raw=false         	   14360	      8273 ns/op	  99.11 MB/s	    9592 B/op	      47 allocs/op
+BenchmarkRenderTruncated/paragraphs=10/raw=true          	   26306	      5028 ns/op	 163.10 MB/s	    6752 B/op	      35 allocs/op
+BenchmarkRenderTruncated/paragraphs=1000/raw=false       	     159	    765996 ns/op	  99.30 MB/s	  902624 B/op	      95 allocs/op
+BenchmarkRenderTruncated/paragraphs=1000/raw=true        	     326	    365912 ns/op	 207.86 MB/s	  436936 B/op	      68 allocs/op
+BenchmarkRenderTruncated/paragraphs=16000/raw=false      	      12	   9870330 ns/op	 123.20 MB/s	13370881 B/op	     114 allocs/op
+BenchmarkRenderTruncated/paragraphs=16000/raw=true       	      27	   4281588 ns/op	 284.02 MB/s	 5507824 B/op	      76 allocs/op
+PASS
+
+# run-03-candidate
+goos: darwin
+goarch: arm64
+pkg: github.com/danieljustus/symaira-corekit/domkit
+cpu: Apple M4 Pro
+BenchmarkRenderParseOnce 	   10000	     11021 ns/op	   13496 B/op	     208 allocs/op
+BenchmarkTruncate/paragraphs=10         	  423342	       273.3 ns/op	2780.49 MB/s	       0 B/op	       0 allocs/op
+BenchmarkTruncate/paragraphs=1000       	    1039	    115322 ns/op	 659.03 MB/s	   95080 B/op	      28 allocs/op
+BenchmarkTruncate/paragraphs=16000      	     219	    539722 ns/op	2253.01 MB/s	   95112 B/op	      32 allocs/op
+BenchmarkRenderTruncated/paragraphs=10/raw=false         	   14755	      8269 ns/op	  99.16 MB/s	    9592 B/op	      47 allocs/op
+BenchmarkRenderTruncated/paragraphs=10/raw=true          	   26306	      4473 ns/op	 183.31 MB/s	    6752 B/op	      35 allocs/op
+BenchmarkRenderTruncated/paragraphs=1000/raw=false       	     162	    830802 ns/op	  91.55 MB/s	  902624 B/op	      95 allocs/op
+BenchmarkRenderTruncated/paragraphs=1000/raw=true        	     330	    356356 ns/op	 213.44 MB/s	  436936 B/op	      68 allocs/op
+BenchmarkRenderTruncated/paragraphs=16000/raw=false      	      13	   9782766 ns/op	 124.31 MB/s	13370882 B/op	     114 allocs/op
+BenchmarkRenderTruncated/paragraphs=16000/raw=true       	      26	   4285944 ns/op	 283.73 MB/s	 5507824 B/op	      76 allocs/op
+PASS
+
+# run-03-baseline
+goos: darwin
+goarch: arm64
+pkg: github.com/danieljustus/symaira-corekit/domkit
+cpu: Apple M4 Pro
+BenchmarkRenderParseOnce 	   10000	     11553 ns/op	   13496 B/op	     208 allocs/op
+BenchmarkTruncate/paragraphs=10         	  400923	       281.7 ns/op	2697.59 MB/s	       0 B/op	       0 allocs/op
+BenchmarkTruncate/paragraphs=1000       	     554	    217698 ns/op	 349.11 MB/s	  332648 B/op	      28 allocs/op
+BenchmarkTruncate/paragraphs=16000      	      50	   2358227 ns/op	 515.64 MB/s	 4354959 B/op	      32 allocs/op
+BenchmarkRenderTruncated/paragraphs=10/raw=false         	   14506	      8212 ns/op	  99.86 MB/s	    9592 B/op	      47 allocs/op
+BenchmarkRenderTruncated/paragraphs=10/raw=true          	   26374	      4539 ns/op	 180.64 MB/s	    6752 B/op	      35 allocs/op
+BenchmarkRenderTruncated/paragraphs=1000/raw=false       	     141	    892649 ns/op	  85.21 MB/s	 1140193 B/op	      95 allocs/op
+BenchmarkRenderTruncated/paragraphs=1000/raw=true        	     252	    476274 ns/op	 159.70 MB/s	  674504 B/op	      68 allocs/op
+BenchmarkRenderTruncated/paragraphs=16000/raw=false      	      10	  11006600 ns/op	 110.48 MB/s	17630734 B/op	     114 allocs/op
+BenchmarkRenderTruncated/paragraphs=16000/raw=true       	      19	   6146993 ns/op	 197.83 MB/s	 9767664 B/op	      76 allocs/op
+PASS
+
+# run-04-baseline
+goos: darwin
+goarch: arm64
+pkg: github.com/danieljustus/symaira-corekit/domkit
+cpu: Apple M4 Pro
+BenchmarkRenderParseOnce 	   10000	     10992 ns/op	   13496 B/op	     208 allocs/op
+BenchmarkTruncate/paragraphs=10         	  415248	       282.2 ns/op	2693.26 MB/s	       0 B/op	       0 allocs/op
+BenchmarkTruncate/paragraphs=1000       	     540	    213925 ns/op	 355.27 MB/s	  332648 B/op	      28 allocs/op
+BenchmarkTruncate/paragraphs=16000      	      52	   2368491 ns/op	 513.41 MB/s	 4354959 B/op	      32 allocs/op
+BenchmarkRenderTruncated/paragraphs=10/raw=false         	   14728	      8264 ns/op	  99.23 MB/s	    9592 B/op	      47 allocs/op
+BenchmarkRenderTruncated/paragraphs=10/raw=true          	   26434	      4532 ns/op	 180.92 MB/s	    6752 B/op	      35 allocs/op
+BenchmarkRenderTruncated/paragraphs=1000/raw=false       	     144	    836016 ns/op	  90.98 MB/s	 1140193 B/op	      95 allocs/op
+BenchmarkRenderTruncated/paragraphs=1000/raw=true        	     253	    469615 ns/op	 161.96 MB/s	  674504 B/op	      68 allocs/op
+BenchmarkRenderTruncated/paragraphs=16000/raw=false      	       9	  11532051 ns/op	 105.45 MB/s	17630734 B/op	     114 allocs/op
+BenchmarkRenderTruncated/paragraphs=16000/raw=true       	      19	   6121487 ns/op	 198.65 MB/s	 9767664 B/op	      76 allocs/op
+PASS
+
+# run-04-candidate
+goos: darwin
+goarch: arm64
+pkg: github.com/danieljustus/symaira-corekit/domkit
+cpu: Apple M4 Pro
+BenchmarkRenderParseOnce 	   10000	     11480 ns/op	   13496 B/op	     208 allocs/op
+BenchmarkTruncate/paragraphs=10         	  415728	       278.7 ns/op	2726.96 MB/s	       0 B/op	       0 allocs/op
+BenchmarkTruncate/paragraphs=1000       	    1058	    115111 ns/op	 660.24 MB/s	   95080 B/op	      28 allocs/op
+BenchmarkTruncate/paragraphs=16000      	     220	    544291 ns/op	2234.10 MB/s	   95112 B/op	      32 allocs/op
+BenchmarkRenderTruncated/paragraphs=10/raw=false         	   10000	     10070 ns/op	  81.43 MB/s	    9592 B/op	      47 allocs/op
+BenchmarkRenderTruncated/paragraphs=10/raw=true          	   26116	      4641 ns/op	 176.67 MB/s	    6752 B/op	      35 allocs/op
+BenchmarkRenderTruncated/paragraphs=1000/raw=false       	     164	    734891 ns/op	 103.50 MB/s	  902624 B/op	      95 allocs/op
+BenchmarkRenderTruncated/paragraphs=1000/raw=true        	     325	    361783 ns/op	 210.24 MB/s	  436936 B/op	      68 allocs/op
+BenchmarkRenderTruncated/paragraphs=16000/raw=false      	      12	   9780118 ns/op	 124.34 MB/s	13370882 B/op	     114 allocs/op
+BenchmarkRenderTruncated/paragraphs=16000/raw=true       	      26	   4227486 ns/op	 287.66 MB/s	 5507824 B/op	      76 allocs/op
+PASS
+
+# run-05-candidate
+goos: darwin
+goarch: arm64
+pkg: github.com/danieljustus/symaira-corekit/domkit
+cpu: Apple M4 Pro
+BenchmarkRenderParseOnce 	   10000	     11315 ns/op	   13496 B/op	     208 allocs/op
+BenchmarkTruncate/paragraphs=10         	  420842	       272.8 ns/op	2785.86 MB/s	       0 B/op	       0 allocs/op
+BenchmarkTruncate/paragraphs=1000       	    1005	    119384 ns/op	 636.60 MB/s	   95080 B/op	      28 allocs/op
+BenchmarkTruncate/paragraphs=16000      	     222	    538839 ns/op	2256.70 MB/s	   95112 B/op	      32 allocs/op
+BenchmarkRenderTruncated/paragraphs=10/raw=false         	   14392	      8316 ns/op	  98.61 MB/s	    9592 B/op	      47 allocs/op
+BenchmarkRenderTruncated/paragraphs=10/raw=true          	   26103	      4529 ns/op	 181.05 MB/s	    6752 B/op	      35 allocs/op
+BenchmarkRenderTruncated/paragraphs=1000/raw=false       	     159	    738187 ns/op	 103.04 MB/s	  902624 B/op	      95 allocs/op
+BenchmarkRenderTruncated/paragraphs=1000/raw=true        	     326	    367442 ns/op	 207.00 MB/s	  436936 B/op	      68 allocs/op
+BenchmarkRenderTruncated/paragraphs=16000/raw=false      	      12	   9744097 ns/op	 124.80 MB/s	13370882 B/op	     114 allocs/op
+BenchmarkRenderTruncated/paragraphs=16000/raw=true       	      27	   4245140 ns/op	 286.46 MB/s	 5507824 B/op	      76 allocs/op
+PASS
+
+# run-05-baseline
+goos: darwin
+goarch: arm64
+pkg: github.com/danieljustus/symaira-corekit/domkit
+cpu: Apple M4 Pro
+BenchmarkRenderParseOnce 	   10000	     11324 ns/op	   13496 B/op	     208 allocs/op
+BenchmarkTruncate/paragraphs=10         	  449178	       278.7 ns/op	2726.47 MB/s	       0 B/op	       0 allocs/op
+BenchmarkTruncate/paragraphs=1000       	     535	    221183 ns/op	 343.61 MB/s	  332648 B/op	      28 allocs/op
+BenchmarkTruncate/paragraphs=16000      	      51	   2402699 ns/op	 506.10 MB/s	 4354959 B/op	      32 allocs/op
+BenchmarkRenderTruncated/paragraphs=10/raw=false         	   14678	      8322 ns/op	  98.53 MB/s	    9592 B/op	      47 allocs/op
+BenchmarkRenderTruncated/paragraphs=10/raw=true          	   26184	      4616 ns/op	 177.65 MB/s	    6752 B/op	      35 allocs/op
+BenchmarkRenderTruncated/paragraphs=1000/raw=false       	     136	    867516 ns/op	  87.68 MB/s	 1140193 B/op	      95 allocs/op
+BenchmarkRenderTruncated/paragraphs=1000/raw=true        	     252	    475159 ns/op	 160.07 MB/s	  674504 B/op	      68 allocs/op
+BenchmarkRenderTruncated/paragraphs=16000/raw=false      	       9	  11233245 ns/op	 108.26 MB/s	17630734 B/op	     114 allocs/op
+BenchmarkRenderTruncated/paragraphs=16000/raw=true       	      18	   6054424 ns/op	 200.85 MB/s	 9767664 B/op	      76 allocs/op
+PASS
+
+# run-06-baseline
+goos: darwin
+goarch: arm64
+pkg: github.com/danieljustus/symaira-corekit/domkit
+cpu: Apple M4 Pro
+BenchmarkRenderParseOnce 	   10000	     11275 ns/op	   13496 B/op	     208 allocs/op
+BenchmarkTruncate/paragraphs=10         	  426584	       280.3 ns/op	2711.37 MB/s	       0 B/op	       0 allocs/op
+BenchmarkTruncate/paragraphs=1000       	     547	    218616 ns/op	 347.64 MB/s	  332648 B/op	      28 allocs/op
+BenchmarkTruncate/paragraphs=16000      	      50	   2354433 ns/op	 516.47 MB/s	 4354959 B/op	      32 allocs/op
+BenchmarkRenderTruncated/paragraphs=10/raw=false         	   14565	      9324 ns/op	  87.94 MB/s	    9592 B/op	      47 allocs/op
+BenchmarkRenderTruncated/paragraphs=10/raw=true          	   26610	      4573 ns/op	 179.30 MB/s	    6752 B/op	      35 allocs/op
+BenchmarkRenderTruncated/paragraphs=1000/raw=false       	     142	    843496 ns/op	  90.17 MB/s	 1140193 B/op	      95 allocs/op
+BenchmarkRenderTruncated/paragraphs=1000/raw=true        	     255	    474579 ns/op	 160.27 MB/s	  674504 B/op	      68 allocs/op
+BenchmarkRenderTruncated/paragraphs=16000/raw=false      	       9	  11628375 ns/op	 104.58 MB/s	17630736 B/op	     114 allocs/op
+BenchmarkRenderTruncated/paragraphs=16000/raw=true       	      18	   5987840 ns/op	 203.09 MB/s	 9767664 B/op	      76 allocs/op
+PASS
+
+# run-06-candidate
+goos: darwin
+goarch: arm64
+pkg: github.com/danieljustus/symaira-corekit/domkit
+cpu: Apple M4 Pro
+BenchmarkRenderParseOnce 	   10000	     11302 ns/op	   13496 B/op	     208 allocs/op
+BenchmarkTruncate/paragraphs=10         	  428577	       276.2 ns/op	2751.82 MB/s	       0 B/op	       0 allocs/op
+BenchmarkTruncate/paragraphs=1000       	    1010	    118093 ns/op	 643.56 MB/s	   95080 B/op	      28 allocs/op
+BenchmarkTruncate/paragraphs=16000      	     225	    525451 ns/op	2314.20 MB/s	   95112 B/op	      32 allocs/op
+BenchmarkRenderTruncated/paragraphs=10/raw=false         	   14564	      8301 ns/op	  98.78 MB/s	    9592 B/op	      47 allocs/op
+BenchmarkRenderTruncated/paragraphs=10/raw=true          	   26096	      4576 ns/op	 179.18 MB/s	    6752 B/op	      35 allocs/op
+BenchmarkRenderTruncated/paragraphs=1000/raw=false       	     163	    741497 ns/op	 102.58 MB/s	  902624 B/op	      95 allocs/op
+BenchmarkRenderTruncated/paragraphs=1000/raw=true        	     326	    366513 ns/op	 207.52 MB/s	  436936 B/op	      68 allocs/op
+BenchmarkRenderTruncated/paragraphs=16000/raw=false      	      12	   9601097 ns/op	 126.66 MB/s	13370881 B/op	     114 allocs/op
+BenchmarkRenderTruncated/paragraphs=16000/raw=true       	      25	   4278780 ns/op	 284.21 MB/s	 5507822 B/op	      76 allocs/op
+PASS
+
+# run-07-candidate
+goos: darwin
+goarch: arm64
+pkg: github.com/danieljustus/symaira-corekit/domkit
+cpu: Apple M4 Pro
+BenchmarkRenderParseOnce 	   10000	     11377 ns/op	   13496 B/op	     208 allocs/op
+BenchmarkTruncate/paragraphs=10         	  425481	       272.3 ns/op	2790.53 MB/s	       0 B/op	       0 allocs/op
+BenchmarkTruncate/paragraphs=1000       	    1026	    115663 ns/op	 657.08 MB/s	   95080 B/op	      28 allocs/op
+BenchmarkTruncate/paragraphs=16000      	     222	    543103 ns/op	2238.99 MB/s	   95112 B/op	      32 allocs/op
+BenchmarkRenderTruncated/paragraphs=10/raw=false         	   14514	      8721 ns/op	  94.03 MB/s	    9592 B/op	      47 allocs/op
+BenchmarkRenderTruncated/paragraphs=10/raw=true          	   26324	      4605 ns/op	 178.05 MB/s	    6752 B/op	      35 allocs/op
+BenchmarkRenderTruncated/paragraphs=1000/raw=false       	     162	    726992 ns/op	 104.62 MB/s	  902624 B/op	      95 allocs/op
+BenchmarkRenderTruncated/paragraphs=1000/raw=true        	     330	    363129 ns/op	 209.46 MB/s	  436936 B/op	      68 allocs/op
+BenchmarkRenderTruncated/paragraphs=16000/raw=false      	      12	   9633931 ns/op	 126.23 MB/s	13370882 B/op	     114 allocs/op
+BenchmarkRenderTruncated/paragraphs=16000/raw=true       	      25	   4299303 ns/op	 282.85 MB/s	 5507824 B/op	      76 allocs/op
+PASS
+
+# run-07-baseline
+goos: darwin
+goarch: arm64
+pkg: github.com/danieljustus/symaira-corekit/domkit
+cpu: Apple M4 Pro
+BenchmarkRenderParseOnce 	   10000	     11025 ns/op	   13496 B/op	     208 allocs/op
+BenchmarkTruncate/paragraphs=10         	  411598	       280.2 ns/op	2712.12 MB/s	       0 B/op	       0 allocs/op
+BenchmarkTruncate/paragraphs=1000       	     548	    216738 ns/op	 350.65 MB/s	  332648 B/op	      28 allocs/op
+BenchmarkTruncate/paragraphs=16000      	      48	   2340082 ns/op	 519.64 MB/s	 4354960 B/op	      32 allocs/op
+BenchmarkRenderTruncated/paragraphs=10/raw=false         	   12754	      8276 ns/op	  99.08 MB/s	    9592 B/op	      47 allocs/op
+BenchmarkRenderTruncated/paragraphs=10/raw=true          	   26430	      4554 ns/op	 180.05 MB/s	    6752 B/op	      35 allocs/op
+BenchmarkRenderTruncated/paragraphs=1000/raw=false       	     140	    851966 ns/op	  89.28 MB/s	 1140193 B/op	      95 allocs/op
+BenchmarkRenderTruncated/paragraphs=1000/raw=true        	     252	    470707 ns/op	 161.59 MB/s	  674504 B/op	      68 allocs/op
+BenchmarkRenderTruncated/paragraphs=16000/raw=false      	      10	  11065896 ns/op	 109.89 MB/s	17630732 B/op	     114 allocs/op
+BenchmarkRenderTruncated/paragraphs=16000/raw=true       	      19	   6029272 ns/op	 201.69 MB/s	 9767664 B/op	      76 allocs/op
+PASS
+
+# run-08-baseline
+goos: darwin
+goarch: arm64
+pkg: github.com/danieljustus/symaira-corekit/domkit
+cpu: Apple M4 Pro
+BenchmarkRenderParseOnce 	   10000	     11592 ns/op	   13496 B/op	     208 allocs/op
+BenchmarkTruncate/paragraphs=10         	  430879	       270.9 ns/op	2805.66 MB/s	       0 B/op	       0 allocs/op
+BenchmarkTruncate/paragraphs=1000       	     544	    218933 ns/op	 347.14 MB/s	  332648 B/op	      28 allocs/op
+BenchmarkTruncate/paragraphs=16000      	      51	   2356585 ns/op	 516.00 MB/s	 4354959 B/op	      32 allocs/op
+BenchmarkRenderTruncated/paragraphs=10/raw=false         	   14887	      8223 ns/op	  99.73 MB/s	    9592 B/op	      47 allocs/op
+BenchmarkRenderTruncated/paragraphs=10/raw=true          	   26487	      4547 ns/op	 180.34 MB/s	    6752 B/op	      35 allocs/op
+BenchmarkRenderTruncated/paragraphs=1000/raw=false       	     140	    852156 ns/op	  89.26 MB/s	 1140193 B/op	      95 allocs/op
+BenchmarkRenderTruncated/paragraphs=1000/raw=true        	     254	    471456 ns/op	 161.33 MB/s	  674504 B/op	      68 allocs/op
+BenchmarkRenderTruncated/paragraphs=16000/raw=false      	      10	  11166712 ns/op	 108.90 MB/s	17630736 B/op	     114 allocs/op
+BenchmarkRenderTruncated/paragraphs=16000/raw=true       	      19	   5967524 ns/op	 203.78 MB/s	 9767664 B/op	      76 allocs/op
+PASS
+
+# run-08-candidate
+goos: darwin
+goarch: arm64
+pkg: github.com/danieljustus/symaira-corekit/domkit
+cpu: Apple M4 Pro
+BenchmarkRenderParseOnce 	   10000	     11216 ns/op	   13496 B/op	     208 allocs/op
+BenchmarkTruncate/paragraphs=10         	  421508	       275.1 ns/op	2762.50 MB/s	       0 B/op	       0 allocs/op
+BenchmarkTruncate/paragraphs=1000       	    1016	    117640 ns/op	 646.04 MB/s	   95080 B/op	      28 allocs/op
+BenchmarkTruncate/paragraphs=16000      	     229	    530269 ns/op	2293.17 MB/s	   95112 B/op	      32 allocs/op
+BenchmarkRenderTruncated/paragraphs=10/raw=false         	   14545	      8313 ns/op	  98.64 MB/s	    9592 B/op	      47 allocs/op
+BenchmarkRenderTruncated/paragraphs=10/raw=true          	   26264	      4614 ns/op	 177.71 MB/s	    6752 B/op	      35 allocs/op
+BenchmarkRenderTruncated/paragraphs=1000/raw=false       	     160	    749843 ns/op	 101.43 MB/s	  902624 B/op	      95 allocs/op
+BenchmarkRenderTruncated/paragraphs=1000/raw=true        	     321	    362610 ns/op	 209.76 MB/s	  436936 B/op	      68 allocs/op
+BenchmarkRenderTruncated/paragraphs=16000/raw=false      	      12	   9914510 ns/op	 122.65 MB/s	13370881 B/op	     114 allocs/op
+BenchmarkRenderTruncated/paragraphs=16000/raw=true       	      26	   4220647 ns/op	 288.12 MB/s	 5507824 B/op	      76 allocs/op
+PASS
+
+# run-09-candidate
+goos: darwin
+goarch: arm64
+pkg: github.com/danieljustus/symaira-corekit/domkit
+cpu: Apple M4 Pro
+BenchmarkRenderParseOnce 	   10000	     11371 ns/op	   13496 B/op	     208 allocs/op
+BenchmarkTruncate/paragraphs=10         	  429772	       293.5 ns/op	2589.59 MB/s	       0 B/op	       0 allocs/op
+BenchmarkTruncate/paragraphs=1000       	     861	    117677 ns/op	 645.84 MB/s	   95080 B/op	      28 allocs/op
+BenchmarkTruncate/paragraphs=16000      	     223	    529847 ns/op	2295.00 MB/s	   95112 B/op	      32 allocs/op
+BenchmarkRenderTruncated/paragraphs=10/raw=false         	   13924	      8298 ns/op	  98.82 MB/s	    9592 B/op	      47 allocs/op
+BenchmarkRenderTruncated/paragraphs=10/raw=true          	   25578	      4591 ns/op	 178.61 MB/s	    6752 B/op	      35 allocs/op
+BenchmarkRenderTruncated/paragraphs=1000/raw=false       	     163	    737639 ns/op	 103.11 MB/s	  902624 B/op	      95 allocs/op
+BenchmarkRenderTruncated/paragraphs=1000/raw=true        	     334	    363854 ns/op	 209.04 MB/s	  436936 B/op	      68 allocs/op
+BenchmarkRenderTruncated/paragraphs=16000/raw=false      	      12	   9739316 ns/op	 124.86 MB/s	13370881 B/op	     114 allocs/op
+BenchmarkRenderTruncated/paragraphs=16000/raw=true       	      26	   4248138 ns/op	 286.26 MB/s	 5507824 B/op	      76 allocs/op
+PASS
+
+# run-09-baseline
+goos: darwin
+goarch: arm64
+pkg: github.com/danieljustus/symaira-corekit/domkit
+cpu: Apple M4 Pro
+BenchmarkRenderParseOnce 	   10000	     11065 ns/op	   13496 B/op	     208 allocs/op
+BenchmarkTruncate/paragraphs=10         	  448891	       272.9 ns/op	2784.55 MB/s	       0 B/op	       0 allocs/op
+BenchmarkTruncate/paragraphs=1000       	     544	    219446 ns/op	 346.33 MB/s	  332648 B/op	      28 allocs/op
+BenchmarkTruncate/paragraphs=16000      	      50	   2374046 ns/op	 512.21 MB/s	 4354959 B/op	      32 allocs/op
+BenchmarkRenderTruncated/paragraphs=10/raw=false         	   14740	      8278 ns/op	  99.06 MB/s	    9592 B/op	      47 allocs/op
+BenchmarkRenderTruncated/paragraphs=10/raw=true          	   26132	      4618 ns/op	 177.58 MB/s	    6752 B/op	      35 allocs/op
+BenchmarkRenderTruncated/paragraphs=1000/raw=false       	     138	    855304 ns/op	  88.93 MB/s	 1140193 B/op	      95 allocs/op
+BenchmarkRenderTruncated/paragraphs=1000/raw=true        	     252	    474282 ns/op	 160.37 MB/s	  674504 B/op	      68 allocs/op
+BenchmarkRenderTruncated/paragraphs=16000/raw=false      	       9	  11192181 ns/op	 108.65 MB/s	17630730 B/op	     114 allocs/op
+BenchmarkRenderTruncated/paragraphs=16000/raw=true       	      18	   6090125 ns/op	 199.68 MB/s	 9767664 B/op	      76 allocs/op
+PASS
+
+# run-10-baseline
+goos: darwin
+goarch: arm64
+pkg: github.com/danieljustus/symaira-corekit/domkit
+cpu: Apple M4 Pro
+BenchmarkRenderParseOnce 	   10000	     11583 ns/op	   13496 B/op	     208 allocs/op
+BenchmarkTruncate/paragraphs=10         	  443199	       274.6 ns/op	2767.61 MB/s	       0 B/op	       0 allocs/op
+BenchmarkTruncate/paragraphs=1000       	     550	    217291 ns/op	 349.76 MB/s	  332648 B/op	      28 allocs/op
+BenchmarkTruncate/paragraphs=16000      	      54	   2391412 ns/op	 508.49 MB/s	 4354959 B/op	      32 allocs/op
+BenchmarkRenderTruncated/paragraphs=10/raw=false         	   14622	      8487 ns/op	  96.62 MB/s	    9592 B/op	      47 allocs/op
+BenchmarkRenderTruncated/paragraphs=10/raw=true          	   26502	      4487 ns/op	 182.74 MB/s	    6752 B/op	      35 allocs/op
+BenchmarkRenderTruncated/paragraphs=1000/raw=false       	     142	    835190 ns/op	  91.07 MB/s	 1140193 B/op	      95 allocs/op
+BenchmarkRenderTruncated/paragraphs=1000/raw=true        	     253	    474240 ns/op	 160.38 MB/s	  674504 B/op	      68 allocs/op
+BenchmarkRenderTruncated/paragraphs=16000/raw=false      	      10	  10982125 ns/op	 110.73 MB/s	17630734 B/op	     114 allocs/op
+BenchmarkRenderTruncated/paragraphs=16000/raw=true       	      18	   6051669 ns/op	 200.95 MB/s	 9767664 B/op	      76 allocs/op
+PASS
+
+# run-10-candidate
+goos: darwin
+goarch: arm64
+pkg: github.com/danieljustus/symaira-corekit/domkit
+cpu: Apple M4 Pro
+BenchmarkRenderParseOnce 	   10000	     14682 ns/op	   13496 B/op	     208 allocs/op
+BenchmarkTruncate/paragraphs=10         	  428922	       277.8 ns/op	2735.95 MB/s	       0 B/op	       0 allocs/op
+BenchmarkTruncate/paragraphs=1000       	    1022	    116290 ns/op	 653.54 MB/s	   95080 B/op	      28 allocs/op
+BenchmarkTruncate/paragraphs=16000      	     228	    535758 ns/op	2269.68 MB/s	   95112 B/op	      32 allocs/op
+BenchmarkRenderTruncated/paragraphs=10/raw=false         	   14240	      8386 ns/op	  97.79 MB/s	    9592 B/op	      47 allocs/op
+BenchmarkRenderTruncated/paragraphs=10/raw=true          	   26180	      4654 ns/op	 176.20 MB/s	    6752 B/op	      35 allocs/op
+BenchmarkRenderTruncated/paragraphs=1000/raw=false       	     158	    734098 ns/op	 103.61 MB/s	  902624 B/op	      95 allocs/op
+BenchmarkRenderTruncated/paragraphs=1000/raw=true        	     333	    361179 ns/op	 210.59 MB/s	  436936 B/op	      68 allocs/op
+BenchmarkRenderTruncated/paragraphs=16000/raw=false      	      12	   9557795 ns/op	 127.23 MB/s	13370881 B/op	     114 allocs/op
+BenchmarkRenderTruncated/paragraphs=16000/raw=true       	      26	   4266853 ns/op	 285.00 MB/s	 5507824 B/op	      76 allocs/op
+PASS
