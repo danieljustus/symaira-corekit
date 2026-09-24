@@ -15,12 +15,16 @@ const DefaultMaxChars = 15000
 // body was truncated. (Persisting the full text to the cache is owned by the
 // token-budget issue, B-19.)
 func Truncate(text string, maxChars int) (string, bool) {
-	if maxChars <= 0 || utf8.RuneCountInString(text) <= maxChars {
+	if maxChars <= 0 {
+		return text, false
+	}
+	total := utf8.RuneCountInString(text)
+	if total <= maxChars {
 		return text, false
 	}
 	head := takeRunes(text, maxChars/2)
 	tail := takeRunesFromEnd(text, maxChars-maxChars/2)
-	omitted := utf8.RuneCountInString(text) - utf8.RuneCountInString(head) - utf8.RuneCountInString(tail)
+	omitted := total - maxChars
 	marker := "\n\n… [truncated: " + itoa(omitted) + " runes omitted] …\n\n"
 	return head + marker + tail, true
 }
@@ -45,11 +49,16 @@ func takeRunesFromEnd(text string, count int) string {
 	if count <= 0 {
 		return ""
 	}
-	runes := []rune(text)
-	if len(runes) <= count {
+	start := len(text)
+	for seen := 0; seen < count && start > 0; seen++ {
+		_, size := utf8.DecodeLastRuneInString(text[:start])
+		start -= size
+	}
+	if start == 0 {
 		return text
 	}
-	return string(runes[len(runes)-count:])
+	// Convert only the retained suffix, preserving replacement of invalid UTF-8.
+	return string([]rune(text[start:]))
 }
 
 func itoa(value int) string {
