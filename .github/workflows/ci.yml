@@ -6,20 +6,59 @@ on:
   pull_request:
     branches: [main]
   workflow_dispatch:
+  schedule:
+    - cron: '0 4 * * 1'
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
   cancel-in-progress: true
 permissions:
   contents: read
 
 jobs:
+  changes:
+    name: select CI scope
+    runs-on: ubuntu-latest
+    outputs:
+      full: ${{ steps.scope.outputs.full }}
+      test_matrix: ${{ steps.scope.outputs.test_matrix }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
+        with:
+          fetch-depth: 0
+      - name: Select PR or full coverage
+        id: scope
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+          full=true
+          if [[ "$GITHUB_EVENT_NAME" == pull_request ]]; then
+            full=false
+            git diff --name-only -z "$BASE_SHA" HEAD > "$RUNNER_TEMP/changed-paths"
+            while IFS= read -r -d '' path; do
+              case "$path" in
+                rust/*|.cargo/*|port/*|scripts/rust-port/*|testdata/rust-port/*|contracts/*|docs/rust-port/*|.github/workflows/*|Cargo.*|rust-toolchain.toml|Makefile|go.mod|go.sum|*.rs)
+                  full=true
+                  break ;;
+              esac
+            done < "$RUNNER_TEMP/changed-paths"
+          fi
+          echo "full=$full" >> "$GITHUB_OUTPUT"
+          if [[ "$full" == true ]]; then
+            echo 'test_matrix=["ubuntu-latest","macos-latest","windows-latest"]' >> "$GITHUB_OUTPUT"
+          else
+            echo 'test_matrix=["ubuntu-latest","macos-latest"]' >> "$GITHUB_OUTPUT"
+          fi
+
   test:
     name: test (${{ matrix.os }})
+    needs: changes
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: ${{ fromJSON(needs.changes.outputs.test_matrix) }}
         go-version: ["1.26.6"]
     runs-on: ${{ matrix.os }}
     steps:
@@ -54,6 +93,8 @@ jobs:
 
   cross-platform:
     name: cross (${{ matrix.goos }}/${{ matrix.goarch }})
+    needs: changes
+    if: needs.changes.outputs.full == 'true'
     strategy:
       fail-fast: false
       matrix:
@@ -95,6 +136,8 @@ jobs:
 
   port-contract:
     name: port contract (${{ matrix.os }})
+    needs: changes
+    if: needs.changes.outputs.full == 'true'
     strategy:
       fail-fast: false
       matrix:
@@ -200,6 +243,8 @@ jobs:
 
   rust-foundation:
     name: Rust foundation (${{ matrix.os }})
+    needs: changes
+    if: needs.changes.outputs.full == 'true'
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -236,6 +281,8 @@ jobs:
 
   rust-mcp:
     name: Rust MCP (${{ matrix.os }})
+    needs: changes
+    if: needs.changes.outputs.full == 'true'
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -275,6 +322,8 @@ jobs:
 
   rust-mcpcfg:
     name: Rust MCP config (${{ matrix.os }})
+    needs: changes
+    if: needs.changes.outputs.full == 'true'
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -305,6 +354,8 @@ jobs:
 
   rust-sqlite-native:
     name: Rust SQLite native (${{ matrix.os }})
+    needs: changes
+    if: needs.changes.outputs.full == 'true'
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -342,6 +393,8 @@ jobs:
 
   rust-rust003-native:
     name: Rust RUST-003 native (${{ matrix.os }})
+    needs: changes
+    if: needs.changes.outputs.full == 'true'
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -389,6 +442,8 @@ jobs:
 
   rust-rust003-miri:
     name: Rust RUST-003 Miri
+    needs: changes
+    if: needs.changes.outputs.full == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
@@ -401,6 +456,8 @@ jobs:
 
   rust-rust013-miri:
     name: Rust RUST-013 Miri gate
+    needs: changes
+    if: needs.changes.outputs.full == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -418,6 +475,8 @@ jobs:
 
   rust-rust013-native:
     name: Rust RUST-013 native (${{ matrix.os }})
+    needs: changes
+    if: needs.changes.outputs.full == 'true'
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -435,6 +494,8 @@ jobs:
 
   rust-rust013-hardening:
     name: Rust RUST-013 hardening
+    needs: changes
+    if: needs.changes.outputs.full == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
@@ -468,6 +529,8 @@ jobs:
 
   rust-release-manifest:
     name: Rust release manifest
+    needs: changes
+    if: needs.changes.outputs.full == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
