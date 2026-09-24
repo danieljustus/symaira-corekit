@@ -39,6 +39,22 @@ def pin_consumer_release(document: dict, consumer: Path) -> None:
     document["consumers"][0]["consumer_release"] = {"tag": tag, "commit": snapshot}
 
 
+def recapture_build_source(document: dict, consumer: Path) -> None:
+    """Model a fresh build after fixture source/config changes."""
+    rust = document["consumers"][0]["rust"]
+    item = rust["evidence"]["standalone"]
+    report_path = consumer / item["report"]
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    cargo_root = rust.get("cargo_root", ".")
+    lock_path = consumer / cargo_root / "Cargo.lock"
+    report["rust_build"]["source_commit"] = git(consumer, "rev-parse", "HEAD")
+    report["rust_build"]["cargo_lock_sha256"] = hashlib.sha256(lock_path.read_bytes()).hexdigest()
+    report_path.write_text(json.dumps(report), encoding="utf-8")
+    subprocess.run(["git", "-C", str(consumer), "add", item["report"]], check=True)
+    subprocess.run(["git", "-C", str(consumer), "commit", "-qm", "recaptured Rust build evidence"], check=True)
+    item["report_sha256"] = hashlib.sha256(report_path.read_bytes()).hexdigest()
+
+
 def make_fixture(root: Path, *, status: str = "git") -> tuple[Path, Path, Path, str, str]:
     corekit = root / "symaira-corekit"
     consumer = root / "fixture"
@@ -70,7 +86,8 @@ def make_fixture(root: Path, *, status: str = "git") -> tuple[Path, Path, Path, 
         'package main\nimport _ "github.com/danieljustus/symaira-corekit/versionkit"\n',
         encoding="utf-8",
     )
-    (consumer / "bin" / "fixture").write_text("artifact\n", encoding="utf-8")
+    (consumer / "bin" / "fixture").write_text("rust artifact\n", encoding="utf-8")
+    (consumer / "bin" / "fixture-go").write_text("old go artifact\n", encoding="utf-8")
 
     if status == "git":
         cargo_spec = (
@@ -96,24 +113,53 @@ def make_fixture(root: Path, *, status: str = "git") -> tuple[Path, Path, Path, 
         encoding="utf-8",
     )
 
+    init_git(consumer)
+    subprocess.run(["git", "-C", str(consumer), "add", "."], check=True)
+    subprocess.run(["git", "-C", str(consumer), "commit", "-qm", "consumer source"], check=True)
+    source_commit = git(consumer, "rev-parse", "HEAD")
+
     def evidence(name: str, command: str) -> dict[str, object]:
         report_path = f"evidence/{name}.json"
         result = {"exit_code": 0, "stdout": "fixture version\n", "stderr": ""}
-        (consumer / report_path).write_text(
-            json.dumps({
-                "tag": "v0.17.0",
-                "commit": release_commit,
-                "artifact": "bin/fixture",
-                "artifact_sha256": hashlib.sha256((consumer / "bin/fixture").read_bytes()).hexdigest(),
-                "observed": {"command": command, **result},
-            }),
-            encoding="utf-8",
-        )
+        rust_digest = hashlib.sha256((consumer / "bin/fixture").read_bytes()).hexdigest()
+        go_digest = hashlib.sha256((consumer / "bin/fixture-go").read_bytes()).hexdigest()
+        artifact = "bin/fixture" if name == "standalone" else "bin/fixture-go"
+        artifact_digest = rust_digest if name == "standalone" else go_digest
+        report = {
+            "tag": "v0.17.0",
+            "commit": release_commit,
+            "artifact": artifact,
+            "artifact_sha256": artifact_digest,
+            "observed": {"command": command, **result},
+        }
+        if name == "standalone":
+            report["rust_build"] = {
+                "source_commit": source_commit,
+                "cargo_version": "cargo 1.90.0",
+                "rustc_version": "rustc 1.90.0",
+                "target": "aarch64-apple-darwin",
+                "cargo_lock_sha256": hashlib.sha256((consumer / "Cargo.lock").read_bytes()).hexdigest(),
+                "observed": {
+                    "command": ["cargo", "build", "--release", "--locked", "--target", "aarch64-apple-darwin"],
+                    "exit_code": 0,
+                    "stdout": "Finished release build\n",
+                    "stderr": "",
+                },
+            }
+        else:
+            state_output = "same synthetic state"
+            report["synthetic_state_sha256"] = hashlib.sha256(state_output.encode("utf-8")).hexdigest()
+            report["transition"] = [
+                {"runtime": "go", "artifact": "bin/fixture-go", "artifact_sha256": go_digest, "state_readback_sha256": report["synthetic_state_sha256"], "observed": {"command": ["./bin/fixture-go", "read-state"], "exit_code": 0, "stdout": state_output, "stderr": ""}},
+                {"runtime": "rust", "artifact": "bin/fixture", "artifact_sha256": rust_digest, "state_readback_sha256": report["synthetic_state_sha256"], "observed": {"command": ["./bin/fixture", "read-state"], "exit_code": 0, "stdout": state_output, "stderr": ""}},
+                {"runtime": "go", "artifact": "bin/fixture-go", "artifact_sha256": go_digest, "state_readback_sha256": report["synthetic_state_sha256"], "observed": {"command": ["./bin/fixture-go", "read-state"], "exit_code": 0, "stdout": state_output, "stderr": ""}},
+            ]
+        (consumer / report_path).write_text(json.dumps(report), encoding="utf-8")
         return {
             "status": "verified",
             "report": report_path,
             "report_sha256": hashlib.sha256((consumer / report_path).read_bytes()).hexdigest(),
-            "artifact": "bin/fixture",
+            "artifact": artifact,
             "command": command,
             "result": result,
         }
@@ -148,9 +194,8 @@ def make_fixture(root: Path, *, status: str = "git") -> tuple[Path, Path, Path, 
     }
     manifest_path = root / "consumers.json"
 
-    init_git(consumer)
     subprocess.run(["git", "-C", str(consumer), "add", "."], check=True)
-    subprocess.run(["git", "-C", str(consumer), "commit", "-qm", "fixture"], check=True)
+    subprocess.run(["git", "-C", str(consumer), "commit", "-qm", "consumer release with evidence"], check=True)
     pin_consumer_release(manifest, consumer)
     manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
     return manifest_path, corekit, consumer, release_commit, adoption_commit
@@ -164,9 +209,18 @@ def release_registry(manifest: Path, consumer: Path) -> None:
         lock_path.read_text(encoding="utf-8").replace("a" * 64, checksum),
         encoding="utf-8",
     )
+    document = json.loads(manifest.read_text(encoding="utf-8"))
+    standalone = document["consumers"][0]["rust"]["evidence"]["standalone"]
+    standalone_report = consumer / standalone["report"]
     subprocess.run(["git", "-C", str(consumer), "add", "Cargo.lock"], check=True)
     subprocess.run(["git", "-C", str(consumer), "commit", "-qm", "registry-lock"], check=True)
-    document = json.loads(manifest.read_text(encoding="utf-8"))
+    receipt = json.loads(standalone_report.read_text(encoding="utf-8"))
+    receipt["rust_build"]["source_commit"] = git(consumer, "rev-parse", "HEAD")
+    receipt["rust_build"]["cargo_lock_sha256"] = hashlib.sha256(lock_path.read_bytes()).hexdigest()
+    standalone_report.write_text(json.dumps(receipt), encoding="utf-8")
+    subprocess.run(["git", "-C", str(consumer), "add", standalone["report"]], check=True)
+    subprocess.run(["git", "-C", str(consumer), "commit", "-qm", "registry build receipt"], check=True)
+    standalone["report_sha256"] = hashlib.sha256(standalone_report.read_bytes()).hexdigest()
     document["corekit"]["rust_registry"] = {
         "package": verify.COREKIT_PACKAGE,
         "status": "released",
@@ -241,6 +295,114 @@ import (
             self.assertNotEqual(release_commit, adoption_commit)
             report = verify.verify_manifest(manifest, workspace_root=Path(raw), corekit_root=corekit)
             self.assertEqual(report["status"], "passed", report)
+
+    def test_post_build_consumer_source_change_is_blocked(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            root = Path(raw)
+            manifest, corekit, consumer, _, _ = make_fixture(root)
+            (consumer / "src").mkdir()
+            (consumer / "src" / "main.rs").write_text("pub fn changed_after_build() {}\n", encoding="utf-8")
+            subprocess.run(["git", "-C", str(consumer), "add", "src/main.rs"], check=True)
+            subprocess.run(["git", "-C", str(consumer), "commit", "-qm", "change source after Rust build"], check=True)
+            document = json.loads(manifest.read_text(encoding="utf-8"))
+            pin_consumer_release(document, consumer)
+            manifest.write_text(json.dumps(document), encoding="utf-8")
+            report = verify.verify_manifest(manifest, workspace_root=root, corekit_root=corekit)
+            self.assertIn("evidence.standalone.build.source", {item["code"] for item in report["findings"]})
+
+    def test_rollback_binds_distinct_go_and_rust_artifacts(self) -> None:
+        cases = (
+            ("identical", "evidence.rollback.transition.go"),
+            ("swapped", "evidence.rollback.transition.rust"),
+        )
+        for case, expected in cases:
+            with self.subTest(case=case), tempfile.TemporaryDirectory() as raw:
+                root = Path(raw)
+                manifest, corekit, consumer, _, _ = make_fixture(root)
+                document = json.loads(manifest.read_text(encoding="utf-8"))
+                evidence = document["consumers"][0]["rust"]["evidence"]
+                item = evidence["rollback"]
+                self.assertEqual(verify.verify_manifest(manifest, workspace_root=root, corekit_root=corekit)["status"], "passed")
+                self.assertNotEqual(item["artifact"], evidence["standalone"]["artifact"])
+                report_path = consumer / item["report"]
+                receipt = json.loads(report_path.read_text(encoding="utf-8"))
+                standalone_receipt = json.loads((consumer / evidence["standalone"]["report"]).read_text(encoding="utf-8"))
+                rust_digest = standalone_receipt["artifact_sha256"]
+                go_digest = receipt["artifact_sha256"]
+                if case == "identical":
+                    receipt["artifact"] = evidence["standalone"]["artifact"]
+                    receipt["artifact_sha256"] = rust_digest
+                    for step in receipt["transition"]:
+                        if step["runtime"] == "go":
+                            step["artifact"] = evidence["standalone"]["artifact"]
+                            step["artifact_sha256"] = rust_digest
+                else:
+                    for step in receipt["transition"]:
+                        if step["runtime"] == "rust":
+                            step["artifact"] = item["artifact"]
+                            step["artifact_sha256"] = go_digest
+                report_path.write_text(json.dumps(receipt), encoding="utf-8")
+                subprocess.run(["git", "-C", str(consumer), "add", item["report"]], check=True)
+                subprocess.run(["git", "-C", str(consumer), "commit", "-qm", case], check=True)
+                pin_consumer_release(document, consumer)
+                item["report_sha256"] = hashlib.sha256(report_path.read_bytes()).hexdigest()
+                manifest.write_text(json.dumps(document), encoding="utf-8")
+                report = verify.verify_manifest(manifest, workspace_root=root, corekit_root=corekit)
+                self.assertIn(expected, {finding["code"] for finding in report["findings"]})
+
+    def test_legacy_go_only_receipts_fail_without_rust_provenance_or_rollback(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            root = Path(raw)
+            manifest, corekit, consumer, _, _ = make_fixture(root)
+            document = json.loads(manifest.read_text(encoding="utf-8"))
+            for name, fields in (("standalone", ("rust_build",)), ("rollback", ("transition", "synthetic_state_sha256"))):
+                item = document["consumers"][0]["rust"]["evidence"][name]
+                report_path = consumer / item["report"]
+                receipt = json.loads(report_path.read_text(encoding="utf-8"))
+                for field in fields:
+                    receipt.pop(field, None)
+                report_path.write_text(json.dumps(receipt), encoding="utf-8")
+            subprocess.run(["git", "-C", str(consumer), "add", "evidence"], check=True)
+            subprocess.run(["git", "-C", str(consumer), "commit", "-qm", "legacy Go-only receipts"], check=True)
+            pin_consumer_release(document, consumer)
+            for name in ("standalone", "rollback"):
+                item = document["consumers"][0]["rust"]["evidence"][name]
+                item["report_sha256"] = hashlib.sha256((consumer / item["report"]).read_bytes()).hexdigest()
+            manifest.write_text(json.dumps(document), encoding="utf-8")
+            report = verify.verify_manifest(manifest, workspace_root=root, corekit_root=corekit)
+            self.assertEqual(report["status"], "blocked", report)
+            codes = {finding["code"] for finding in report["findings"]}
+            self.assertIn("evidence.standalone.build", codes)
+            self.assertIn("evidence.rollback.transition", codes)
+
+    def test_rust_build_and_rollback_receipts_reject_tampering(self) -> None:
+        for name, mutate, expected in (
+            ("standalone", lambda receipt: receipt["rust_build"].update({"source_commit": "f" * 40}), "evidence.standalone.build.source"),
+            ("standalone", lambda receipt: receipt["rust_build"].update({"cargo_lock_sha256": "0" * 64}), "evidence.standalone.build.lock"),
+            ("standalone", lambda receipt: receipt["rust_build"]["observed"].update({"exit_code": 1}), "evidence.standalone.build"),
+            ("rollback", lambda receipt: receipt["transition"][2].update({"state_readback_sha256": "0" * 64}), "evidence.rollback.state"),
+            ("rollback", lambda receipt: receipt["transition"][2].update({"artifact": "bin/other-go"}), "evidence.rollback.transition.artifact"),
+            ("rollback", lambda receipt: receipt["transition"][1]["observed"].update({"command": ["./bin/fixture-go", "read-state"]}), "evidence.rollback.transition.command"),
+            ("rollback", lambda receipt: receipt["transition"][1].pop("observed"), "evidence.rollback.transition.result"),
+            ("rollback", lambda receipt: receipt["transition"][1]["observed"].update({"stdout": "different state"}), "evidence.rollback.state"),
+        ):
+            with self.subTest(name=name, expected=expected), tempfile.TemporaryDirectory() as raw:
+                root = Path(raw)
+                manifest, corekit, consumer, _, _ = make_fixture(root)
+                document = json.loads(manifest.read_text(encoding="utf-8"))
+                item = document["consumers"][0]["rust"]["evidence"][name]
+                report_path = consumer / item["report"]
+                receipt = json.loads(report_path.read_text(encoding="utf-8"))
+                mutate(receipt)
+                report_path.write_text(json.dumps(receipt), encoding="utf-8")
+                subprocess.run(["git", "-C", str(consumer), "add", item["report"]], check=True)
+                subprocess.run(["git", "-C", str(consumer), "commit", "-qm", "tamper evidence"], check=True)
+                pin_consumer_release(document, consumer)
+                item["report_sha256"] = hashlib.sha256(report_path.read_bytes()).hexdigest()
+                manifest.write_text(json.dumps(document), encoding="utf-8")
+                report = verify.verify_manifest(manifest, workspace_root=root, corekit_root=corekit)
+                self.assertEqual(report["status"], "blocked", report)
+                self.assertIn(expected, {finding["code"] for finding in report["findings"]})
 
     def test_git_release_stage_rejects_registry_or_missing_git_pin(self) -> None:
         with tempfile.TemporaryDirectory() as raw:
@@ -514,6 +676,15 @@ import (
             rust["manifest_paths"] = ["browse/Cargo.toml", "browse/protocol/Cargo.toml"]
             subprocess.run(["git", "-C", str(consumer), "add", "-A"], check=True)
             subprocess.run(["git", "-C", str(consumer), "commit", "-qm", "nested-workspace"], check=True)
+            standalone = rust["evidence"]["standalone"]
+            standalone_report = consumer / standalone["report"]
+            receipt = json.loads(standalone_report.read_text(encoding="utf-8"))
+            receipt["rust_build"]["source_commit"] = git(consumer, "rev-parse", "HEAD")
+            receipt["rust_build"]["cargo_lock_sha256"] = hashlib.sha256((nested / "Cargo.lock").read_bytes()).hexdigest()
+            standalone_report.write_text(json.dumps(receipt), encoding="utf-8")
+            subprocess.run(["git", "-C", str(consumer), "add", standalone["report"]], check=True)
+            subprocess.run(["git", "-C", str(consumer), "commit", "-qm", "nested build receipt"], check=True)
+            standalone["report_sha256"] = hashlib.sha256(standalone_report.read_bytes()).hexdigest()
             pin_consumer_release(document, consumer)
             manifest.write_text(json.dumps(document), encoding="utf-8")
             report = verify.verify_manifest(manifest, workspace_root=root, corekit_root=corekit)
@@ -606,16 +777,22 @@ import (
             for item in evidence.values():
                 report_path = consumer / item["report"]
                 report = json.loads(report_path.read_text(encoding="utf-8"))
-                report["artifact_sha256"] = hashlib.sha256(artifact.read_bytes()).hexdigest()
+                rust_digest = hashlib.sha256(artifact.read_bytes()).hexdigest()
+                if report["artifact"] == "bin/fixture":
+                    report["artifact_sha256"] = rust_digest
+                if "transition" in report:
+                    for step in report["transition"]:
+                        if step["runtime"] == "rust":
+                            step["artifact_sha256"] = rust_digest
                 report_path.write_text(json.dumps(report), encoding="utf-8")
             git(consumer, "add", ".")
             git(consumer, "commit", "-qm", "replace artifact and matching sidecars")
             pin_consumer_release(document, consumer)
             manifest.write_text(json.dumps(document), encoding="utf-8")
             report = verify.verify_manifest(manifest, workspace_root=root, corekit_root=corekit)
-            self.assertEqual({finding["code"] for finding in report["findings"]}, {
-                "evidence.standalone.report.sha256", "evidence.rollback.report.sha256",
-            })
+            codes = {finding["code"] for finding in report["findings"]}
+            self.assertIn("evidence.standalone.report.sha256", codes)
+            self.assertIn("evidence.rollback.report.sha256", codes)
 
             # A separately reviewed new anchor is an explicit trust decision.
             # Updating it is fixture setup only, never an automatic verifier action.
@@ -1077,6 +1254,7 @@ import (
             subprocess.run(["git", "-C", str(consumer), "add", ".gitignore"], check=True)
             subprocess.run(["git", "-C", str(consumer), "commit", "-qm", "ignore-generated-trees"], check=True)
             document = json.loads(manifest.read_text(encoding="utf-8"))
+            recapture_build_source(document, consumer)
             pin_consumer_release(document, consumer)
             manifest.write_text(json.dumps(document), encoding="utf-8")
 
@@ -1095,6 +1273,7 @@ import (
             subprocess.run(["git", "-C", str(consumer), "add", ".gitignore"], check=True)
             subprocess.run(["git", "-C", str(consumer), "commit", "-qm", "ignore-target"], check=True)
             document = json.loads(manifest.read_text(encoding="utf-8"))
+            recapture_build_source(document, consumer)
             pin_consumer_release(document, consumer)
             manifest.write_text(json.dumps(document), encoding="utf-8")
 
@@ -1113,6 +1292,7 @@ import (
                 subprocess.run(["git", "-C", str(consumer), "add", ".gitignore", "skills"], check=True)
                 subprocess.run(["git", "-C", str(consumer), "commit", "-qm", "ignore-agent-tooling"], check=True)
                 document = json.loads(manifest.read_text(encoding="utf-8"))
+                recapture_build_source(document, consumer)
                 pin_consumer_release(document, consumer)
                 manifest.write_text(json.dumps(document), encoding="utf-8")
                 for name in (".agents", ".windsurf"):
@@ -1164,6 +1344,7 @@ import (
             subprocess.run(["git", "-C", str(consumer), "add", ".agents", ".windsurf"], check=True)
             subprocess.run(["git", "-C", str(consumer), "commit", "-qm", "tracked-agent-tooling"], check=True)
             document = json.loads(manifest.read_text(encoding="utf-8"))
+            recapture_build_source(document, consumer)
             pin_consumer_release(document, consumer)
             manifest.write_text(json.dumps(document), encoding="utf-8")
 

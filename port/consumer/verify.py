@@ -465,6 +465,145 @@ def _evidence_error(
     _add(findings, repository, f"evidence.{name}.{suffix}", message)
 
 
+def _artifact_digest(checkout: Path, relative: Any) -> str | None:
+    if not isinstance(relative, str) or not relative.strip():
+        return None
+    try:
+        path = _safe_non_symlink_child(checkout, relative)
+        if not _regular_non_symlink(path):
+            return None
+        digest = hashlib.sha256()
+        with path.open("rb") as artifact:
+            for chunk in iter(lambda: artifact.read(1024 * 1024), b""):
+                digest.update(chunk)
+        return digest.hexdigest()
+    except (OSError, TypeError, ValueError):
+        return None
+
+
+def _check_rust_build_provenance(
+    report: dict[str, Any], record: dict[str, Any], checkout: Path,
+    name: str, findings: list[Finding],
+) -> None:
+    repository = str(record.get("repo", "unknown"))
+    provenance = report.get("rust_build")
+    source_commit = provenance.get("source_commit") if isinstance(provenance, dict) else None
+    release = record.get("consumer_release")
+    release_commit = release.get("commit") if isinstance(release, dict) else None
+    if (
+        not isinstance(provenance, dict)
+        or not isinstance(source_commit, str)
+        or not REVISION_RE.fullmatch(source_commit)
+        or not isinstance(release_commit, str)
+        or not REVISION_RE.fullmatch(release_commit)
+    ):
+        _evidence_error(findings, repository, name, "build", f"{name} report needs Rust build provenance bound to an immutable consumer source commit")
+        return
+    code, _, _ = _git(["cat-file", "-e", f"{source_commit}^{{commit}}"], checkout)
+    ancestor, _, _ = _git(["merge-base", "--is-ancestor", source_commit, release_commit], checkout)
+    if code or ancestor:
+        _evidence_error(findings, repository, name, "build.source", f"{name} Rust source commit must exist in and precede the tagged consumer release")
+    rust = _expected_rust(record)
+    evidence = rust.get("evidence") if rust else None
+    allowed_changes = {
+        value
+        for item in evidence.values() if isinstance(item, dict)
+        for value in (item.get("report"), item.get("artifact"))
+        if isinstance(value, str)
+    } if isinstance(evidence, dict) else set()
+    diff_code, changed, _ = _git(["diff", "--name-only", source_commit, release_commit, "--"], checkout)
+    if diff_code or set(changed.splitlines()) - allowed_changes:
+        _evidence_error(findings, repository, name, "build.source", f"{name} consumer source changed after the recorded Rust build commit")
+
+    cargo_version = provenance.get("cargo_version")
+    rustc_version = provenance.get("rustc_version")
+    target = provenance.get("target")
+    observed_build = provenance.get("observed")
+    build_command = observed_build.get("command") if isinstance(observed_build, dict) else None
+    if (
+        not isinstance(cargo_version, str) or not cargo_version.startswith("cargo ")
+        or not isinstance(rustc_version, str) or not rustc_version.startswith("rustc ")
+        or not isinstance(target, str) or not target.strip()
+        or not isinstance(build_command, list) or not all(isinstance(arg, str) for arg in build_command)
+        or build_command[:2] != ["cargo", "build"] or "--locked" not in build_command or "--release" not in build_command
+        or observed_build.get("exit_code") != 0
+        or not isinstance(observed_build.get("stdout"), str)
+        or not isinstance(observed_build.get("stderr"), str)
+    ):
+        _evidence_error(findings, repository, name, "build", f"{name} report needs a successful observed locked release build with recorded cargo/rustc versions and target")
+
+    cargo_root = rust.get("cargo_root", ".") if rust else "."
+    lock_digest = provenance.get("cargo_lock_sha256")
+    try:
+        lock_relative = str(Path(cargo_root) / "Cargo.lock")
+        lock_path = _safe_non_symlink_child(checkout, lock_relative)
+        actual_lock_digest = hashlib.sha256(lock_path.read_bytes()).hexdigest() if _regular_non_symlink(lock_path) else None
+    except (OSError, TypeError, ValueError):
+        lock_relative = "Cargo.lock"
+        actual_lock_digest = None
+    lock_changed, _, _ = _git(["diff", "--quiet", source_commit, release_commit, "--", lock_relative], checkout)
+    if lock_changed or not isinstance(lock_digest, str) or not re.fullmatch(r"[0-9a-f]{64}", lock_digest) or actual_lock_digest != lock_digest:
+        _evidence_error(findings, repository, name, "build.lock", f"{name} report Cargo.lock digest does not match the consumer checkout")
+
+
+def _check_rollback_transition(
+    report: dict[str, Any], record: dict[str, Any], checkout: Path,
+    go_artifact: str, go_digest: str | None, rust_artifact: str | None,
+    rust_digest: str | None, findings: list[Finding],
+) -> None:
+    repository = str(record.get("repo", "unknown"))
+    sequence = report.get("transition")
+    state_digest = report.get("synthetic_state_sha256")
+    valid_state_digest = isinstance(state_digest, str) and re.fullmatch(r"[0-9a-f]{64}", state_digest)
+    if not isinstance(sequence, list) or len(sequence) != 3 or not valid_state_digest:
+        _evidence_error(findings, repository, "rollback", "transition", "rollback report needs Go→Rust→Go steps and a synthetic-state readback SHA-256")
+        return
+    runtimes = [step.get("runtime") if isinstance(step, dict) else None for step in sequence]
+    if runtimes != ["go", "rust", "go"]:
+        _evidence_error(findings, repository, "rollback", "transition", "rollback transition must record Go baseline, Rust run, then Go rollback")
+        return
+    go_identity: tuple[str, str] | None = None
+    for step in sequence:
+        assert isinstance(step, dict)
+        artifact = step.get("artifact")
+        digest = step.get("artifact_sha256")
+        readback = step.get("state_readback_sha256")
+        observed = step.get("observed")
+        command = observed.get("command") if isinstance(observed, dict) else None
+        stdout = observed.get("stdout") if isinstance(observed, dict) else None
+        if (
+            not isinstance(command, list) or not command or not all(isinstance(arg, str) for arg in command)
+            or observed.get("exit_code") != 0
+            or not isinstance(stdout, str)
+            or not isinstance(observed.get("stderr"), str)
+        ):
+            _evidence_error(findings, repository, "rollback", "transition.result", "each rollback step needs an observed successful command with argv, stdout, and stderr")
+        else:
+            executable = command[0].replace("\\", "/")
+            if executable.startswith("./"):
+                executable = executable[2:]
+            if executable != artifact:
+                _evidence_error(findings, repository, "rollback", "transition.command", "each rollback command must invoke its declared artifact")
+            output_digest = hashlib.sha256(stdout.encode("utf-8")).hexdigest()
+            if readback != state_digest or readback != output_digest:
+                _evidence_error(findings, repository, "rollback", "state", "each synthetic-state digest must match captured stdout and agree across all steps")
+        actual = _artifact_digest(checkout, artifact)
+        if not isinstance(digest, str) or not re.fullmatch(r"[0-9a-f]{64}", digest) or actual != digest:
+            _evidence_error(findings, repository, "rollback", "transition.artifact", "rollback transition artifact is missing or its digest does not match")
+        if step.get("runtime") == "rust" and (artifact != rust_artifact or digest != rust_digest):
+            _evidence_error(findings, repository, "rollback", "transition.rust", "rollback Rust step must identify the reported Rust artifact and digest")
+        if step.get("runtime") == "go":
+            identity = (artifact, digest) if isinstance(artifact, str) and isinstance(digest, str) else None
+            if identity != (go_artifact, go_digest):
+                _evidence_error(findings, repository, "rollback", "transition.go", "Go transition steps must identify the rollback report's old Go artifact")
+            if go_identity is None:
+                go_identity = identity
+            elif identity != go_identity:
+                _evidence_error(findings, repository, "rollback", "transition.go", "rollback must restore the same identified preexisting Go artifact")
+    if (go_artifact, go_digest) == (rust_artifact, rust_digest):
+        _evidence_error(findings, repository, "rollback", "transition.go", "rollback must identify the preexisting Go artifact separately from the Rust artifact")
+
+
 def _check_evidence(record: dict[str, Any], checkout: Path, findings: list[Finding]) -> None:
     repository = str(record.get("repo", "unknown"))
     rust = _expected_rust(record)
@@ -477,6 +616,8 @@ def _check_evidence(record: dict[str, Any], checkout: Path, findings: list[Findi
     release = rust.get("release")
     release_tag = release.get("tag") if isinstance(release, dict) else None
     release_commit = release.get("commit") if isinstance(release, dict) else None
+    standalone_artifact: str | None = None
+    standalone_digest: str | None = None
     for name in ("standalone", "rollback"):
         item = evidence.get(name)
         if not isinstance(item, dict) or item.get("status") != "verified":
@@ -541,6 +682,8 @@ def _check_evidence(record: dict[str, Any], checkout: Path, findings: list[Findi
         expected_observed = {"command": command, **result} if isinstance(command, str) and isinstance(result, dict) else None
         if observed != expected_observed:
             _evidence_error(findings, repository, name, "result", f"{name} report does not contain the exact observed command result")
+        if name == "standalone":
+            _check_rust_build_provenance(report, record, checkout, name, findings)
 
         if not isinstance(artifact_relative, str) or not artifact_relative.strip():
             continue
@@ -564,8 +707,17 @@ def _check_evidence(record: dict[str, Any], checkout: Path, findings: list[Findi
         except OSError as error:
             _evidence_error(findings, repository, name, "artifact.sha256", f"{name} artifact cannot be read: {error}")
             continue
-        if digest.hexdigest() != recorded_digest:
+        actual_digest = digest.hexdigest()
+        if actual_digest != recorded_digest:
             _evidence_error(findings, repository, name, "artifact.sha256", f"{name} artifact digest does not match report")
+        if name == "standalone" and actual_digest == recorded_digest:
+            standalone_artifact = artifact_relative
+            standalone_digest = recorded_digest
+        if name == "rollback":
+            _check_rollback_transition(
+                report, record, checkout, artifact_relative, recorded_digest,
+                standalone_artifact, standalone_digest, findings,
+            )
 
 
 def _check_release_ancestry(
