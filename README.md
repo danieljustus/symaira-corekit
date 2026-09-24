@@ -8,7 +8,7 @@
 
 ![Symaira CoreKit social preview](docs/assets/social-preview.png)
 
-> Shared Go library for the Symaira Go backends (`symbrain`, `symdesk`, `symbrowse`, `symvault`, `symeraseme`). `symfritz` is Rust-only and no longer imports this module.
+> Shared Go library for the remaining Go consumers (`symbrain`, `symdesk`, `symvault`, `symeraseme`). Browse is now a Brain-owned module; `symfritz` is Rust-only and no longer imports the Go module.
 
 **Status:** pre-1.0 — see [CHANGELOG.md](CHANGELOG.md).
 
@@ -18,8 +18,8 @@ Bundles domain-free infrastructure that is otherwise duplicated across tools: MC
 go get github.com/danieljustus/symaira-corekit@latest
 ```
 
-Although `corekit` is currently a Go library, its conventions also guide the
-non-Go backends such as `symcockpit` and the Rust migrations. See
+CoreKit also contains Rust crates. Its cross-language conventions guide other
+backends such as `symcockpit` and the Rust migrations. See
 [`docs/cross-language-conventions.md`](docs/cross-language-conventions.md) for
 the shared contracts that apply across languages.
 

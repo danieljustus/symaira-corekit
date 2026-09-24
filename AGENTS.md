@@ -15,7 +15,7 @@ This repository is the public Apache-2.0 licensed shared library for Symaira pub
 
 ## Repository Role
 
-- Provide domain-free infrastructure packages shared across the remaining Symaira Go backends: `symvault`, `symdesk` (incl. its nested `ingest`/`print`/`seek`/`relate`/`room` modules), `symbrain` (incl. the absorbed memory/skills/guard code), `symbrowse`, and `symeraseme`. `symfritz` is Rust-only and no longer imports the Go module.
+- Provide domain-free infrastructure packages shared across the remaining Symaira Go consumers: `symvault`, `symdesk` (incl. its nested `ingest`/`print`/`seek`/`relate`/`room` modules), `symbrain` (incl. the absorbed memory/skills/guard and Browse modules), and `symeraseme`. `symfritz` is Rust-only and no longer imports the Go module.
 - Packages: `auditkit`, `mcpserver`, `mcpcfgkit`, `configkit`, `logkit`, `exitcodes`, `fsutil`, `envutil`, `sqlitekit`, `updatecheck`, `ollamakit`, `domkit`, `evidencekit`, `vectorkit/turboquant`, `versionkit`, `llmkit` (incl. its nested `gen` generator), and `secretref`.
 - Every package must be independently usable and testable.
 - Preserve standalone-first behavior for every consumer. Corekit may provide reusable helpers and conventions, but it must never make any public tool require another Symaira tool at build time or startup.
@@ -35,7 +35,7 @@ make lint               # gofmt -l + go vet
 - **No Cloud/SaaS concepts**: No Firebase, Stripe, GCP SDK, or billing code. This is a public Apache-2.0 library.
 - **No tool-specific business logic**: No vault crypto, no memory PII rules, no seek ranking, no fetch fingerprinting, no scope port scanning.
 - **No cross-tool coupling**: Do not import `symaira-vault`, `symaira-memory`, `symaira-seek`, `symaira-fetch`, `symaira-scope`, or any of their `internal/` packages. Optional integrations must remain runtime contracts implemented by consumers.
-- **Cross-language conventions**: `corekit` is Go, but its conventions (exit codes, XDG paths, env var naming, MCP stdio framing, zero stdout pollution) also guide the Swift and Python free tools. See `docs/cross-language-conventions.md`.
+- **Cross-language conventions**: CoreKit's Go implementation and Rust crates share conventions (exit codes, XDG paths, env var naming, MCP stdio framing, zero stdout pollution) that also guide the Swift and Python free tools. See `docs/cross-language-conventions.md`.
 - **Strict SemVer**: API stability guaranteed within major versions. Consumers pin versions in `go.mod`.
 - **GUI handshake contract (`versionkit`)**: every core's `version --json` subcommand must emit the `versionkit.Info` payload (`{tool, version, schema_version}`). symaira-appkit's `SymairaToolKit` performs its schema handshake against exactly these field names — never rename them. Bump the tool's `schema_version` whenever its machine-readable JSON output changes incompatibly. The plain `version` output should match `Info.String()` ("tool vX.Y.Z") so appkit's fallback parser keeps working.
 
