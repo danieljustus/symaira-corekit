@@ -1204,7 +1204,10 @@ mod tests {
     #[test]
     fn clean_path_follows_filepath_clean() {
         let separator = std::path::MAIN_SEPARATOR;
-        assert_eq!(clean_path("/a/./b/../c"), format!("{separator}a{separator}c"));
+        assert_eq!(
+            clean_path("/a/./b/../c"),
+            format!("{separator}a{separator}c")
+        );
         assert_eq!(clean_path("/../a"), format!("{separator}a"));
         assert_eq!(clean_path("a/b"), format!("a{separator}b"));
         assert_eq!(clean_path("../a"), format!("..{separator}a"));
