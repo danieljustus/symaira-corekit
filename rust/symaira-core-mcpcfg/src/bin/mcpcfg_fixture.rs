@@ -187,7 +187,7 @@ fn observe(case: &Case) -> Result<Observation, String> {
                 .iter()
                 .map(|finding| FindingObs {
                     client: finding.client.as_str().to_owned(),
-                    path: finding.path.clone(),
+                    path: clean_path(&finding.path),
                     status: finding.status.as_str().to_owned(),
                     kind: finding_kind(&finding.message),
                     message: normalized_message(&finding.message),
