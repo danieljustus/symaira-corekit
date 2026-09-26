@@ -1,0 +1,431 @@
+{
+  "anthropic_chat": {
+    "auth_header": "x-api-key",
+    "body": {
+      "max_tokens": 8192,
+      "messages": [
+        {
+          "content": "question",
+          "role": "user"
+        }
+      ],
+      "model": "claude",
+      "system": "rules"
+    },
+    "path": "/messages",
+    "provider_version": "2023-06-01"
+  },
+  "native_chat": {
+    "chunks": [
+      {
+        "done": true,
+        "message": {
+          "content": "piece",
+          "role": "assistant"
+        },
+        "model": "llama3.1"
+      }
+    ],
+    "request": {
+      "auth_header": "",
+      "body": {
+        "format": "json",
+        "messages": [
+          {
+            "content": "question",
+            "role": "user"
+          }
+        ],
+        "model": "llama3.1",
+        "stream": true,
+        "temperature": 0.5
+      },
+      "path": "/api/chat"
+    }
+  },
+  "native_embed": {
+    "embeddings": [
+      [
+        0.25,
+        0.5
+      ]
+    ],
+    "request": {
+      "auth_header": "",
+      "body": {
+        "dimensions": 2,
+        "input": [
+          "input"
+        ],
+        "model": "llama3.1"
+      },
+      "path": "/api/embed"
+    }
+  },
+  "native_generate": {
+    "chunks": [
+      {
+        "done": false,
+        "model": "llama3.1",
+        "response": "piece"
+      },
+      {
+        "done": true,
+        "model": "llama3.1",
+        "response": ""
+      }
+    ],
+    "request": {
+      "auth_header": "",
+      "body": {
+        "format": "json",
+        "images": [
+          "aW1hZ2U="
+        ],
+        "model": "llama3.1",
+        "prompt": "prompt",
+        "stream": true,
+        "system": "system",
+        "temperature": 0.25
+      },
+      "path": "/api/generate"
+    }
+  },
+  "native_models": {
+    "models": [
+      {
+        "modified_at": "today",
+        "name": "llama3.1",
+        "size": 12
+      }
+    ],
+    "request": {
+      "auth_header": "",
+      "body": null,
+      "path": "/api/tags"
+    }
+  },
+  "openai_chat": {
+    "auth_header": "bearer",
+    "body": {
+      "max_tokens": 32,
+      "messages": [
+        {
+          "content": "system prompt",
+          "role": "system"
+        },
+        {
+          "content": "question",
+          "role": "user"
+        }
+      ],
+      "model": "gpt-5",
+      "stream": false
+    },
+    "path": "/v1/chat/completions"
+  },
+  "provenance": {
+    "go_source_sha256": "9083f34389a8d37c89a54676c069432ec69daa1fd2d40a68081695a9ade6260c",
+    "oracle_command": "GOTOOLCHAIN=go1.26.6 go run ./scripts/rust-port/llm-oracle",
+    "oracle_sha256": "b5ebd835840e1170cf298268094713268b6ec22127ee29c8293c586e8172cd2f",
+    "runner_sha256": "c445537e6f83626e3d762acba2d1983ad90a2fbd4d355a9da84582ad303ba5f9"
+  },
+  "providers": [
+    {
+      "auth_header": "x-api-key",
+      "auth_scheme": "header",
+      "base_url": "https://api.anthropic.com",
+      "base_url_overridable": true,
+      "capabilities": {
+        "embeddings": false,
+        "streaming": true,
+        "system_prompt": true,
+        "tool_use": true,
+        "vision": true
+      },
+      "credential_env_default": "ANTHROPIC_API_KEY",
+      "dialect": "anthropic",
+      "display_name": "Anthropic",
+      "extra_headers": {
+        "anthropic-version": "2023-06-01"
+      },
+      "id": "anthropic",
+      "models": {
+        "default": "claude-sonnet-5-20250915",
+        "mode": "static"
+      }
+    },
+    {
+      "auth_scheme": "bearer",
+      "base_url": "https://api.openai.com/v1",
+      "base_url_overridable": true,
+      "capabilities": {
+        "embeddings": true,
+        "streaming": true,
+        "system_prompt": true,
+        "tool_use": true,
+        "vision": true
+      },
+      "credential_env_default": "OPENAI_API_KEY",
+      "dialect": "openai",
+      "display_name": "OpenAI",
+      "id": "openai",
+      "models": {
+        "default": "gpt-5",
+        "mode": "static"
+      }
+    },
+    {
+      "auth_scheme": "bearer",
+      "base_url": "https://openrouter.ai/api/v1",
+      "base_url_overridable": true,
+      "capabilities": {
+        "embeddings": false,
+        "streaming": true,
+        "system_prompt": true,
+        "tool_use": true,
+        "vision": true
+      },
+      "credential_env_default": "OPENROUTER_API_KEY",
+      "dialect": "openai",
+      "display_name": "OpenRouter",
+      "id": "openrouter",
+      "models": {
+        "default": "anthropic/claude-sonnet-5",
+        "discovery_path": "/models",
+        "mode": "discovered"
+      }
+    },
+    {
+      "auth_scheme": "bearer",
+      "base_url": "https://generativelanguage.googleapis.com/v1beta/openai",
+      "base_url_overridable": true,
+      "capabilities": {
+        "embeddings": false,
+        "streaming": true,
+        "system_prompt": true,
+        "tool_use": true,
+        "vision": true
+      },
+      "credential_env_default": "GEMINI_API_KEY",
+      "dialect": "openai",
+      "display_name": "Google Gemini",
+      "id": "google",
+      "models": {
+        "default": "gemini-3-flash",
+        "mode": "static"
+      }
+    },
+    {
+      "auth_scheme": "bearer",
+      "base_url": "https://api.groq.com/openai/v1",
+      "base_url_overridable": true,
+      "capabilities": {
+        "embeddings": false,
+        "streaming": true,
+        "system_prompt": true,
+        "tool_use": true,
+        "vision": false
+      },
+      "credential_env_default": "GROQ_API_KEY",
+      "dialect": "openai",
+      "display_name": "Groq",
+      "id": "groq",
+      "models": {
+        "default": "",
+        "mode": "static"
+      }
+    },
+    {
+      "auth_scheme": "bearer",
+      "base_url": "https://api.deepseek.com/v1",
+      "base_url_overridable": true,
+      "capabilities": {
+        "embeddings": false,
+        "streaming": true,
+        "system_prompt": true,
+        "tool_use": false,
+        "vision": false
+      },
+      "credential_env_default": "DEEPSEEK_API_KEY",
+      "dialect": "openai",
+      "display_name": "DeepSeek",
+      "id": "deepseek",
+      "models": {
+        "default": "",
+        "mode": "static"
+      }
+    },
+    {
+      "auth_scheme": "bearer",
+      "base_url": "https://api.mistral.ai/v1",
+      "base_url_overridable": true,
+      "capabilities": {
+        "embeddings": true,
+        "streaming": true,
+        "system_prompt": true,
+        "tool_use": true,
+        "vision": true
+      },
+      "credential_env_default": "MISTRAL_API_KEY",
+      "dialect": "openai",
+      "display_name": "Mistral",
+      "id": "mistral",
+      "models": {
+        "default": "",
+        "mode": "static"
+      }
+    },
+    {
+      "auth_scheme": "bearer",
+      "base_url": "https://api.x.ai/v1",
+      "base_url_overridable": true,
+      "capabilities": {
+        "embeddings": false,
+        "streaming": true,
+        "system_prompt": true,
+        "tool_use": true,
+        "vision": true
+      },
+      "credential_env_default": "XAI_API_KEY",
+      "dialect": "openai",
+      "display_name": "xAI",
+      "id": "xai",
+      "models": {
+        "default": "",
+        "mode": "static"
+      }
+    },
+    {
+      "auth_scheme": "bearer",
+      "base_url": "https://api.moonshot.ai/v1",
+      "base_url_overridable": true,
+      "capabilities": {
+        "embeddings": false,
+        "streaming": true,
+        "system_prompt": true,
+        "tool_use": true,
+        "vision": false
+      },
+      "credential_env_default": "MOONSHOT_API_KEY",
+      "dialect": "openai",
+      "display_name": "Moonshot AI",
+      "id": "moonshot",
+      "models": {
+        "default": "",
+        "mode": "static"
+      }
+    },
+    {
+      "auth_scheme": "bearer",
+      "base_url": "https://api.together.xyz/v1",
+      "base_url_overridable": true,
+      "capabilities": {
+        "embeddings": true,
+        "streaming": true,
+        "system_prompt": true,
+        "tool_use": true,
+        "vision": false
+      },
+      "credential_env_default": "TOGETHER_API_KEY",
+      "dialect": "openai",
+      "display_name": "Together AI",
+      "id": "together",
+      "models": {
+        "default": "",
+        "mode": "static"
+      }
+    },
+    {
+      "auth_scheme": "bearer",
+      "base_url": "https://api.fireworks.ai/inference/v1",
+      "base_url_overridable": true,
+      "capabilities": {
+        "embeddings": false,
+        "streaming": true,
+        "system_prompt": true,
+        "tool_use": true,
+        "vision": false
+      },
+      "credential_env_default": "FIREWORKS_API_KEY",
+      "dialect": "openai",
+      "display_name": "Fireworks AI",
+      "id": "fireworks",
+      "models": {
+        "default": "",
+        "mode": "static"
+      }
+    },
+    {
+      "auth_header": "api-key",
+      "auth_scheme": "header",
+      "base_url": "",
+      "base_url_overridable": false,
+      "base_url_required_override": true,
+      "capabilities": {
+        "embeddings": true,
+        "streaming": true,
+        "system_prompt": true,
+        "tool_use": true,
+        "vision": true
+      },
+      "credential_env_default": "AZURE_OPENAI_API_KEY",
+      "dialect": "openai",
+      "display_name": "Azure OpenAI",
+      "id": "azure-openai",
+      "models": {
+        "default": "",
+        "mode": "deployment"
+      }
+    },
+    {
+      "auth_scheme": "none",
+      "base_url": "http://localhost:11434/v1",
+      "base_url_overridable": true,
+      "capabilities": {
+        "embeddings": true,
+        "streaming": true,
+        "system_prompt": true,
+        "tool_use": false,
+        "vision": false
+      },
+      "dialect": "openai",
+      "display_name": "Ollama (local)",
+      "id": "ollama",
+      "models": {
+        "default": "llama3.1",
+        "discovery_path": "/api/tags",
+        "mode": "discovered"
+      }
+    },
+    {
+      "auth_scheme": "bearer",
+      "base_url": "",
+      "base_url_overridable": false,
+      "base_url_required_override": true,
+      "capabilities": {
+        "embeddings": true,
+        "streaming": true,
+        "system_prompt": true,
+        "tool_use": true,
+        "vision": true
+      },
+      "dialect": "openai",
+      "dialect_configurable": true,
+      "display_name": "Custom endpoint",
+      "id": "custom",
+      "models": {
+        "default": "",
+        "mode": "configured"
+      }
+    }
+  ],
+  "rate_limit": {
+    "body": "{\"error\":\"busy\"}",
+    "code": "rate_limited",
+    "exit_code": 6,
+    "retry_after": "17",
+    "retryable": true,
+    "status": 429
+  }
+}
