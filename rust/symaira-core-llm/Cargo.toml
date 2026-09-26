@@ -10,6 +10,6 @@ publish = false
 [dependencies]
 serde.workspace = true
 serde_json.workspace = true
-symaira-core-exit = { path = "../symaira-core-exit" }
-symaira-core-secretref = { path = "../symaira-core-secretref" }
+symaira-core-exit = { path = "../symaira-core-exit", version = "=0.0.0" }
+symaira-core-secretref = { path = "../symaira-core-secretref", version = "=0.0.0" }
 ureq.workspace = true

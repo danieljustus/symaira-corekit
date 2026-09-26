@@ -82,6 +82,15 @@
         "reason": "No released adopter is recorded."
       },
       {
+        "name": "symaira-core-llm",
+        "manifest": "rust/symaira-core-llm/Cargo.toml",
+        "version": "0.0.0",
+        "adopted": false,
+        "publishable": false,
+        "adopters": [],
+        "reason": "LLM transport library; no released adopter is recorded and publication remains deferred."
+      },
+      {
         "name": "symaira-core-fs",
         "manifest": "rust/symaira-core-fs/Cargo.toml",
         "version": "0.0.0",
