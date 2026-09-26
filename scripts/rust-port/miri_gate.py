@@ -45,6 +45,7 @@ NON_ISOLATED_PACKAGES = (
 # Keep it in the dedicated native SQLite matrix instead of pretending Miri is
 # evidence for this package.
 MIRI_EXCLUDED_PACKAGES = {
+    "symaira-core-llm": "HTTP networking and TLS execution are covered by the native LLM contract gate, not Miri",
     "symaira-core-sqlite": "bundled SQLite FFI and unsupported native filesystem flags",
 }
 

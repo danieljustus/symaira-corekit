@@ -9,6 +9,10 @@ confidence-threshold = 0.8
 allow = [
   "Apache-2.0",
   "Apache-2.0 WITH LLVM-exception",
+  # rustls-webpki's compiled-in trust anchors are distributed under this
+  # permissive data license; ureq enables that maintained HTTPS root set.
+  "CDLA-Permissive-2.0",
+  "ISC",
   "MIT",
   "Unicode-3.0",
   # The MCP-config discovery crate needs a real YAML parser (the Go package

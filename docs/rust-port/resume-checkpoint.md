@@ -1,5 +1,24 @@
 # Resume checkpoint — Rust consumer release gates open
 
+## Active slice — CoreKit #288 Rust LLM transport
+
+- RUST-008 is `in_progress` on isolated branch
+  `codex/corekit-rust-llm-20260926`. `rust/symaira-core-llm` adds shared
+  descriptor-driven OpenAI-compatible/Anthropic chat and streaming,
+  OpenAI-compatible embeddings/model discovery, native Ollama calls, shared
+  secretref resolution, and Go-compatible error categories. The local Go oracle
+  and Rust integration tests cover request shapes and error taxonomy. See
+  `llm-contract.md`.
+- Residual parity is explicit: Rust requests are synchronous and do not have
+  Go `context.Context` per-request cancellation or the custom HTTP-client
+  injection hook. This remains a library slice; no consumer cutover, release,
+  tag, Go removal, or publication is authorized. Acceptance runs and PR status
+  Local checks pass: `make rust-llm-contract` (Go packages, differential fixture,
+  Rust fmt, strict Clippy, and all seven provider-contract tests). The branch is
+  published as draft PR #337 at `0d38da75a378d2b117a4baea11382a051647c20f`.
+  Required GitHub checks (lint, govulncheck, apidiff) were queued at the initial
+  exact-head read; no remote result is claimed yet.
+
 ## Active checkpoint — staged release contract and EraseMe parity (2026-09-24)
 
 - Mode/status: EraseMe #1039 is integrated with green post-merge main CI.
