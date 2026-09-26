@@ -11,7 +11,7 @@ import diff
 
 class FailureCapture(unittest.TestCase):
     def test_failed_success_validation_retains_raw_observations(self):
-        record = json.loads((diff.ROOT / 'testdata/rust-port/sqlite/differential-macos-refreeze-20260920T175852Z.json').read_text())
+        record = json.loads((diff.ROOT / 'testdata/rust-port/sqlite/differential-macos-refreeze-20260926T111342Z.json').read_text())
         record['rust']['cases'][0]['success'] = False
         manifest, digest = candidate.load()
         with tempfile.TemporaryDirectory() as directory, ExitStack() as stack:
