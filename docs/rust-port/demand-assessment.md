@@ -27,7 +27,7 @@ and `update apply` unavailable; its `update info` reports the installation
 method, not the same pipeline. **Verdict: deferred — one Rust consumer needs
 the full pipeline; nothing to de-duplicate yet.**
 
-## RUST-008 — Descriptor-driven LLM provider slice (`LLM-*`) — deferred
+## RUST-008 — Descriptor-driven LLM provider slice (`LLM-*`) — in progress
 
 ```sh
 rg -l -i -g '*.rs' "openai|anthropic|ollama|provider|llm" \
@@ -48,7 +48,11 @@ transport unported. Brain's `rust/symbrain-usage/src/provider_requests.rs`
 builds account/quota usage requests, not generation requests. Brain memory's
 `rust/symbrain-memory/src/embedding.rs` does make Ollama embedding requests;
 no second Rust consumer duplicates that embedding transport. **Verdict:
-deferred — no shared generation or embedding transport to de-duplicate yet.**
+demand met for implementation.** CoreKit issue #288 records the EraseMe Rust
+consumer's blocked provider transport and the shared LLM contract needed by
+that consumer surface. CoreKit now owns the transport port; this does not
+itself authorize changing either consumer or removing the Go path. Implementation
+and residual boundaries are tracked in [`llm-contract.md`](llm-contract.md).
 
 ## RUST-009 — Audit and grounded-evidence algorithm slices (`AUD-*`, `EVID-*`) — deferred
 

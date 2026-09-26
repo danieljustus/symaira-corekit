@@ -236,15 +236,14 @@
         "LLM-011",
         "LLM-012"
       ],
-      "status": "deferred",
+      "status": "in_progress",
       "demand_class": "demand_driven",
       "demand_evidence": "demand-assessment.md",
       "acceptance_commands": [
         "make rust-llm-contract",
-        "python3 scripts/rust-port/diff.py --suite llm",
-        "cargo nextest run -p symaira-core-llm"
+        "python3 scripts/rust-port/llm-differential.py"
       ],
-      "stop_rule": "Keep deferred until two Rust consumers need the same provider layer. Do not create provider-specific consumer code or a Rust ollamakit clone; stop on credential leakage, redirect drift, streaming/tool-wire drift or taxonomy changes."
+      "stop_rule": "Do not create provider-specific consumer code or a Rust ollamakit clone. Keep the item in progress until the cancellation and transport-injection gaps are resolved or explicitly accepted; stop on credential leakage, redirect drift, streaming/tool-wire drift or taxonomy changes."
     },
     {
       "id": "RUST-009",
