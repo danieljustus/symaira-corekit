@@ -547,21 +547,30 @@ mod tests {
     #[cfg(not(miri))]
     #[test]
     fn system_runner_bounds_real_output() {
-        #[cfg(unix)]
-        let (program, args) = ("sh", vec!["-c".into(), "printf '%*s' 70000 x".into()]);
-        #[cfg(windows)]
-        let (program, args) = (
-            "powershell.exe",
-            vec![
-                "-NoProfile".into(),
-                "-NonInteractive".into(),
-                "-Command".into(),
-                "[Console]::Out.Write('x' * 70000)".into(),
-            ],
-        );
+        let program = std::env::current_exe().expect("test executable");
+        let args = vec![
+            "--ignored".into(),
+            "--exact".into(),
+            "tests::system_runner_output_helper".into(),
+            "--nocapture".into(),
+        ];
         let error = SystemCommandRunner
-            .run(program, &args, Duration::from_secs(10))
+            .run(
+                program.to_str().expect("test executable path"),
+                &args,
+                Duration::from_secs(10),
+            )
             .expect_err("output limit");
         assert!(matches!(error, CommandError::OutputLimit));
+    }
+
+    #[cfg(not(miri))]
+    #[test]
+    #[ignore]
+    fn system_runner_output_helper() {
+        use std::io::Write;
+        std::io::stdout()
+            .write_all(&[b'x'; 70_000])
+            .expect("write output");
     }
 }

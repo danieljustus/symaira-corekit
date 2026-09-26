@@ -1003,3 +1003,21 @@ demand-driven implementation item is `ready`, but RUST-016 is ready for
 Git-pinned consumer release evidence. Publication still requires its own
 separate approval after that gate. No Go removal or product cutover is
 authorized here.
+
+## SQLite evidence after the LLM workspace merge (2026-09-26)
+
+PR #337 changed the enforced `Cargo.toml` and `Cargo.lock` inputs. The SQLite
+manifest and native darwin/arm64 capture were re-frozen from merged main
+`0277afe3cf1a35c9db173d9bb29ee07ac6cd6368`, which remains reachable after
+the next squash merge. The current evidence is:
+
+- `testdata/rust-port/sqlite/candidate-source.json` (SHA-256
+  `780b9a1f7808f8e9173ec981d69412cf486918bb49543821a16a5516a4dceed2`;
+  83 recorded files, 39 enforced).
+- `testdata/rust-port/sqlite/differential-macos-refreeze-20260926T111342Z.json`
+  (SHA-256 `590dc386f48dd9c53c4cdd5b272aeb6601b062bafa3a4b95f3e8d50b072c24b0`;
+  six cases, 42 checked fields, nine accepted differences, zero unresolved).
+
+The 79 SQLite acceptance tests and provenance test pass against this pair.
+`docs/rust-port/validate.py` now reports one ready work item; that current
+inventory supersedes the older no-ready statement above.
