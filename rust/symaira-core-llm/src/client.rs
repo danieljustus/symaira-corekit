@@ -15,6 +15,7 @@ pub struct ClientBuilder {
     dialect: Option<WireDialect>,
     timeout: Duration,
     api_key: Option<String>,
+    agent: Option<Agent>,
 }
 
 impl ClientBuilder {
@@ -26,6 +27,7 @@ impl ClientBuilder {
             dialect: None,
             timeout: DEFAULT_TIMEOUT,
             api_key: None,
+            agent: None,
         }
     }
 
@@ -43,6 +45,13 @@ impl ClientBuilder {
     }
     pub fn api_key(mut self, value: impl Into<String>) -> Self {
         self.api_key = Some(value.into());
+        self
+    }
+    /// Replaces the default HTTP agent with one configured by the caller.
+    /// Its redirect, timeout, proxy, and TLS behavior is caller-controlled;
+    /// `timeout` applies only when the default agent is used.
+    pub fn agent(mut self, value: Agent) -> Self {
+        self.agent = Some(value);
         self
     }
 
@@ -95,12 +104,14 @@ impl ClientBuilder {
                 )?,
             },
         };
-        let agent = Agent::config_builder()
-            .http_status_as_error(false)
-            .max_redirects(0)
-            .timeout_global(Some(self.timeout))
-            .build()
-            .into();
+        let agent = self.agent.unwrap_or_else(|| {
+            Agent::config_builder()
+                .http_status_as_error(false)
+                .max_redirects(0)
+                .timeout_global(Some(self.timeout))
+                .build()
+                .into()
+        });
         Ok(Client {
             descriptor: self.descriptor,
             base_url: base_url.trim_end_matches('/').to_owned(),

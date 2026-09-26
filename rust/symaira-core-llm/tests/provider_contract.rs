@@ -6,9 +6,10 @@ use std::net::TcpListener;
 use std::thread;
 use symaira_core_exit::ExitCode;
 use symaira_core_llm::{
-    ChatOptions, ClientBuilder, ErrorCode, GenerateOption, Message, NativeChatOption, Tool, lookup,
-    providers,
+    Agent, ChatOptions, ClientBuilder, DEFAULT_TIMEOUT, ErrorCode, GenerateOption, Message,
+    NativeChatOption, Tool, lookup, providers,
 };
+use ureq::Proxy;
 
 fn mock_server(
     status: u16,
@@ -59,6 +60,44 @@ fn mock_server(
     (format!("http://{address}"), handle)
 }
 
+fn mock_connect_proxy(response: &'static str) -> (String, thread::JoinHandle<(String, String)>) {
+    let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+    let address = listener.local_addr().unwrap();
+    let handle = thread::spawn(move || {
+        let (mut stream, _) = listener.accept().unwrap();
+        let mut request = Vec::new();
+        let mut chunk = [0_u8; 4096];
+        let connect_end = loop {
+            let n = stream.read(&mut chunk).unwrap();
+            request.extend_from_slice(&chunk[..n]);
+            if let Some(i) = request.windows(4).position(|w| w == b"\r\n\r\n") {
+                break i + 4;
+            }
+        };
+        let connect = String::from_utf8_lossy(&request[..connect_end]).into_owned();
+        stream
+            .write_all(b"HTTP/1.1 200 Connection Established\r\n\r\n")
+            .unwrap();
+        request.clear();
+        let request_end = loop {
+            let n = stream.read(&mut chunk).unwrap();
+            if n == 0 {
+                panic!("client closed before sending tunneled request");
+            }
+            request.extend_from_slice(&chunk[..n]);
+            if let Some(i) = request.windows(4).position(|w| w == b"\r\n\r\n") {
+                break i + 4;
+            }
+        };
+        let headers = String::from_utf8_lossy(&request[..request_end]).into_owned();
+        let bytes = response.as_bytes();
+        write!(stream, "HTTP/1.1 200 Test\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n", bytes.len()).unwrap();
+        stream.write_all(bytes).unwrap();
+        (connect, headers)
+    });
+    (format!("http://{address}"), handle)
+}
+
 #[test]
 fn registry_and_go_generated_snapshot_are_available() {
     let fixture: Value = serde_json::from_str(include_str!(
@@ -73,6 +112,31 @@ fn registry_and_go_generated_snapshot_are_available() {
     assert_eq!(lookup("OPENAI").unwrap().default_model(), "gpt-5");
     assert_eq!(lookup("custom").unwrap().base_url, "");
     assert_eq!(lookup("unknown"), None);
+}
+
+#[test]
+fn caller_agent_routes_requests_through_its_proxy() {
+    let (proxy_url, proxy) = mock_connect_proxy(r#"{"models":[{"name":"proxied-model"}]}"#);
+    let agent = Agent::config_builder()
+        .http_status_as_error(false)
+        .max_redirects(0)
+        .timeout_global(Some(DEFAULT_TIMEOUT))
+        .proxy(Some(Proxy::new(&proxy_url).unwrap()))
+        .build()
+        .into();
+    let client = ClientBuilder::new(lookup("ollama").unwrap().clone(), "")
+        .base_url("http://transport-injection.invalid")
+        .agent(agent)
+        .build()
+        .unwrap();
+
+    let result = client.list_models();
+    let (connect, headers) = proxy.join().unwrap();
+    let models = result.unwrap_or_else(|error| panic!("{error}; request was: {connect}{headers}"));
+
+    assert_eq!(models[0].id, "proxied-model");
+    assert!(connect.starts_with("CONNECT transport-injection.invalid:80 HTTP/1.1"));
+    assert!(headers.starts_with("GET /api/tags HTTP/1.1"));
 }
 
 #[test]
