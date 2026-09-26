@@ -74,7 +74,7 @@
       },
       {
         "path": "scripts/rust-port/adoption.py",
-        "sha256": "7d93cc6f99f4cdc3dabc2225d081d372e816c831bdff0f73d144e5ccbc845881"
+        "sha256": "4d8bd6544b5c6368030d92ffd413925f797e731d519e8b99da319be7da079cf7"
       },
       {
         "path": "scripts/rust-port/bench.py",
