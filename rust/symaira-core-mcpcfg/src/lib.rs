@@ -1056,10 +1056,10 @@ pub fn canonical_notes(notes: &[Note]) -> Vec<Note> {
 
 /// Lexically normalises a path the way Go's `filepath.Clean` does: drops `.`
 /// components, resolves `..` against a preceding element, collapses repeated
-/// separators and keeps a leading `/`.
+/// separators and keeps a leading native separator.
 #[must_use]
 pub fn clean_path(path: &str) -> String {
-    let absolute = path.starts_with('/');
+    let absolute = path.starts_with('/') || (cfg!(windows) && path.starts_with('\\'));
     let mut parts: Vec<String> = Vec::new();
     for component in Path::new(path).components() {
         match component {
@@ -1076,9 +1076,10 @@ pub fn clean_path(path: &str) -> String {
             Component::Normal(part) => parts.push(part.to_string_lossy().into_owned()),
         }
     }
-    let joined = parts.join("/");
+    let separator = std::path::MAIN_SEPARATOR.to_string();
+    let joined = parts.join(&separator);
     if absolute {
-        format!("/{joined}")
+        format!("{separator}{joined}")
     } else if joined.is_empty() {
         ".".to_owned()
     } else {
@@ -1202,11 +1203,15 @@ mod tests {
 
     #[test]
     fn clean_path_follows_filepath_clean() {
-        assert_eq!(clean_path("/a/./b/../c"), "/a/c");
-        assert_eq!(clean_path("/../a"), "/a");
-        assert_eq!(clean_path("a/b"), "a/b");
-        assert_eq!(clean_path("../a"), "../a");
-        assert_eq!(clean_path("/a//b/"), "/a/b");
+        let separator = std::path::MAIN_SEPARATOR;
+        assert_eq!(
+            clean_path("/a/./b/../c"),
+            format!("{separator}a{separator}c")
+        );
+        assert_eq!(clean_path("/../a"), format!("{separator}a"));
+        assert_eq!(clean_path("a/b"), format!("a{separator}b"));
+        assert_eq!(clean_path("../a"), format!("..{separator}a"));
+        assert_eq!(clean_path("/a//b/"), format!("{separator}a{separator}b"));
         assert_eq!(clean_path(""), ".");
     }
 }

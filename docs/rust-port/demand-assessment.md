@@ -94,11 +94,11 @@ Two Rust consumers independently implement agent/MCP configuration discovery:
 The two differ in depth — brain parses the per-agent config files directly,
 vault discovers the configured agents and MCP engines from its own config — but
 both maintain an agent/target registry that answers "where is MCP configured for
-this agent", which is the `mcpcfgkit` concern. **Verdict: demand met → the item
-moves from `deferred` to `ready`.** Its acceptance commands
-(`make rust-mcpcfg-contract`, `python3 scripts/rust-port/diff.py --suite mcpcfg`,
-`cargo nextest run -p symaira-core-mcpcfg`) do not exist yet; building them is
-part of the slice, exactly as the SQLite suite was built with `RUST-006`.
+this agent", which is the `mcpcfgkit` concern. **Verdict: demand met; RUST-010
+is implemented.** Its acceptance commands are `make rust-mcpcfg-contract` and
+`python scripts/rust-port/mcpcfg-differential.py --check`. The native CI matrix
+must execute the Go/Rust differential on Linux, macOS, and Windows before its
+cross-platform evidence is complete.
 
 ## RUST-011 — DOM selection and rendering feasibility (`DOM-*`) — deferred
 
