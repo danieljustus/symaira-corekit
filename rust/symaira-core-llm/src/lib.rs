@@ -19,3 +19,4 @@ pub use ollama::{
 pub use provider::{
     AuthScheme, Capabilities, Descriptor, ModelInfo, ModelSource, WireDialect, lookup, providers,
 };
+pub use ureq::Agent;
