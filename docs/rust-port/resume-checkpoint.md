@@ -15,7 +15,9 @@
   tag, Go removal, or publication is authorized. Acceptance runs and PR status
   Local checks pass: `make rust-llm-contract` (Go packages, differential fixture,
   Rust fmt, strict Clippy, and all seven provider-contract tests). The branch is
-  not pushed yet; PR and remote CI status are recorded after publication.
+  published as draft PR #337 at `0d38da75a378d2b117a4baea11382a051647c20f`.
+  Required GitHub checks (lint, govulncheck, apidiff) were queued at the initial
+  exact-head read; no remote result is claimed yet.
 
 ## Active checkpoint — staged release contract and EraseMe parity (2026-09-24)
 
