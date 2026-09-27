@@ -99,7 +99,7 @@ impl ClientBuilder {
             Agent::config_builder()
                 .http_status_as_error(false)
                 .max_redirects(0)
-                .timeout_global(Some(self.timeout))
+                .timeout_global((!self.timeout.is_zero()).then_some(self.timeout))
                 .build()
                 .into()
         });

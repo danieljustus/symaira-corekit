@@ -160,7 +160,7 @@
   "provenance": {
     "go_source_sha256": "9083f34389a8d37c89a54676c069432ec69daa1fd2d40a68081695a9ade6260c",
     "oracle_command": "GOTOOLCHAIN=go1.26.6 go run ./scripts/rust-port/llm-oracle",
-    "oracle_sha256": "d0e5eab96fc089e5037d5630f71b20fa983939797c02a115bb3cd5daa517df7b",
+    "oracle_sha256": "19f2ada40e32d88cef1984a10b4bd48eff1a78238affffb427429a2101e7c68f",
     "runner_sha256": "c445537e6f83626e3d762acba2d1983ad90a2fbd4d355a9da84582ad303ba5f9"
   },
   "providers": [
@@ -476,5 +476,6 @@
     "retry_after": "",
     "retryable": false,
     "status": 400
-  }
+  },
+  "zero_timeout_allowed": true
 }

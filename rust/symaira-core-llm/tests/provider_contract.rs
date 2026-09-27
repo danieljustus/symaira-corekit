@@ -4,6 +4,7 @@ use serde_json::{Value, json};
 use std::io::{Read, Write};
 use std::net::TcpListener;
 use std::thread;
+use std::time::Duration;
 use symaira_core_exit::ExitCode;
 use symaira_core_llm::{
     Agent, ChatOptions, ClientBuilder, DEFAULT_TIMEOUT, ErrorCode, GenerateOption, Message,
@@ -143,6 +144,32 @@ fn dialect_override_follows_go_builder_behavior() {
         .dialect(WireDialect::Anthropic)
         .build()
         .unwrap();
+}
+
+#[test]
+fn zero_timeout_keeps_go_unbounded_request_behavior() {
+    let fixture: Value = serde_json::from_str(include_str!(
+        "../../../testdata/rust-port/fixtures/llm/go-oracle.json"
+    ))
+    .unwrap();
+    assert_eq!(fixture["zero_timeout_allowed"], true);
+    let (url, server) = mock_server(200, r#"{"choices":[{"message":{"content":"answer"}}]}"#);
+    let client = ClientBuilder::new(lookup("openai").unwrap().clone(), "")
+        .base_url(format!("{url}/v1"))
+        .api_key("dummy-key")
+        .timeout(Duration::ZERO)
+        .build()
+        .unwrap();
+    let result = client.chat(
+        "gpt-5",
+        &[Message {
+            role: "user".into(),
+            content: "question".into(),
+        }],
+        None,
+    );
+    assert!(result.is_ok(), "zero timeout failed: {result:?}");
+    server.join().unwrap();
 }
 
 #[test]
