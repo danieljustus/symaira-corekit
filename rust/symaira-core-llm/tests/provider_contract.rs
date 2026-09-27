@@ -173,6 +173,35 @@ fn zero_timeout_keeps_go_unbounded_request_behavior() {
 }
 
 #[test]
+fn anthropic_content_includes_text_from_every_block_like_go() {
+    let fixture: Value = serde_json::from_str(include_str!(
+        "../../../testdata/rust-port/fixtures/llm/go-oracle.json"
+    ))
+    .unwrap();
+    let (url, server) = mock_server(
+        200,
+        r#"{"content":[{"type":"text","text":"first"},{"type":"tool_use","text":"second"}],"stop_reason":"end_turn"}"#,
+    );
+    let client = ClientBuilder::new(lookup("anthropic").unwrap().clone(), "")
+        .base_url(url)
+        .api_key("dummy-key")
+        .build()
+        .unwrap();
+    let result = client
+        .chat(
+            "claude",
+            &[Message {
+                role: "user".into(),
+                content: "question".into(),
+            }],
+            None,
+        )
+        .unwrap();
+    server.join().unwrap();
+    assert_eq!(result.content, fixture["anthropic_mixed_content"]);
+}
+
+#[test]
 fn base_query_stays_after_the_joined_chat_path() {
     let fixture: Value = serde_json::from_str(include_str!(
         "../../../testdata/rust-port/fixtures/llm/go-oracle.json"

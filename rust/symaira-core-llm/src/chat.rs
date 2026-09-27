@@ -189,12 +189,7 @@ impl Client {
                 format!("llmkit: decode anthropic response: {e}"),
             )
         })?;
-        let content = parsed
-            .content
-            .into_iter()
-            .filter(|part| part.kind.as_deref().unwrap_or("text") == "text")
-            .map(|part| part.text)
-            .collect();
+        let content = parsed.content.into_iter().map(|part| part.text).collect();
         Ok(Choice {
             content,
             tool_calls: Vec::new(),
@@ -547,8 +542,6 @@ struct AnthropicResponse {
 }
 #[derive(Deserialize)]
 struct AnthropicContent {
-    #[serde(rename = "type")]
-    kind: Option<String>,
     #[serde(default)]
     text: String,
 }

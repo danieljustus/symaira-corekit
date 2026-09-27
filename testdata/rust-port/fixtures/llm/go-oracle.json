@@ -15,6 +15,7 @@
     "path": "/messages",
     "provider_version": "2023-06-01"
   },
+  "anthropic_mixed_content": "firstsecond",
   "dialect_override_allowed": true,
   "empty_api_key_resolves": true,
   "loopback_query_base_allowed": true,
@@ -160,7 +161,7 @@
   "provenance": {
     "go_source_sha256": "9083f34389a8d37c89a54676c069432ec69daa1fd2d40a68081695a9ade6260c",
     "oracle_command": "GOTOOLCHAIN=go1.26.6 go run ./scripts/rust-port/llm-oracle",
-    "oracle_sha256": "19f2ada40e32d88cef1984a10b4bd48eff1a78238affffb427429a2101e7c68f",
+    "oracle_sha256": "08ab390a20f56f776c248feca4095867f9b3ea86a724eb5f0232957b3d095b61",
     "runner_sha256": "c445537e6f83626e3d762acba2d1983ad90a2fbd4d355a9da84582ad303ba5f9"
   },
   "providers": [

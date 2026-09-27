@@ -39,6 +39,7 @@ type observation struct {
 	DialectOverrideAllowed   bool                `json:"dialect_override_allowed"`
 	ZeroTimeoutAllowed       bool                `json:"zero_timeout_allowed"`
 	Anthropic                request             `json:"anthropic_chat"`
+	AnthropicMixedContent    string              `json:"anthropic_mixed_content"`
 	RateLimit                errorResult         `json:"rate_limit"`
 	StructuredAuth           errorResult         `json:"structured_auth"`
 	StructuredAuthCasefold   errorResult         `json:"structured_auth_casefold"`
@@ -168,6 +169,16 @@ func main() {
 	}
 	closeServer()
 	out.Anthropic = *got
+	_, client, closeServer, err = capture("anthropic", `{"content":[{"type":"text","text":"first"},{"type":"tool_use","text":"second"}],"stop_reason":"end_turn"}`, http.StatusOK)
+	if err != nil {
+		panic(err)
+	}
+	choice, err := client.Chat(context.Background(), "claude", []llmkit.Message{{Role: "user", Content: "question"}}, nil)
+	closeServer()
+	if err != nil {
+		panic(err)
+	}
+	out.AnthropicMixedContent = choice.Content
 	_, client, closeServer, err = capture("openai", `{"error":"busy"}`, http.StatusTooManyRequests)
 	if err != nil {
 		panic(err)
