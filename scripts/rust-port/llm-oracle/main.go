@@ -30,13 +30,14 @@ type errorResult struct {
 }
 
 type observation struct {
-	Providers      []llmkit.Descriptor `json:"providers"`
-	OpenAI         request             `json:"openai_chat"`
-	OpenAIQuery    request             `json:"openai_query_chat"`
-	Anthropic      request             `json:"anthropic_chat"`
-	RateLimit      errorResult         `json:"rate_limit"`
-	StructuredAuth errorResult         `json:"structured_auth"`
-	NativeGenerate struct {
+	Providers                []llmkit.Descriptor `json:"providers"`
+	OpenAI                   request             `json:"openai_chat"`
+	OpenAIQuery              request             `json:"openai_query_chat"`
+	LoopbackQueryBaseAllowed bool                `json:"loopback_query_base_allowed"`
+	Anthropic                request             `json:"anthropic_chat"`
+	RateLimit                errorResult         `json:"rate_limit"`
+	StructuredAuth           errorResult         `json:"structured_auth"`
+	NativeGenerate           struct {
 		Request request                   `json:"request"`
 		Chunks  []llmkit.GenerateResponse `json:"chunks"`
 	} `json:"native_generate"`
@@ -103,6 +104,12 @@ func main() {
 	}
 	var out observation
 	out.Providers = providers
+	openAI, ok := llmkit.Lookup("openai")
+	if !ok {
+		panic("openai provider not found")
+	}
+	_, err = llmkit.NewClient(openAI, "", llmkit.WithBaseURL("http://localhost:11434?api-version=2026-01-01"), llmkit.WithAPIKey("dummy-key"))
+	out.LoopbackQueryBaseAllowed = err == nil
 	got, client, closeServer, err := capture("openai", `{"choices":[{"message":{"content":"answer"},"finish_reason":"stop"}]}`, http.StatusOK)
 	if err != nil {
 		panic(err)

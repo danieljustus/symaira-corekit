@@ -314,7 +314,13 @@ fn validate_base_url(base_url: &str, descriptor: &Descriptor) -> Result<()> {
     if descriptor.auth_scheme == AuthScheme::None {
         return Ok(());
     }
-    let Some((scheme, authority)) = base_url.split_once("://") else {
+    let parsed = base_url.parse::<http::Uri>();
+    let (Some(scheme), Some(host)) = parsed
+        .as_ref()
+        .ok()
+        .map(|uri| (uri.scheme_str(), uri.host()))
+        .unwrap_or((None, None))
+    else {
         return Err(Error::local(
             ErrorCode::AuthFailure,
             format!(
@@ -323,22 +329,6 @@ fn validate_base_url(base_url: &str, descriptor: &Descriptor) -> Result<()> {
             ),
         ));
     };
-    let host = authority
-        .split('/')
-        .next()
-        .unwrap_or_default()
-        .split('@')
-        .next_back()
-        .unwrap_or_default();
-    if host.is_empty() {
-        return Err(Error::local(
-            ErrorCode::AuthFailure,
-            format!(
-                "provider {:?} requires an HTTPS base URL for credentialed requests",
-                descriptor.id
-            ),
-        ));
-    }
     if scheme.eq_ignore_ascii_case("https") || is_loopback(host) {
         return Ok(());
     }
@@ -351,17 +341,11 @@ fn validate_base_url(base_url: &str, descriptor: &Descriptor) -> Result<()> {
     ))
 }
 
-fn is_loopback(authority: &str) -> bool {
-    if authority.eq_ignore_ascii_case("localhost")
-        || authority.to_ascii_lowercase().starts_with("localhost:")
-    {
+fn is_loopback(host: &str) -> bool {
+    if host.eq_ignore_ascii_case("localhost") {
         return true;
     }
-    let host = if let Some(host) = authority.strip_prefix('[') {
-        host.split(']').next().unwrap_or_default()
-    } else {
-        authority.split(':').next().unwrap_or_default()
-    };
+    let host = host.trim_start_matches('[').trim_end_matches(']');
     host.parse::<IpAddr>().is_ok_and(|ip| ip.is_loopback())
 }
 

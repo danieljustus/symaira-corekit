@@ -449,6 +449,18 @@ fn streaming_and_embedding_calls_preserve_openai_wire_options() {
 
 #[test]
 fn credentials_fail_closed_and_redirects_are_not_followed() {
+    let fixture: Value = serde_json::from_str(include_str!(
+        "../../../testdata/rust-port/fixtures/llm/go-oracle.json"
+    ))
+    .unwrap();
+    assert_eq!(fixture["loopback_query_base_allowed"], true);
+    assert!(
+        ClientBuilder::new(lookup("openai").unwrap().clone(), "")
+            .base_url("http://localhost:11434?api-version=2026-01-01")
+            .api_key("dummy-key")
+            .build()
+            .is_ok()
+    );
     let mut descriptor = lookup("openai").unwrap().clone();
     descriptor.base_url = "http://provider.example/v1".into();
     let error = match ClientBuilder::new(descriptor, "env://MISSING_TEST_CREDENTIAL").build() {
