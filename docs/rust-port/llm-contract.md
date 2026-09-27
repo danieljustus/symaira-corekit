@@ -27,10 +27,11 @@ provider code, a Rust `ollamakit` clone, or a process/release surface.
   response read, closing the provider connection, and reports
   `transport_error`, matching Go `llmkit`'s `context.Context` cancellation path
   (`llmkit/client.go`: `do` passes the context to `http.NewRequestWithContext`
-  and classifies `Do` errors with `errTransport`). These methods use a separate
-  async HTTP client and reject clients configured with an injected blocking
-  `ureq::Agent`; existing synchronous calls and their injected-agent behavior
-  are unchanged.
+  and classifies `Do` errors with `errTransport`). Callers can supply a
+  `reqwest::Client` through `ClientBuilder::async_client` for custom async
+  transport settings. An injected blocking `ureq::Agent` without an async client
+  remains an explicit error for cancellable calls. Synchronous calls continue
+  to use the configured `ureq::Agent`.
 
 ## Differential evidence
 
@@ -46,8 +47,7 @@ contract change.
 ## Residual boundary
 
 The existing `chat` and `stream_chat` methods remain synchronous and are not
-cancellable. The async cancellation methods require an executor and cannot
-reuse caller-configured `ureq::Agent` settings; callers needing both custom
-transport configuration and cancellation need a separately designed async
-transport-injection API. This slice does not authorize a consumer cutover,
-release, tag, Go removal, or publication.
+cancellable. The async cancellation methods require an executor and a separate
+async client when custom transport settings are needed; `ureq::Agent` settings
+cannot be transferred automatically. This slice does not authorize a consumer
+cutover, release, tag, Go removal, or publication.

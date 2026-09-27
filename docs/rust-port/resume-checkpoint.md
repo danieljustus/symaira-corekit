@@ -1021,3 +1021,15 @@ the next squash merge. The current evidence is:
 The 79 SQLite acceptance tests and provenance test pass against this pair.
 `docs/rust-port/validate.py` now reports one ready work item; that current
 inventory supersedes the older no-ready statement above.
+
+## RUST-008 async transport injection candidate (2026-09-28)
+
+Owner: migration coordinator. Isolated worktree:
+`.worktrees/corekit-llm-transport-parity-20260927`, branch
+`codex/corekit-llm-async-transport-20260927`, based on `fa9650d08779608bbed705762d83a0c2dee3f691`.
+The slice touches only `rust/symaira-core-llm` and its contract documentation.
+It adds a caller-supplied async HTTP client for cancellable chat and stream
+requests while retaining the explicit error for a blocking-only injected
+agent. `make rust-llm-contract` passes locally; independent review and exact
+PR CI remain before integration. RUST-008 remains `in_progress` and no consumer
+cutover, release, publication or Go removal is claimed.

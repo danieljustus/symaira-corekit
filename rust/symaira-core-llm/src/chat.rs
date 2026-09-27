@@ -81,9 +81,8 @@ impl Client {
     /// Performs chat over the cancellable async transport.
     ///
     /// Cancelling `token` drops the in-flight request or response read and
-    /// closes its connection. This method uses the default transport; clients
-    /// configured with [`ClientBuilder::agent`] receive an explicit error
-    /// because a blocking `ureq::Agent` cannot be safely interrupted.
+    /// closes its connection. Use [`ClientBuilder::async_client`] to configure
+    /// this transport. A blocking `ureq::Agent` alone cannot be interrupted.
     pub async fn chat_cancellable(
         &self,
         token: &CancellationToken,
@@ -486,8 +485,8 @@ impl Client {
     /// Streams chat over the cancellable async transport.
     ///
     /// Cancelling `token` drops the active response read and closes its
-    /// connection. This uses the default transport; an injected blocking
-    /// `ureq::Agent` cannot be interrupted and is rejected explicitly.
+    /// connection. Use [`ClientBuilder::async_client`] to configure this
+    /// transport. A blocking `ureq::Agent` alone cannot be interrupted.
     pub async fn stream_chat_cancellable<F, G>(
         &self,
         token: &CancellationToken,
