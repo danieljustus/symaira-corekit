@@ -141,6 +141,7 @@ impl Client {
             body["images"] = json!(options.images);
         }
         self.stream_ndjson("/api/generate", &body, |line| {
+            validate_go_json(line, "decode generate chunk")?;
             let value: GenerateResponse = serde_json::from_slice(line).map_err(|e| {
                 Error::local(
                     ErrorCode::ProviderError,
@@ -177,6 +178,7 @@ impl Client {
             body["format"] = json!(value);
         }
         self.stream_ndjson("/api/chat", &body, |line| {
+            validate_go_json(line, "decode chat chunk")?;
             let value: ChatStreamResponse = serde_json::from_slice(line).map_err(|e| {
                 Error::local(
                     ErrorCode::ProviderError,
@@ -227,6 +229,61 @@ impl Client {
             ))
         }
     }
+}
+
+fn validate_go_json(line: &[u8], operation: &str) -> Result<()> {
+    serde_json::from_slice::<Value>(line)
+        .map(|_| ())
+        .map_err(|error| {
+            Error::local(
+                ErrorCode::ProviderError,
+                format!("llmkit: {operation}: {}", go_json_error(line, &error)),
+            )
+        })
+}
+
+fn go_json_error(line: &[u8], error: &serde_json::Error) -> String {
+    let line = line.strip_suffix(b"\n").unwrap_or(line);
+    let line = line.strip_suffix(b"\r").unwrap_or(line);
+    let message = error.to_string();
+
+    if error.is_eof() {
+        return "unexpected end of JSON input".to_owned();
+    }
+    if message.contains("key must be a string")
+        && let Some(byte) = line.iter().enumerate().find_map(|(index, byte)| {
+            if *byte != b'{' && *byte != b',' {
+                return None;
+            }
+            line[index + 1..]
+                .iter()
+                .copied()
+                .find(|next| !next.is_ascii_whitespace())
+                .filter(|next| *next != b'"')
+        })
+    {
+        return format!(
+            "invalid character '{}' looking for beginning of object key string",
+            char::from(byte)
+        );
+    }
+    if message.contains("trailing characters")
+        && let Some(byte) = line
+            .iter()
+            .position(|byte| *byte == b'}' || *byte == b']')
+            .and_then(|index| {
+                line[index + 1..]
+                    .iter()
+                    .copied()
+                    .find(|byte| !byte.is_ascii_whitespace())
+            })
+    {
+        return format!(
+            "invalid character '{}' after top-level value",
+            char::from(byte)
+        );
+    }
+    message
 }
 
 #[derive(Deserialize)]

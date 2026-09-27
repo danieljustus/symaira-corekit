@@ -62,7 +62,12 @@ type observation struct {
 		AfterData  streamErrorResult `json:"after_data"`
 	} `json:"native_generate_scanner_errors"`
 	NativeGenerateWhitespaceLine streamErrorResult `json:"native_generate_whitespace_line"`
-	NativeChat                   struct {
+	NativeGenerateDecodeErrors   struct {
+		Truncated streamErrorResult `json:"truncated"`
+		BadKey    streamErrorResult `json:"bad_key"`
+		Trailing  streamErrorResult `json:"trailing"`
+	} `json:"native_generate_decode_errors"`
+	NativeChat struct {
 		Request request                     `json:"request"`
 		Chunks  []llmkit.ChatStreamResponse `json:"chunks"`
 	} `json:"native_chat"`
@@ -327,6 +332,9 @@ func main() {
 	out.NativeGenerateScannerErrors.BeforeData = streamError(string(append(largeLine, '\n')))
 	out.NativeGenerateScannerErrors.AfterData = streamError("{\"model\":\"llama3.1\",\"response\":\"first\",\"done\":false}\n" + string(append(largeLine, '\n')))
 	out.NativeGenerateWhitespaceLine = streamError(" \n{\"model\":\"llama3.1\",\"response\":\"second\",\"done\":true}\n")
+	out.NativeGenerateDecodeErrors.Truncated = streamError("{\"model\":\n")
+	out.NativeGenerateDecodeErrors.BadKey = streamError("{bad}\n")
+	out.NativeGenerateDecodeErrors.Trailing = streamError("{\"model\":\"llama3.1\"}x\n")
 	got, client, closeServer, err = capture("ollama", "{\"model\":\"llama3.1\",\"message\":{\"role\":\"assistant\",\"content\":\"piece\"},\"done\":true}\n", http.StatusOK)
 	if err != nil {
 		panic(err)
