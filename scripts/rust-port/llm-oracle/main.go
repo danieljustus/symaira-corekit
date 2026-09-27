@@ -14,6 +14,7 @@ import (
 
 type request struct {
 	Path            string         `json:"path"`
+	Query           string         `json:"query,omitempty"`
 	Auth            string         `json:"auth_header"`
 	ProviderVersion string         `json:"provider_version,omitempty"`
 	Body            map[string]any `json:"body"`
@@ -31,6 +32,7 @@ type errorResult struct {
 type observation struct {
 	Providers      []llmkit.Descriptor `json:"providers"`
 	OpenAI         request             `json:"openai_chat"`
+	OpenAIQuery    request             `json:"openai_query_chat"`
 	Anthropic      request             `json:"anthropic_chat"`
 	RateLimit      errorResult         `json:"rate_limit"`
 	StructuredAuth errorResult         `json:"structured_auth"`
@@ -53,9 +55,14 @@ type observation struct {
 }
 
 func capture(provider, response string, status int) (*request, *llmkit.Client, func(), error) {
+	return captureWithSuffix(provider, response, status, "")
+}
+
+func captureWithSuffix(provider, response string, status int, suffix string) (*request, *llmkit.Client, func(), error) {
 	got := &request{}
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		got.Path = r.URL.Path
+		got.Query = r.URL.RawQuery
 		if strings.HasPrefix(r.Header.Get("Authorization"), "Bearer ") {
 			got.Auth = "bearer"
 		}
@@ -80,6 +87,7 @@ func capture(provider, response string, status int) (*request, *llmkit.Client, f
 	if provider == "openai" {
 		baseURL += "/v1"
 	}
+	baseURL += suffix
 	client, err := llmkit.NewClient(desc, "", llmkit.WithBaseURL(baseURL), llmkit.WithAPIKey("dummy-key"))
 	if err != nil {
 		server.Close()
@@ -105,6 +113,16 @@ func main() {
 	}
 	closeServer()
 	out.OpenAI = *got
+	got, client, closeServer, err = captureWithSuffix("openai", `{"choices":[{"message":{"content":"answer"},"finish_reason":"stop"}]}`, http.StatusOK, "?api-version=2026-01-01")
+	if err != nil {
+		panic(err)
+	}
+	_, err = client.Chat(context.Background(), "gpt-5", []llmkit.Message{{Role: "user", Content: "question"}}, nil)
+	if err != nil {
+		panic(err)
+	}
+	closeServer()
+	out.OpenAIQuery = *got
 	got, client, closeServer, err = capture("anthropic", `{"content":[{"type":"text","text":"answer"}],"stop_reason":"end_turn"}`, http.StatusOK)
 	if err != nil {
 		panic(err)

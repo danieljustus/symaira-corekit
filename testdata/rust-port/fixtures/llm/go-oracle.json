@@ -124,10 +124,25 @@
     },
     "path": "/v1/chat/completions"
   },
+  "openai_query_chat": {
+    "auth_header": "bearer",
+    "body": {
+      "messages": [
+        {
+          "content": "question",
+          "role": "user"
+        }
+      ],
+      "model": "gpt-5",
+      "stream": false
+    },
+    "path": "/v1/chat/completions",
+    "query": "api-version=2026-01-01"
+  },
   "provenance": {
     "go_source_sha256": "9083f34389a8d37c89a54676c069432ec69daa1fd2d40a68081695a9ade6260c",
     "oracle_command": "GOTOOLCHAIN=go1.26.6 go run ./scripts/rust-port/llm-oracle",
-    "oracle_sha256": "adb9b193a5458848f20ac81a89728a153c8139492ea4fdbe8865b532b9afcb1c",
+    "oracle_sha256": "51b0c6b0507b708fddf7a92c1bdc1b5238570db9b9ed85040ed8f5f90eb24848",
     "runner_sha256": "c445537e6f83626e3d762acba2d1983ad90a2fbd4d355a9da84582ad303ba5f9"
   },
   "providers": [

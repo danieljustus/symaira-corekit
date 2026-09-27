@@ -144,7 +144,7 @@ impl Client {
         path: &str,
         body: Option<&T>,
     ) -> Result<ureq::http::Response<ureq::Body>> {
-        let url = format!("{}/{}", self.base_url, path.trim_start_matches('/'));
+        let url = join_url_path(&self.base_url, path)?;
         let json = body
             .map(serde_json::to_string)
             .transpose()
@@ -240,6 +240,37 @@ impl Client {
         }
         Ok(response)
     }
+}
+
+fn join_url_path(base: &str, path: &str) -> Result<String> {
+    let uri: http::Uri = base
+        .parse()
+        .map_err(|e| Error::local(ErrorCode::ProviderError, format!("llmkit: build url: {e}")))?;
+    let mut parts = uri.into_parts();
+    let base_path = parts
+        .path_and_query
+        .as_ref()
+        .map_or("/", |value| value.path());
+    let mut joined = format!(
+        "{}/{}",
+        base_path.trim_end_matches('/'),
+        path.trim_start_matches('/')
+    );
+    if let Some(query) = parts
+        .path_and_query
+        .as_ref()
+        .and_then(|value| value.query())
+    {
+        joined.push('?');
+        joined.push_str(query);
+    }
+    parts.path_and_query =
+        Some(joined.parse().map_err(|e| {
+            Error::local(ErrorCode::ProviderError, format!("llmkit: build url: {e}"))
+        })?);
+    http::Uri::from_parts(parts)
+        .map(|uri| uri.to_string())
+        .map_err(|e| Error::local(ErrorCode::ProviderError, format!("llmkit: build url: {e}")))
 }
 
 fn resolve_credential(reference: &str, env_default: &str) -> Result<String> {
