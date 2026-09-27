@@ -196,7 +196,7 @@ impl Client {
         let mut response = self.request("POST", path, Some(body))?;
         let mut reader = BufReader::new(response.body_mut().as_reader());
         let mut started = false;
-        while let Some(line) = read_bounded_line(&mut reader, 1024 * 1024).map_err(|error| {
+        while let Some(line) = read_bounded_line(&mut reader, 4 * 1024 * 1024).map_err(|error| {
             Error::transport(if started {
                 format!("stream interrupted: {error}")
             } else {

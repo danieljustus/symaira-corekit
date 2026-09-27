@@ -700,7 +700,7 @@ pub(crate) fn read_bounded_line<R: std::io::BufRead>(
         if line.len() + count > max {
             return Err(Error::new(
                 ErrorKind::InvalidData,
-                "stream line exceeds 1 MiB",
+                format!("stream line exceeds {max} bytes"),
             ));
         }
         line.extend_from_slice(&buffer[..count]);

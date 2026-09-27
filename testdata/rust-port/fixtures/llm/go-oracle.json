@@ -95,6 +95,7 @@
       "path": "/api/generate"
     }
   },
+  "native_generate_large_chunk_response_bytes": 2097152,
   "native_models": {
     "models": [
       {
@@ -161,7 +162,7 @@
   "provenance": {
     "go_source_sha256": "9083f34389a8d37c89a54676c069432ec69daa1fd2d40a68081695a9ade6260c",
     "oracle_command": "GOTOOLCHAIN=go1.26.6 go run ./scripts/rust-port/llm-oracle",
-    "oracle_sha256": "08ab390a20f56f776c248feca4095867f9b3ea86a724eb5f0232957b3d095b61",
+    "oracle_sha256": "b926f3aa4d57e69b3a20b13f0fc25606a333e308b8010eb8c18ebaea0bf1cfc7",
     "runner_sha256": "c445537e6f83626e3d762acba2d1983ad90a2fbd4d355a9da84582ad303ba5f9"
   },
   "providers": [

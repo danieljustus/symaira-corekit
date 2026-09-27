@@ -47,7 +47,8 @@ type observation struct {
 		Request request                   `json:"request"`
 		Chunks  []llmkit.GenerateResponse `json:"chunks"`
 	} `json:"native_generate"`
-	NativeChat struct {
+	NativeGenerateLargeChunkBytes int `json:"native_generate_large_chunk_response_bytes"`
+	NativeChat                    struct {
 		Request request                     `json:"request"`
 		Chunks  []llmkit.ChatStreamResponse `json:"chunks"`
 	} `json:"native_chat"`
@@ -223,6 +224,24 @@ func main() {
 	}
 	closeServer()
 	out.NativeGenerate.Request = *got
+	largeChunk, err := json.Marshal(llmkit.GenerateResponse{
+		Model: "llama3.1", Response: strings.Repeat("x", 2*1024*1024), Done: true,
+	})
+	if err != nil {
+		panic(err)
+	}
+	got, client, closeServer, err = capture("ollama", string(append(largeChunk, '\n')), http.StatusOK)
+	if err != nil {
+		panic(err)
+	}
+	err = client.Generate(context.Background(), "", "prompt", func(value llmkit.GenerateResponse) error {
+		out.NativeGenerateLargeChunkBytes = len(value.Response)
+		return nil
+	})
+	if err != nil {
+		panic(err)
+	}
+	closeServer()
 	got, client, closeServer, err = capture("ollama", "{\"model\":\"llama3.1\",\"message\":{\"role\":\"assistant\",\"content\":\"piece\"},\"done\":true}\n", http.StatusOK)
 	if err != nil {
 		panic(err)

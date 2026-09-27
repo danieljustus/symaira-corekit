@@ -14,8 +14,9 @@ use ureq::Proxy;
 
 fn mock_server(
     status: u16,
-    response: &'static str,
+    response: impl Into<String>,
 ) -> (String, thread::JoinHandle<(String, String, String)>) {
+    let response = response.into();
     let listener = TcpListener::bind("127.0.0.1:0").unwrap();
     let address = listener.local_addr().unwrap();
     let handle = thread::spawn(move || {
@@ -1161,6 +1162,41 @@ fn native_ollama_calls_match_go_recordings() {
         serde_json::to_value(models).unwrap(),
         fixture["native_models"]["models"]
     );
+}
+
+#[test]
+fn native_ollama_generate_accepts_go_scanner_large_chunks() {
+    let fixture: Value = serde_json::from_str(include_str!(
+        "../../../testdata/rust-port/fixtures/llm/go-oracle.json"
+    ))
+    .unwrap();
+    let response_bytes = fixture["native_generate_large_chunk_response_bytes"]
+        .as_u64()
+        .expect("pinned Go oracle records large NDJSON response bytes")
+        as usize;
+    assert_eq!(response_bytes, 2 * 1024 * 1024);
+
+    let response = json!({
+        "model":"llama3.1",
+        "response":"x".repeat(response_bytes),
+        "done":true
+    })
+    .to_string()
+        + "\n";
+    let (url, server) = mock_server(200, response);
+    let client = ClientBuilder::new(lookup("ollama").unwrap().clone(), "")
+        .base_url(url)
+        .build()
+        .unwrap();
+    let mut observed_bytes = None;
+    client
+        .generate("", "prompt", &GenerateOption::default(), |chunk| {
+            observed_bytes = Some(chunk.response.len());
+            Ok(())
+        })
+        .unwrap();
+    server.join().unwrap();
+    assert_eq!(observed_bytes, Some(response_bytes));
 }
 
 #[test]
