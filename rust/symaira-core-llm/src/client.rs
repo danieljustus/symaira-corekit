@@ -184,10 +184,13 @@ impl Client {
         }
         match self.descriptor.auth_scheme {
             AuthScheme::Bearer => {
-                request = request.header(
-                    reqwest::header::AUTHORIZATION,
-                    format!("Bearer {}", self.api_key),
-                );
+                let (name, value) = checked_header(
+                    "Authorization",
+                    &format!("Bearer {}", self.api_key),
+                    "invalid auth header",
+                    "invalid auth value",
+                )?;
+                request = request.header(name, value);
             }
             AuthScheme::Header => {
                 let name = if self.descriptor.auth_header.is_empty() {
@@ -195,11 +198,23 @@ impl Client {
                 } else {
                     &self.descriptor.auth_header
                 };
-                request = request.header(name, &self.api_key);
+                let (name, value) = checked_header(
+                    name,
+                    &self.api_key,
+                    "invalid auth header",
+                    "invalid auth value",
+                )?;
+                request = request.header(name, value);
             }
             AuthScheme::None => {}
         }
         for (name, value) in &self.descriptor.extra_headers {
+            let (name, value) = checked_header(
+                name,
+                value,
+                "invalid provider header",
+                "invalid provider header value",
+            )?;
             request = request.header(name, value);
         }
         let mut response = request
@@ -280,33 +295,17 @@ impl Client {
             AuthScheme::None => None,
         };
         if let Some((name, value)) = auth {
-            let name = http::header::HeaderName::from_bytes(name.as_bytes()).map_err(|e| {
-                Error::local(
-                    ErrorCode::ProviderError,
-                    format!("llmkit: invalid auth header: {e}"),
-                )
-            })?;
-            let value = http::header::HeaderValue::from_str(&value).map_err(|e| {
-                Error::local(
-                    ErrorCode::ProviderError,
-                    format!("llmkit: invalid auth value: {e}"),
-                )
-            })?;
+            let (name, value) =
+                checked_header(name, &value, "invalid auth header", "invalid auth value")?;
             request.headers_mut().insert(name, value);
         }
         for (name, value) in &self.descriptor.extra_headers {
-            let name = http::header::HeaderName::from_bytes(name.as_bytes()).map_err(|e| {
-                Error::local(
-                    ErrorCode::ProviderError,
-                    format!("llmkit: invalid provider header: {e}"),
-                )
-            })?;
-            let value = http::header::HeaderValue::from_str(value).map_err(|e| {
-                Error::local(
-                    ErrorCode::ProviderError,
-                    format!("llmkit: invalid provider header value: {e}"),
-                )
-            })?;
+            let (name, value) = checked_header(
+                name,
+                value,
+                "invalid provider header",
+                "invalid provider header value",
+            )?;
             request.headers_mut().insert(name, value);
         }
         let mut response = self
@@ -337,6 +336,27 @@ impl Client {
         }
         Ok(response)
     }
+}
+
+fn checked_header(
+    name: &str,
+    value: &str,
+    invalid_name: &str,
+    invalid_value: &str,
+) -> Result<(http::header::HeaderName, http::header::HeaderValue)> {
+    let name = http::header::HeaderName::from_bytes(name.as_bytes()).map_err(|error| {
+        Error::local(
+            ErrorCode::ProviderError,
+            format!("llmkit: {invalid_name}: {error}"),
+        )
+    })?;
+    let value = http::header::HeaderValue::from_str(value).map_err(|error| {
+        Error::local(
+            ErrorCode::ProviderError,
+            format!("llmkit: {invalid_value}: {error}"),
+        )
+    })?;
+    Ok((name, value))
 }
 
 fn join_url_path(base: &str, path: &str) -> Result<String> {

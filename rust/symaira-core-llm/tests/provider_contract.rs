@@ -7,7 +7,7 @@ use std::thread;
 use std::time::Duration;
 use symaira_core_exit::ExitCode;
 use symaira_core_llm::{
-    Agent, CancellationToken, ChatOptions, ClientBuilder, DEFAULT_TIMEOUT, ErrorCode,
+    Agent, AuthScheme, CancellationToken, ChatOptions, ClientBuilder, DEFAULT_TIMEOUT, ErrorCode,
     GenerateOption, Message, NativeChatOption, Tool, WireDialect, lookup, providers,
 };
 use ureq::Proxy;
@@ -211,6 +211,152 @@ fn cancellable_api_does_not_silently_ignore_an_injected_agent() {
         .unwrap_err();
     assert_eq!(error.code, ErrorCode::ProviderError);
     assert!(error.detail.contains("cannot use an injected ureq Agent"));
+}
+
+#[test]
+fn cancellable_chat_preserves_go_rate_limit_and_header_classification() {
+    let fixture: Value = serde_json::from_str(include_str!(
+        "../../../testdata/rust-port/fixtures/llm/go-oracle.json"
+    ))
+    .unwrap();
+    let token = CancellationToken::new();
+    let runtime = tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+        .unwrap();
+    let cases = [
+        (
+            "openai",
+            r#"{"error":"busy"}"#,
+            ErrorCode::RateLimited,
+            429,
+            "17",
+            true,
+        ),
+        // Go's openAIErrorFromBody reclassifies a typed 429 as status 400 and
+        // rebuilds the error from its message, dropping Retry-After.
+        (
+            "openai",
+            r#"{"error":{"message":"rate limit exceeded","type":"rate_limit_error"}}"#,
+            ErrorCode::RateLimited,
+            400,
+            "",
+            true,
+        ),
+        // Go's Anthropic path returns do's original status/body/header.
+        (
+            "anthropic",
+            r#"{"type":"error","error":{"type":"rate_limit_error","message":"overloaded"}}"#,
+            ErrorCode::RateLimited,
+            429,
+            "17",
+            true,
+        ),
+    ];
+
+    for (provider, body, code, status, retry_after, retryable) in cases {
+        let mut observed = Vec::new();
+        for cancellable in [false, true] {
+            let (url, server) = mock_server(429, body);
+            let url = if provider == "openai" {
+                format!("{url}/v1")
+            } else {
+                url
+            };
+            let client = ClientBuilder::new(lookup(provider).unwrap().clone(), "")
+                .base_url(url)
+                .api_key("dummy-key")
+                .build()
+                .unwrap();
+            let result = if cancellable {
+                runtime.block_on(client.chat_cancellable(
+                    &token,
+                    "model",
+                    &[Message {
+                        role: "user".into(),
+                        content: "question".into(),
+                    }],
+                    None,
+                ))
+            } else {
+                client.chat(
+                    "model",
+                    &[Message {
+                        role: "user".into(),
+                        content: "question".into(),
+                    }],
+                    None,
+                )
+            };
+            server.join().unwrap();
+            let error = result.unwrap_err();
+            assert_eq!(error.code, code, "{provider}, cancellable={cancellable}");
+            assert_eq!(
+                error.status_code, status,
+                "{provider}, cancellable={cancellable}"
+            );
+            assert_eq!(
+                error.retry_after, retry_after,
+                "{provider}, cancellable={cancellable}"
+            );
+            assert_eq!(error.retryable(), retryable);
+            observed.push(error);
+        }
+        assert_eq!(
+            observed[0], observed[1],
+            "{provider} sync/async error drift"
+        );
+    }
+    assert_eq!(fixture["rate_limit"]["body"], r#"{"error":"busy"}"#);
+    assert_eq!(fixture["rate_limit"]["code"], "rate_limited");
+    assert_eq!(fixture["rate_limit"]["status"], 429);
+    assert_eq!(fixture["rate_limit"]["retry_after"], "17");
+    assert_eq!(fixture["rate_limit"]["retryable"], true);
+
+    let messages = [Message {
+        role: "user".into(),
+        content: "question".into(),
+    }];
+    let mut invalid_extra_name = lookup("openai").unwrap().clone();
+    invalid_extra_name
+        .extra_headers
+        .insert("invalid header".to_owned(), "value".to_owned());
+    let mut invalid_extra_value = lookup("openai").unwrap().clone();
+    invalid_extra_value
+        .extra_headers
+        .insert("x-test".to_owned(), "invalid\nvalue".to_owned());
+    let mut invalid_auth_name = lookup("openai").unwrap().clone();
+    invalid_auth_name.auth_scheme = AuthScheme::Header;
+    invalid_auth_name.auth_header = "invalid header".to_owned();
+    let invalid_headers = [
+        (invalid_extra_name, "dummy-key", "invalid provider header:"),
+        (
+            invalid_extra_value,
+            "dummy-key",
+            "invalid provider header value:",
+        ),
+        (invalid_auth_name, "dummy-key", "invalid auth header:"),
+        (
+            lookup("openai").unwrap().clone(),
+            "invalid\nkey",
+            "invalid auth value:",
+        ),
+    ];
+    for (descriptor, api_key, detail_prefix) in invalid_headers {
+        let client = ClientBuilder::new(descriptor, "")
+            .api_key(api_key)
+            .build()
+            .unwrap();
+        let sync_error = client
+            .chat("model", &messages, None)
+            .expect_err("sync transport rejects invalid headers");
+        let async_error = runtime
+            .block_on(client.chat_cancellable(&token, "model", &messages, None))
+            .expect_err("cancellable transport rejects invalid headers");
+        assert_eq!(sync_error.code, ErrorCode::ProviderError);
+        assert!(sync_error.detail.contains(detail_prefix), "{sync_error:?}");
+        assert_eq!(async_error, sync_error);
+    }
 }
 
 #[test]
