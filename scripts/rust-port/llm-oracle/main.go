@@ -33,6 +33,7 @@ type observation struct {
 	Providers                []llmkit.Descriptor `json:"providers"`
 	OpenAI                   request             `json:"openai_chat"`
 	OpenAIQuery              request             `json:"openai_query_chat"`
+	OpenAIDotPath            request             `json:"openai_dot_path_chat"`
 	LoopbackQueryBaseAllowed bool                `json:"loopback_query_base_allowed"`
 	Anthropic                request             `json:"anthropic_chat"`
 	RateLimit                errorResult         `json:"rate_limit"`
@@ -131,6 +132,16 @@ func main() {
 	}
 	closeServer()
 	out.OpenAIQuery = *got
+	got, client, closeServer, err = captureWithSuffix("openai", `{"choices":[{"message":{"content":"answer"},"finish_reason":"stop"}]}`, http.StatusOK, "/../api/./?api-version=2026-01-01")
+	if err != nil {
+		panic(err)
+	}
+	_, err = client.Chat(context.Background(), "gpt-5", []llmkit.Message{{Role: "user", Content: "question"}}, nil)
+	if err != nil {
+		panic(err)
+	}
+	closeServer()
+	out.OpenAIDotPath = *got
 	got, client, closeServer, err = capture("anthropic", `{"content":[{"type":"text","text":"answer"}],"stop_reason":"end_turn"}`, http.StatusOK)
 	if err != nil {
 		panic(err)

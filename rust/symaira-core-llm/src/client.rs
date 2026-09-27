@@ -251,11 +251,21 @@ fn join_url_path(base: &str, path: &str) -> Result<String> {
         .path_and_query
         .as_ref()
         .map_or("/", |value| value.path());
-    let mut joined = format!(
-        "{}/{}",
-        base_path.trim_end_matches('/'),
-        path.trim_start_matches('/')
-    );
+    let combined = format!("{base_path}/{path}");
+    let mut segments = Vec::new();
+    for segment in combined.split('/') {
+        match segment {
+            "" | "." => {}
+            ".." => {
+                segments.pop();
+            }
+            _ => segments.push(segment),
+        }
+    }
+    let mut joined = format!("/{}", segments.join("/"));
+    if path.ends_with('/') && !joined.ends_with('/') {
+        joined.push('/');
+    }
     if let Some(query) = parts
         .path_and_query
         .as_ref()

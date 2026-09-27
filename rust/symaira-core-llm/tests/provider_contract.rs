@@ -145,6 +145,32 @@ fn base_query_stays_after_the_joined_chat_path() {
         fixture["openai_query_chat"]["path"].as_str().unwrap(),
         fixture["openai_query_chat"]["query"].as_str().unwrap()
     )));
+
+    let (url, server) = mock_server(
+        200,
+        r#"{"choices":[{"message":{"content":"answer"},"finish_reason":"stop"}]}"#,
+    );
+    let client = ClientBuilder::new(lookup("openai").unwrap().clone(), "")
+        .base_url(format!("{url}/v1/../api/./?api-version=2026-01-01"))
+        .api_key("dummy-key")
+        .build()
+        .unwrap();
+    client
+        .chat(
+            "gpt-5",
+            &[Message {
+                role: "user".into(),
+                content: "question".into(),
+            }],
+            None,
+        )
+        .unwrap();
+    let (headers, _, _) = server.join().unwrap();
+    assert!(headers.starts_with(&format!(
+        "POST {}?{} HTTP/1.1",
+        fixture["openai_dot_path_chat"]["path"].as_str().unwrap(),
+        fixture["openai_dot_path_chat"]["query"].as_str().unwrap()
+    )));
 }
 
 #[test]
