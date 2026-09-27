@@ -801,6 +801,9 @@ fn refine_openai_error(error: Error) -> Error {
     let Ok(value) = serde_json::from_str::<Value>(&error.body) else {
         return error;
     };
+    if !go_openai_error_envelope_is_well_formed(&value) {
+        return error;
+    }
     let Some(typed) = value
         .as_object()
         .and_then(|object| go_json_field(object, "error"))
@@ -838,6 +841,102 @@ fn refine_openai_error(error: Error) -> Error {
         error
     } else {
         refined
+    }
+}
+
+fn go_openai_error_envelope_is_well_formed(value: &Value) -> bool {
+    let Some(object) = value.as_object() else {
+        return false;
+    };
+    if let Some(choices) = go_json_field(object, "choices") {
+        match choices {
+            Value::Null => {}
+            Value::Array(choices) => {
+                if !choices.iter().all(go_openai_choice_is_well_formed) {
+                    return false;
+                }
+            }
+            _ => return false,
+        }
+    }
+    if let Some(error) = go_json_field(object, "error") {
+        match error {
+            Value::Null => {}
+            Value::Object(error) => {
+                if !go_json_string_field_is_valid(error, "message")
+                    || !go_json_string_field_is_valid(error, "type")
+                {
+                    return false;
+                }
+            }
+            _ => return false,
+        }
+    }
+    true
+}
+
+fn go_openai_choice_is_well_formed(choice: &Value) -> bool {
+    let Some(choice) = choice.as_object() else {
+        return choice.is_null();
+    };
+    if !go_json_string_field_is_valid(choice, "finish_reason") {
+        return false;
+    }
+    let Some(message) = go_json_field(choice, "message") else {
+        return true;
+    };
+    match message {
+        Value::Null => true,
+        Value::Object(message) => {
+            go_json_string_field_is_valid(message, "content")
+                && go_json_array_field_is_valid(
+                    message,
+                    "tool_calls",
+                    go_openai_tool_call_is_well_formed,
+                )
+        }
+        _ => false,
+    }
+}
+
+fn go_openai_tool_call_is_well_formed(tool_call: &Value) -> bool {
+    let Some(tool_call) = tool_call.as_object() else {
+        return tool_call.is_null();
+    };
+    if !go_json_string_field_is_valid(tool_call, "id")
+        || !go_json_string_field_is_valid(tool_call, "type")
+    {
+        return false;
+    }
+    let Some(function) = go_json_field(tool_call, "function") else {
+        return true;
+    };
+    match function {
+        Value::Null => true,
+        Value::Object(function) => {
+            go_json_string_field_is_valid(function, "name")
+                && go_json_string_field_is_valid(function, "arguments")
+        }
+        _ => false,
+    }
+}
+
+fn go_json_string_field_is_valid(object: &serde_json::Map<String, Value>, name: &str) -> bool {
+    matches!(
+        go_json_field(object, name),
+        None | Some(Value::Null | Value::String(_))
+    )
+}
+
+fn go_json_array_field_is_valid(
+    object: &serde_json::Map<String, Value>,
+    name: &str,
+    validate_item: fn(&Value) -> bool,
+) -> bool {
+    match go_json_field(object, name) {
+        None | Some(Value::Null) => true,
+        Some(Value::Array(items)) => items.iter().all(validate_item),
+        Some(_) => false,
     }
 }
 

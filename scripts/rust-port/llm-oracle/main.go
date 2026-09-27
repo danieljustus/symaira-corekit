@@ -43,6 +43,8 @@ type observation struct {
 	RateLimit                errorResult         `json:"rate_limit"`
 	StructuredAuth           errorResult         `json:"structured_auth"`
 	StructuredAuthCasefold   errorResult         `json:"structured_auth_casefold"`
+	MalformedEnvelope        errorResult         `json:"malformed_error_envelope"`
+	MalformedChoice          errorResult         `json:"malformed_error_choice"`
 	NativeGenerate           struct {
 		Request request                   `json:"request"`
 		Chunks  []llmkit.GenerateResponse `json:"chunks"`
@@ -217,6 +219,26 @@ func main() {
 		panic("expected casefold structured llmkit error")
 	}
 	out.StructuredAuthCasefold = errorResult{Code: string(providerErr.Code), Status: providerErr.StatusCode, Body: providerErr.Body, RetryAfter: providerErr.RetryAfter, Retryable: providerErr.Retryable(), ExitCode: int(providerErr.ExitCode())}
+	_, client, closeServer, err = capture("openai", `{"error":{"message":"authentication failed","type":"authentication_error"},"choices":"malformed"}`, http.StatusUnauthorized)
+	if err != nil {
+		panic(err)
+	}
+	_, err = client.Chat(context.Background(), "gpt-5", []llmkit.Message{{Role: "user", Content: "question"}}, nil)
+	closeServer()
+	if !errors.As(err, &providerErr) {
+		panic("expected malformed-envelope provider error")
+	}
+	out.MalformedEnvelope = errorResult{Code: string(providerErr.Code), Status: providerErr.StatusCode, Body: providerErr.Body, RetryAfter: providerErr.RetryAfter, Retryable: providerErr.Retryable(), ExitCode: int(providerErr.ExitCode())}
+	_, client, closeServer, err = capture("openai", `{"error":{"message":"rate limit exceeded","type":"rate_limit_error"},"choices":[{"message":"malformed"}]}`, http.StatusTooManyRequests)
+	if err != nil {
+		panic(err)
+	}
+	_, err = client.Chat(context.Background(), "gpt-5", []llmkit.Message{{Role: "user", Content: "question"}}, nil)
+	closeServer()
+	if !errors.As(err, &providerErr) {
+		panic("expected malformed-choice provider error")
+	}
+	out.MalformedChoice = errorResult{Code: string(providerErr.Code), Status: providerErr.StatusCode, Body: providerErr.Body, RetryAfter: providerErr.RetryAfter, Retryable: providerErr.Retryable(), ExitCode: int(providerErr.ExitCode())}
 	got, client, closeServer, err = capture("ollama", "{\"model\":\"llama3.1\",\"response\":\"piece\",\"done\":false}\n{\"model\":\"llama3.1\",\"response\":\"\",\"done\":true}\n", http.StatusOK)
 	if err != nil {
 		panic(err)

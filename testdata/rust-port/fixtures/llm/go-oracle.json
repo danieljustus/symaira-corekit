@@ -33,6 +33,22 @@
   "dialect_override_allowed": true,
   "empty_api_key_resolves": true,
   "loopback_query_base_allowed": true,
+  "malformed_error_choice": {
+    "body": "{\"error\":{\"message\":\"rate limit exceeded\",\"type\":\"rate_limit_error\"},\"choices\":[{\"message\":\"malformed\"}]}",
+    "code": "rate_limited",
+    "exit_code": 6,
+    "retry_after": "17",
+    "retryable": true,
+    "status": 429
+  },
+  "malformed_error_envelope": {
+    "body": "{\"error\":{\"message\":\"authentication failed\",\"type\":\"authentication_error\"},\"choices\":\"malformed\"}",
+    "code": "auth_failure",
+    "exit_code": 3,
+    "retry_after": "17",
+    "retryable": false,
+    "status": 401
+  },
   "native_chat": {
     "chunks": [
       {
@@ -176,7 +192,7 @@
   "provenance": {
     "go_source_sha256": "9083f34389a8d37c89a54676c069432ec69daa1fd2d40a68081695a9ade6260c",
     "oracle_command": "GOTOOLCHAIN=go1.26.6 go run ./scripts/rust-port/llm-oracle",
-    "oracle_sha256": "27bc4d3f21497c2abd02433b3dc4da2d8eda49193cb6be8a6ad65a86ae389271",
+    "oracle_sha256": "57b68e2c825d07760f9a8ccd21c40acbb8de155831224c1ad53e2663f4ac857b",
     "runner_sha256": "c445537e6f83626e3d762acba2d1983ad90a2fbd4d355a9da84582ad303ba5f9"
   },
   "providers": [
