@@ -562,6 +562,7 @@ def _check_rollback_transition(
     if runtimes != ["go", "rust", "go"]:
         _evidence_error(findings, repository, "rollback", "transition", "rollback transition must record Go baseline, Rust run, then Go rollback")
         return
+        return
     go_identity: tuple[str, str] | None = None
     for step in sequence:
         assert isinstance(step, dict)

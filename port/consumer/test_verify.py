@@ -381,6 +381,7 @@ import (
             ("standalone", lambda receipt: receipt["rust_build"].update({"cargo_lock_sha256": "0" * 64}), "evidence.standalone.build.lock"),
             ("standalone", lambda receipt: receipt["rust_build"]["observed"].update({"exit_code": 1}), "evidence.standalone.build"),
             ("rollback", lambda receipt: receipt["transition"][2].update({"state_readback_sha256": "0" * 64}), "evidence.rollback.state"),
+            ("rollback", lambda receipt: receipt["transition"].__setitem__(1, None), "evidence.rollback.transition"),
             ("rollback", lambda receipt: receipt["transition"][2].update({"artifact": "bin/other-go"}), "evidence.rollback.transition.artifact"),
             ("rollback", lambda receipt: receipt["transition"][1]["observed"].update({"command": ["./bin/fixture-go", "read-state"]}), "evidence.rollback.transition.command"),
             ("rollback", lambda receipt: receipt["transition"][1].pop("observed"), "evidence.rollback.transition.result"),
