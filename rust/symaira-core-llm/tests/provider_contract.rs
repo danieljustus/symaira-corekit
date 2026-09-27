@@ -1268,6 +1268,21 @@ fn native_ollama_calls_match_go_recordings() {
         serde_json::to_value(models).unwrap(),
         fixture["native_models"]["models"]
     );
+
+    let (url, server) = mock_server(
+        200,
+        r#"{"models":[{"name":"older-model","modified_at":"yesterday","size":99}],"MODELS":[{"NAME":"current-model","MODIFIED_AT":"today","SIZE":12}]}"#,
+    );
+    let client = ClientBuilder::new(lookup("ollama").unwrap().clone(), "")
+        .base_url(url)
+        .build()
+        .unwrap();
+    let models = client.list_ollama_models().unwrap();
+    server.join().unwrap();
+    assert_eq!(
+        serde_json::to_value(models).unwrap(),
+        fixture["native_models_casefold_alias_order"]
+    );
 }
 
 #[test]

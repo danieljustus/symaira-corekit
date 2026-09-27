@@ -1,11 +1,14 @@
 use crate::chat::{Message, read_bounded_line};
 use crate::client::{Client, read_limited};
 use crate::error::{Error, ErrorCode, Result};
+use serde::Deserializer;
+use serde::de::{IgnoredAny, MapAccess, Visitor};
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
+use std::fmt;
 use std::io::BufReader;
 
-#[derive(Clone, Debug, Default, Deserialize, Serialize, PartialEq)]
+#[derive(Clone, Debug, Default, Serialize, PartialEq)]
 pub struct OllamaModelInfo {
     pub name: String,
     pub modified_at: String,
@@ -228,8 +231,100 @@ impl Client {
 struct NativeEmbeddingResponse {
     embeddings: Vec<Vec<f32>>,
 }
-#[derive(Deserialize)]
 struct OllamaModelsResponse {
-    #[serde(default)]
     models: Vec<OllamaModelInfo>,
+}
+
+impl<'de> Deserialize<'de> for OllamaModelsResponse {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct OllamaModelsVisitor;
+
+        impl<'de> Visitor<'de> for OllamaModelsVisitor {
+            type Value = OllamaModelsResponse;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+                formatter.write_str("an Ollama model-list response object")
+            }
+
+            fn visit_unit<E>(self) -> std::result::Result<Self::Value, E>
+            where
+                E: serde::de::Error,
+            {
+                Ok(OllamaModelsResponse { models: Vec::new() })
+            }
+
+            fn visit_map<M>(self, mut map: M) -> std::result::Result<Self::Value, M::Error>
+            where
+                M: MapAccess<'de>,
+            {
+                let mut models = Vec::new();
+                while let Some(key) = map.next_key::<String>()? {
+                    if key.eq_ignore_ascii_case("models") {
+                        models = map
+                            .next_value::<Option<Vec<OllamaModelInfo>>>()?
+                            .unwrap_or_default();
+                    } else {
+                        let _: IgnoredAny = map.next_value()?;
+                    }
+                }
+                Ok(OllamaModelsResponse { models })
+            }
+        }
+
+        deserializer.deserialize_any(OllamaModelsVisitor)
+    }
+}
+
+impl<'de> Deserialize<'de> for OllamaModelInfo {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct OllamaModelInfoVisitor;
+
+        impl<'de> Visitor<'de> for OllamaModelInfoVisitor {
+            type Value = OllamaModelInfo;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+                formatter.write_str("an Ollama model metadata object")
+            }
+
+            fn visit_unit<E>(self) -> std::result::Result<Self::Value, E>
+            where
+                E: serde::de::Error,
+            {
+                Ok(OllamaModelInfo::default())
+            }
+
+            fn visit_map<M>(self, mut map: M) -> std::result::Result<Self::Value, M::Error>
+            where
+                M: MapAccess<'de>,
+            {
+                let mut model = OllamaModelInfo::default();
+                while let Some(key) = map.next_key::<String>()? {
+                    if key.eq_ignore_ascii_case("name") {
+                        if let Some(value) = map.next_value::<Option<String>>()? {
+                            model.name = value;
+                        }
+                    } else if key.eq_ignore_ascii_case("modified_at") {
+                        if let Some(value) = map.next_value::<Option<String>>()? {
+                            model.modified_at = value;
+                        }
+                    } else if key.eq_ignore_ascii_case("size") {
+                        if let Some(value) = map.next_value::<Option<i64>>()? {
+                            model.size = value;
+                        }
+                    } else {
+                        let _: IgnoredAny = map.next_value()?;
+                    }
+                }
+                Ok(model)
+            }
+        }
+
+        deserializer.deserialize_any(OllamaModelInfoVisitor)
+    }
 }

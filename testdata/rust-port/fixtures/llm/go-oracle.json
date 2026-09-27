@@ -171,6 +171,13 @@
       "path": "/api/tags"
     }
   },
+  "native_models_casefold_alias_order": [
+    {
+      "modified_at": "today",
+      "name": "current-model",
+      "size": 12
+    }
+  ],
   "openai_chat": {
     "auth_header": "bearer",
     "body": {
@@ -223,7 +230,7 @@
   "provenance": {
     "go_source_sha256": "9083f34389a8d37c89a54676c069432ec69daa1fd2d40a68081695a9ade6260c",
     "oracle_command": "GOTOOLCHAIN=go1.26.6 go run ./scripts/rust-port/llm-oracle",
-    "oracle_sha256": "3cdf379546291cc8fea0c6186ba2d8188d99c66c1a2a7f152c8afbeb6ad40606",
+    "oracle_sha256": "c7572b4e8fa3658fe59932bd91cddae41b844acd32206dde5da6f48f980f5263",
     "runner_sha256": "c445537e6f83626e3d762acba2d1983ad90a2fbd4d355a9da84582ad303ba5f9"
   },
   "providers": [
