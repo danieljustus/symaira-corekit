@@ -133,6 +133,32 @@ fn empty_api_key_uses_credential_resolution() {
 }
 
 #[test]
+fn injected_default_agent_keeps_provider_error_classification() {
+    let (url, server) = mock_server(429, r#"{"error":{"message":"temporary"}}"#);
+    let client = ClientBuilder::new(lookup("openai").unwrap().clone(), "")
+        .base_url(url)
+        .api_key("dummy-key")
+        .agent(Agent::new_with_defaults())
+        .build()
+        .unwrap();
+    let error = client
+        .chat(
+            "gpt-5",
+            &[Message {
+                role: "user".into(),
+                content: "hi".into(),
+            }],
+            None,
+        )
+        .unwrap_err();
+    server.join().unwrap();
+    assert_eq!(error.code, ErrorCode::RateLimited);
+    assert_eq!(error.status_code, 429, "{error:?}");
+    assert_eq!(error.retry_after, "17");
+    assert!(error.body.contains("temporary"));
+}
+
+#[test]
 fn dialect_override_follows_go_builder_behavior() {
     let fixture: Value = serde_json::from_str(include_str!(
         "../../../testdata/rust-port/fixtures/llm/go-oracle.json"

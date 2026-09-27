@@ -210,7 +210,12 @@ impl Client {
         }
         let mut response = self
             .agent
-            .run(request)
+            .run(
+                self.agent
+                    .configure_request(request)
+                    .http_status_as_error(false)
+                    .build(),
+            )
             .map_err(|e| Error::transport(e.to_string()))?;
         let status = response.status().as_u16();
         if status >= 300 {
