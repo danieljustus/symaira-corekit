@@ -56,8 +56,13 @@ type observation struct {
 		Request    request     `json:"request"`
 		Embeddings [][]float32 `json:"embeddings"`
 	} `json:"native_embed"`
-	CasefoldEmbedding []float32 `json:"casefold_embedding"`
-	NativeModels      struct {
+	CasefoldEmbedding struct {
+		DataThenAlias      []float32 `json:"data_then_alias"`
+		AliasThenData      []float32 `json:"alias_then_data"`
+		EmbeddingThenAlias []float32 `json:"embedding_then_alias"`
+		AliasThenEmbedding []float32 `json:"alias_then_embedding"`
+	} `json:"casefold_embedding"`
+	NativeModels struct {
 		Request request                  `json:"request"`
 		Models  []llmkit.OllamaModelInfo `json:"models"`
 	} `json:"native_models"`
@@ -266,19 +271,31 @@ func main() {
 	}
 	closeServer()
 	out.NativeEmbed.Request = *got
-	_, client, closeServer, err = capture("openai", `{"dAtA":[{"eMbEdDiNg":[0.25,0.5]}]}`, http.StatusOK)
-	if err != nil {
-		panic(err)
+	casefoldResponses := []struct {
+		response string
+	}{
+		{`{"data":[{"embedding":[0.1]}],"dAtA":[{"embedding":[0.2]}]}`},
+		{`{"dAtA":[{"embedding":[0.3]}],"data":[{"embedding":[0.4]}]}`},
+		{`{"data":[{"embedding":[0.5],"eMbEdDiNg":[0.6]}]}`},
+		{`{"data":[{"eMbEdDiNg":[0.7],"embedding":[0.8]}]}`},
 	}
-	embeddings, err := client.Embed(context.Background(), "", []string{"input"})
-	if err != nil {
-		panic(err)
+	var casefoldVectors [][]float32
+	for _, test := range casefoldResponses {
+		_, client, closeServer, err = capture("openai", test.response, http.StatusOK)
+		if err != nil {
+			panic(err)
+		}
+		embeddings, err := client.Embed(context.Background(), "", []string{"input"})
+		closeServer()
+		if err != nil || len(embeddings) != 1 {
+			panic("expected one case-folded embedding")
+		}
+		casefoldVectors = append(casefoldVectors, embeddings[0].Vector)
 	}
-	closeServer()
-	if len(embeddings) != 1 {
-		panic("expected one case-folded embedding")
-	}
-	out.CasefoldEmbedding = embeddings[0].Vector
+	out.CasefoldEmbedding.DataThenAlias = casefoldVectors[0]
+	out.CasefoldEmbedding.AliasThenData = casefoldVectors[1]
+	out.CasefoldEmbedding.EmbeddingThenAlias = casefoldVectors[2]
+	out.CasefoldEmbedding.AliasThenEmbedding = casefoldVectors[3]
 	got, client, closeServer, err = capture("ollama", `{"models":[{"name":"llama3.1","modified_at":"today","size":12}]}`, http.StatusOK)
 	if err != nil {
 		panic(err)

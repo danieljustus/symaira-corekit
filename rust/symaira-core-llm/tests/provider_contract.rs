@@ -1001,19 +1001,40 @@ fn embedding_response_fields_match_go_case_insensitive_json() {
         "../../../testdata/rust-port/fixtures/llm/go-oracle.json"
     ))
     .unwrap();
-    let (url, server) = mock_server(200, r#"{"dAtA":[{"eMbEdDiNg":[0.25,0.5]}]}"#);
-    let client = ClientBuilder::new(lookup("openai").unwrap().clone(), "")
-        .base_url(format!("{url}/v1"))
-        .api_key("dummy-key")
-        .build()
-        .unwrap();
-    let embeddings = client.embed("", &["input".into()], None).unwrap();
-    server.join().unwrap();
-    assert_eq!(embeddings.len(), 1);
-    assert_eq!(
-        serde_json::to_value(&embeddings[0].vector).unwrap(),
-        fixture["casefold_embedding"]
-    );
+    let cases = [
+        (
+            r#"{"data":[{"embedding":[0.1]}],"dAtA":[{"embedding":[0.2]}]}"#,
+            "data_then_alias",
+        ),
+        (
+            r#"{"dAtA":[{"embedding":[0.3]}],"data":[{"embedding":[0.4]}]}"#,
+            "alias_then_data",
+        ),
+        (
+            r#"{"data":[{"embedding":[0.5],"eMbEdDiNg":[0.6]}]}"#,
+            "embedding_then_alias",
+        ),
+        (
+            r#"{"data":[{"eMbEdDiNg":[0.7],"embedding":[0.8]}]}"#,
+            "alias_then_embedding",
+        ),
+    ];
+    for (response, fixture_case) in cases {
+        let (url, server) = mock_server(200, response);
+        let client = ClientBuilder::new(lookup("openai").unwrap().clone(), "")
+            .base_url(format!("{url}/v1"))
+            .api_key("dummy-key")
+            .build()
+            .unwrap();
+        let embeddings = client.embed("", &["input".into()], None).unwrap();
+        server.join().unwrap();
+        assert_eq!(embeddings.len(), 1);
+        assert_eq!(
+            serde_json::to_value(&embeddings[0].vector).unwrap(),
+            fixture["casefold_embedding"][fixture_case],
+            "Go JSON field matching drift for {fixture_case}"
+        );
+    }
 }
 
 #[test]

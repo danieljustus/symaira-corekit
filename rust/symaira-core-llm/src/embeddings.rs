@@ -1,9 +1,10 @@
 use crate::client::{Client, read_limited};
 use crate::error::{Error, ErrorCode, Result};
 use crate::provider::ModelInfo;
-use serde::Deserialize;
-use serde::de::DeserializeOwned;
+use serde::de::{Error as _, IgnoredAny, MapAccess, Visitor};
+use serde::{Deserialize, Deserializer};
 use serde_json::json;
+use std::fmt;
 
 #[derive(Clone, Debug, Deserialize, PartialEq)]
 pub struct Embedding {
@@ -53,7 +54,7 @@ impl Client {
         }
         let mut response = self.request("POST", "/embeddings", Some(&body))?;
         let raw = read_limited(&mut response, 64 << 20)?;
-        let parsed: EmbeddingResponse = deserialize_case_insensitive(&raw).map_err(|e| {
+        let parsed: EmbeddingResponse = serde_json::from_slice(&raw).map_err(|e| {
             Error::local(
                 ErrorCode::ProviderError,
                 format!("llmkit: decode embeddings response: {e}"),
@@ -139,42 +140,82 @@ impl Client {
     }
 }
 
-#[derive(Deserialize)]
 struct EmbeddingResponse {
     data: Vec<EmbeddingData>,
 }
-#[derive(Deserialize)]
 struct EmbeddingData {
     embedding: Vec<f32>,
 }
 
-fn deserialize_case_insensitive<T: DeserializeOwned>(raw: &[u8]) -> serde_json::Result<T> {
-    match serde_json::from_slice(raw) {
-        Ok(value) => Ok(value),
-        Err(case_sensitive_error) => {
-            let mut value: serde_json::Value = serde_json::from_slice(raw)?;
-            lowercase_json_keys(&mut value);
-            serde_json::from_value(value).or(Err(case_sensitive_error))
+impl<'de> Deserialize<'de> for EmbeddingResponse {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct EmbeddingResponseVisitor;
+
+        impl<'de> Visitor<'de> for EmbeddingResponseVisitor {
+            type Value = EmbeddingResponse;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+                formatter.write_str("an embedding response object")
+            }
+
+            fn visit_map<M>(self, mut map: M) -> std::result::Result<Self::Value, M::Error>
+            where
+                M: MapAccess<'de>,
+            {
+                let mut data = None;
+                while let Some(key) = map.next_key::<String>()? {
+                    if key.eq_ignore_ascii_case("data") {
+                        data = Some(map.next_value()?);
+                    } else {
+                        let _: IgnoredAny = map.next_value()?;
+                    }
+                }
+                Ok(EmbeddingResponse {
+                    data: data.ok_or_else(|| M::Error::missing_field("data"))?,
+                })
+            }
         }
+
+        deserializer.deserialize_map(EmbeddingResponseVisitor)
     }
 }
 
-fn lowercase_json_keys(value: &mut serde_json::Value) {
-    match value {
-        serde_json::Value::Object(object) => {
-            let mut normalized = serde_json::Map::new();
-            for (key, mut value) in std::mem::take(object) {
-                lowercase_json_keys(&mut value);
-                normalized.insert(key.to_lowercase(), value);
+impl<'de> Deserialize<'de> for EmbeddingData {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct EmbeddingDataVisitor;
+
+        impl<'de> Visitor<'de> for EmbeddingDataVisitor {
+            type Value = EmbeddingData;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+                formatter.write_str("an embedding data object")
             }
-            *object = normalized;
-        }
-        serde_json::Value::Array(values) => {
-            for value in values {
-                lowercase_json_keys(value);
+
+            fn visit_map<M>(self, mut map: M) -> std::result::Result<Self::Value, M::Error>
+            where
+                M: MapAccess<'de>,
+            {
+                let mut embedding = None;
+                while let Some(key) = map.next_key::<String>()? {
+                    if key.eq_ignore_ascii_case("embedding") {
+                        embedding = Some(map.next_value()?);
+                    } else {
+                        let _: IgnoredAny = map.next_value()?;
+                    }
+                }
+                Ok(EmbeddingData {
+                    embedding: embedding.ok_or_else(|| M::Error::missing_field("embedding"))?,
+                })
             }
         }
-        _ => {}
+
+        deserializer.deserialize_map(EmbeddingDataVisitor)
     }
 }
 

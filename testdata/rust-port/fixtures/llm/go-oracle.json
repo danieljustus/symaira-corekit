@@ -16,10 +16,20 @@
     "provider_version": "2023-06-01"
   },
   "anthropic_mixed_content": "firstsecond",
-  "casefold_embedding": [
-    0.25,
-    0.5
-  ],
+  "casefold_embedding": {
+    "alias_then_data": [
+      0.4
+    ],
+    "alias_then_embedding": [
+      0.8
+    ],
+    "data_then_alias": [
+      0.2
+    ],
+    "embedding_then_alias": [
+      0.6
+    ]
+  },
   "dialect_override_allowed": true,
   "empty_api_key_resolves": true,
   "loopback_query_base_allowed": true,
@@ -166,7 +176,7 @@
   "provenance": {
     "go_source_sha256": "9083f34389a8d37c89a54676c069432ec69daa1fd2d40a68081695a9ade6260c",
     "oracle_command": "GOTOOLCHAIN=go1.26.6 go run ./scripts/rust-port/llm-oracle",
-    "oracle_sha256": "d1ae523c1423579ff1c4ab1008f6a42ce246282eb0180ac05ae67b9f8fd17cf8",
+    "oracle_sha256": "27bc4d3f21497c2abd02433b3dc4da2d8eda49193cb6be8a6ad65a86ae389271",
     "runner_sha256": "c445537e6f83626e3d762acba2d1983ad90a2fbd4d355a9da84582ad303ba5f9"
   },
   "providers": [
