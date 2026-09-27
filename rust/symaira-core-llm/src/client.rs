@@ -96,7 +96,7 @@ impl ClientBuilder {
         }
         let api_key = match self.descriptor.auth_scheme {
             AuthScheme::None => String::new(),
-            _ => match self.api_key {
+            _ => match self.api_key.filter(|key| !key.is_empty()) {
                 Some(value) => value,
                 None => resolve_credential(
                     &self.credential_ref,

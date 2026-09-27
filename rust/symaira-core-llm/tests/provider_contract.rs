@@ -115,6 +115,23 @@ fn registry_and_go_generated_snapshot_are_available() {
 }
 
 #[test]
+fn empty_api_key_uses_credential_resolution() {
+    let fixture: Value = serde_json::from_str(include_str!(
+        "../../../testdata/rust-port/fixtures/llm/go-oracle.json"
+    ))
+    .unwrap();
+    assert_eq!(fixture["empty_api_key_resolves"], true);
+    let error = match ClientBuilder::new(lookup("openai").unwrap().clone(), "env://")
+        .api_key("")
+        .build()
+    {
+        Ok(_) => panic!("empty API key bypassed credential resolution"),
+        Err(error) => error,
+    };
+    assert_eq!(error.code, ErrorCode::AuthFailure);
+}
+
+#[test]
 fn base_query_stays_after_the_joined_chat_path() {
     let fixture: Value = serde_json::from_str(include_str!(
         "../../../testdata/rust-port/fixtures/llm/go-oracle.json"

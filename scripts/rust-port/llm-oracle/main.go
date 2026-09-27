@@ -35,6 +35,7 @@ type observation struct {
 	OpenAIQuery              request             `json:"openai_query_chat"`
 	OpenAIDotPath            request             `json:"openai_dot_path_chat"`
 	LoopbackQueryBaseAllowed bool                `json:"loopback_query_base_allowed"`
+	EmptyAPIKeyResolves      bool                `json:"empty_api_key_resolves"`
 	Anthropic                request             `json:"anthropic_chat"`
 	RateLimit                errorResult         `json:"rate_limit"`
 	StructuredAuth           errorResult         `json:"structured_auth"`
@@ -112,6 +113,8 @@ func main() {
 	}
 	_, err = llmkit.NewClient(openAI, "", llmkit.WithBaseURL("http://localhost:11434?api-version=2026-01-01"), llmkit.WithAPIKey("dummy-key"))
 	out.LoopbackQueryBaseAllowed = err == nil
+	_, err = llmkit.NewClient(openAI, "env://", llmkit.WithAPIKey(""))
+	out.EmptyAPIKeyResolves = err != nil
 	got, client, closeServer, err := capture("openai", `{"choices":[{"message":{"content":"answer"},"finish_reason":"stop"}]}`, http.StatusOK)
 	if err != nil {
 		panic(err)

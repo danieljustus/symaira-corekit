@@ -15,6 +15,7 @@
     "path": "/messages",
     "provider_version": "2023-06-01"
   },
+  "empty_api_key_resolves": true,
   "loopback_query_base_allowed": true,
   "native_chat": {
     "chunks": [
@@ -158,7 +159,7 @@
   "provenance": {
     "go_source_sha256": "9083f34389a8d37c89a54676c069432ec69daa1fd2d40a68081695a9ade6260c",
     "oracle_command": "GOTOOLCHAIN=go1.26.6 go run ./scripts/rust-port/llm-oracle",
-    "oracle_sha256": "c4fcf4beb8de4e7d91419318c7ae52631130d24700745afdf8b78099a783496d",
+    "oracle_sha256": "69f04478f2f3033075096d1101af21924967a8b3cd53b4702b770ea1166377ee",
     "runner_sha256": "c445537e6f83626e3d762acba2d1983ad90a2fbd4d355a9da84582ad303ba5f9"
   },
   "providers": [
