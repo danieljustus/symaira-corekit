@@ -397,6 +397,41 @@ fn taxonomy_maps_status_retry_and_exit_codes() {
 }
 
 #[test]
+fn structured_error_fields_follow_go_json_casefolding() {
+    let fixture: Value = serde_json::from_str(include_str!(
+        "../../../testdata/rust-port/fixtures/llm/go-oracle.json"
+    ))
+    .unwrap();
+    let (url, server) = mock_server(
+        401,
+        r#"{"ERROR":{"MESSAGE":"authentication failed","TYPE":"authentication_error"}}"#,
+    );
+    let client = ClientBuilder::new(lookup("openai").unwrap().clone(), "")
+        .base_url(url)
+        .api_key("dummy-key")
+        .build()
+        .unwrap();
+    let error = client
+        .chat(
+            "model",
+            &[Message {
+                role: "user".into(),
+                content: "x".into(),
+            }],
+            None,
+        )
+        .unwrap_err();
+    server.join().unwrap();
+    let expected = &fixture["structured_auth_casefold"];
+    assert_eq!(error.code.as_str(), expected["code"]);
+    assert_eq!(error.status_code, expected["status"]);
+    assert_eq!(error.body, expected["body"]);
+    assert_eq!(error.retry_after, expected["retry_after"]);
+    assert_eq!(error.retryable(), expected["retryable"]);
+    assert_eq!(u8::from(error.exit_code()), expected["exit_code"]);
+}
+
+#[test]
 fn streaming_and_embedding_calls_preserve_openai_wire_options() {
     let (url, server) = mock_server(
         200,

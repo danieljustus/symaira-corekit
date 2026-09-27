@@ -449,10 +449,14 @@ fn refine_openai_error(error: Error) -> Error {
     let Ok(value) = serde_json::from_str::<Value>(&error.body) else {
         return error;
     };
-    let Some(typed) = value.get("error").and_then(Value::as_object) else {
+    let Some(typed) = value
+        .as_object()
+        .and_then(|object| go_json_field(object, "error"))
+        .and_then(Value::as_object)
+    else {
         return error;
     };
-    let field = |name| match typed.get(name) {
+    let field = |name| match go_json_field(typed, name) {
         None | Some(Value::Null) => Some(""),
         Some(Value::String(value)) => Some(value.as_str()),
         Some(_) => None,
@@ -483,6 +487,15 @@ fn refine_openai_error(error: Error) -> Error {
     } else {
         refined
     }
+}
+
+fn go_json_field<'a>(object: &'a serde_json::Map<String, Value>, name: &str) -> Option<&'a Value> {
+    object.get(name).or_else(|| {
+        object
+            .iter()
+            .find(|(key, _)| key.eq_ignore_ascii_case(name))
+            .map(|(_, value)| value)
+    })
 }
 
 #[derive(Deserialize)]

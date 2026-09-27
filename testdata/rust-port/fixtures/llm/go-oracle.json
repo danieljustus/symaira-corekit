@@ -143,7 +143,7 @@
   "provenance": {
     "go_source_sha256": "9083f34389a8d37c89a54676c069432ec69daa1fd2d40a68081695a9ade6260c",
     "oracle_command": "GOTOOLCHAIN=go1.26.6 go run ./scripts/rust-port/llm-oracle",
-    "oracle_sha256": "d8fe98bcd31dd7ca5317d94f4594bc5ed8cd6fb269697727d168082298d17d9e",
+    "oracle_sha256": "4c455aa3348f77939bc3756eae1d59da1f6a2d9cd7f2451c1a3a346150fd7737",
     "runner_sha256": "c445537e6f83626e3d762acba2d1983ad90a2fbd4d355a9da84582ad303ba5f9"
   },
   "providers": [
@@ -445,6 +445,14 @@
     "status": 429
   },
   "structured_auth": {
+    "body": "authentication failed",
+    "code": "auth_failure",
+    "exit_code": 3,
+    "retry_after": "",
+    "retryable": false,
+    "status": 400
+  },
+  "structured_auth_casefold": {
     "body": "authentication failed",
     "code": "auth_failure",
     "exit_code": 3,

@@ -37,6 +37,7 @@ type observation struct {
 	Anthropic                request             `json:"anthropic_chat"`
 	RateLimit                errorResult         `json:"rate_limit"`
 	StructuredAuth           errorResult         `json:"structured_auth"`
+	StructuredAuthCasefold   errorResult         `json:"structured_auth_casefold"`
 	NativeGenerate           struct {
 		Request request                   `json:"request"`
 		Chunks  []llmkit.GenerateResponse `json:"chunks"`
@@ -161,6 +162,16 @@ func main() {
 		panic("expected structured llmkit error")
 	}
 	out.StructuredAuth = errorResult{Code: string(providerErr.Code), Status: providerErr.StatusCode, Body: providerErr.Body, RetryAfter: providerErr.RetryAfter, Retryable: providerErr.Retryable(), ExitCode: int(providerErr.ExitCode())}
+	_, client, closeServer, err = capture("openai", `{"ERROR":{"MESSAGE":"authentication failed","TYPE":"authentication_error"}}`, http.StatusUnauthorized)
+	if err != nil {
+		panic(err)
+	}
+	_, err = client.Chat(context.Background(), "gpt-5", []llmkit.Message{{Role: "user", Content: "question"}}, nil)
+	closeServer()
+	if !errors.As(err, &providerErr) {
+		panic("expected casefold structured llmkit error")
+	}
+	out.StructuredAuthCasefold = errorResult{Code: string(providerErr.Code), Status: providerErr.StatusCode, Body: providerErr.Body, RetryAfter: providerErr.RetryAfter, Retryable: providerErr.Retryable(), ExitCode: int(providerErr.ExitCode())}
 	got, client, closeServer, err = capture("ollama", "{\"model\":\"llama3.1\",\"response\":\"piece\",\"done\":false}\n{\"model\":\"llama3.1\",\"response\":\"\",\"done\":true}\n", http.StatusOK)
 	if err != nil {
 		panic(err)
