@@ -16,9 +16,65 @@
     "provider_version": "2023-06-01"
   },
   "anthropic_mixed_content": "firstsecond",
+  "casefold_discovery_models": [
+    {
+      "id": "vendor/current-model"
+    }
+  ],
+  "casefold_embedding": {
+    "alias_then_data": [
+      0.4
+    ],
+    "alias_then_embedding": [
+      0.8
+    ],
+    "data_then_alias": [
+      0.2
+    ],
+    "embedding_then_alias": [
+      0.6
+    ]
+  },
   "dialect_override_allowed": true,
   "empty_api_key_resolves": true,
+  "generic_ollama_casefold_models": [
+    {
+      "id": "current-model"
+    }
+  ],
   "loopback_query_base_allowed": true,
+  "malformed_error_choice": {
+    "body": "{\"error\":{\"message\":\"rate limit exceeded\",\"type\":\"rate_limit_error\"},\"choices\":[{\"message\":\"malformed\"}]}",
+    "code": "rate_limited",
+    "exit_code": 6,
+    "retry_after": "17",
+    "retryable": true,
+    "status": 429
+  },
+  "malformed_error_choice_alias_collision": {
+    "body": "{\"choices\":[],\"error\":{\"message\":\"authentication failed\",\"type\":\"authentication_error\"},\"CHOICES\":\"malformed\"}",
+    "code": "auth_failure",
+    "exit_code": 3,
+    "retry_after": "17",
+    "retryable": false,
+    "status": 401
+  },
+  "malformed_error_envelope": {
+    "body": "{\"error\":{\"message\":\"authentication failed\",\"type\":\"authentication_error\"},\"choices\":\"malformed\"}",
+    "code": "auth_failure",
+    "exit_code": 3,
+    "retry_after": "17",
+    "retryable": false,
+    "status": 401
+  },
+  "malformed_error_nested_alias_collision": {
+    "body": "{\"error\":{\"message\":\"authentication failed\",\"type\":\"authentication_error\"},\"choices\":[{\"message\":{\"content\":\"ok\",\"CONTENT\":5}}]}",
+    "code": "auth_failure",
+    "exit_code": 3,
+    "retry_after": "17",
+    "retryable": false,
+    "status": 401
+  },
   "native_chat": {
     "chunks": [
       {
@@ -95,6 +151,35 @@
       "path": "/api/generate"
     }
   },
+  "native_generate_decode_errors": {
+    "bad_key": {
+      "code": "provider_error",
+      "error": "llmkit: provider_error: decode generate chunk: invalid character 'b' looking for beginning of object key string"
+    },
+    "trailing": {
+      "code": "provider_error",
+      "error": "llmkit: provider_error: decode generate chunk: invalid character 'x' after top-level value"
+    },
+    "truncated": {
+      "code": "provider_error",
+      "error": "llmkit: provider_error: decode generate chunk: unexpected end of JSON input"
+    }
+  },
+  "native_generate_large_chunk_response_bytes": 2097152,
+  "native_generate_scanner_errors": {
+    "after_data": {
+      "code": "transport_error",
+      "error": "llmkit: transport_error: stream interrupted: bufio.Scanner: token too long"
+    },
+    "before_data": {
+      "code": "transport_error",
+      "error": "llmkit: transport_error: bufio.Scanner: token too long"
+    }
+  },
+  "native_generate_whitespace_line": {
+    "code": "provider_error",
+    "error": "llmkit: provider_error: decode generate chunk: unexpected end of JSON input"
+  },
   "native_models": {
     "models": [
       {
@@ -109,6 +194,13 @@
       "path": "/api/tags"
     }
   },
+  "native_models_casefold_alias_order": [
+    {
+      "modified_at": "today",
+      "name": "current-model",
+      "size": 12
+    }
+  ],
   "openai_chat": {
     "auth_header": "bearer",
     "body": {
@@ -161,7 +253,7 @@
   "provenance": {
     "go_source_sha256": "9083f34389a8d37c89a54676c069432ec69daa1fd2d40a68081695a9ade6260c",
     "oracle_command": "GOTOOLCHAIN=go1.26.6 go run ./scripts/rust-port/llm-oracle",
-    "oracle_sha256": "08ab390a20f56f776c248feca4095867f9b3ea86a724eb5f0232957b3d095b61",
+    "oracle_sha256": "ff25888618751a59d69ea47785288b934dcfdf188b3b686abb7e287643d69cd0",
     "runner_sha256": "c445537e6f83626e3d762acba2d1983ad90a2fbd4d355a9da84582ad303ba5f9"
   },
   "providers": [

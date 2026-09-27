@@ -1,11 +1,14 @@
 use crate::chat::{Message, read_bounded_line};
 use crate::client::{Client, read_limited};
 use crate::error::{Error, ErrorCode, Result};
+use serde::Deserializer;
+use serde::de::{DeserializeOwned, IgnoredAny, MapAccess, Visitor};
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
+use std::fmt;
 use std::io::BufReader;
 
-#[derive(Clone, Debug, Default, Deserialize, Serialize, PartialEq)]
+#[derive(Clone, Debug, Default, Serialize, PartialEq)]
 pub struct OllamaModelInfo {
     pub name: String,
     pub modified_at: String,
@@ -138,12 +141,7 @@ impl Client {
             body["images"] = json!(options.images);
         }
         self.stream_ndjson("/api/generate", &body, |line| {
-            let value: GenerateResponse = serde_json::from_slice(line).map_err(|e| {
-                Error::local(
-                    ErrorCode::ProviderError,
-                    format!("llmkit: decode generate chunk: {e}"),
-                )
-            })?;
+            let value: GenerateResponse = decode_go_json(line, "decode generate chunk")?;
             callback(value)
         })
     }
@@ -174,12 +172,7 @@ impl Client {
             body["format"] = json!(value);
         }
         self.stream_ndjson("/api/chat", &body, |line| {
-            let value: ChatStreamResponse = serde_json::from_slice(line).map_err(|e| {
-                Error::local(
-                    ErrorCode::ProviderError,
-                    format!("llmkit: decode chat chunk: {e}"),
-                )
-            })?;
+            let value: ChatStreamResponse = decode_go_json(line, "decode chat chunk")?;
             callback(value)
         })
     }
@@ -196,14 +189,16 @@ impl Client {
         let mut response = self.request("POST", path, Some(body))?;
         let mut reader = BufReader::new(response.body_mut().as_reader());
         let mut started = false;
-        while let Some(line) = read_bounded_line(&mut reader, 1024 * 1024).map_err(|error| {
+        while let Some(line) = read_bounded_line(&mut reader, 4 * 1024 * 1024).map_err(|error| {
             Error::transport(if started {
                 format!("stream interrupted: {error}")
             } else {
                 error.to_string()
             })
         })? {
-            if line.iter().all(u8::is_ascii_whitespace) {
+            let token = line.strip_suffix(b"\n").unwrap_or(&line);
+            let token = token.strip_suffix(b"\r").unwrap_or(token);
+            if token.is_empty() {
                 continue;
             }
             started = true;
@@ -224,12 +219,163 @@ impl Client {
     }
 }
 
+fn decode_go_json<T: DeserializeOwned>(line: &[u8], operation: &str) -> Result<T> {
+    match serde_json::from_slice(line) {
+        Ok(value) => Ok(value),
+        Err(decode_error) => {
+            let detail = match serde_json::from_slice::<Value>(line) {
+                Err(syntax_error) => go_json_error(line, &syntax_error),
+                Ok(_) => decode_error.to_string(),
+            };
+            Err(Error::local(
+                ErrorCode::ProviderError,
+                format!("llmkit: {operation}: {detail}"),
+            ))
+        }
+    }
+}
+
+fn go_json_error(line: &[u8], error: &serde_json::Error) -> String {
+    let line = line.strip_suffix(b"\n").unwrap_or(line);
+    let line = line.strip_suffix(b"\r").unwrap_or(line);
+    let message = error.to_string();
+
+    if error.is_eof() {
+        return "unexpected end of JSON input".to_owned();
+    }
+    if message.contains("key must be a string")
+        && let Some(byte) = line.iter().enumerate().find_map(|(index, byte)| {
+            if *byte != b'{' && *byte != b',' {
+                return None;
+            }
+            line[index + 1..]
+                .iter()
+                .copied()
+                .find(|next| !next.is_ascii_whitespace())
+                .filter(|next| *next != b'"')
+        })
+    {
+        return format!(
+            "invalid character '{}' looking for beginning of object key string",
+            char::from(byte)
+        );
+    }
+    if message.contains("trailing characters")
+        && let Some(byte) = serde_error_position_byte(line, error)
+    {
+        return format!(
+            "invalid character '{}' after top-level value",
+            char::from(byte)
+        );
+    }
+    message
+}
+
+fn serde_error_position_byte(line: &[u8], error: &serde_json::Error) -> Option<u8> {
+    let source_line = line
+        .split(|byte| *byte == b'\n')
+        .nth(error.line().checked_sub(1)?)?;
+    source_line.get(error.column().checked_sub(1)?).copied()
+}
+
 #[derive(Deserialize)]
 struct NativeEmbeddingResponse {
     embeddings: Vec<Vec<f32>>,
 }
-#[derive(Deserialize)]
 struct OllamaModelsResponse {
-    #[serde(default)]
     models: Vec<OllamaModelInfo>,
+}
+
+impl<'de> Deserialize<'de> for OllamaModelsResponse {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct OllamaModelsVisitor;
+
+        impl<'de> Visitor<'de> for OllamaModelsVisitor {
+            type Value = OllamaModelsResponse;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+                formatter.write_str("an Ollama model-list response object")
+            }
+
+            fn visit_unit<E>(self) -> std::result::Result<Self::Value, E>
+            where
+                E: serde::de::Error,
+            {
+                Ok(OllamaModelsResponse { models: Vec::new() })
+            }
+
+            fn visit_map<M>(self, mut map: M) -> std::result::Result<Self::Value, M::Error>
+            where
+                M: MapAccess<'de>,
+            {
+                let mut models = Vec::new();
+                while let Some(key) = map.next_key::<String>()? {
+                    if key.eq_ignore_ascii_case("models") {
+                        models = map
+                            .next_value::<Option<Vec<OllamaModelInfo>>>()?
+                            .unwrap_or_default();
+                    } else {
+                        let _: IgnoredAny = map.next_value()?;
+                    }
+                }
+                Ok(OllamaModelsResponse { models })
+            }
+        }
+
+        deserializer.deserialize_any(OllamaModelsVisitor)
+    }
+}
+
+impl<'de> Deserialize<'de> for OllamaModelInfo {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct OllamaModelInfoVisitor;
+
+        impl<'de> Visitor<'de> for OllamaModelInfoVisitor {
+            type Value = OllamaModelInfo;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+                formatter.write_str("an Ollama model metadata object")
+            }
+
+            fn visit_unit<E>(self) -> std::result::Result<Self::Value, E>
+            where
+                E: serde::de::Error,
+            {
+                Ok(OllamaModelInfo::default())
+            }
+
+            fn visit_map<M>(self, mut map: M) -> std::result::Result<Self::Value, M::Error>
+            where
+                M: MapAccess<'de>,
+            {
+                let mut model = OllamaModelInfo::default();
+                while let Some(key) = map.next_key::<String>()? {
+                    if key.eq_ignore_ascii_case("name") {
+                        if let Some(value) = map.next_value::<Option<String>>()? {
+                            model.name = value;
+                        }
+                    } else if key.eq_ignore_ascii_case("modified_at") {
+                        if let Some(value) = map.next_value::<Option<String>>()? {
+                            model.modified_at = value;
+                        }
+                    } else if key.eq_ignore_ascii_case("size") {
+                        if let Some(value) = map.next_value::<Option<i64>>()? {
+                            model.size = value;
+                        }
+                    } else {
+                        let _: IgnoredAny = map.next_value()?;
+                    }
+                }
+                Ok(model)
+            }
+        }
+
+        deserializer.deserialize_any(OllamaModelInfoVisitor)
+    }
 }
