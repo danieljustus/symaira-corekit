@@ -29,6 +29,11 @@ type errorResult struct {
 	ExitCode   int    `json:"exit_code"`
 }
 
+type streamErrorResult struct {
+	Code  string `json:"code"`
+	Error string `json:"error"`
+}
+
 type observation struct {
 	Providers                []llmkit.Descriptor `json:"providers"`
 	OpenAI                   request             `json:"openai_chat"`
@@ -52,7 +57,11 @@ type observation struct {
 		Chunks  []llmkit.GenerateResponse `json:"chunks"`
 	} `json:"native_generate"`
 	NativeGenerateLargeChunkBytes int `json:"native_generate_large_chunk_response_bytes"`
-	NativeChat                    struct {
+	NativeGenerateScannerErrors   struct {
+		BeforeData streamErrorResult `json:"before_data"`
+		AfterData  streamErrorResult `json:"after_data"`
+	} `json:"native_generate_scanner_errors"`
+	NativeChat struct {
 		Request request                     `json:"request"`
 		Chunks  []llmkit.ChatStreamResponse `json:"chunks"`
 	} `json:"native_chat"`
@@ -292,6 +301,27 @@ func main() {
 		panic(err)
 	}
 	closeServer()
+	largeLine, err := json.Marshal(llmkit.GenerateResponse{
+		Model: "llama3.1", Response: strings.Repeat("x", 4*1024*1024), Done: true,
+	})
+	if err != nil {
+		panic(err)
+	}
+	streamError := func(response string) streamErrorResult {
+		_, client, closeServer, err := capture("ollama", response, http.StatusOK)
+		if err != nil {
+			panic(err)
+		}
+		err = client.Generate(context.Background(), "", "prompt", func(llmkit.GenerateResponse) error { return nil })
+		closeServer()
+		var providerErr *llmkit.Error
+		if !errors.As(err, &providerErr) {
+			panic("expected scanner failure as llmkit error")
+		}
+		return streamErrorResult{Code: string(providerErr.Code), Error: err.Error()}
+	}
+	out.NativeGenerateScannerErrors.BeforeData = streamError(string(append(largeLine, '\n')))
+	out.NativeGenerateScannerErrors.AfterData = streamError("{\"model\":\"llama3.1\",\"response\":\"first\",\"done\":false}\n" + string(append(largeLine, '\n')))
 	got, client, closeServer, err = capture("ollama", "{\"model\":\"llama3.1\",\"message\":{\"role\":\"assistant\",\"content\":\"piece\"},\"done\":true}\n", http.StatusOK)
 	if err != nil {
 		panic(err)

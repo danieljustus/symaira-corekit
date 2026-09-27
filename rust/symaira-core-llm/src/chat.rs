@@ -702,7 +702,7 @@ pub(crate) fn read_bounded_line<R: std::io::BufRead>(
         if line.len() + count > max {
             return Err(Error::new(
                 ErrorKind::InvalidData,
-                format!("stream line exceeds {max} bytes"),
+                "bufio.Scanner: token too long",
             ));
         }
         line.extend_from_slice(&buffer[..count]);

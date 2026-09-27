@@ -1306,6 +1306,49 @@ fn native_ollama_generate_accepts_go_scanner_large_chunks() {
 }
 
 #[test]
+fn native_ollama_generate_scanner_errors_match_go_before_and_after_data() {
+    let fixture: Value = serde_json::from_str(include_str!(
+        "../../../testdata/rust-port/fixtures/llm/go-oracle.json"
+    ))
+    .unwrap();
+    let oversized_line = json!({
+        "model":"llama3.1",
+        "response":"x".repeat(4 * 1024 * 1024),
+        "done":true
+    })
+    .to_string()
+        + "\n";
+
+    for (prefix, expected_case, expected_callbacks) in [
+        ("", "before_data", 0),
+        (
+            "{\"model\":\"llama3.1\",\"response\":\"first\",\"done\":false}\n",
+            "after_data",
+            1,
+        ),
+    ] {
+        let (url, server) = mock_server(200, format!("{prefix}{oversized_line}"));
+        let client = ClientBuilder::new(lookup("ollama").unwrap().clone(), "")
+            .base_url(url)
+            .build()
+            .unwrap();
+        let mut callbacks = 0;
+        let error = client
+            .generate("", "prompt", &GenerateOption::default(), |_| {
+                callbacks += 1;
+                Ok(())
+            })
+            .unwrap_err();
+        server.join().unwrap();
+
+        let expected = &fixture["native_generate_scanner_errors"][expected_case];
+        assert_eq!(error.code.as_str(), expected["code"]);
+        assert_eq!(error.to_string(), expected["error"]);
+        assert_eq!(callbacks, expected_callbacks);
+    }
+}
+
+#[test]
 fn anthropic_stream_and_openrouter_model_discovery_are_normalized() {
     let (url, server) = mock_server(
         200,
