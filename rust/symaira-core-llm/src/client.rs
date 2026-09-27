@@ -15,6 +15,7 @@ pub struct ClientBuilder {
     dialect: Option<WireDialect>,
     timeout: Duration,
     api_key: Option<String>,
+    agent: Option<Agent>,
 }
 
 impl ClientBuilder {
@@ -26,6 +27,7 @@ impl ClientBuilder {
             dialect: None,
             timeout: DEFAULT_TIMEOUT,
             api_key: None,
+            agent: None,
         }
     }
 
@@ -43,6 +45,13 @@ impl ClientBuilder {
     }
     pub fn api_key(mut self, value: impl Into<String>) -> Self {
         self.api_key = Some(value.into());
+        self
+    }
+    /// Replaces the default HTTP agent with one configured by the caller.
+    /// Its redirect, timeout, proxy, and TLS behavior is caller-controlled;
+    /// `timeout` applies only when the default agent is used.
+    pub fn agent(mut self, value: Agent) -> Self {
+        self.agent = Some(value);
         self
     }
 
@@ -76,18 +85,9 @@ impl ClientBuilder {
         }
         validate_base_url(&base_url, &self.descriptor)?;
         let dialect = self.dialect.unwrap_or(self.descriptor.dialect);
-        if dialect != self.descriptor.dialect && !self.descriptor.dialect_configurable {
-            return Err(Error::local(
-                ErrorCode::ProviderError,
-                format!(
-                    "llmkit: provider {:?} does not allow dialect overrides",
-                    self.descriptor.id
-                ),
-            ));
-        }
         let api_key = match self.descriptor.auth_scheme {
             AuthScheme::None => String::new(),
-            _ => match self.api_key {
+            _ => match self.api_key.filter(|key| !key.is_empty()) {
                 Some(value) => value,
                 None => resolve_credential(
                     &self.credential_ref,
@@ -95,12 +95,14 @@ impl ClientBuilder {
                 )?,
             },
         };
-        let agent = Agent::config_builder()
-            .http_status_as_error(false)
-            .max_redirects(0)
-            .timeout_global(Some(self.timeout))
-            .build()
-            .into();
+        let agent = self.agent.unwrap_or_else(|| {
+            Agent::config_builder()
+                .http_status_as_error(false)
+                .max_redirects(0)
+                .timeout_global((!self.timeout.is_zero()).then_some(self.timeout))
+                .build()
+                .into()
+        });
         Ok(Client {
             descriptor: self.descriptor,
             base_url: base_url.trim_end_matches('/').to_owned(),
@@ -133,7 +135,7 @@ impl Client {
         path: &str,
         body: Option<&T>,
     ) -> Result<ureq::http::Response<ureq::Body>> {
-        let url = format!("{}/{}", self.base_url, path.trim_start_matches('/'));
+        let url = join_url_path(&self.base_url, path)?;
         let json = body
             .map(serde_json::to_string)
             .transpose()
@@ -208,7 +210,12 @@ impl Client {
         }
         let mut response = self
             .agent
-            .run(request)
+            .run(
+                self.agent
+                    .configure_request(request)
+                    .http_status_as_error(false)
+                    .build(),
+            )
             .map_err(|e| Error::transport(e.to_string()))?;
         let status = response.status().as_u16();
         if status >= 300 {
@@ -229,6 +236,47 @@ impl Client {
         }
         Ok(response)
     }
+}
+
+fn join_url_path(base: &str, path: &str) -> Result<String> {
+    let uri: http::Uri = base
+        .parse()
+        .map_err(|e| Error::local(ErrorCode::ProviderError, format!("llmkit: build url: {e}")))?;
+    let mut parts = uri.into_parts();
+    let base_path = parts
+        .path_and_query
+        .as_ref()
+        .map_or("/", |value| value.path());
+    let combined = format!("{base_path}/{path}");
+    let mut segments = Vec::new();
+    for segment in combined.split('/') {
+        match segment {
+            "" | "." => {}
+            ".." => {
+                segments.pop();
+            }
+            _ => segments.push(segment),
+        }
+    }
+    let mut joined = format!("/{}", segments.join("/"));
+    if path.ends_with('/') && !joined.ends_with('/') {
+        joined.push('/');
+    }
+    if let Some(query) = parts
+        .path_and_query
+        .as_ref()
+        .and_then(|value| value.query())
+    {
+        joined.push('?');
+        joined.push_str(query);
+    }
+    parts.path_and_query =
+        Some(joined.parse().map_err(|e| {
+            Error::local(ErrorCode::ProviderError, format!("llmkit: build url: {e}"))
+        })?);
+    http::Uri::from_parts(parts)
+        .map(|uri| uri.to_string())
+        .map_err(|e| Error::local(ErrorCode::ProviderError, format!("llmkit: build url: {e}")))
 }
 
 fn resolve_credential(reference: &str, env_default: &str) -> Result<String> {
@@ -272,7 +320,13 @@ fn validate_base_url(base_url: &str, descriptor: &Descriptor) -> Result<()> {
     if descriptor.auth_scheme == AuthScheme::None {
         return Ok(());
     }
-    let Some((scheme, authority)) = base_url.split_once("://") else {
+    let parsed = base_url.parse::<http::Uri>();
+    let (Some(scheme), Some(host)) = parsed
+        .as_ref()
+        .ok()
+        .map(|uri| (uri.scheme_str(), uri.host()))
+        .unwrap_or((None, None))
+    else {
         return Err(Error::local(
             ErrorCode::AuthFailure,
             format!(
@@ -281,22 +335,6 @@ fn validate_base_url(base_url: &str, descriptor: &Descriptor) -> Result<()> {
             ),
         ));
     };
-    let host = authority
-        .split('/')
-        .next()
-        .unwrap_or_default()
-        .split('@')
-        .next_back()
-        .unwrap_or_default();
-    if host.is_empty() {
-        return Err(Error::local(
-            ErrorCode::AuthFailure,
-            format!(
-                "provider {:?} requires an HTTPS base URL for credentialed requests",
-                descriptor.id
-            ),
-        ));
-    }
     if scheme.eq_ignore_ascii_case("https") || is_loopback(host) {
         return Ok(());
     }
@@ -309,17 +347,11 @@ fn validate_base_url(base_url: &str, descriptor: &Descriptor) -> Result<()> {
     ))
 }
 
-fn is_loopback(authority: &str) -> bool {
-    if authority.eq_ignore_ascii_case("localhost")
-        || authority.to_ascii_lowercase().starts_with("localhost:")
-    {
+fn is_loopback(host: &str) -> bool {
+    if host.eq_ignore_ascii_case("localhost") {
         return true;
     }
-    let host = if let Some(host) = authority.strip_prefix('[') {
-        host.split(']').next().unwrap_or_default()
-    } else {
-        authority.split(':').next().unwrap_or_default()
-    };
+    let host = host.trim_start_matches('[').trim_end_matches(']');
     host.parse::<IpAddr>().is_ok_and(|ip| ip.is_loopback())
 }
 

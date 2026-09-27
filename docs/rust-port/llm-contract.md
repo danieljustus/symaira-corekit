@@ -18,8 +18,10 @@ provider code, a Rust `ollamakit` clone, or a process/release surface.
   `llmkit` categories, HTTP status/body/retry-after fields, retry classification,
   and shared exit-code mapping. Credential values are not included in diagnostic
   formatting or the oracle fixture.
-- HTTPS is required for non-loopback remote endpoints, redirects are disabled,
-  and the default request timeout is two minutes.
+- HTTPS is required for non-loopback remote endpoints. The default HTTP agent
+  disables redirects and uses a two-minute request timeout. Callers can inject
+  a configured `ureq::Agent` with `ClientBuilder::agent`; its transport settings
+  are caller-controlled.
 
 ## Differential evidence
 
@@ -35,8 +37,8 @@ contract change.
 ## Residual boundary
 
 The Rust API is synchronous and does not provide Go `context.Context`
-per-request cancellation or an injected custom HTTP-client hook. The request
-timeout bounds waiting, but it is not cancellation parity. Callers that require
-cooperative cancellation or transport injection must retain that boundary in
-their consumer until a separately designed Rust API provides it. This slice
-does not authorize a consumer cutover, release, tag, Go removal, or publication.
+per-request cancellation. The request timeout bounds waiting, but it is not
+cancellation parity. Callers that require cooperative cancellation must retain
+that boundary in their consumer until a separately designed Rust API provides
+it. This slice does not authorize a consumer cutover, release, tag, Go removal,
+or publication.
