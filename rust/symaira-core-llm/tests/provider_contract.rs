@@ -314,6 +314,35 @@ fn taxonomy_maps_status_retry_and_exit_codes() {
         u8::from(error.exit_code()),
         fixture["rate_limit"]["exit_code"]
     );
+    let (url, server) = mock_server(
+        401,
+        r#"{"error":{"message":"authentication failed","type":"authentication_error"}}"#,
+    );
+    let client = ClientBuilder::new(lookup("openai").unwrap().clone(), "")
+        .base_url(format!("{url}/v1"))
+        .api_key("dummy-key")
+        .build()
+        .unwrap();
+    let error = client
+        .chat(
+            "model",
+            &[Message {
+                role: "user".into(),
+                content: "x".into(),
+            }],
+            None,
+        )
+        .unwrap_err();
+    server.join().unwrap();
+    assert_eq!(error.code.as_str(), fixture["structured_auth"]["code"]);
+    assert_eq!(error.status_code, fixture["structured_auth"]["status"]);
+    assert_eq!(error.body, fixture["structured_auth"]["body"]);
+    assert_eq!(error.retry_after, fixture["structured_auth"]["retry_after"]);
+    assert_eq!(error.retryable(), fixture["structured_auth"]["retryable"]);
+    assert_eq!(
+        u8::from(error.exit_code()),
+        fixture["structured_auth"]["exit_code"]
+    );
     let (url, server) = mock_server(400, "context window exceeded");
     let client = ClientBuilder::new(lookup("openai").unwrap().clone(), "")
         .base_url(url)
