@@ -334,7 +334,7 @@ func main() {
 	out.NativeGenerateWhitespaceLine = streamError(" \n{\"model\":\"llama3.1\",\"response\":\"second\",\"done\":true}\n")
 	out.NativeGenerateDecodeErrors.Truncated = streamError("{\"model\":\n")
 	out.NativeGenerateDecodeErrors.BadKey = streamError("{bad}\n")
-	out.NativeGenerateDecodeErrors.Trailing = streamError("{\"model\":\"llama3.1\"}x\n")
+	out.NativeGenerateDecodeErrors.Trailing = streamError("{\"model\":\"llama3.1\",\"response\":5,\"done\":true,\"metadata\":{\"text\":\"} ] { in string\"}}x\n")
 	got, client, closeServer, err = capture("ollama", "{\"model\":\"llama3.1\",\"message\":{\"role\":\"assistant\",\"content\":\"piece\"},\"done\":true}\n", http.StatusOK)
 	if err != nil {
 		panic(err)

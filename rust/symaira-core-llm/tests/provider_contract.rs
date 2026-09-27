@@ -1427,7 +1427,7 @@ fn native_ollama_generate_json_errors_match_go() {
         ("native_generate_decode_errors.bad_key", "{bad}\n"),
         (
             "native_generate_decode_errors.trailing",
-            "{\"model\":\"llama3.1\"}x\n",
+            "{\"model\":\"llama3.1\",\"response\":5,\"done\":true,\"metadata\":{\"text\":\"} ] { in string\"}}x\n",
         ),
     ];
     for (case, response) in cases {

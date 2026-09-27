@@ -2,7 +2,7 @@ use crate::chat::{Message, read_bounded_line};
 use crate::client::{Client, read_limited};
 use crate::error::{Error, ErrorCode, Result};
 use serde::Deserializer;
-use serde::de::{IgnoredAny, MapAccess, Visitor};
+use serde::de::{DeserializeOwned, IgnoredAny, MapAccess, Visitor};
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 use std::fmt;
@@ -141,13 +141,7 @@ impl Client {
             body["images"] = json!(options.images);
         }
         self.stream_ndjson("/api/generate", &body, |line| {
-            validate_go_json(line, "decode generate chunk")?;
-            let value: GenerateResponse = serde_json::from_slice(line).map_err(|e| {
-                Error::local(
-                    ErrorCode::ProviderError,
-                    format!("llmkit: decode generate chunk: {e}"),
-                )
-            })?;
+            let value: GenerateResponse = decode_go_json(line, "decode generate chunk")?;
             callback(value)
         })
     }
@@ -178,13 +172,7 @@ impl Client {
             body["format"] = json!(value);
         }
         self.stream_ndjson("/api/chat", &body, |line| {
-            validate_go_json(line, "decode chat chunk")?;
-            let value: ChatStreamResponse = serde_json::from_slice(line).map_err(|e| {
-                Error::local(
-                    ErrorCode::ProviderError,
-                    format!("llmkit: decode chat chunk: {e}"),
-                )
-            })?;
+            let value: ChatStreamResponse = decode_go_json(line, "decode chat chunk")?;
             callback(value)
         })
     }
@@ -231,15 +219,20 @@ impl Client {
     }
 }
 
-fn validate_go_json(line: &[u8], operation: &str) -> Result<()> {
-    serde_json::from_slice::<Value>(line)
-        .map(|_| ())
-        .map_err(|error| {
-            Error::local(
+fn decode_go_json<T: DeserializeOwned>(line: &[u8], operation: &str) -> Result<T> {
+    match serde_json::from_slice(line) {
+        Ok(value) => Ok(value),
+        Err(decode_error) => {
+            let detail = match serde_json::from_slice::<Value>(line) {
+                Err(syntax_error) => go_json_error(line, &syntax_error),
+                Ok(_) => decode_error.to_string(),
+            };
+            Err(Error::local(
                 ErrorCode::ProviderError,
-                format!("llmkit: {operation}: {}", go_json_error(line, &error)),
-            )
-        })
+                format!("llmkit: {operation}: {detail}"),
+            ))
+        }
+    }
 }
 
 fn go_json_error(line: &[u8], error: &serde_json::Error) -> String {
@@ -268,15 +261,7 @@ fn go_json_error(line: &[u8], error: &serde_json::Error) -> String {
         );
     }
     if message.contains("trailing characters")
-        && let Some(byte) = line
-            .iter()
-            .position(|byte| *byte == b'}' || *byte == b']')
-            .and_then(|index| {
-                line[index + 1..]
-                    .iter()
-                    .copied()
-                    .find(|byte| !byte.is_ascii_whitespace())
-            })
+        && let Some(byte) = serde_error_position_byte(line, error)
     {
         return format!(
             "invalid character '{}' after top-level value",
@@ -284,6 +269,13 @@ fn go_json_error(line: &[u8], error: &serde_json::Error) -> String {
         );
     }
     message
+}
+
+fn serde_error_position_byte(line: &[u8], error: &serde_json::Error) -> Option<u8> {
+    let source_line = line
+        .split(|byte| *byte == b'\n')
+        .nth(error.line().checked_sub(1)?)?;
+    source_line.get(error.column().checked_sub(1)?).copied()
 }
 
 #[derive(Deserialize)]
