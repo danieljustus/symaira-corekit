@@ -29,6 +29,11 @@ type errorResult struct {
 	ExitCode   int    `json:"exit_code"`
 }
 
+type streamErrorResult struct {
+	Code  string `json:"code"`
+	Error string `json:"error"`
+}
+
 type observation struct {
 	Providers                []llmkit.Descriptor `json:"providers"`
 	OpenAI                   request             `json:"openai_chat"`
@@ -43,10 +48,25 @@ type observation struct {
 	RateLimit                errorResult         `json:"rate_limit"`
 	StructuredAuth           errorResult         `json:"structured_auth"`
 	StructuredAuthCasefold   errorResult         `json:"structured_auth_casefold"`
+	MalformedEnvelope        errorResult         `json:"malformed_error_envelope"`
+	MalformedChoice          errorResult         `json:"malformed_error_choice"`
+	MalformedChoiceAlias     errorResult         `json:"malformed_error_choice_alias_collision"`
+	MalformedNestedAlias     errorResult         `json:"malformed_error_nested_alias_collision"`
 	NativeGenerate           struct {
 		Request request                   `json:"request"`
 		Chunks  []llmkit.GenerateResponse `json:"chunks"`
 	} `json:"native_generate"`
+	NativeGenerateLargeChunkBytes int `json:"native_generate_large_chunk_response_bytes"`
+	NativeGenerateScannerErrors   struct {
+		BeforeData streamErrorResult `json:"before_data"`
+		AfterData  streamErrorResult `json:"after_data"`
+	} `json:"native_generate_scanner_errors"`
+	NativeGenerateWhitespaceLine streamErrorResult `json:"native_generate_whitespace_line"`
+	NativeGenerateDecodeErrors   struct {
+		Truncated streamErrorResult `json:"truncated"`
+		BadKey    streamErrorResult `json:"bad_key"`
+		Trailing  streamErrorResult `json:"trailing"`
+	} `json:"native_generate_decode_errors"`
 	NativeChat struct {
 		Request request                     `json:"request"`
 		Chunks  []llmkit.ChatStreamResponse `json:"chunks"`
@@ -55,10 +75,19 @@ type observation struct {
 		Request    request     `json:"request"`
 		Embeddings [][]float32 `json:"embeddings"`
 	} `json:"native_embed"`
+	CasefoldEmbedding struct {
+		DataThenAlias      []float32 `json:"data_then_alias"`
+		AliasThenData      []float32 `json:"alias_then_data"`
+		EmbeddingThenAlias []float32 `json:"embedding_then_alias"`
+		AliasThenEmbedding []float32 `json:"alias_then_embedding"`
+	} `json:"casefold_embedding"`
 	NativeModels struct {
 		Request request                  `json:"request"`
 		Models  []llmkit.OllamaModelInfo `json:"models"`
 	} `json:"native_models"`
+	NativeModelsCasefold        []llmkit.OllamaModelInfo `json:"native_models_casefold_alias_order"`
+	CasefoldDiscoveryModels     []llmkit.ModelInfo       `json:"casefold_discovery_models"`
+	GenericOllamaCasefoldModels []llmkit.ModelInfo       `json:"generic_ollama_casefold_models"`
 }
 
 func capture(provider, response string, status int) (*request, *llmkit.Client, func(), error) {
@@ -210,6 +239,46 @@ func main() {
 		panic("expected casefold structured llmkit error")
 	}
 	out.StructuredAuthCasefold = errorResult{Code: string(providerErr.Code), Status: providerErr.StatusCode, Body: providerErr.Body, RetryAfter: providerErr.RetryAfter, Retryable: providerErr.Retryable(), ExitCode: int(providerErr.ExitCode())}
+	_, client, closeServer, err = capture("openai", `{"error":{"message":"authentication failed","type":"authentication_error"},"choices":"malformed"}`, http.StatusUnauthorized)
+	if err != nil {
+		panic(err)
+	}
+	_, err = client.Chat(context.Background(), "gpt-5", []llmkit.Message{{Role: "user", Content: "question"}}, nil)
+	closeServer()
+	if !errors.As(err, &providerErr) {
+		panic("expected malformed-envelope provider error")
+	}
+	out.MalformedEnvelope = errorResult{Code: string(providerErr.Code), Status: providerErr.StatusCode, Body: providerErr.Body, RetryAfter: providerErr.RetryAfter, Retryable: providerErr.Retryable(), ExitCode: int(providerErr.ExitCode())}
+	_, client, closeServer, err = capture("openai", `{"error":{"message":"rate limit exceeded","type":"rate_limit_error"},"choices":[{"message":"malformed"}]}`, http.StatusTooManyRequests)
+	if err != nil {
+		panic(err)
+	}
+	_, err = client.Chat(context.Background(), "gpt-5", []llmkit.Message{{Role: "user", Content: "question"}}, nil)
+	closeServer()
+	if !errors.As(err, &providerErr) {
+		panic("expected malformed-choice provider error")
+	}
+	out.MalformedChoice = errorResult{Code: string(providerErr.Code), Status: providerErr.StatusCode, Body: providerErr.Body, RetryAfter: providerErr.RetryAfter, Retryable: providerErr.Retryable(), ExitCode: int(providerErr.ExitCode())}
+	_, client, closeServer, err = capture("openai", `{"choices":[],"error":{"message":"authentication failed","type":"authentication_error"},"CHOICES":"malformed"}`, http.StatusUnauthorized)
+	if err != nil {
+		panic(err)
+	}
+	_, err = client.Chat(context.Background(), "gpt-5", []llmkit.Message{{Role: "user", Content: "question"}}, nil)
+	closeServer()
+	if !errors.As(err, &providerErr) {
+		panic("expected malformed aliased-choice provider error")
+	}
+	out.MalformedChoiceAlias = errorResult{Code: string(providerErr.Code), Status: providerErr.StatusCode, Body: providerErr.Body, RetryAfter: providerErr.RetryAfter, Retryable: providerErr.Retryable(), ExitCode: int(providerErr.ExitCode())}
+	_, client, closeServer, err = capture("openai", `{"error":{"message":"authentication failed","type":"authentication_error"},"choices":[{"message":{"content":"ok","CONTENT":5}}]}`, http.StatusUnauthorized)
+	if err != nil {
+		panic(err)
+	}
+	_, err = client.Chat(context.Background(), "gpt-5", []llmkit.Message{{Role: "user", Content: "question"}}, nil)
+	closeServer()
+	if !errors.As(err, &providerErr) {
+		panic("expected malformed nested-choice provider error")
+	}
+	out.MalformedNestedAlias = errorResult{Code: string(providerErr.Code), Status: providerErr.StatusCode, Body: providerErr.Body, RetryAfter: providerErr.RetryAfter, Retryable: providerErr.Retryable(), ExitCode: int(providerErr.ExitCode())}
 	got, client, closeServer, err = capture("ollama", "{\"model\":\"llama3.1\",\"response\":\"piece\",\"done\":false}\n{\"model\":\"llama3.1\",\"response\":\"\",\"done\":true}\n", http.StatusOK)
 	if err != nil {
 		panic(err)
@@ -223,6 +292,49 @@ func main() {
 	}
 	closeServer()
 	out.NativeGenerate.Request = *got
+	largeChunk, err := json.Marshal(llmkit.GenerateResponse{
+		Model: "llama3.1", Response: strings.Repeat("x", 2*1024*1024), Done: true,
+	})
+	if err != nil {
+		panic(err)
+	}
+	_, client, closeServer, err = capture("ollama", string(append(largeChunk, '\n')), http.StatusOK)
+	if err != nil {
+		panic(err)
+	}
+	err = client.Generate(context.Background(), "", "prompt", func(value llmkit.GenerateResponse) error {
+		out.NativeGenerateLargeChunkBytes = len(value.Response)
+		return nil
+	})
+	if err != nil {
+		panic(err)
+	}
+	closeServer()
+	largeLine, err := json.Marshal(llmkit.GenerateResponse{
+		Model: "llama3.1", Response: strings.Repeat("x", 4*1024*1024), Done: true,
+	})
+	if err != nil {
+		panic(err)
+	}
+	streamError := func(response string) streamErrorResult {
+		_, client, closeServer, err := capture("ollama", response, http.StatusOK)
+		if err != nil {
+			panic(err)
+		}
+		err = client.Generate(context.Background(), "", "prompt", func(llmkit.GenerateResponse) error { return nil })
+		closeServer()
+		var providerErr *llmkit.Error
+		if !errors.As(err, &providerErr) {
+			panic("expected scanner failure as llmkit error")
+		}
+		return streamErrorResult{Code: string(providerErr.Code), Error: err.Error()}
+	}
+	out.NativeGenerateScannerErrors.BeforeData = streamError(string(append(largeLine, '\n')))
+	out.NativeGenerateScannerErrors.AfterData = streamError("{\"model\":\"llama3.1\",\"response\":\"first\",\"done\":false}\n" + string(append(largeLine, '\n')))
+	out.NativeGenerateWhitespaceLine = streamError(" \n{\"model\":\"llama3.1\",\"response\":\"second\",\"done\":true}\n")
+	out.NativeGenerateDecodeErrors.Truncated = streamError("{\"model\":\n")
+	out.NativeGenerateDecodeErrors.BadKey = streamError("{bad}\n")
+	out.NativeGenerateDecodeErrors.Trailing = streamError("{\"model\":\"llama3.1\",\"response\":5,\"done\":true,\"metadata\":{\"text\":\"} ] { in string\"}}x\n")
 	got, client, closeServer, err = capture("ollama", "{\"model\":\"llama3.1\",\"message\":{\"role\":\"assistant\",\"content\":\"piece\"},\"done\":true}\n", http.StatusOK)
 	if err != nil {
 		panic(err)
@@ -246,6 +358,31 @@ func main() {
 	}
 	closeServer()
 	out.NativeEmbed.Request = *got
+	casefoldResponses := []struct {
+		response string
+	}{
+		{`{"data":[{"embedding":[0.1]}],"dAtA":[{"embedding":[0.2]}]}`},
+		{`{"dAtA":[{"embedding":[0.3]}],"data":[{"embedding":[0.4]}]}`},
+		{`{"data":[{"embedding":[0.5],"eMbEdDiNg":[0.6]}]}`},
+		{`{"data":[{"eMbEdDiNg":[0.7],"embedding":[0.8]}]}`},
+	}
+	var casefoldVectors [][]float32
+	for _, test := range casefoldResponses {
+		_, client, closeServer, err = capture("openai", test.response, http.StatusOK)
+		if err != nil {
+			panic(err)
+		}
+		embeddings, err := client.Embed(context.Background(), "", []string{"input"})
+		closeServer()
+		if err != nil || len(embeddings) != 1 {
+			panic("expected one case-folded embedding")
+		}
+		casefoldVectors = append(casefoldVectors, embeddings[0].Vector)
+	}
+	out.CasefoldEmbedding.DataThenAlias = casefoldVectors[0]
+	out.CasefoldEmbedding.AliasThenData = casefoldVectors[1]
+	out.CasefoldEmbedding.EmbeddingThenAlias = casefoldVectors[2]
+	out.CasefoldEmbedding.AliasThenEmbedding = casefoldVectors[3]
 	got, client, closeServer, err = capture("ollama", `{"models":[{"name":"llama3.1","modified_at":"today","size":12}]}`, http.StatusOK)
 	if err != nil {
 		panic(err)
@@ -256,6 +393,33 @@ func main() {
 	}
 	closeServer()
 	out.NativeModels.Request = *got
+	_, client, closeServer, err = capture("ollama", `{"models":[{"name":"older-model","modified_at":"yesterday","size":99}],"MODELS":[{"NAME":"current-model","MODIFIED_AT":"today","SIZE":12}]}`, http.StatusOK)
+	if err != nil {
+		panic(err)
+	}
+	out.NativeModelsCasefold, err = client.ListOllamaModels(context.Background())
+	if err != nil {
+		panic(err)
+	}
+	closeServer()
+	_, client, closeServer, err = captureWithSuffix("openrouter", `{"data":[{"id":"older-model"}],"DaTa":[{"ID":"vendor/current-model"}]}`, http.StatusOK, "/api/v1")
+	if err != nil {
+		panic(err)
+	}
+	out.CasefoldDiscoveryModels, err = client.ListModels(context.Background())
+	if err != nil {
+		panic(err)
+	}
+	closeServer()
+	_, client, closeServer, err = capture("ollama", `{"models":[{"name":"older-model"}],"MODELS":[{"NAME":"current-model"}]}`, http.StatusOK)
+	if err != nil {
+		panic(err)
+	}
+	out.GenericOllamaCasefoldModels, err = client.ListModels(context.Background())
+	if err != nil {
+		panic(err)
+	}
+	closeServer()
 	if err := json.NewEncoder(os.Stdout).Encode(out); err != nil {
 		panic(err)
 	}

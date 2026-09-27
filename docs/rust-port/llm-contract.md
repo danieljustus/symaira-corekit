@@ -22,6 +22,15 @@ provider code, a Rust `ollamakit` clone, or a process/release surface.
   disables redirects and uses a two-minute request timeout. Callers can inject
   a configured `ureq::Agent` with `ClientBuilder::agent`; its transport settings
   are caller-controlled.
+- `chat_cancellable` and `stream_chat_cancellable` provide async cancellation
+  through a `CancellationToken`. Cancelling drops the active async request or
+  response read, closing the provider connection, and reports
+  `transport_error`, matching Go `llmkit`'s `context.Context` cancellation path
+  (`llmkit/client.go`: `do` passes the context to `http.NewRequestWithContext`
+  and classifies `Do` errors with `errTransport`). These methods use a separate
+  async HTTP client and reject clients configured with an injected blocking
+  `ureq::Agent`; existing synchronous calls and their injected-agent behavior
+  are unchanged.
 
 ## Differential evidence
 
@@ -36,9 +45,9 @@ contract change.
 
 ## Residual boundary
 
-The Rust API is synchronous and does not provide Go `context.Context`
-per-request cancellation. The request timeout bounds waiting, but it is not
-cancellation parity. Callers that require cooperative cancellation must retain
-that boundary in their consumer until a separately designed Rust API provides
-it. This slice does not authorize a consumer cutover, release, tag, Go removal,
-or publication.
+The existing `chat` and `stream_chat` methods remain synchronous and are not
+cancellable. The async cancellation methods require an executor and cannot
+reuse caller-configured `ureq::Agent` settings; callers needing both custom
+transport configuration and cancellation need a separately designed async
+transport-injection API. This slice does not authorize a consumer cutover,
+release, tag, Go removal, or publication.
