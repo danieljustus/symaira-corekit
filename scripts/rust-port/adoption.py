@@ -439,7 +439,7 @@ def report_label(path: Path) -> str:
         return str(path)
 
 
-def check(evidence_path: Path, report_path: Path, minimum: int, offline: bool) -> int:
+def check(evidence_path: Path, report_path: Path, minimum: int, offline: bool, write_report: bool) -> int:
     evidence = load(evidence_path)
     if evidence.get("schema_version") != 1 or evidence.get("gate_id") != "RUST-005":
         fail("adoption evidence has an unsupported schema or gate id")
@@ -537,8 +537,9 @@ def check(evidence_path: Path, report_path: Path, minimum: int, offline: bool) -
     findings.extend(validate_smokes(records, benchmark_report))
     fetch_holder.cleanup()
     report = make_report(evidence, records, facts, findings, live_records)
-    report_path.parent.mkdir(parents=True, exist_ok=True)
-    report_path.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    if write_report:
+        report_path.parent.mkdir(parents=True, exist_ok=True)
+        report_path.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     print(json.dumps({"status": report["status"], "consumers": len(records), "blocking_findings": len(findings), "report": report_label(report_path)}, sort_keys=True))
     return 1 if findings else 0
 
@@ -606,6 +607,7 @@ def main() -> int:
     parser.add_argument("--report", type=Path, default=DEFAULT_REPORT)
     parser.add_argument("--offline", action="store_true", help="use explicitly recorded offline PR state; tests only")
     parser.add_argument("--self-test", action="store_true")
+    parser.add_argument("--write-report", action="store_true", help="write the generated report to --report")
     args = parser.parse_args()
     try:
         if args.self_test:
@@ -614,7 +616,7 @@ def main() -> int:
             parser.error("use --check")
         if args.min_consumers < 2:
             parser.error("--min-consumers must be at least 2")
-        return check(args.evidence, args.report, args.min_consumers, args.offline)
+        return check(args.evidence, args.report, args.min_consumers, args.offline, args.write_report)
     except (OSError, RuntimeError, ValueError, json.JSONDecodeError, tomllib.TOMLDecodeError) as error:
         print(f"FAIL adoption: {error}", file=sys.stderr)
         return 1
