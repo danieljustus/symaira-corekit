@@ -7,8 +7,8 @@ use std::thread;
 use std::time::Duration;
 use symaira_core_exit::ExitCode;
 use symaira_core_llm::{
-    Agent, ChatOptions, ClientBuilder, DEFAULT_TIMEOUT, ErrorCode, GenerateOption, Message,
-    NativeChatOption, Tool, WireDialect, lookup, providers,
+    Agent, CancellationToken, ChatOptions, ClientBuilder, DEFAULT_TIMEOUT, ErrorCode,
+    GenerateOption, Message, NativeChatOption, Tool, WireDialect, lookup, providers,
 };
 use ureq::Proxy;
 
@@ -97,6 +97,233 @@ fn mock_connect_proxy(response: &'static str) -> (String, thread::JoinHandle<(St
         (connect, headers)
     });
     (format!("http://{address}"), handle)
+}
+
+fn read_request(stream: &mut std::net::TcpStream) {
+    let mut request = Vec::new();
+    let mut chunk = [0_u8; 4096];
+    let header_end = loop {
+        let n = stream.read(&mut chunk).unwrap();
+        assert_ne!(n, 0, "client closed before sending request headers");
+        request.extend_from_slice(&chunk[..n]);
+        if let Some(index) = request.windows(4).position(|window| window == b"\r\n\r\n") {
+            break index + 4;
+        }
+    };
+    let headers = String::from_utf8_lossy(&request[..header_end]);
+    let content_length = headers
+        .lines()
+        .find_map(|line| {
+            let (name, value) = line.split_once(':')?;
+            name.eq_ignore_ascii_case("content-length")
+                .then(|| value.trim().parse::<usize>().ok())
+                .flatten()
+        })
+        .unwrap_or(0);
+    while request.len() < header_end + content_length {
+        let n = stream.read(&mut chunk).unwrap();
+        assert_ne!(n, 0, "client closed before sending request body");
+        request.extend_from_slice(&chunk[..n]);
+    }
+}
+
+fn server_observes_close(stream: &mut std::net::TcpStream) -> bool {
+    stream
+        .set_read_timeout(Some(Duration::from_secs(5)))
+        .unwrap();
+    let mut byte = [0_u8; 1];
+    matches!(stream.read(&mut byte), Ok(0))
+}
+
+#[test]
+fn cancellable_chat_preserves_go_openai_wire_contract() {
+    let fixture: Value = serde_json::from_str(include_str!(
+        "../../../testdata/rust-port/fixtures/llm/go-oracle.json"
+    ))
+    .unwrap();
+    let (url, server) = mock_server(
+        200,
+        r#"{"choices":[{"message":{"content":"answer"},"finish_reason":"stop"}]}"#,
+    );
+    let client = ClientBuilder::new(lookup("openai").unwrap().clone(), "")
+        .base_url(format!("{url}/v1"))
+        .api_key("dummy-key")
+        .build()
+        .unwrap();
+    let token = CancellationToken::new();
+    let runtime = tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+        .unwrap();
+    let choice = runtime
+        .block_on(client.chat_cancellable(
+            &token,
+            "gpt-5",
+            &[Message {
+                role: "user".into(),
+                content: "question".into(),
+            }],
+            Some(&ChatOptions {
+                system: "system prompt".into(),
+                max_tokens: 32,
+                ..ChatOptions::default()
+            }),
+        ))
+        .unwrap();
+    let (headers, body, _) = server.join().unwrap();
+    assert!(headers.starts_with(&format!(
+        "POST {} HTTP/1.1",
+        fixture["openai_chat"]["path"].as_str().unwrap()
+    )));
+    assert!(
+        headers
+            .lines()
+            .any(|line| line.eq_ignore_ascii_case("user-agent: Go-http-client/1.1"))
+    );
+    let body: Value = serde_json::from_str(&body).unwrap();
+    assert_eq!(body, fixture["openai_chat"]["body"]);
+    assert_eq!(choice.content, "answer");
+    assert_eq!(choice.finish_reason, "stop");
+}
+
+#[test]
+fn cancellable_api_does_not_silently_ignore_an_injected_agent() {
+    let client = ClientBuilder::new(lookup("openai").unwrap().clone(), "")
+        .api_key("dummy-key")
+        .agent(Agent::new_with_defaults())
+        .build()
+        .unwrap();
+    let token = CancellationToken::new();
+    let runtime = tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+        .unwrap();
+    let error = runtime
+        .block_on(client.chat_cancellable(
+            &token,
+            "gpt-5",
+            &[Message {
+                role: "user".into(),
+                content: "question".into(),
+            }],
+            None,
+        ))
+        .unwrap_err();
+    assert_eq!(error.code, ErrorCode::ProviderError);
+    assert!(error.detail.contains("cannot use an injected ureq Agent"));
+}
+
+#[test]
+fn cancellation_closes_connection_while_waiting_for_response_headers() {
+    // Go's net/http request uses the supplied context through Do and returns
+    // when that context is cancelled (llmkit/client.go:138-161).
+    let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+    let address = listener.local_addr().unwrap();
+    let (started_tx, started_rx) = std::sync::mpsc::channel();
+    let server = thread::spawn(move || {
+        let (mut stream, _) = listener.accept().unwrap();
+        read_request(&mut stream);
+        started_tx.send(()).unwrap();
+        server_observes_close(&mut stream)
+    });
+    let client = ClientBuilder::new(lookup("openai").unwrap().clone(), "")
+        .base_url(format!("http://{address}/v1"))
+        .api_key("dummy-key")
+        .build()
+        .unwrap();
+    let token = CancellationToken::new();
+    let worker_token = token.clone();
+    let runtime = tokio::runtime::Builder::new_multi_thread()
+        .enable_all()
+        .build()
+        .unwrap();
+    let worker = runtime.spawn(async move {
+        client
+            .chat_cancellable(
+                &worker_token,
+                "gpt-5",
+                &[Message {
+                    role: "user".into(),
+                    content: "question".into(),
+                }],
+                None,
+            )
+            .await
+    });
+    started_rx
+        .recv_timeout(Duration::from_secs(2))
+        .expect("provider did not receive the request");
+    token.cancel();
+    let error = runtime.block_on(async {
+        tokio::time::timeout(Duration::from_secs(2), worker)
+            .await
+            .expect("cancelled chat did not return promptly")
+            .unwrap()
+            .unwrap_err()
+    });
+    assert_eq!(error.code, ErrorCode::TransportError);
+    assert!(server.join().unwrap(), "provider connection stayed open");
+}
+
+#[test]
+fn cancellation_closes_connection_while_waiting_for_next_stream_chunk() {
+    let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+    let address = listener.local_addr().unwrap();
+    let server = thread::spawn(move || {
+        let (mut stream, _) = listener.accept().unwrap();
+        read_request(&mut stream);
+        stream
+            .write_all(
+                b"HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nConnection: keep-alive\r\n\r\ndata: {\"choices\":[{\"delta\":{\"content\":\"partial\"}}]}\n\n",
+            )
+            .unwrap();
+        stream.flush().unwrap();
+        server_observes_close(&mut stream)
+    });
+    let client = ClientBuilder::new(lookup("openai").unwrap().clone(), "")
+        .base_url(format!("http://{address}/v1"))
+        .api_key("dummy-key")
+        .build()
+        .unwrap();
+    let token = CancellationToken::new();
+    let worker_token = token.clone();
+    let (seen_tx, seen_rx) = std::sync::mpsc::channel();
+    let runtime = tokio::runtime::Builder::new_multi_thread()
+        .enable_all()
+        .build()
+        .unwrap();
+    let worker = runtime.spawn(async move {
+        client
+            .stream_chat_cancellable(
+                &worker_token,
+                "gpt-5",
+                &[Message {
+                    role: "user".into(),
+                    content: "question".into(),
+                }],
+                None,
+                |delta| {
+                    seen_tx.send(delta.to_owned()).unwrap();
+                    Ok(())
+                },
+                |_| {},
+            )
+            .await
+    });
+    assert_eq!(
+        seen_rx.recv_timeout(Duration::from_secs(2)).unwrap(),
+        "partial"
+    );
+    token.cancel();
+    let error = runtime.block_on(async {
+        tokio::time::timeout(Duration::from_secs(2), worker)
+            .await
+            .expect("cancelled stream did not return promptly")
+            .unwrap()
+            .unwrap_err()
+    });
+    assert_eq!(error.code, ErrorCode::TransportError);
+    assert!(server.join().unwrap(), "provider connection stayed open");
 }
 
 #[test]

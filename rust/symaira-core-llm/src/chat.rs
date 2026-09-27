@@ -1,8 +1,9 @@
-use crate::client::{Client, read_limited};
+use crate::client::{Client, read_limited, read_reqwest_limited};
 use crate::error::{Error, ErrorCode, Result};
 use crate::provider::WireDialect;
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
+use tokio_util::sync::CancellationToken;
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize, Eq, PartialEq)]
 pub struct Message {
@@ -73,6 +74,164 @@ impl Client {
             WireDialect::Openai => self.chat_openai(model, messages, options),
             WireDialect::Anthropic => self.chat_anthropic(model, messages, options),
         }
+    }
+
+    /// Performs chat over the cancellable async transport.
+    ///
+    /// Cancelling `token` drops the in-flight request or response read and
+    /// closes its connection. This method uses the default transport; clients
+    /// configured with [`ClientBuilder::agent`] receive an explicit error
+    /// because a blocking `ureq::Agent` cannot be safely interrupted.
+    pub async fn chat_cancellable(
+        &self,
+        token: &CancellationToken,
+        model: &str,
+        messages: &[Message],
+        options: Option<&ChatOptions>,
+    ) -> Result<Choice> {
+        tokio::select! {
+            biased;
+            _ = token.cancelled() => Err(Error::transport("llmkit: context canceled")),
+            result = self.chat_cancellable_inner(model, messages, options) => result,
+        }
+    }
+
+    async fn chat_cancellable_inner(
+        &self,
+        model: &str,
+        messages: &[Message],
+        options: Option<&ChatOptions>,
+    ) -> Result<Choice> {
+        let model = if model.is_empty() {
+            self.descriptor().default_model()
+        } else {
+            model
+        };
+        if model.is_empty() {
+            return Err(Error::local(
+                ErrorCode::ProviderError,
+                format!(
+                    "llmkit: model is required for provider {:?}",
+                    self.descriptor().id
+                ),
+            ));
+        }
+        if messages.is_empty() {
+            return Err(Error::local(
+                ErrorCode::ProviderError,
+                "llmkit: messages must not be empty",
+            ));
+        }
+        match self.dialect {
+            WireDialect::Openai => self.chat_openai_cancellable(model, messages, options).await,
+            WireDialect::Anthropic => {
+                self.chat_anthropic_cancellable(model, messages, options)
+                    .await
+            }
+        }
+    }
+
+    async fn chat_openai_cancellable(
+        &self,
+        model: &str,
+        messages: &[Message],
+        options: Option<&ChatOptions>,
+    ) -> Result<Choice> {
+        let opts = options.cloned().unwrap_or_default();
+        if !opts.tools.is_empty() && !self.descriptor().capabilities.tool_use {
+            return Err(Error::local(
+                ErrorCode::ProviderError,
+                format!(
+                    "llmkit: provider {:?} does not promise tool_use",
+                    self.descriptor().id
+                ),
+            ));
+        }
+        let mut converted = Vec::new();
+        if !opts.system.is_empty() {
+            converted.push(json!({"role":"system","content":opts.system}));
+        }
+        converted.extend(
+            messages
+                .iter()
+                .map(|message| json!({"role":message.role,"content":message.content})),
+        );
+        let mut body = json!({"model":model,"messages":converted,"stream":false});
+        if let Some(temperature) = opts.temperature {
+            body["temperature"] = json!(temperature);
+        }
+        if opts.max_tokens != 0 {
+            body["max_tokens"] = json!(opts.max_tokens);
+        }
+        let tools: Vec<Value> = opts.tools.iter().map(openai_tool).collect();
+        if !tools.is_empty() {
+            body["tools"] = json!(tools);
+        }
+        if let Some(format) = opts.response_format {
+            body["response_format"] = format;
+        }
+        let mut response = match self
+            .request_cancellable(reqwest::Method::POST, "/chat/completions", Some(&body))
+            .await
+        {
+            Ok(response) => response,
+            Err(error) => return Err(refine_openai_error(error)),
+        };
+        let raw = read_reqwest_limited(&mut response, 16 << 20).await?;
+        let parsed: OpenAiResponse = serde_json::from_slice(&raw).map_err(|error| {
+            Error::local(
+                ErrorCode::ProviderError,
+                format!("llmkit: decode chat response: {error}"),
+            )
+        })?;
+        let Some(choice) = parsed.choices.into_iter().next() else {
+            return Err(Error::local(
+                ErrorCode::ProviderError,
+                "llmkit: chat response contained no choices",
+            ));
+        };
+        let tool_calls = choice
+            .message
+            .tool_calls
+            .into_iter()
+            .map(|call| ToolCall {
+                id: call.id,
+                name: call.function.name,
+                arguments: serde_json::from_str(&call.function.arguments)
+                    .unwrap_or(Value::String(call.function.arguments)),
+            })
+            .collect();
+        Ok(Choice {
+            content: choice.message.content.unwrap_or_default(),
+            tool_calls,
+            finish_reason: choice.finish_reason.unwrap_or_default(),
+        })
+    }
+
+    async fn chat_anthropic_cancellable(
+        &self,
+        model: &str,
+        messages: &[Message],
+        options: Option<&ChatOptions>,
+    ) -> Result<Choice> {
+        let opts = options.cloned().unwrap_or_default();
+        let body = anthropic_body(model, messages, &opts);
+        let mut response = self
+            .request_cancellable(reqwest::Method::POST, "/messages", Some(&body))
+            .await
+            .map_err(refine_anthropic_error)?;
+        let raw = read_reqwest_limited(&mut response, 16 << 20).await?;
+        let parsed: AnthropicResponse = serde_json::from_slice(&raw).map_err(|error| {
+            Error::local(
+                ErrorCode::ProviderError,
+                format!("llmkit: decode anthropic response: {error}"),
+            )
+        })?;
+        Ok(Choice {
+            content: parsed.content.into_iter().map(|part| part.text).collect(),
+            tool_calls: Vec::new(),
+            finish_reason: parsed.stop_reason.unwrap_or_default(),
+        })
     }
 
     fn chat_openai(
@@ -321,6 +480,204 @@ impl Client {
         }
         Ok(())
     }
+
+    /// Streams chat over the cancellable async transport.
+    ///
+    /// Cancelling `token` drops the active response read and closes its
+    /// connection. This uses the default transport; an injected blocking
+    /// `ureq::Agent` cannot be interrupted and is rejected explicitly.
+    pub async fn stream_chat_cancellable<F, G>(
+        &self,
+        token: &CancellationToken,
+        model: &str,
+        messages: &[Message],
+        options: Option<&ChatOptions>,
+        mut callback: F,
+        mut on_finish: G,
+    ) -> Result<()>
+    where
+        F: FnMut(&str) -> Result<()>,
+        G: FnMut(&str),
+    {
+        tokio::select! {
+            biased;
+            _ = token.cancelled() => Err(Error::transport("llmkit: context canceled")),
+            result = self.stream_chat_cancellable_inner(
+                model,
+                messages,
+                options,
+                &mut callback,
+                &mut on_finish,
+            ) => result,
+        }
+    }
+
+    async fn stream_chat_cancellable_inner<F, G>(
+        &self,
+        model: &str,
+        messages: &[Message],
+        options: Option<&ChatOptions>,
+        callback: &mut F,
+        on_finish: &mut G,
+    ) -> Result<()>
+    where
+        F: FnMut(&str) -> Result<()>,
+        G: FnMut(&str),
+    {
+        if !self.descriptor().capabilities.streaming {
+            return Err(Error::local(
+                ErrorCode::ProviderError,
+                format!(
+                    "llmkit: provider {:?} does not promise streaming",
+                    self.descriptor().id
+                ),
+            ));
+        }
+        let model = if model.is_empty() {
+            self.descriptor().default_model()
+        } else {
+            model
+        };
+        if model.is_empty() {
+            return Err(Error::local(
+                ErrorCode::ProviderError,
+                format!(
+                    "llmkit: model is required for provider {:?}",
+                    self.descriptor().id
+                ),
+            ));
+        }
+        let opts = options.cloned().unwrap_or_default();
+        let mut body = if self.dialect == WireDialect::Anthropic {
+            anthropic_body(model, messages, &opts)
+        } else {
+            let mut converted = Vec::new();
+            if !opts.system.is_empty() {
+                converted.push(json!({"role":"system","content":opts.system}));
+            }
+            converted.extend(
+                messages
+                    .iter()
+                    .map(|message| json!({"role":message.role,"content":message.content})),
+            );
+            let mut body = json!({"model":model,"messages":converted,"stream":true});
+            if let Some(temperature) = opts.temperature {
+                body["temperature"] = json!(temperature);
+            }
+            if opts.max_tokens != 0 {
+                body["max_tokens"] = json!(opts.max_tokens);
+            }
+            body
+        };
+        body["stream"] = json!(true);
+        let path = if self.dialect == WireDialect::Anthropic {
+            "/messages"
+        } else {
+            "/chat/completions"
+        };
+        let mut response = self
+            .request_cancellable(reqwest::Method::POST, path, Some(&body))
+            .await?;
+        let mut pending = Vec::new();
+        let mut started = false;
+        while let Some(chunk) = response.chunk().await.map_err(|error| {
+            Error::transport(if started {
+                format!("llmkit: stream interrupted: {}", error.without_url())
+            } else {
+                error.without_url().to_string()
+            })
+        })? {
+            pending.extend_from_slice(&chunk);
+            while let Some(index) = pending.iter().position(|byte| *byte == b'\n') {
+                if index + 1 > 1024 * 1024 {
+                    return Err(Error::transport("llmkit: stream line exceeds 1 MiB"));
+                }
+                let line: Vec<u8> = pending.drain(..=index).collect();
+                process_cancellable_stream_line(
+                    self.dialect,
+                    &line,
+                    &mut started,
+                    callback,
+                    on_finish,
+                )?;
+            }
+            if pending.len() > 1024 * 1024 {
+                return Err(Error::transport("llmkit: stream line exceeds 1 MiB"));
+            }
+        }
+        if !pending.is_empty() {
+            process_cancellable_stream_line(
+                self.dialect,
+                &pending,
+                &mut started,
+                callback,
+                on_finish,
+            )?;
+        }
+        if !started {
+            return Err(Error::local(
+                ErrorCode::ProviderError,
+                "llmkit: no stream data received",
+            ));
+        }
+        Ok(())
+    }
+}
+
+fn process_cancellable_stream_line<F, G>(
+    dialect: WireDialect,
+    raw_line: &[u8],
+    started: &mut bool,
+    callback: &mut F,
+    on_finish: &mut G,
+) -> Result<()>
+where
+    F: FnMut(&str) -> Result<()>,
+    G: FnMut(&str),
+{
+    let line = String::from_utf8_lossy(raw_line);
+    let Some(data) = line.strip_prefix("data:") else {
+        return Ok(());
+    };
+    let data = data.trim();
+    if data.is_empty() || data == "[DONE]" {
+        return Ok(());
+    }
+    *started = true;
+    if dialect == WireDialect::Openai {
+        let chunk: OpenAiChunk = serde_json::from_str(data).map_err(|error| {
+            Error::local(
+                ErrorCode::ProviderError,
+                format!("llmkit: decode stream chunk: {error}"),
+            )
+        })?;
+        if let Some(choice) = chunk.choices.first() {
+            if let Some(reason) = choice.finish_reason.as_deref().filter(|s| !s.is_empty()) {
+                on_finish(reason);
+            }
+            if !choice.delta.content.is_empty() {
+                callback(&choice.delta.content)?;
+            }
+        }
+    } else if let Ok(event) = serde_json::from_str::<AnthropicEvent>(data) {
+        if event.kind == "message_delta" {
+            if let Some(reason) = event
+                .delta
+                .and_then(|delta| delta.stop_reason)
+                .filter(|reason| !reason.is_empty())
+            {
+                on_finish(&reason);
+            }
+        } else if event.kind == "content_block_delta"
+            && let Some(text) = event
+                .delta
+                .and_then(|delta| delta.text)
+                .filter(|text| !text.is_empty())
+        {
+            callback(&text)?;
+        }
+    }
+    Ok(())
 }
 
 pub(crate) fn read_bounded_line<R: std::io::BufRead>(
