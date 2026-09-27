@@ -996,6 +996,27 @@ fn streaming_and_embedding_calls_preserve_openai_wire_options() {
 }
 
 #[test]
+fn embedding_response_fields_match_go_case_insensitive_json() {
+    let fixture: Value = serde_json::from_str(include_str!(
+        "../../../testdata/rust-port/fixtures/llm/go-oracle.json"
+    ))
+    .unwrap();
+    let (url, server) = mock_server(200, r#"{"dAtA":[{"eMbEdDiNg":[0.25,0.5]}]}"#);
+    let client = ClientBuilder::new(lookup("openai").unwrap().clone(), "")
+        .base_url(format!("{url}/v1"))
+        .api_key("dummy-key")
+        .build()
+        .unwrap();
+    let embeddings = client.embed("", &["input".into()], None).unwrap();
+    server.join().unwrap();
+    assert_eq!(embeddings.len(), 1);
+    assert_eq!(
+        serde_json::to_value(&embeddings[0].vector).unwrap(),
+        fixture["casefold_embedding"]
+    );
+}
+
+#[test]
 fn credentials_fail_closed_and_redirects_are_not_followed() {
     let fixture: Value = serde_json::from_str(include_str!(
         "../../../testdata/rust-port/fixtures/llm/go-oracle.json"

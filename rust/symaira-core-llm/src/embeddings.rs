@@ -2,6 +2,7 @@ use crate::client::{Client, read_limited};
 use crate::error::{Error, ErrorCode, Result};
 use crate::provider::ModelInfo;
 use serde::Deserialize;
+use serde::de::DeserializeOwned;
 use serde_json::json;
 
 #[derive(Clone, Debug, Deserialize, PartialEq)]
@@ -52,7 +53,7 @@ impl Client {
         }
         let mut response = self.request("POST", "/embeddings", Some(&body))?;
         let raw = read_limited(&mut response, 64 << 20)?;
-        let parsed: EmbeddingResponse = serde_json::from_slice(&raw).map_err(|e| {
+        let parsed: EmbeddingResponse = deserialize_case_insensitive(&raw).map_err(|e| {
             Error::local(
                 ErrorCode::ProviderError,
                 format!("llmkit: decode embeddings response: {e}"),
@@ -146,6 +147,37 @@ struct EmbeddingResponse {
 struct EmbeddingData {
     embedding: Vec<f32>,
 }
+
+fn deserialize_case_insensitive<T: DeserializeOwned>(raw: &[u8]) -> serde_json::Result<T> {
+    match serde_json::from_slice(raw) {
+        Ok(value) => Ok(value),
+        Err(case_sensitive_error) => {
+            let mut value: serde_json::Value = serde_json::from_slice(raw)?;
+            lowercase_json_keys(&mut value);
+            serde_json::from_value(value).or(Err(case_sensitive_error))
+        }
+    }
+}
+
+fn lowercase_json_keys(value: &mut serde_json::Value) {
+    match value {
+        serde_json::Value::Object(object) => {
+            let mut normalized = serde_json::Map::new();
+            for (key, mut value) in std::mem::take(object) {
+                lowercase_json_keys(&mut value);
+                normalized.insert(key.to_lowercase(), value);
+            }
+            *object = normalized;
+        }
+        serde_json::Value::Array(values) => {
+            for value in values {
+                lowercase_json_keys(value);
+            }
+        }
+        _ => {}
+    }
+}
+
 #[derive(Deserialize)]
 struct OpenAiModelList {
     data: Vec<ModelId>,

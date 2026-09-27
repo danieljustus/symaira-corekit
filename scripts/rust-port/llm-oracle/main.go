@@ -56,7 +56,8 @@ type observation struct {
 		Request    request     `json:"request"`
 		Embeddings [][]float32 `json:"embeddings"`
 	} `json:"native_embed"`
-	NativeModels struct {
+	CasefoldEmbedding []float32 `json:"casefold_embedding"`
+	NativeModels      struct {
 		Request request                  `json:"request"`
 		Models  []llmkit.OllamaModelInfo `json:"models"`
 	} `json:"native_models"`
@@ -265,6 +266,19 @@ func main() {
 	}
 	closeServer()
 	out.NativeEmbed.Request = *got
+	_, client, closeServer, err = capture("openai", `{"dAtA":[{"eMbEdDiNg":[0.25,0.5]}]}`, http.StatusOK)
+	if err != nil {
+		panic(err)
+	}
+	embeddings, err := client.Embed(context.Background(), "", []string{"input"})
+	if err != nil {
+		panic(err)
+	}
+	closeServer()
+	if len(embeddings) != 1 {
+		panic("expected one case-folded embedding")
+	}
+	out.CasefoldEmbedding = embeddings[0].Vector
 	got, client, closeServer, err = capture("ollama", `{"models":[{"name":"llama3.1","modified_at":"today","size":12}]}`, http.StatusOK)
 	if err != nil {
 		panic(err)
