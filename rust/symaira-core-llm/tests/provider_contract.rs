@@ -4,11 +4,13 @@ use serde_json::{Value, json};
 use std::io::{Read, Write};
 use std::net::TcpListener;
 use std::thread;
+use std::time::Duration;
 use symaira_core_exit::ExitCode;
 use symaira_core_llm::{
-    ChatOptions, ClientBuilder, ErrorCode, GenerateOption, Message, NativeChatOption, Tool, lookup,
-    providers,
+    Agent, ChatOptions, ClientBuilder, DEFAULT_TIMEOUT, ErrorCode, GenerateOption, Message,
+    NativeChatOption, Tool, WireDialect, lookup, providers,
 };
+use ureq::Proxy;
 
 fn mock_server(
     status: u16,
@@ -59,6 +61,44 @@ fn mock_server(
     (format!("http://{address}"), handle)
 }
 
+fn mock_connect_proxy(response: &'static str) -> (String, thread::JoinHandle<(String, String)>) {
+    let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+    let address = listener.local_addr().unwrap();
+    let handle = thread::spawn(move || {
+        let (mut stream, _) = listener.accept().unwrap();
+        let mut request = Vec::new();
+        let mut chunk = [0_u8; 4096];
+        let connect_end = loop {
+            let n = stream.read(&mut chunk).unwrap();
+            request.extend_from_slice(&chunk[..n]);
+            if let Some(i) = request.windows(4).position(|w| w == b"\r\n\r\n") {
+                break i + 4;
+            }
+        };
+        let connect = String::from_utf8_lossy(&request[..connect_end]).into_owned();
+        stream
+            .write_all(b"HTTP/1.1 200 Connection Established\r\n\r\n")
+            .unwrap();
+        request.clear();
+        let request_end = loop {
+            let n = stream.read(&mut chunk).unwrap();
+            if n == 0 {
+                panic!("client closed before sending tunneled request");
+            }
+            request.extend_from_slice(&chunk[..n]);
+            if let Some(i) = request.windows(4).position(|w| w == b"\r\n\r\n") {
+                break i + 4;
+            }
+        };
+        let headers = String::from_utf8_lossy(&request[..request_end]).into_owned();
+        let bytes = response.as_bytes();
+        write!(stream, "HTTP/1.1 200 Test\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n", bytes.len()).unwrap();
+        stream.write_all(bytes).unwrap();
+        (connect, headers)
+    });
+    (format!("http://{address}"), handle)
+}
+
 #[test]
 fn registry_and_go_generated_snapshot_are_available() {
     let fixture: Value = serde_json::from_str(include_str!(
@@ -73,6 +113,202 @@ fn registry_and_go_generated_snapshot_are_available() {
     assert_eq!(lookup("OPENAI").unwrap().default_model(), "gpt-5");
     assert_eq!(lookup("custom").unwrap().base_url, "");
     assert_eq!(lookup("unknown"), None);
+}
+
+#[test]
+fn empty_api_key_uses_credential_resolution() {
+    let fixture: Value = serde_json::from_str(include_str!(
+        "../../../testdata/rust-port/fixtures/llm/go-oracle.json"
+    ))
+    .unwrap();
+    assert_eq!(fixture["empty_api_key_resolves"], true);
+    let error = match ClientBuilder::new(lookup("openai").unwrap().clone(), "env://")
+        .api_key("")
+        .build()
+    {
+        Ok(_) => panic!("empty API key bypassed credential resolution"),
+        Err(error) => error,
+    };
+    assert_eq!(error.code, ErrorCode::AuthFailure);
+}
+
+#[test]
+fn injected_default_agent_keeps_provider_error_classification() {
+    let (url, server) = mock_server(429, r#"{"error":{"message":"temporary"}}"#);
+    let client = ClientBuilder::new(lookup("openai").unwrap().clone(), "")
+        .base_url(url)
+        .api_key("dummy-key")
+        .agent(Agent::new_with_defaults())
+        .build()
+        .unwrap();
+    let error = client
+        .chat(
+            "gpt-5",
+            &[Message {
+                role: "user".into(),
+                content: "hi".into(),
+            }],
+            None,
+        )
+        .unwrap_err();
+    server.join().unwrap();
+    assert_eq!(error.code, ErrorCode::RateLimited);
+    assert_eq!(error.status_code, 429, "{error:?}");
+    assert_eq!(error.retry_after, "17");
+    assert!(error.body.contains("temporary"));
+}
+
+#[test]
+fn dialect_override_follows_go_builder_behavior() {
+    let fixture: Value = serde_json::from_str(include_str!(
+        "../../../testdata/rust-port/fixtures/llm/go-oracle.json"
+    ))
+    .unwrap();
+    assert_eq!(fixture["dialect_override_allowed"], true);
+    ClientBuilder::new(lookup("openai").unwrap().clone(), "")
+        .api_key("dummy-key")
+        .dialect(WireDialect::Anthropic)
+        .build()
+        .unwrap();
+}
+
+#[test]
+fn zero_timeout_keeps_go_unbounded_request_behavior() {
+    let fixture: Value = serde_json::from_str(include_str!(
+        "../../../testdata/rust-port/fixtures/llm/go-oracle.json"
+    ))
+    .unwrap();
+    assert_eq!(fixture["zero_timeout_allowed"], true);
+    let (url, server) = mock_server(200, r#"{"choices":[{"message":{"content":"answer"}}]}"#);
+    let client = ClientBuilder::new(lookup("openai").unwrap().clone(), "")
+        .base_url(format!("{url}/v1"))
+        .api_key("dummy-key")
+        .timeout(Duration::ZERO)
+        .build()
+        .unwrap();
+    let result = client.chat(
+        "gpt-5",
+        &[Message {
+            role: "user".into(),
+            content: "question".into(),
+        }],
+        None,
+    );
+    assert!(result.is_ok(), "zero timeout failed: {result:?}");
+    server.join().unwrap();
+}
+
+#[test]
+fn anthropic_content_includes_text_from_every_block_like_go() {
+    let fixture: Value = serde_json::from_str(include_str!(
+        "../../../testdata/rust-port/fixtures/llm/go-oracle.json"
+    ))
+    .unwrap();
+    let (url, server) = mock_server(
+        200,
+        r#"{"content":[{"type":"text","text":"first"},{"type":"tool_use","text":"second"}],"stop_reason":"end_turn"}"#,
+    );
+    let client = ClientBuilder::new(lookup("anthropic").unwrap().clone(), "")
+        .base_url(url)
+        .api_key("dummy-key")
+        .build()
+        .unwrap();
+    let result = client
+        .chat(
+            "claude",
+            &[Message {
+                role: "user".into(),
+                content: "question".into(),
+            }],
+            None,
+        )
+        .unwrap();
+    server.join().unwrap();
+    assert_eq!(result.content, fixture["anthropic_mixed_content"]);
+}
+
+#[test]
+fn base_query_stays_after_the_joined_chat_path() {
+    let fixture: Value = serde_json::from_str(include_str!(
+        "../../../testdata/rust-port/fixtures/llm/go-oracle.json"
+    ))
+    .unwrap();
+    let (url, server) = mock_server(
+        200,
+        r#"{"choices":[{"message":{"content":"answer"},"finish_reason":"stop"}]}"#,
+    );
+    let client = ClientBuilder::new(lookup("openai").unwrap().clone(), "")
+        .base_url(format!("{url}/v1?api-version=2026-01-01"))
+        .api_key("dummy-key")
+        .build()
+        .unwrap();
+    client
+        .chat(
+            "gpt-5",
+            &[Message {
+                role: "user".into(),
+                content: "question".into(),
+            }],
+            None,
+        )
+        .unwrap();
+    let (headers, _, _) = server.join().unwrap();
+    assert!(headers.starts_with(&format!(
+        "POST {}?{} HTTP/1.1",
+        fixture["openai_query_chat"]["path"].as_str().unwrap(),
+        fixture["openai_query_chat"]["query"].as_str().unwrap()
+    )));
+
+    let (url, server) = mock_server(
+        200,
+        r#"{"choices":[{"message":{"content":"answer"},"finish_reason":"stop"}]}"#,
+    );
+    let client = ClientBuilder::new(lookup("openai").unwrap().clone(), "")
+        .base_url(format!("{url}/v1/../api/./?api-version=2026-01-01"))
+        .api_key("dummy-key")
+        .build()
+        .unwrap();
+    client
+        .chat(
+            "gpt-5",
+            &[Message {
+                role: "user".into(),
+                content: "question".into(),
+            }],
+            None,
+        )
+        .unwrap();
+    let (headers, _, _) = server.join().unwrap();
+    assert!(headers.starts_with(&format!(
+        "POST {}?{} HTTP/1.1",
+        fixture["openai_dot_path_chat"]["path"].as_str().unwrap(),
+        fixture["openai_dot_path_chat"]["query"].as_str().unwrap()
+    )));
+}
+
+#[test]
+fn caller_agent_routes_requests_through_its_proxy() {
+    let (proxy_url, proxy) = mock_connect_proxy(r#"{"models":[{"name":"proxied-model"}]}"#);
+    let agent = Agent::config_builder()
+        .http_status_as_error(false)
+        .max_redirects(0)
+        .timeout_global(Some(DEFAULT_TIMEOUT))
+        .proxy(Some(Proxy::new(&proxy_url).unwrap()))
+        .build()
+        .into();
+    let client = ClientBuilder::new(lookup("ollama").unwrap().clone(), "")
+        .base_url("http://transport-injection.invalid")
+        .agent(agent)
+        .build()
+        .unwrap();
+
+    let result = client.list_models();
+    let (connect, headers) = proxy.join().unwrap();
+    let models = result.unwrap_or_else(|error| panic!("{error}; request was: {connect}{headers}"));
+
+    assert_eq!(models[0].id, "proxied-model");
+    assert!(connect.starts_with("CONNECT transport-injection.invalid:80 HTTP/1.1"));
+    assert!(headers.starts_with("GET /api/tags HTTP/1.1"));
 }
 
 #[test]
@@ -250,6 +486,35 @@ fn taxonomy_maps_status_retry_and_exit_codes() {
         u8::from(error.exit_code()),
         fixture["rate_limit"]["exit_code"]
     );
+    let (url, server) = mock_server(
+        401,
+        r#"{"error":{"message":"authentication failed","type":"authentication_error"}}"#,
+    );
+    let client = ClientBuilder::new(lookup("openai").unwrap().clone(), "")
+        .base_url(format!("{url}/v1"))
+        .api_key("dummy-key")
+        .build()
+        .unwrap();
+    let error = client
+        .chat(
+            "model",
+            &[Message {
+                role: "user".into(),
+                content: "x".into(),
+            }],
+            None,
+        )
+        .unwrap_err();
+    server.join().unwrap();
+    assert_eq!(error.code.as_str(), fixture["structured_auth"]["code"]);
+    assert_eq!(error.status_code, fixture["structured_auth"]["status"]);
+    assert_eq!(error.body, fixture["structured_auth"]["body"]);
+    assert_eq!(error.retry_after, fixture["structured_auth"]["retry_after"]);
+    assert_eq!(error.retryable(), fixture["structured_auth"]["retryable"]);
+    assert_eq!(
+        u8::from(error.exit_code()),
+        fixture["structured_auth"]["exit_code"]
+    );
     let (url, server) = mock_server(400, "context window exceeded");
     let client = ClientBuilder::new(lookup("openai").unwrap().clone(), "")
         .base_url(url)
@@ -268,6 +533,41 @@ fn taxonomy_maps_status_retry_and_exit_codes() {
         .unwrap_err();
     server.join().unwrap();
     assert_eq!(error.code, ErrorCode::ContextOverflow);
+}
+
+#[test]
+fn structured_error_fields_follow_go_json_casefolding() {
+    let fixture: Value = serde_json::from_str(include_str!(
+        "../../../testdata/rust-port/fixtures/llm/go-oracle.json"
+    ))
+    .unwrap();
+    let (url, server) = mock_server(
+        401,
+        r#"{"ERROR":{"MESSAGE":"authentication failed","TYPE":"authentication_error"}}"#,
+    );
+    let client = ClientBuilder::new(lookup("openai").unwrap().clone(), "")
+        .base_url(url)
+        .api_key("dummy-key")
+        .build()
+        .unwrap();
+    let error = client
+        .chat(
+            "model",
+            &[Message {
+                role: "user".into(),
+                content: "x".into(),
+            }],
+            None,
+        )
+        .unwrap_err();
+    server.join().unwrap();
+    let expected = &fixture["structured_auth_casefold"];
+    assert_eq!(error.code.as_str(), expected["code"]);
+    assert_eq!(error.status_code, expected["status"]);
+    assert_eq!(error.body, expected["body"]);
+    assert_eq!(error.retry_after, expected["retry_after"]);
+    assert_eq!(error.retryable(), expected["retryable"]);
+    assert_eq!(u8::from(error.exit_code()), expected["exit_code"]);
 }
 
 #[test]
@@ -323,6 +623,18 @@ fn streaming_and_embedding_calls_preserve_openai_wire_options() {
 
 #[test]
 fn credentials_fail_closed_and_redirects_are_not_followed() {
+    let fixture: Value = serde_json::from_str(include_str!(
+        "../../../testdata/rust-port/fixtures/llm/go-oracle.json"
+    ))
+    .unwrap();
+    assert_eq!(fixture["loopback_query_base_allowed"], true);
+    assert!(
+        ClientBuilder::new(lookup("openai").unwrap().clone(), "")
+            .base_url("http://localhost:11434?api-version=2026-01-01")
+            .api_key("dummy-key")
+            .build()
+            .is_ok()
+    );
     let mut descriptor = lookup("openai").unwrap().clone();
     descriptor.base_url = "http://provider.example/v1".into();
     let error = match ClientBuilder::new(descriptor, "env://MISSING_TEST_CREDENTIAL").build() {

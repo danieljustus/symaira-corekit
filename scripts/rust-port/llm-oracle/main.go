@@ -14,6 +14,7 @@ import (
 
 type request struct {
 	Path            string         `json:"path"`
+	Query           string         `json:"query,omitempty"`
 	Auth            string         `json:"auth_header"`
 	ProviderVersion string         `json:"provider_version,omitempty"`
 	Body            map[string]any `json:"body"`
@@ -29,11 +30,20 @@ type errorResult struct {
 }
 
 type observation struct {
-	Providers      []llmkit.Descriptor `json:"providers"`
-	OpenAI         request             `json:"openai_chat"`
-	Anthropic      request             `json:"anthropic_chat"`
-	RateLimit      errorResult         `json:"rate_limit"`
-	NativeGenerate struct {
+	Providers                []llmkit.Descriptor `json:"providers"`
+	OpenAI                   request             `json:"openai_chat"`
+	OpenAIQuery              request             `json:"openai_query_chat"`
+	OpenAIDotPath            request             `json:"openai_dot_path_chat"`
+	LoopbackQueryBaseAllowed bool                `json:"loopback_query_base_allowed"`
+	EmptyAPIKeyResolves      bool                `json:"empty_api_key_resolves"`
+	DialectOverrideAllowed   bool                `json:"dialect_override_allowed"`
+	ZeroTimeoutAllowed       bool                `json:"zero_timeout_allowed"`
+	Anthropic                request             `json:"anthropic_chat"`
+	AnthropicMixedContent    string              `json:"anthropic_mixed_content"`
+	RateLimit                errorResult         `json:"rate_limit"`
+	StructuredAuth           errorResult         `json:"structured_auth"`
+	StructuredAuthCasefold   errorResult         `json:"structured_auth_casefold"`
+	NativeGenerate           struct {
 		Request request                   `json:"request"`
 		Chunks  []llmkit.GenerateResponse `json:"chunks"`
 	} `json:"native_generate"`
@@ -52,9 +62,14 @@ type observation struct {
 }
 
 func capture(provider, response string, status int) (*request, *llmkit.Client, func(), error) {
+	return captureWithSuffix(provider, response, status, "")
+}
+
+func captureWithSuffix(provider, response string, status int, suffix string) (*request, *llmkit.Client, func(), error) {
 	got := &request{}
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		got.Path = r.URL.Path
+		got.Query = r.URL.RawQuery
 		if strings.HasPrefix(r.Header.Get("Authorization"), "Bearer ") {
 			got.Auth = "bearer"
 		}
@@ -79,6 +94,7 @@ func capture(provider, response string, status int) (*request, *llmkit.Client, f
 	if provider == "openai" {
 		baseURL += "/v1"
 	}
+	baseURL += suffix
 	client, err := llmkit.NewClient(desc, "", llmkit.WithBaseURL(baseURL), llmkit.WithAPIKey("dummy-key"))
 	if err != nil {
 		server.Close()
@@ -94,6 +110,25 @@ func main() {
 	}
 	var out observation
 	out.Providers = providers
+	openAI, ok := llmkit.Lookup("openai")
+	if !ok {
+		panic("openai provider not found")
+	}
+	_, err = llmkit.NewClient(openAI, "", llmkit.WithBaseURL("http://localhost:11434?api-version=2026-01-01"), llmkit.WithAPIKey("dummy-key"))
+	out.LoopbackQueryBaseAllowed = err == nil
+	_, err = llmkit.NewClient(openAI, "env://", llmkit.WithAPIKey(""))
+	out.EmptyAPIKeyResolves = err != nil
+	_, err = llmkit.NewClient(openAI, "", llmkit.WithAPIKey("dummy-key"), llmkit.WithDialect(llmkit.DialectAnthropic))
+	out.DialectOverrideAllowed = err == nil
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte(`{"choices":[{"message":{"content":"answer"}}]}`))
+	}))
+	zeroTimeoutClient, err := llmkit.NewClient(openAI, "", llmkit.WithBaseURL(server.URL+"/v1"), llmkit.WithAPIKey("dummy-key"), llmkit.WithTimeout(0))
+	if err == nil {
+		_, err = zeroTimeoutClient.Chat(context.Background(), "gpt-5", []llmkit.Message{{Role: "user", Content: "question"}}, nil)
+	}
+	out.ZeroTimeoutAllowed = err == nil
+	server.Close()
 	got, client, closeServer, err := capture("openai", `{"choices":[{"message":{"content":"answer"},"finish_reason":"stop"}]}`, http.StatusOK)
 	if err != nil {
 		panic(err)
@@ -104,6 +139,26 @@ func main() {
 	}
 	closeServer()
 	out.OpenAI = *got
+	got, client, closeServer, err = captureWithSuffix("openai", `{"choices":[{"message":{"content":"answer"},"finish_reason":"stop"}]}`, http.StatusOK, "?api-version=2026-01-01")
+	if err != nil {
+		panic(err)
+	}
+	_, err = client.Chat(context.Background(), "gpt-5", []llmkit.Message{{Role: "user", Content: "question"}}, nil)
+	if err != nil {
+		panic(err)
+	}
+	closeServer()
+	out.OpenAIQuery = *got
+	got, client, closeServer, err = captureWithSuffix("openai", `{"choices":[{"message":{"content":"answer"},"finish_reason":"stop"}]}`, http.StatusOK, "/../api/./?api-version=2026-01-01")
+	if err != nil {
+		panic(err)
+	}
+	_, err = client.Chat(context.Background(), "gpt-5", []llmkit.Message{{Role: "user", Content: "question"}}, nil)
+	if err != nil {
+		panic(err)
+	}
+	closeServer()
+	out.OpenAIDotPath = *got
 	got, client, closeServer, err = capture("anthropic", `{"content":[{"type":"text","text":"answer"}],"stop_reason":"end_turn"}`, http.StatusOK)
 	if err != nil {
 		panic(err)
@@ -114,6 +169,16 @@ func main() {
 	}
 	closeServer()
 	out.Anthropic = *got
+	_, client, closeServer, err = capture("anthropic", `{"content":[{"type":"text","text":"first"},{"type":"tool_use","text":"second"}],"stop_reason":"end_turn"}`, http.StatusOK)
+	if err != nil {
+		panic(err)
+	}
+	choice, err := client.Chat(context.Background(), "claude", []llmkit.Message{{Role: "user", Content: "question"}}, nil)
+	closeServer()
+	if err != nil {
+		panic(err)
+	}
+	out.AnthropicMixedContent = choice.Content
 	_, client, closeServer, err = capture("openai", `{"error":"busy"}`, http.StatusTooManyRequests)
 	if err != nil {
 		panic(err)
@@ -125,6 +190,26 @@ func main() {
 		panic("expected llmkit error")
 	}
 	out.RateLimit = errorResult{Code: string(providerErr.Code), Status: providerErr.StatusCode, Body: providerErr.Body, RetryAfter: providerErr.RetryAfter, Retryable: providerErr.Retryable(), ExitCode: int(providerErr.ExitCode())}
+	_, client, closeServer, err = capture("openai", `{"error":{"message":"authentication failed","type":"authentication_error"}}`, http.StatusUnauthorized)
+	if err != nil {
+		panic(err)
+	}
+	_, err = client.Chat(context.Background(), "gpt-5", []llmkit.Message{{Role: "user", Content: "question"}}, nil)
+	closeServer()
+	if !errors.As(err, &providerErr) {
+		panic("expected structured llmkit error")
+	}
+	out.StructuredAuth = errorResult{Code: string(providerErr.Code), Status: providerErr.StatusCode, Body: providerErr.Body, RetryAfter: providerErr.RetryAfter, Retryable: providerErr.Retryable(), ExitCode: int(providerErr.ExitCode())}
+	_, client, closeServer, err = capture("openai", `{"ERROR":{"MESSAGE":"authentication failed","TYPE":"authentication_error"}}`, http.StatusUnauthorized)
+	if err != nil {
+		panic(err)
+	}
+	_, err = client.Chat(context.Background(), "gpt-5", []llmkit.Message{{Role: "user", Content: "question"}}, nil)
+	closeServer()
+	if !errors.As(err, &providerErr) {
+		panic("expected casefold structured llmkit error")
+	}
+	out.StructuredAuthCasefold = errorResult{Code: string(providerErr.Code), Status: providerErr.StatusCode, Body: providerErr.Body, RetryAfter: providerErr.RetryAfter, Retryable: providerErr.Retryable(), ExitCode: int(providerErr.ExitCode())}
 	got, client, closeServer, err = capture("ollama", "{\"model\":\"llama3.1\",\"response\":\"piece\",\"done\":false}\n{\"model\":\"llama3.1\",\"response\":\"\",\"done\":true}\n", http.StatusOK)
 	if err != nil {
 		panic(err)

@@ -189,12 +189,7 @@ impl Client {
                 format!("llmkit: decode anthropic response: {e}"),
             )
         })?;
-        let content = parsed
-            .content
-            .into_iter()
-            .filter(|part| part.kind.as_deref().unwrap_or("text") == "text")
-            .map(|part| part.text)
-            .collect();
+        let content = parsed.content.into_iter().map(|part| part.text).collect();
         Ok(Choice {
             content,
             tool_calls: Vec::new(),
@@ -442,41 +437,60 @@ fn refine_anthropic_error(mut error: Error) -> Error {
     error
 }
 
-fn refine_openai_error(mut error: Error) -> Error {
+fn refine_openai_error(error: Error) -> Error {
     if error.status_code == 0 || error.body.is_empty() {
         return error;
     }
     let Ok(value) = serde_json::from_str::<Value>(&error.body) else {
         return error;
     };
-    let message = value
-        .pointer("/error/message")
-        .and_then(Value::as_str)
-        .unwrap_or_default()
-        .to_ascii_lowercase();
-    let kind = value
-        .pointer("/error/type")
-        .and_then(Value::as_str)
-        .unwrap_or_default()
-        .to_ascii_lowercase();
-    let text = format!("{kind} {message}");
+    let Some(typed) = value
+        .as_object()
+        .and_then(|object| go_json_field(object, "error"))
+        .and_then(Value::as_object)
+    else {
+        return error;
+    };
+    let field = |name| match go_json_field(typed, name) {
+        None | Some(Value::Null) => Some(""),
+        Some(Value::String(value)) => Some(value.as_str()),
+        Some(_) => None,
+    };
+    let (Some(message), Some(kind)) = (field("message"), field("type")) else {
+        return error;
+    };
+    let mut refined = Error::http(400, message, "");
+    let text = format!("{kind} {message}").to_lowercase();
     if ["authentication", "invalid api key", "permission"]
         .iter()
         .any(|m| text.contains(m))
     {
-        error.code = ErrorCode::AuthFailure;
+        refined.code = ErrorCode::AuthFailure;
     } else if ["rate limit", "overloaded"]
         .iter()
         .any(|m| text.contains(m))
     {
-        error.code = ErrorCode::RateLimited;
+        refined.code = ErrorCode::RateLimited;
     } else if ["not_found", "no such model"]
         .iter()
         .any(|m| text.contains(m))
     {
-        error.code = ErrorCode::ModelNotFound;
+        refined.code = ErrorCode::ModelNotFound;
     }
-    error
+    if refined.code == ErrorCode::ProviderError {
+        error
+    } else {
+        refined
+    }
+}
+
+fn go_json_field<'a>(object: &'a serde_json::Map<String, Value>, name: &str) -> Option<&'a Value> {
+    object.get(name).or_else(|| {
+        object
+            .iter()
+            .find(|(key, _)| key.eq_ignore_ascii_case(name))
+            .map(|(_, value)| value)
+    })
 }
 
 #[derive(Deserialize)]
@@ -528,8 +542,6 @@ struct AnthropicResponse {
 }
 #[derive(Deserialize)]
 struct AnthropicContent {
-    #[serde(rename = "type")]
-    kind: Option<String>,
     #[serde(default)]
     text: String,
 }
