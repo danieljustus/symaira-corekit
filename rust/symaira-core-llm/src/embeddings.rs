@@ -1,8 +1,10 @@
 use crate::client::{Client, read_limited};
 use crate::error::{Error, ErrorCode, Result};
 use crate::provider::ModelInfo;
-use serde::Deserialize;
+use serde::de::{Error as _, IgnoredAny, MapAccess, Visitor};
+use serde::{Deserialize, Deserializer};
 use serde_json::json;
+use std::fmt;
 
 #[derive(Clone, Debug, Deserialize, PartialEq)]
 pub struct Embedding {
@@ -138,27 +140,269 @@ impl Client {
     }
 }
 
-#[derive(Deserialize)]
 struct EmbeddingResponse {
     data: Vec<EmbeddingData>,
 }
-#[derive(Deserialize)]
 struct EmbeddingData {
     embedding: Vec<f32>,
 }
-#[derive(Deserialize)]
+
+impl<'de> Deserialize<'de> for EmbeddingResponse {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct EmbeddingResponseVisitor;
+
+        impl<'de> Visitor<'de> for EmbeddingResponseVisitor {
+            type Value = EmbeddingResponse;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+                formatter.write_str("an embedding response object")
+            }
+
+            fn visit_map<M>(self, mut map: M) -> std::result::Result<Self::Value, M::Error>
+            where
+                M: MapAccess<'de>,
+            {
+                let mut data = None;
+                while let Some(key) = map.next_key::<String>()? {
+                    if key.eq_ignore_ascii_case("data") {
+                        data = Some(map.next_value()?);
+                    } else {
+                        let _: IgnoredAny = map.next_value()?;
+                    }
+                }
+                Ok(EmbeddingResponse {
+                    data: data.ok_or_else(|| M::Error::missing_field("data"))?,
+                })
+            }
+        }
+
+        deserializer.deserialize_map(EmbeddingResponseVisitor)
+    }
+}
+
+impl<'de> Deserialize<'de> for EmbeddingData {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct EmbeddingDataVisitor;
+
+        impl<'de> Visitor<'de> for EmbeddingDataVisitor {
+            type Value = EmbeddingData;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+                formatter.write_str("an embedding data object")
+            }
+
+            fn visit_map<M>(self, mut map: M) -> std::result::Result<Self::Value, M::Error>
+            where
+                M: MapAccess<'de>,
+            {
+                let mut embedding = None;
+                while let Some(key) = map.next_key::<String>()? {
+                    if key.eq_ignore_ascii_case("embedding") {
+                        embedding = Some(map.next_value()?);
+                    } else {
+                        let _: IgnoredAny = map.next_value()?;
+                    }
+                }
+                Ok(EmbeddingData {
+                    embedding: embedding.ok_or_else(|| M::Error::missing_field("embedding"))?,
+                })
+            }
+        }
+
+        deserializer.deserialize_map(EmbeddingDataVisitor)
+    }
+}
+
 struct OpenAiModelList {
     data: Vec<ModelId>,
 }
-#[derive(Deserialize)]
+
 struct ModelId {
     id: String,
 }
-#[derive(Deserialize)]
+
+impl<'de> Deserialize<'de> for OpenAiModelList {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct ModelListVisitor;
+
+        impl<'de> Visitor<'de> for ModelListVisitor {
+            type Value = OpenAiModelList;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+                formatter.write_str("an OpenAI model-list response object")
+            }
+
+            fn visit_unit<E>(self) -> std::result::Result<Self::Value, E>
+            where
+                E: serde::de::Error,
+            {
+                Ok(OpenAiModelList { data: Vec::new() })
+            }
+
+            fn visit_map<M>(self, mut map: M) -> std::result::Result<Self::Value, M::Error>
+            where
+                M: MapAccess<'de>,
+            {
+                let mut data = Vec::new();
+                while let Some(key) = map.next_key::<String>()? {
+                    if key.eq_ignore_ascii_case("data") {
+                        data = map
+                            .next_value::<Option<Vec<ModelId>>>()?
+                            .unwrap_or_default();
+                    } else {
+                        let _: IgnoredAny = map.next_value()?;
+                    }
+                }
+                Ok(OpenAiModelList { data })
+            }
+        }
+
+        deserializer.deserialize_any(ModelListVisitor)
+    }
+}
+
+impl<'de> Deserialize<'de> for ModelId {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct ModelIdVisitor;
+
+        impl<'de> Visitor<'de> for ModelIdVisitor {
+            type Value = ModelId;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+                formatter.write_str("an OpenAI model object")
+            }
+
+            fn visit_unit<E>(self) -> std::result::Result<Self::Value, E>
+            where
+                E: serde::de::Error,
+            {
+                Ok(ModelId { id: String::new() })
+            }
+
+            fn visit_map<M>(self, mut map: M) -> std::result::Result<Self::Value, M::Error>
+            where
+                M: MapAccess<'de>,
+            {
+                let mut id = String::new();
+                while let Some(key) = map.next_key::<String>()? {
+                    if key.eq_ignore_ascii_case("id") {
+                        if let Some(value) = map.next_value::<Option<String>>()? {
+                            id = value;
+                        }
+                    } else {
+                        let _: IgnoredAny = map.next_value()?;
+                    }
+                }
+                Ok(ModelId { id })
+            }
+        }
+
+        deserializer.deserialize_any(ModelIdVisitor)
+    }
+}
+
 struct OllamaModelList {
     models: Option<Vec<OllamaModel>>,
 }
-#[derive(Deserialize)]
+
 struct OllamaModel {
     name: String,
+}
+
+impl<'de> Deserialize<'de> for OllamaModelList {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct OllamaModelListVisitor;
+
+        impl<'de> Visitor<'de> for OllamaModelListVisitor {
+            type Value = OllamaModelList;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+                formatter.write_str("an Ollama model-list response object")
+            }
+
+            fn visit_unit<E>(self) -> std::result::Result<Self::Value, E>
+            where
+                E: serde::de::Error,
+            {
+                Ok(OllamaModelList { models: None })
+            }
+
+            fn visit_map<M>(self, mut map: M) -> std::result::Result<Self::Value, M::Error>
+            where
+                M: MapAccess<'de>,
+            {
+                let mut models = None;
+                while let Some(key) = map.next_key::<String>()? {
+                    if key.eq_ignore_ascii_case("models") {
+                        models = map.next_value::<Option<Vec<OllamaModel>>>()?;
+                    } else {
+                        let _: IgnoredAny = map.next_value()?;
+                    }
+                }
+                Ok(OllamaModelList { models })
+            }
+        }
+
+        deserializer.deserialize_any(OllamaModelListVisitor)
+    }
+}
+
+impl<'de> Deserialize<'de> for OllamaModel {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct OllamaModelVisitor;
+
+        impl<'de> Visitor<'de> for OllamaModelVisitor {
+            type Value = OllamaModel;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+                formatter.write_str("an Ollama model object")
+            }
+
+            fn visit_unit<E>(self) -> std::result::Result<Self::Value, E>
+            where
+                E: serde::de::Error,
+            {
+                Ok(OllamaModel {
+                    name: String::new(),
+                })
+            }
+
+            fn visit_map<M>(self, mut map: M) -> std::result::Result<Self::Value, M::Error>
+            where
+                M: MapAccess<'de>,
+            {
+                let mut name = String::new();
+                while let Some(key) = map.next_key::<String>()? {
+                    if key.eq_ignore_ascii_case("name") {
+                        if let Some(value) = map.next_value::<Option<String>>()? {
+                            name = value;
+                        }
+                    } else {
+                        let _: IgnoredAny = map.next_value()?;
+                    }
+                }
+                Ok(OllamaModel { name })
+            }
+        }
+
+        deserializer.deserialize_any(OllamaModelVisitor)
+    }
 }

@@ -19,4 +19,5 @@ pub use ollama::{
 pub use provider::{
     AuthScheme, Capabilities, Descriptor, ModelInfo, ModelSource, WireDialect, lookup, providers,
 };
+pub use tokio_util::sync::CancellationToken;
 pub use ureq::Agent;
