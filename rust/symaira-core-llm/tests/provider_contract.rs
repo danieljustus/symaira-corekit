@@ -961,32 +961,45 @@ fn malformed_openai_error_envelopes_keep_go_http_classification() {
             r#"{"error":{"message":"rate limit exceeded","type":"rate_limit_error"},"choices":[{"message":"malformed"}]}"#,
             "malformed_error_choice",
         ),
+        (
+            401,
+            r#"{"choices":[],"error":{"message":"authentication failed","type":"authentication_error"},"CHOICES":"malformed"}"#,
+            "malformed_error_choice_alias_collision",
+        ),
     ];
+    let token = CancellationToken::new();
+    let runtime = tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+        .unwrap();
     for (status, body, fixture_case) in cases {
-        let (url, server) = mock_server(status, body);
-        let client = ClientBuilder::new(lookup("openai").unwrap().clone(), "")
-            .base_url(url)
-            .api_key("dummy-key")
-            .build()
-            .unwrap();
-        let error = client
-            .chat(
-                "model",
-                &[Message {
-                    role: "user".into(),
-                    content: "question".into(),
-                }],
-                None,
-            )
-            .unwrap_err();
-        server.join().unwrap();
-        let expected = &fixture[fixture_case];
-        assert_eq!(error.code.as_str(), expected["code"]);
-        assert_eq!(error.status_code, expected["status"]);
-        assert_eq!(error.body, expected["body"]);
-        assert_eq!(error.retry_after, expected["retry_after"]);
-        assert_eq!(error.retryable(), expected["retryable"]);
-        assert_eq!(u8::from(error.exit_code()), expected["exit_code"]);
+        for cancellable in [false, true] {
+            let (url, server) = mock_server(status, body);
+            let client = ClientBuilder::new(lookup("openai").unwrap().clone(), "")
+                .base_url(url)
+                .api_key("dummy-key")
+                .build()
+                .unwrap();
+            let messages = [Message {
+                role: "user".into(),
+                content: "question".into(),
+            }];
+            let error = if cancellable {
+                runtime
+                    .block_on(client.chat_cancellable(&token, "model", &messages, None))
+                    .unwrap_err()
+            } else {
+                client.chat("model", &messages, None).unwrap_err()
+            };
+            server.join().unwrap();
+            let expected = &fixture[fixture_case];
+            assert_eq!(error.code.as_str(), expected["code"]);
+            assert_eq!(error.status_code, expected["status"]);
+            assert_eq!(error.body, expected["body"]);
+            assert_eq!(error.retry_after, expected["retry_after"]);
+            assert_eq!(error.retryable(), expected["retryable"]);
+            assert_eq!(u8::from(error.exit_code()), expected["exit_code"]);
+        }
     }
 }
 

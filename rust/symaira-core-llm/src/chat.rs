@@ -1,8 +1,10 @@
 use crate::client::{Client, read_limited, read_reqwest_limited};
 use crate::error::{Error, ErrorCode, Result};
 use crate::provider::WireDialect;
-use serde::{Deserialize, Serialize};
+use serde::de::{Error as _, IgnoredAny, MapAccess, Visitor};
+use serde::{Deserialize, Deserializer, Serialize};
 use serde_json::{Value, json};
+use std::fmt;
 use tokio_util::sync::CancellationToken;
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize, Eq, PartialEq)]
@@ -798,29 +800,14 @@ fn refine_openai_error(error: Error) -> Error {
     if error.status_code == 0 || error.body.is_empty() {
         return error;
     }
-    let Ok(value) = serde_json::from_str::<Value>(&error.body) else {
+    let Ok(envelope) = serde_json::from_str::<OpenAiErrorEnvelope>(&error.body) else {
         return error;
     };
-    if !go_openai_error_envelope_is_well_formed(&value) {
-        return error;
-    }
-    let Some(typed) = value
-        .as_object()
-        .and_then(|object| go_json_field(object, "error"))
-        .and_then(Value::as_object)
-    else {
+    let Some(typed) = envelope.error else {
         return error;
     };
-    let field = |name| match go_json_field(typed, name) {
-        None | Some(Value::Null) => Some(""),
-        Some(Value::String(value)) => Some(value.as_str()),
-        Some(_) => None,
-    };
-    let (Some(message), Some(kind)) = (field("message"), field("type")) else {
-        return error;
-    };
-    let mut refined = Error::http(400, message, "");
-    let text = format!("{kind} {message}").to_lowercase();
+    let mut refined = Error::http(400, &typed.message, "");
+    let text = format!("{} {}", typed.kind, typed.message).to_lowercase();
     if ["authentication", "invalid api key", "permission"]
         .iter()
         .any(|m| text.contains(m))
@@ -844,35 +831,104 @@ fn refine_openai_error(error: Error) -> Error {
     }
 }
 
-fn go_openai_error_envelope_is_well_formed(value: &Value) -> bool {
-    let Some(object) = value.as_object() else {
-        return false;
-    };
-    if let Some(choices) = go_json_field(object, "choices") {
-        match choices {
-            Value::Null => {}
-            Value::Array(choices) => {
-                if !choices.iter().all(go_openai_choice_is_well_formed) {
-                    return false;
-                }
+struct OpenAiErrorEnvelope {
+    error: Option<OpenAiTypedError>,
+}
+
+struct OpenAiTypedError {
+    message: String,
+    kind: String,
+}
+
+impl<'de> Deserialize<'de> for OpenAiErrorEnvelope {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct EnvelopeVisitor;
+
+        impl<'de> Visitor<'de> for EnvelopeVisitor {
+            type Value = OpenAiErrorEnvelope;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+                formatter.write_str("an OpenAI error response object")
             }
-            _ => return false,
-        }
-    }
-    if let Some(error) = go_json_field(object, "error") {
-        match error {
-            Value::Null => {}
-            Value::Object(error) => {
-                if !go_json_string_field_is_valid(error, "message")
-                    || !go_json_string_field_is_valid(error, "type")
-                {
-                    return false;
+
+            fn visit_map<M>(self, mut map: M) -> std::result::Result<Self::Value, M::Error>
+            where
+                M: MapAccess<'de>,
+            {
+                let mut error = None;
+                while let Some(key) = map.next_key::<String>()? {
+                    if key.eq_ignore_ascii_case("choices") {
+                        let choices = map.next_value::<Value>()?;
+                        if !go_openai_choices_are_well_formed(&choices) {
+                            return Err(M::Error::custom("invalid choices field"));
+                        }
+                    } else if key.eq_ignore_ascii_case("error") {
+                        error = map.next_value::<Option<OpenAiTypedError>>()?;
+                    } else {
+                        let _: IgnoredAny = map.next_value()?;
+                    }
                 }
+                Ok(OpenAiErrorEnvelope { error })
             }
-            _ => return false,
         }
+
+        deserializer.deserialize_map(EnvelopeVisitor)
     }
-    true
+}
+
+impl<'de> Deserialize<'de> for OpenAiTypedError {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct OpenAiErrorVisitor;
+
+        impl<'de> Visitor<'de> for OpenAiErrorVisitor {
+            type Value = OpenAiTypedError;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+                formatter.write_str("an OpenAI error object")
+            }
+
+            fn visit_map<M>(self, mut map: M) -> std::result::Result<Self::Value, M::Error>
+            where
+                M: MapAccess<'de>,
+            {
+                let mut message = String::new();
+                let mut kind = String::new();
+                while let Some(key) = map.next_key::<String>()? {
+                    let target = if key.eq_ignore_ascii_case("message") {
+                        Some(&mut message)
+                    } else if key.eq_ignore_ascii_case("type") {
+                        Some(&mut kind)
+                    } else {
+                        None
+                    };
+                    if let Some(target) = target {
+                        if let Some(value) = map.next_value::<Option<String>>()? {
+                            *target = value;
+                        }
+                    } else {
+                        let _: IgnoredAny = map.next_value()?;
+                    }
+                }
+                Ok(OpenAiTypedError { message, kind })
+            }
+        }
+
+        deserializer.deserialize_map(OpenAiErrorVisitor)
+    }
+}
+
+fn go_openai_choices_are_well_formed(value: &Value) -> bool {
+    match value {
+        Value::Null => true,
+        Value::Array(choices) => choices.iter().all(go_openai_choice_is_well_formed),
+        _ => false,
+    }
 }
 
 fn go_openai_choice_is_well_formed(choice: &Value) -> bool {
