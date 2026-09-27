@@ -57,6 +57,14 @@
     "retryable": false,
     "status": 401
   },
+  "malformed_error_nested_alias_collision": {
+    "body": "{\"error\":{\"message\":\"authentication failed\",\"type\":\"authentication_error\"},\"choices\":[{\"message\":{\"content\":\"ok\",\"CONTENT\":5}}]}",
+    "code": "auth_failure",
+    "exit_code": 3,
+    "retry_after": "17",
+    "retryable": false,
+    "status": 401
+  },
   "native_chat": {
     "chunks": [
       {
@@ -200,7 +208,7 @@
   "provenance": {
     "go_source_sha256": "9083f34389a8d37c89a54676c069432ec69daa1fd2d40a68081695a9ade6260c",
     "oracle_command": "GOTOOLCHAIN=go1.26.6 go run ./scripts/rust-port/llm-oracle",
-    "oracle_sha256": "cf4b0c7ae8f88db2f7610ca07a0a194ef31bcb8e8847d6cda52a146c4ae63bda",
+    "oracle_sha256": "44e4deec5d0ca15cc3d658342e8354b0f3fc28d729275ca706045e920f6e61c1",
     "runner_sha256": "c445537e6f83626e3d762acba2d1983ad90a2fbd4d355a9da84582ad303ba5f9"
   },
   "providers": [

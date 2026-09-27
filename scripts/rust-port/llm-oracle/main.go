@@ -46,6 +46,7 @@ type observation struct {
 	MalformedEnvelope        errorResult         `json:"malformed_error_envelope"`
 	MalformedChoice          errorResult         `json:"malformed_error_choice"`
 	MalformedChoiceAlias     errorResult         `json:"malformed_error_choice_alias_collision"`
+	MalformedNestedAlias     errorResult         `json:"malformed_error_nested_alias_collision"`
 	NativeGenerate           struct {
 		Request request                   `json:"request"`
 		Chunks  []llmkit.GenerateResponse `json:"chunks"`
@@ -250,6 +251,16 @@ func main() {
 		panic("expected malformed aliased-choice provider error")
 	}
 	out.MalformedChoiceAlias = errorResult{Code: string(providerErr.Code), Status: providerErr.StatusCode, Body: providerErr.Body, RetryAfter: providerErr.RetryAfter, Retryable: providerErr.Retryable(), ExitCode: int(providerErr.ExitCode())}
+	_, client, closeServer, err = capture("openai", `{"error":{"message":"authentication failed","type":"authentication_error"},"choices":[{"message":{"content":"ok","CONTENT":5}}]}`, http.StatusUnauthorized)
+	if err != nil {
+		panic(err)
+	}
+	_, err = client.Chat(context.Background(), "gpt-5", []llmkit.Message{{Role: "user", Content: "question"}}, nil)
+	closeServer()
+	if !errors.As(err, &providerErr) {
+		panic("expected malformed nested-choice provider error")
+	}
+	out.MalformedNestedAlias = errorResult{Code: string(providerErr.Code), Status: providerErr.StatusCode, Body: providerErr.Body, RetryAfter: providerErr.RetryAfter, Retryable: providerErr.Retryable(), ExitCode: int(providerErr.ExitCode())}
 	got, client, closeServer, err = capture("ollama", "{\"model\":\"llama3.1\",\"response\":\"piece\",\"done\":false}\n{\"model\":\"llama3.1\",\"response\":\"\",\"done\":true}\n", http.StatusOK)
 	if err != nil {
 		panic(err)

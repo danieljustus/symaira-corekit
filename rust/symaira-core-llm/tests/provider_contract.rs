@@ -966,6 +966,11 @@ fn malformed_openai_error_envelopes_keep_go_http_classification() {
             r#"{"choices":[],"error":{"message":"authentication failed","type":"authentication_error"},"CHOICES":"malformed"}"#,
             "malformed_error_choice_alias_collision",
         ),
+        (
+            401,
+            r#"{"error":{"message":"authentication failed","type":"authentication_error"},"choices":[{"message":{"content":"ok","CONTENT":5}}]}"#,
+            "malformed_error_nested_alias_collision",
+        ),
     ];
     let token = CancellationToken::new();
     let runtime = tokio::runtime::Builder::new_current_thread()

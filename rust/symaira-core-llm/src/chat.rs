@@ -1,7 +1,7 @@
 use crate::client::{Client, read_limited, read_reqwest_limited};
 use crate::error::{Error, ErrorCode, Result};
 use crate::provider::WireDialect;
-use serde::de::{Error as _, IgnoredAny, MapAccess, Visitor};
+use serde::de::{IgnoredAny, MapAccess, Visitor};
 use serde::{Deserialize, Deserializer, Serialize};
 use serde_json::{Value, json};
 use std::fmt;
@@ -861,10 +861,7 @@ impl<'de> Deserialize<'de> for OpenAiErrorEnvelope {
                 let mut error = None;
                 while let Some(key) = map.next_key::<String>()? {
                     if key.eq_ignore_ascii_case("choices") {
-                        let choices = map.next_value::<Value>()?;
-                        if !go_openai_choices_are_well_formed(&choices) {
-                            return Err(M::Error::custom("invalid choices field"));
-                        }
+                        let _: Option<Vec<GoOpenAiChoice>> = map.next_value()?;
                     } else if key.eq_ignore_ascii_case("error") {
                         error = map.next_value::<Option<OpenAiTypedError>>()?;
                     } else {
@@ -923,87 +920,95 @@ impl<'de> Deserialize<'de> for OpenAiTypedError {
     }
 }
 
-fn go_openai_choices_are_well_formed(value: &Value) -> bool {
-    match value {
-        Value::Null => true,
-        Value::Array(choices) => choices.iter().all(go_openai_choice_is_well_formed),
-        _ => false,
-    }
-}
+macro_rules! go_json_struct_validator {
+    ($type_name:ident, $visitor_name:ident, $expecting:literal, { $($field:literal => $field_type:ty),* $(,)? }) => {
+        struct $type_name;
 
-fn go_openai_choice_is_well_formed(choice: &Value) -> bool {
-    let Some(choice) = choice.as_object() else {
-        return choice.is_null();
-    };
-    if !go_json_string_field_is_valid(choice, "finish_reason") {
-        return false;
-    }
-    let Some(message) = go_json_field(choice, "message") else {
-        return true;
-    };
-    match message {
-        Value::Null => true,
-        Value::Object(message) => {
-            go_json_string_field_is_valid(message, "content")
-                && go_json_array_field_is_valid(
-                    message,
-                    "tool_calls",
-                    go_openai_tool_call_is_well_formed,
-                )
+        impl<'de> Deserialize<'de> for $type_name {
+            fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+            where
+                D: Deserializer<'de>,
+            {
+                struct $visitor_name;
+
+                impl<'de> Visitor<'de> for $visitor_name {
+                    type Value = $type_name;
+
+                    fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+                        formatter.write_str($expecting)
+                    }
+
+                    fn visit_unit<E>(self) -> std::result::Result<Self::Value, E>
+                    where
+                        E: serde::de::Error,
+                    {
+                        Ok($type_name)
+                    }
+
+                    fn visit_map<M>(self, mut map: M) -> std::result::Result<Self::Value, M::Error>
+                    where
+                        M: MapAccess<'de>,
+                    {
+                        while let Some(key) = map.next_key::<String>()? {
+                            match key.to_ascii_lowercase().as_str() {
+                                $($field => {
+                                    let _: $field_type = map.next_value()?;
+                                },)*
+                                _ => {
+                                    let _: IgnoredAny = map.next_value()?;
+                                }
+                            }
+                        }
+                        Ok($type_name)
+                    }
+                }
+
+                deserializer.deserialize_any($visitor_name)
+            }
         }
-        _ => false,
-    }
+    };
 }
 
-fn go_openai_tool_call_is_well_formed(tool_call: &Value) -> bool {
-    let Some(tool_call) = tool_call.as_object() else {
-        return tool_call.is_null();
-    };
-    if !go_json_string_field_is_valid(tool_call, "id")
-        || !go_json_string_field_is_valid(tool_call, "type")
+go_json_struct_validator!(
+    GoOpenAiChoice,
+    GoOpenAiChoiceVisitor,
+    "an OpenAI choice object",
     {
-        return false;
+        "message" => GoOpenAiMessage,
+        "finish_reason" => Option<String>,
     }
-    let Some(function) = go_json_field(tool_call, "function") else {
-        return true;
-    };
-    match function {
-        Value::Null => true,
-        Value::Object(function) => {
-            go_json_string_field_is_valid(function, "name")
-                && go_json_string_field_is_valid(function, "arguments")
-        }
-        _ => false,
+);
+
+go_json_struct_validator!(
+    GoOpenAiMessage,
+    GoOpenAiMessageVisitor,
+    "an OpenAI message object",
+    {
+        "content" => Option<String>,
+        "tool_calls" => Option<Vec<GoOpenAiToolCall>>,
     }
-}
+);
 
-fn go_json_string_field_is_valid(object: &serde_json::Map<String, Value>, name: &str) -> bool {
-    matches!(
-        go_json_field(object, name),
-        None | Some(Value::Null | Value::String(_))
-    )
-}
-
-fn go_json_array_field_is_valid(
-    object: &serde_json::Map<String, Value>,
-    name: &str,
-    validate_item: fn(&Value) -> bool,
-) -> bool {
-    match go_json_field(object, name) {
-        None | Some(Value::Null) => true,
-        Some(Value::Array(items)) => items.iter().all(validate_item),
-        Some(_) => false,
+go_json_struct_validator!(
+    GoOpenAiToolCall,
+    GoOpenAiToolCallVisitor,
+    "an OpenAI tool call object",
+    {
+        "id" => Option<String>,
+        "type" => Option<String>,
+        "function" => GoOpenAiFunction,
     }
-}
+);
 
-fn go_json_field<'a>(object: &'a serde_json::Map<String, Value>, name: &str) -> Option<&'a Value> {
-    object.get(name).or_else(|| {
-        object
-            .iter()
-            .find(|(key, _)| key.eq_ignore_ascii_case(name))
-            .map(|(_, value)| value)
-    })
-}
+go_json_struct_validator!(
+    GoOpenAiFunction,
+    GoOpenAiFunctionVisitor,
+    "an OpenAI function object",
+    {
+        "name" => Option<String>,
+        "arguments" => Option<String>,
+    }
+);
 
 #[derive(Deserialize)]
 struct OpenAiResponse {
