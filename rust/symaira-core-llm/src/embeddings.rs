@@ -219,14 +219,100 @@ impl<'de> Deserialize<'de> for EmbeddingData {
     }
 }
 
-#[derive(Deserialize)]
 struct OpenAiModelList {
     data: Vec<ModelId>,
 }
-#[derive(Deserialize)]
+
 struct ModelId {
     id: String,
 }
+
+impl<'de> Deserialize<'de> for OpenAiModelList {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct ModelListVisitor;
+
+        impl<'de> Visitor<'de> for ModelListVisitor {
+            type Value = OpenAiModelList;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+                formatter.write_str("an OpenAI model-list response object")
+            }
+
+            fn visit_unit<E>(self) -> std::result::Result<Self::Value, E>
+            where
+                E: serde::de::Error,
+            {
+                Ok(OpenAiModelList { data: Vec::new() })
+            }
+
+            fn visit_map<M>(self, mut map: M) -> std::result::Result<Self::Value, M::Error>
+            where
+                M: MapAccess<'de>,
+            {
+                let mut data = Vec::new();
+                while let Some(key) = map.next_key::<String>()? {
+                    if key.eq_ignore_ascii_case("data") {
+                        data = map
+                            .next_value::<Option<Vec<ModelId>>>()?
+                            .unwrap_or_default();
+                    } else {
+                        let _: IgnoredAny = map.next_value()?;
+                    }
+                }
+                Ok(OpenAiModelList { data })
+            }
+        }
+
+        deserializer.deserialize_any(ModelListVisitor)
+    }
+}
+
+impl<'de> Deserialize<'de> for ModelId {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct ModelIdVisitor;
+
+        impl<'de> Visitor<'de> for ModelIdVisitor {
+            type Value = ModelId;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+                formatter.write_str("an OpenAI model object")
+            }
+
+            fn visit_unit<E>(self) -> std::result::Result<Self::Value, E>
+            where
+                E: serde::de::Error,
+            {
+                Ok(ModelId { id: String::new() })
+            }
+
+            fn visit_map<M>(self, mut map: M) -> std::result::Result<Self::Value, M::Error>
+            where
+                M: MapAccess<'de>,
+            {
+                let mut id = String::new();
+                while let Some(key) = map.next_key::<String>()? {
+                    if key.eq_ignore_ascii_case("id") {
+                        if let Some(value) = map.next_value::<Option<String>>()? {
+                            id = value;
+                        }
+                    } else {
+                        let _: IgnoredAny = map.next_value()?;
+                    }
+                }
+                Ok(ModelId { id })
+            }
+        }
+
+        deserializer.deserialize_any(ModelIdVisitor)
+    }
+}
+
 #[derive(Deserialize)]
 struct OllamaModelList {
     models: Option<Vec<OllamaModel>>,

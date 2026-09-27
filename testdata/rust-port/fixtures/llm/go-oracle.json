@@ -16,6 +16,11 @@
     "provider_version": "2023-06-01"
   },
   "anthropic_mixed_content": "firstsecond",
+  "casefold_discovery_models": [
+    {
+      "id": "vendor/current-model"
+    }
+  ],
   "casefold_embedding": {
     "alias_then_data": [
       0.4
@@ -218,7 +223,7 @@
   "provenance": {
     "go_source_sha256": "9083f34389a8d37c89a54676c069432ec69daa1fd2d40a68081695a9ade6260c",
     "oracle_command": "GOTOOLCHAIN=go1.26.6 go run ./scripts/rust-port/llm-oracle",
-    "oracle_sha256": "b788ba48504274b3ce1cb738ad5687f9f7270f96100a1809f6b5283faaacfc02",
+    "oracle_sha256": "3cdf379546291cc8fea0c6186ba2d8188d99c66c1a2a7f152c8afbeb6ad40606",
     "runner_sha256": "c445537e6f83626e3d762acba2d1983ad90a2fbd4d355a9da84582ad303ba5f9"
   },
   "providers": [

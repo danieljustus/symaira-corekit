@@ -79,6 +79,7 @@ type observation struct {
 		Request request                  `json:"request"`
 		Models  []llmkit.OllamaModelInfo `json:"models"`
 	} `json:"native_models"`
+	CasefoldDiscoveryModels []llmkit.ModelInfo `json:"casefold_discovery_models"`
 }
 
 func capture(provider, response string, status int) (*request, *llmkit.Client, func(), error) {
@@ -380,6 +381,15 @@ func main() {
 	}
 	closeServer()
 	out.NativeModels.Request = *got
+	_, client, closeServer, err = captureWithSuffix("openrouter", `{"data":[{"id":"older-model"}],"DaTa":[{"ID":"vendor/current-model"}]}`, http.StatusOK, "/api/v1")
+	if err != nil {
+		panic(err)
+	}
+	out.CasefoldDiscoveryModels, err = client.ListModels(context.Background())
+	if err != nil {
+		panic(err)
+	}
+	closeServer()
 	if err := json.NewEncoder(os.Stdout).Encode(out); err != nil {
 		panic(err)
 	}

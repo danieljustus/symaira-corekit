@@ -1271,6 +1271,31 @@ fn native_ollama_calls_match_go_recordings() {
 }
 
 #[test]
+fn openrouter_model_discovery_uses_go_casefold_alias_order() {
+    let fixture: Value = serde_json::from_str(include_str!(
+        "../../../testdata/rust-port/fixtures/llm/go-oracle.json"
+    ))
+    .unwrap();
+    let (url, server) = mock_server(
+        200,
+        r#"{"data":[{"id":"older-model"}],"DaTa":[{"ID":"vendor/current-model"}]}"#,
+    );
+    let client = ClientBuilder::new(lookup("openrouter").unwrap().clone(), "")
+        .base_url(format!("{url}/api/v1"))
+        .api_key("dummy")
+        .build()
+        .unwrap();
+
+    let models = client.list_models().unwrap();
+    let (headers, _, _) = server.join().unwrap();
+    assert!(headers.starts_with("GET /api/v1/models HTTP/1.1"));
+    assert_eq!(
+        serde_json::to_value(models).unwrap(),
+        fixture["casefold_discovery_models"]
+    );
+}
+
+#[test]
 fn native_ollama_generate_accepts_go_scanner_large_chunks() {
     let fixture: Value = serde_json::from_str(include_str!(
         "../../../testdata/rust-port/fixtures/llm/go-oracle.json"
