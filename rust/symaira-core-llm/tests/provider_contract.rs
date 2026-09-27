@@ -7,7 +7,7 @@ use std::thread;
 use symaira_core_exit::ExitCode;
 use symaira_core_llm::{
     Agent, ChatOptions, ClientBuilder, DEFAULT_TIMEOUT, ErrorCode, GenerateOption, Message,
-    NativeChatOption, Tool, lookup, providers,
+    NativeChatOption, Tool, WireDialect, lookup, providers,
 };
 use ureq::Proxy;
 
@@ -129,6 +129,20 @@ fn empty_api_key_uses_credential_resolution() {
         Err(error) => error,
     };
     assert_eq!(error.code, ErrorCode::AuthFailure);
+}
+
+#[test]
+fn dialect_override_follows_go_builder_behavior() {
+    let fixture: Value = serde_json::from_str(include_str!(
+        "../../../testdata/rust-port/fixtures/llm/go-oracle.json"
+    ))
+    .unwrap();
+    assert_eq!(fixture["dialect_override_allowed"], true);
+    ClientBuilder::new(lookup("openai").unwrap().clone(), "")
+        .api_key("dummy-key")
+        .dialect(WireDialect::Anthropic)
+        .build()
+        .unwrap();
 }
 
 #[test]

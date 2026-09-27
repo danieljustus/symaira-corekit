@@ -36,6 +36,7 @@ type observation struct {
 	OpenAIDotPath            request             `json:"openai_dot_path_chat"`
 	LoopbackQueryBaseAllowed bool                `json:"loopback_query_base_allowed"`
 	EmptyAPIKeyResolves      bool                `json:"empty_api_key_resolves"`
+	DialectOverrideAllowed  bool                `json:"dialect_override_allowed"`
 	Anthropic                request             `json:"anthropic_chat"`
 	RateLimit                errorResult         `json:"rate_limit"`
 	StructuredAuth           errorResult         `json:"structured_auth"`
@@ -115,6 +116,8 @@ func main() {
 	out.LoopbackQueryBaseAllowed = err == nil
 	_, err = llmkit.NewClient(openAI, "env://", llmkit.WithAPIKey(""))
 	out.EmptyAPIKeyResolves = err != nil
+	_, err = llmkit.NewClient(openAI, "", llmkit.WithAPIKey("dummy-key"), llmkit.WithDialect(llmkit.DialectAnthropic))
+	out.DialectOverrideAllowed = err == nil
 	got, client, closeServer, err := capture("openai", `{"choices":[{"message":{"content":"answer"},"finish_reason":"stop"}]}`, http.StatusOK)
 	if err != nil {
 		panic(err)

@@ -85,15 +85,6 @@ impl ClientBuilder {
         }
         validate_base_url(&base_url, &self.descriptor)?;
         let dialect = self.dialect.unwrap_or(self.descriptor.dialect);
-        if dialect != self.descriptor.dialect && !self.descriptor.dialect_configurable {
-            return Err(Error::local(
-                ErrorCode::ProviderError,
-                format!(
-                    "llmkit: provider {:?} does not allow dialect overrides",
-                    self.descriptor.id
-                ),
-            ));
-        }
         let api_key = match self.descriptor.auth_scheme {
             AuthScheme::None => String::new(),
             _ => match self.api_key.filter(|key| !key.is_empty()) {
