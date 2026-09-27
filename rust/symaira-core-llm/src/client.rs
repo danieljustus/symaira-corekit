@@ -239,8 +239,7 @@ impl Client {
                 let remaining = MAX_ERROR_BODY - raw.len();
                 raw.extend_from_slice(&chunk[..chunk.len().min(remaining)]);
             }
-            let excerpt = String::from_utf8_lossy(&raw);
-            return Err(Error::http(status, &excerpt, &retry_after));
+            return Err(Error::http(status, &raw, &retry_after));
         }
         Ok(response)
     }
@@ -331,8 +330,7 @@ impl Client {
                 .limit(MAX_ERROR_BODY as u64)
                 .read_to_vec()
                 .unwrap_or_default();
-            let excerpt = String::from_utf8_lossy(&raw);
-            return Err(Error::http(status, &excerpt, &retry_after));
+            return Err(Error::http(status, &raw, &retry_after));
         }
         Ok(response)
     }

@@ -188,6 +188,34 @@ fn cancellable_chat_preserves_go_openai_wire_contract() {
 }
 
 #[test]
+fn openai_null_choice_matches_go_zero_value_choice() {
+    let fixture: Value = serde_json::from_str(include_str!(
+        "../../../testdata/rust-port/fixtures/llm/go-oracle.json"
+    ))
+    .unwrap();
+    let (url, server) = mock_server(200, r#"{"choices":[null]}"#);
+    let client = ClientBuilder::new(lookup("openai").unwrap().clone(), "")
+        .base_url(format!("{url}/v1"))
+        .api_key("dummy-key")
+        .build()
+        .unwrap();
+    let choice = client
+        .chat(
+            "gpt-5",
+            &[Message {
+                role: "user".into(),
+                content: "question".into(),
+            }],
+            None,
+        )
+        .unwrap();
+    server.join().unwrap();
+    assert_eq!(choice.content, fixture["null_choice_content"]);
+    assert!(choice.tool_calls.is_empty());
+    assert_eq!(choice.finish_reason, "");
+}
+
+#[test]
 fn cancellable_api_does_not_silently_ignore_an_injected_agent() {
     let client = ClientBuilder::new(lookup("openai").unwrap().clone(), "")
         .api_key("dummy-key")

@@ -806,7 +806,7 @@ fn refine_openai_error(error: Error) -> Error {
     let Some(typed) = envelope.error else {
         return error;
     };
-    let mut refined = Error::http(400, &typed.message, "");
+    let mut refined = Error::http(400, typed.message.as_bytes(), "");
     let text = format!("{} {}", typed.kind, typed.message).to_lowercase();
     if ["authentication", "invalid api key", "permission"]
         .iter()
@@ -1012,15 +1012,26 @@ go_json_struct_validator!(
 
 #[derive(Deserialize)]
 struct OpenAiResponse {
-    #[serde(default)]
+    #[serde(default, deserialize_with = "deserialize_openai_choices")]
     choices: Vec<OpenAiChoice>,
 }
-#[derive(Deserialize)]
+fn deserialize_openai_choices<'de, D>(
+    deserializer: D,
+) -> std::result::Result<Vec<OpenAiChoice>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    Vec::<Option<OpenAiChoice>>::deserialize(deserializer)
+        .map(|choices| choices.into_iter().map(Option::unwrap_or_default).collect())
+}
+
+#[derive(Default, Deserialize)]
 struct OpenAiChoice {
+    #[serde(default)]
     message: OpenAiMessage,
     finish_reason: Option<String>,
 }
-#[derive(Deserialize)]
+#[derive(Default, Deserialize)]
 struct OpenAiMessage {
     content: Option<String>,
     #[serde(default)]
