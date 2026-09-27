@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -52,6 +53,8 @@ type observation struct {
 	MalformedChoice          errorResult         `json:"malformed_error_choice"`
 	MalformedChoiceAlias     errorResult         `json:"malformed_error_choice_alias_collision"`
 	MalformedNestedAlias     errorResult         `json:"malformed_error_nested_alias_collision"`
+	NullChoiceContent        string              `json:"null_choice_content"`
+	InvalidUTF8ErrorBody     string              `json:"invalid_utf8_error_body"`
 	NativeGenerate           struct {
 		Request request                   `json:"request"`
 		Chunks  []llmkit.GenerateResponse `json:"chunks"`
@@ -279,6 +282,27 @@ func main() {
 		panic("expected malformed nested-choice provider error")
 	}
 	out.MalformedNestedAlias = errorResult{Code: string(providerErr.Code), Status: providerErr.StatusCode, Body: providerErr.Body, RetryAfter: providerErr.RetryAfter, Retryable: providerErr.Retryable(), ExitCode: int(providerErr.ExitCode())}
+	_, client, closeServer, err = capture("openai", `{"choices":[null]}`, http.StatusOK)
+	if err != nil {
+		panic(err)
+	}
+	choice, err = client.Chat(context.Background(), "gpt-5", []llmkit.Message{{Role: "user", Content: "question"}}, nil)
+	closeServer()
+	if err != nil {
+		panic(err)
+	}
+	out.NullChoiceContent = choice.Content
+	rawErrorBody := append(bytes.Repeat([]byte{0xff}, 171), bytes.Repeat([]byte("x"), 500)...)
+	_, client, closeServer, err = capture("openai", string(rawErrorBody), http.StatusBadRequest)
+	if err != nil {
+		panic(err)
+	}
+	_, err = client.Chat(context.Background(), "gpt-5", []llmkit.Message{{Role: "user", Content: "question"}}, nil)
+	closeServer()
+	if !errors.As(err, &providerErr) {
+		panic("expected invalid UTF-8 provider error")
+	}
+	out.InvalidUTF8ErrorBody = providerErr.Body
 	got, client, closeServer, err = capture("ollama", "{\"model\":\"llama3.1\",\"response\":\"piece\",\"done\":false}\n{\"model\":\"llama3.1\",\"response\":\"\",\"done\":true}\n", http.StatusOK)
 	if err != nil {
 		panic(err)
