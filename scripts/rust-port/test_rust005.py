@@ -65,6 +65,43 @@ class Rust005NegativeControls(unittest.TestCase):
         self.assertEqual(completed.returncode, 0, completed.stderr)
         self.assertIn("manipulated pin", completed.stdout)
 
+    def test_adoption_check_does_not_write_report_without_explicit_flag(self):
+        with tempfile.TemporaryDirectory() as raw:
+            root = Path(raw)
+            evidence = root / "evidence.json"
+            report = root / "report.json"
+            evidence.write_text(
+                '{"schema_version":1,"gate_id":"RUST-005",'
+                '"corekit":{"revision":"' + "1" * 40 + '",'
+                '"url":"https://github.com/danieljustus/symaira-corekit",'
+                '"package":"symaira-core-version"},'
+                '"consumers":[{"repository":"invalid-one"},{"repository":"invalid-two"}]}',
+                encoding="utf-8",
+            )
+            original = b"keep this report unchanged\n"
+            report.write_bytes(original)
+            command = [
+                sys.executable,
+                str(ROOT / "scripts/rust-port/adoption.py"),
+                "--check",
+                "--min-consumers",
+                "2",
+                "--evidence",
+                str(evidence),
+                "--report",
+                str(report),
+                "--offline",
+            ]
+            checked = subprocess.run(command, cwd=ROOT, capture_output=True, text=True, check=False)
+            self.assertEqual(checked.returncode, 1, checked.stderr)
+            self.assertEqual(report.read_bytes(), original)
+
+            generated = subprocess.run(
+                [*command, "--write-report"], cwd=ROOT, capture_output=True, text=True, check=False
+            )
+            self.assertEqual(generated.returncode, 1, generated.stderr)
+            self.assertNotEqual(report.read_bytes(), original)
+
     def test_gate_summary_is_bound_to_benchmark(self):
         benchmark = {
             "measurements": [{"repository": "one/repo", "workload": "version --json", "baseline_commit": "1" * 40, "candidate_commit": "2" * 40, "runs": 50, "maximum_regression_ratio": 0.5}],
