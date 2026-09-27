@@ -1413,6 +1413,34 @@ fn native_ollama_generate_scanner_errors_match_go_before_and_after_data() {
 }
 
 #[test]
+fn native_ollama_generate_rejects_nonempty_whitespace_lines_like_go() {
+    let fixture: Value = serde_json::from_str(include_str!(
+        "../../../testdata/rust-port/fixtures/llm/go-oracle.json"
+    ))
+    .unwrap();
+    let response = " \n{\"model\":\"llama3.1\",\"response\":\"second\",\"done\":true}\n";
+    let (url, server) = mock_server(200, response);
+    let client = ClientBuilder::new(lookup("ollama").unwrap().clone(), "")
+        .base_url(url)
+        .build()
+        .unwrap();
+    let mut callbacks = 0;
+    let error = client
+        .generate("", "prompt", &GenerateOption::default(), |_| {
+            callbacks += 1;
+            Ok(())
+        })
+        .unwrap_err();
+    server.join().unwrap();
+
+    assert_eq!(
+        error.code.as_str(),
+        fixture["native_generate_whitespace_line"]["code"]
+    );
+    assert_eq!(callbacks, 0);
+}
+
+#[test]
 fn anthropic_stream_and_openrouter_model_discovery_are_normalized() {
     let (url, server) = mock_server(
         200,

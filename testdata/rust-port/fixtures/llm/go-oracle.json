@@ -162,6 +162,10 @@
       "error": "llmkit: transport_error: bufio.Scanner: token too long"
     }
   },
+  "native_generate_whitespace_line": {
+    "code": "provider_error",
+    "error": "llmkit: provider_error: decode generate chunk: unexpected end of JSON input"
+  },
   "native_models": {
     "models": [
       {
@@ -235,7 +239,7 @@
   "provenance": {
     "go_source_sha256": "9083f34389a8d37c89a54676c069432ec69daa1fd2d40a68081695a9ade6260c",
     "oracle_command": "GOTOOLCHAIN=go1.26.6 go run ./scripts/rust-port/llm-oracle",
-    "oracle_sha256": "55e2fe7ed12b97f7538920197387c5e07e31a83ed3378bc2854ee6e24029e74c",
+    "oracle_sha256": "07e790c32af891dc45f93d06eaad86cfa486e1bea0f5316bd50c31f6cd7ebf02",
     "runner_sha256": "c445537e6f83626e3d762acba2d1983ad90a2fbd4d355a9da84582ad303ba5f9"
   },
   "providers": [

@@ -206,7 +206,9 @@ impl Client {
                 error.to_string()
             })
         })? {
-            if line.iter().all(u8::is_ascii_whitespace) {
+            let token = line.strip_suffix(b"\n").unwrap_or(&line);
+            let token = token.strip_suffix(b"\r").unwrap_or(token);
+            if token.is_empty() {
                 continue;
             }
             started = true;
