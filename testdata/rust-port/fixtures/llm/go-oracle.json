@@ -37,6 +37,11 @@
   },
   "dialect_override_allowed": true,
   "empty_api_key_resolves": true,
+  "generic_ollama_casefold_models": [
+    {
+      "id": "current-model"
+    }
+  ],
   "loopback_query_base_allowed": true,
   "malformed_error_choice": {
     "body": "{\"error\":{\"message\":\"rate limit exceeded\",\"type\":\"rate_limit_error\"},\"choices\":[{\"message\":\"malformed\"}]}",
@@ -230,7 +235,7 @@
   "provenance": {
     "go_source_sha256": "9083f34389a8d37c89a54676c069432ec69daa1fd2d40a68081695a9ade6260c",
     "oracle_command": "GOTOOLCHAIN=go1.26.6 go run ./scripts/rust-port/llm-oracle",
-    "oracle_sha256": "c7572b4e8fa3658fe59932bd91cddae41b844acd32206dde5da6f48f980f5263",
+    "oracle_sha256": "55e2fe7ed12b97f7538920197387c5e07e31a83ed3378bc2854ee6e24029e74c",
     "runner_sha256": "c445537e6f83626e3d762acba2d1983ad90a2fbd4d355a9da84582ad303ba5f9"
   },
   "providers": [

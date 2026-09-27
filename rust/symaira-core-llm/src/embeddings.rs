@@ -313,11 +313,96 @@ impl<'de> Deserialize<'de> for ModelId {
     }
 }
 
-#[derive(Deserialize)]
 struct OllamaModelList {
     models: Option<Vec<OllamaModel>>,
 }
-#[derive(Deserialize)]
+
 struct OllamaModel {
     name: String,
+}
+
+impl<'de> Deserialize<'de> for OllamaModelList {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct OllamaModelListVisitor;
+
+        impl<'de> Visitor<'de> for OllamaModelListVisitor {
+            type Value = OllamaModelList;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+                formatter.write_str("an Ollama model-list response object")
+            }
+
+            fn visit_unit<E>(self) -> std::result::Result<Self::Value, E>
+            where
+                E: serde::de::Error,
+            {
+                Ok(OllamaModelList { models: None })
+            }
+
+            fn visit_map<M>(self, mut map: M) -> std::result::Result<Self::Value, M::Error>
+            where
+                M: MapAccess<'de>,
+            {
+                let mut models = None;
+                while let Some(key) = map.next_key::<String>()? {
+                    if key.eq_ignore_ascii_case("models") {
+                        models = map.next_value::<Option<Vec<OllamaModel>>>()?;
+                    } else {
+                        let _: IgnoredAny = map.next_value()?;
+                    }
+                }
+                Ok(OllamaModelList { models })
+            }
+        }
+
+        deserializer.deserialize_any(OllamaModelListVisitor)
+    }
+}
+
+impl<'de> Deserialize<'de> for OllamaModel {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct OllamaModelVisitor;
+
+        impl<'de> Visitor<'de> for OllamaModelVisitor {
+            type Value = OllamaModel;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+                formatter.write_str("an Ollama model object")
+            }
+
+            fn visit_unit<E>(self) -> std::result::Result<Self::Value, E>
+            where
+                E: serde::de::Error,
+            {
+                Ok(OllamaModel {
+                    name: String::new(),
+                })
+            }
+
+            fn visit_map<M>(self, mut map: M) -> std::result::Result<Self::Value, M::Error>
+            where
+                M: MapAccess<'de>,
+            {
+                let mut name = String::new();
+                while let Some(key) = map.next_key::<String>()? {
+                    if key.eq_ignore_ascii_case("name") {
+                        if let Some(value) = map.next_value::<Option<String>>()? {
+                            name = value;
+                        }
+                    } else {
+                        let _: IgnoredAny = map.next_value()?;
+                    }
+                }
+                Ok(OllamaModel { name })
+            }
+        }
+
+        deserializer.deserialize_any(OllamaModelVisitor)
+    }
 }

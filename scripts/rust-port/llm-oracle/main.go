@@ -79,8 +79,9 @@ type observation struct {
 		Request request                  `json:"request"`
 		Models  []llmkit.OllamaModelInfo `json:"models"`
 	} `json:"native_models"`
-	NativeModelsCasefold    []llmkit.OllamaModelInfo `json:"native_models_casefold_alias_order"`
-	CasefoldDiscoveryModels []llmkit.ModelInfo       `json:"casefold_discovery_models"`
+	NativeModelsCasefold        []llmkit.OllamaModelInfo `json:"native_models_casefold_alias_order"`
+	CasefoldDiscoveryModels     []llmkit.ModelInfo       `json:"casefold_discovery_models"`
+	GenericOllamaCasefoldModels []llmkit.ModelInfo       `json:"generic_ollama_casefold_models"`
 }
 
 func capture(provider, response string, status int) (*request, *llmkit.Client, func(), error) {
@@ -396,6 +397,15 @@ func main() {
 		panic(err)
 	}
 	out.CasefoldDiscoveryModels, err = client.ListModels(context.Background())
+	if err != nil {
+		panic(err)
+	}
+	closeServer()
+	_, client, closeServer, err = capture("ollama", `{"models":[{"name":"older-model"}],"MODELS":[{"NAME":"current-model"}]}`, http.StatusOK)
+	if err != nil {
+		panic(err)
+	}
+	out.GenericOllamaCasefoldModels, err = client.ListModels(context.Background())
 	if err != nil {
 		panic(err)
 	}
