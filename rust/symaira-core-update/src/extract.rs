@@ -54,7 +54,6 @@ pub fn observe(kind: &str, archive: &[u8], expected: &str) -> Observation {
         "symaira-update-extract-{}-{id}",
         std::process::id()
     ));
-    let _ = fs::remove_dir_all(&root);
     let mut result = Observation {
         id: String::new(),
         kind: kind.to_owned(),
@@ -65,7 +64,7 @@ pub fn observe(kind: &str, archive: &[u8], expected: &str) -> Observation {
         files: Vec::new(),
         error: None,
     };
-    if let Err(err) = fs::create_dir_all(&root) {
+    if let Err(err) = fs::create_dir(&root) {
         result.error = Some(ErrorObservation {
             code: "io".into(),
             message: err.to_string(),
