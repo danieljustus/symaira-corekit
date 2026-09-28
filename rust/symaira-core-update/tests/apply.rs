@@ -144,7 +144,7 @@ fn apply_filesystem_observations_match_go_fixture() {
         eprintln!("SKIP {reason}");
         return;
     }
-    assert_eq!(fixture.cases.len(), 10);
+    assert_eq!(fixture.cases.len(), 12);
     for case in fixture.cases {
         let input = case.input();
         let actual = replay(&input);

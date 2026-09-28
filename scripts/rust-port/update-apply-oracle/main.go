@@ -77,6 +77,8 @@ func main() {
 		{ID: "missing-asset", AssetName: "mytool_linux_amd64", PayloadHex: hex.EncodeToString([]byte("new-binary")), ChecksumOK: true, InitialExists: true, InitialContent: "old-binary", InitialMode: 0o755, OmitAsset: true},
 		{ID: "blocked-parent", AssetName: "mytool_linux_amd64", PayloadHex: hex.EncodeToString([]byte("new-binary")), ChecksumOK: true, BlockedParent: true},
 		{ID: "nested-install", AssetName: "mytool_linux_amd64", PayloadHex: hex.EncodeToString([]byte("new-binary")), ChecksumOK: true, InitialExists: true, InitialContent: "old-binary", InitialMode: 0o755, NestedParent: true},
+		{ID: "mixed-case-asset", AssetName: "MyTool_LiNuX_AmD64", PayloadHex: hex.EncodeToString([]byte("new-binary")), ChecksumOK: true, InitialExists: true, InitialContent: "old-binary", InitialMode: 0o755},
+		{ID: "checksums-shaped-asset", AssetName: "mytool_checksums_linux_amd64", PayloadHex: hex.EncodeToString([]byte("new-binary")), ChecksumOK: true, InitialExists: true, InitialContent: "old-binary", InitialMode: 0o755},
 	}
 	zipPath := filepath.Join("scripts", "rust-port", "update-extract-oracle", "testdata", "zip-success.zip")
 	if archive, err := os.ReadFile(zipPath); err == nil { //nolint:gosec // path is built from this repository's own fixture table

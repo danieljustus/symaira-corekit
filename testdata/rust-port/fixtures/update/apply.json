@@ -1,6 +1,6 @@
 {
   "go_source_sha256": "bff3e7be09de630ac2dba8070040443852e7bd9fc8ee5dd76abe614df7d30a0a",
-  "oracle_sha256": "b90acc4ba71d8b015dc716357dd5b7ef1f2fd8843121f6d2dcea9002a87f4f48",
+  "oracle_sha256": "158f0d5395231f0326922ae90d5434f38d3e4f18717a6b203eaec8d438a5c6d6",
   "goos": "darwin",
   "cases": [
     {
@@ -255,6 +255,63 @@
           {
             "path": "nested/mytool",
             "content": "new-binary",
+            "mode": 493
+          }
+        ]
+      }
+    },
+    {
+      "input": {
+        "id": "mixed-case-asset",
+        "asset_name": "MyTool_LiNuX_AmD64",
+        "payload_hex": "6e65772d62696e617279",
+        "checksum_ok": true,
+        "initial_exists": true,
+        "initial_content": "old-binary",
+        "initial_mode": 493
+      },
+      "observation": {
+        "target_exists": true,
+        "target_content": "new-binary",
+        "target_mode": 493,
+        "backup_exists": false,
+        "stage_during_download": true,
+        "temp_during_download": false,
+        "validator_saw_target": false,
+        "validator_saw_backup": false,
+        "files": [
+          {
+            "path": "mytool",
+            "content": "new-binary",
+            "mode": 493
+          }
+        ]
+      }
+    },
+    {
+      "input": {
+        "id": "checksums-shaped-asset",
+        "asset_name": "mytool_checksums_linux_amd64",
+        "payload_hex": "6e65772d62696e617279",
+        "checksum_ok": true,
+        "initial_exists": true,
+        "initial_content": "old-binary",
+        "initial_mode": 493
+      },
+      "observation": {
+        "error_code": "missing_asset",
+        "target_exists": true,
+        "target_content": "old-binary",
+        "target_mode": 493,
+        "backup_exists": false,
+        "stage_during_download": false,
+        "temp_during_download": false,
+        "validator_saw_target": false,
+        "validator_saw_backup": false,
+        "files": [
+          {
+            "path": "mytool",
+            "content": "old-binary",
             "mode": 493
           }
         ]

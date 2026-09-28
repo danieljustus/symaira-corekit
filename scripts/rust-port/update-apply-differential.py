@@ -33,8 +33,8 @@ def observed():
         ["go", "run", "./scripts/rust-port/update-apply-oracle"], cwd=ROOT, env=env
     )
     cases = json.loads(output)
-    if len(cases) != 10:
-        raise ValueError(f"apply oracle ran {len(cases)} cases, expected 10")
+    if len(cases) != 12:
+        raise ValueError(f"apply oracle ran {len(cases)} cases, expected 12")
     go_source = b"\0".join(
         path.read_bytes()
         for path in (
@@ -144,7 +144,16 @@ def main():
         negative = replay(path)
     if negative.returncode == 0 or "zip-extract-blocked observation" not in negative.stdout:
         raise RuntimeError("ZIP mutation was not rejected at its intended assertion")
-    print("PASS install, blocked-parent, nested-install and ZIP mutations rejected at their assertions")
+    asset_mutated = json.loads(json.dumps(current))
+    shaped = next(row for row in asset_mutated["cases"] if row["input"]["id"] == "checksums-shaped-asset")
+    shaped["observation"]["error_code"] = "wrong asset acceptance"
+    with tempfile.TemporaryDirectory(prefix="update-apply-asset-negative-") as temp:
+        path = Path(temp) / "mutated.json"
+        path.write_text(json.dumps(asset_mutated), encoding="utf-8")
+        negative = replay(path)
+    if negative.returncode == 0 or "checksums-shaped-asset observation" not in negative.stdout:
+        raise RuntimeError("checksums-shaped asset mutation was not rejected at its intended assertion")
+    print("PASS install, blocked-parent, nested, ZIP and asset-selection mutations rejected")
     return 0
 
 

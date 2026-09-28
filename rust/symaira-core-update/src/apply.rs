@@ -153,12 +153,13 @@ pub fn replay(input: &Input) -> Observation {
     let mut validator_saw_backup = false;
     let mut validator_target_content = String::new();
 
-    let asset_matches = if input.omit_asset {
+    let asset_name = input.asset_name.to_ascii_lowercase();
+    let asset_matches = if input.omit_asset || asset_name.contains("checksums") {
         false
     } else if input.use_zip {
-        input.asset_name.contains("windows")
+        asset_name.contains("windows") && asset_name.contains("amd64")
     } else {
-        input.asset_name.contains("linux") && input.asset_name.contains("amd64")
+        asset_name.contains("linux") && asset_name.contains("amd64")
     };
     let writable = !asset_matches || check_writable(&target).is_ok();
     let staged = target.with_file_name("updateapply-replay");
