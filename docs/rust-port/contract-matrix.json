@@ -1194,7 +1194,7 @@
         "linux",
         "windows"
       ],
-      "rust_test": "symaira-core-llm/tests/parity.rs",
+      "rust_test": "symaira-core-llm/tests/provider_contract.rs",
       "status": "todo"
     },
     {
@@ -1209,7 +1209,7 @@
         "linux",
         "windows"
       ],
-      "rust_test": "symaira-core-llm/tests/parity.rs",
+      "rust_test": "symaira-core-llm/tests/provider_contract.rs",
       "status": "todo"
     },
     {
@@ -1224,7 +1224,7 @@
         "linux",
         "windows"
       ],
-      "rust_test": "symaira-core-llm/tests/parity.rs",
+      "rust_test": "symaira-core-llm/tests/provider_contract.rs",
       "status": "todo"
     },
     {
@@ -1239,7 +1239,7 @@
         "linux",
         "windows"
       ],
-      "rust_test": "symaira-core-llm/tests/parity.rs",
+      "rust_test": "symaira-core-llm/tests/provider_contract.rs",
       "status": "todo"
     },
     {
@@ -1254,7 +1254,7 @@
         "linux",
         "windows"
       ],
-      "rust_test": "symaira-core-llm/tests/parity.rs",
+      "rust_test": "symaira-core-llm/tests/provider_contract.rs",
       "status": "todo"
     },
     {
@@ -1269,7 +1269,7 @@
         "linux",
         "windows"
       ],
-      "rust_test": "symaira-core-llm/tests/parity.rs",
+      "rust_test": "symaira-core-llm/tests/provider_contract.rs",
       "status": "todo"
     },
     {
@@ -1284,7 +1284,7 @@
         "linux",
         "windows"
       ],
-      "rust_test": "symaira-core-llm/tests/parity.rs",
+      "rust_test": "symaira-core-llm/tests/provider_contract.rs",
       "status": "todo"
     },
     {
@@ -1299,7 +1299,7 @@
         "linux",
         "windows"
       ],
-      "rust_test": "symaira-core-llm/tests/parity.rs",
+      "rust_test": "symaira-core-llm/tests/provider_contract.rs",
       "status": "todo"
     },
     {
@@ -1314,7 +1314,7 @@
         "linux",
         "windows"
       ],
-      "rust_test": "symaira-core-llm/tests/parity.rs",
+      "rust_test": "symaira-core-llm/tests/provider_contract.rs",
       "status": "todo"
     },
     {
@@ -1329,7 +1329,7 @@
         "linux",
         "windows"
       ],
-      "rust_test": "symaira-core-llm/tests/parity.rs",
+      "rust_test": "symaira-core-llm/tests/provider_contract.rs",
       "status": "todo"
     },
     {
@@ -1344,7 +1344,7 @@
         "linux",
         "windows"
       ],
-      "rust_test": "symaira-core-llm/tests/generator.rs",
+      "rust_test": "symaira-core-llm/tests/provider_contract.rs",
       "status": "todo"
     },
     {

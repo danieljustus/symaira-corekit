@@ -273,6 +273,8 @@ jobs:
         run: cargo clippy --workspace --all-targets --all-features --locked -- -D warnings
       - name: Foundation contract gate
         run: make rust-foundation-contract
+      - name: LLM provider contract gate
+        run: make rust-llm-contract
       - name: Dependency policy (Linux)
         if: runner.os == 'Linux'
         run: |

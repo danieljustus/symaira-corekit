@@ -43,6 +43,7 @@ the focused Go package checks, compare the pinned oracle observation, run Rust
 format/lint, and test the Rust crate. Refresh the observation deliberately with
 `python3 scripts/rust-port/llm-differential.py --write` after a reviewed Go
 contract change.
+The `Rust foundation` CI matrix runs this gate on Linux, macOS, and Windows.
 
 ## Residual boundary
 
