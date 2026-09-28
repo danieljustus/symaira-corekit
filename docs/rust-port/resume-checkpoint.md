@@ -3,39 +3,39 @@
 ## Current local candidate — UPD-012 partial parity (2026-09-28)
 
 - Mode: execute; branch `migration/corekit-ledger-20260928` in
-  `.worktrees/corekit-rust-ledger-20260928`, latest tested source `39deb404`.
-  No new push, release, cutover,
-  Go removal or cleanup was authorized.
-- Four direct Go `atomicSwap` cases now replay the Rust filesystem operation;
-  the exported Apply oracle has a ninth, blocked-parent case. Both differentials
-  reject mutated observations. The Rust Apply replay now uses its actual
-  `atomic_swap` primitive, not a duplicate test-only rename sequence.
-- Integrated local checks after the final source edit: `make rust-update-contract`
-  exit 0 (Go tests, nine Apply observations, four direct swap observations and
-  mutation rejection); `golangci-lint run ./...` 0 issues;
-  `generate.py --check-source` and `--check` plus the ledger validator passed.
-  Strict crate Clippy, formatting and all crate tests ran inside the Make gate.
-  Mimo read-only feasibility review ran on an older `994ee3c` checkout and
-  identified two omitted Go test names in the UPD-012 row; the executable
-  selector was extended locally. The Apply replay now creates a staged file
-  before checking its checksum and observes it through the filesystem rather
-  than inferring staging from the asset name. A separate review of the earlier
-  `b8037153` implementation is pending; later source changes need delta review.
-- Native Linux/arm64, non-root UID 65534, Go 1.26.6 and Rust 1.98.0: a
-  source archive of `39deb404` passed `make rust-update-contract` in an
-  isolated Colima/Docker VM (exit 0). Fresh Linux Go observations replayed
-  UPD request, install method, extraction, apply and four swap cases in Rust;
-  the install-method negative control was repaired to actually reject a
-  mutation on Linux. macOS/arm64 ran the same gate after that harness repair,
-  also with exit 0. Native Windows remains untested: local MSVC
-  cross-check fails compiling `ring` without Windows `assert.h`/SDK.
-- Residuals: UPD-012 stays `fixture-ready` until the remaining failure cleanup
-  and full orchestrated apply path are exercised on Linux/macOS/Windows.
+  `.worktrees/corekit-rust-ledger-20260928`, latest tested source
+  `baa661014aad59935300265681e498cbd709ee82`. No new push, release,
+  cutover, Go removal or destructive cleanup was authorized.
+- Six direct Go `atomicSwap` cases replay the Rust filesystem operation,
+  including rollback and remove faults with Go-verified error families. Ten
+  Apply cases replay, including blocked-parent, nested-target and ZIP install;
+  independent mutations of install, blocked-parent, nested and ZIP observations
+  are rejected at their intended assertions. The Rust Apply replay stages a
+  real file and calls the shared `atomic_swap` operation. The four findings
+  from Mimo's read-only review of `b8037153` were addressed locally: isolated
+  negative controls, pinned Go runner, nested path/backup observations and
+  double-failure error prefixes. This is not a new review of the final head.
+- On native macOS/arm64 at `baa6610`, `make rust-update-contract`, full
+  `cargo test --workspace --all-features --locked`, workspace strict Clippy,
+  `make test lint build`, generator source/fixture checks and ledger validation
+  all exited 0. `golangci-lint run ./...` reported 0 issues. A separately
+  documented source archive of the same exact head was run on native
+  Linux/arm64 in Colima/Docker as non-root UID 65534, Go 1.26.6 and Rust
+  1.98.0; `make rust-update-contract` exited 0. The downloaded official Go
+  tarball matched SHA-256
+  `d0507e9e9d7fe012aae570108cbd76c15de879e17130ab8cb90d4d7445cb1f2e`.
+  Its live Linux Go observations replayed all ten Apply and six swap cases,
+  with mutation rejection. Both Colima profiles were stopped afterward.
+- Residuals: UPD-012 stays `fixture-ready` because the current Rust Apply
+  replay is not the full downloaded, signed update orchestration and not all
+  fault paths are covered. Native Windows remains untested; a local MSVC
+  cross-check previously failed on `ring` without Windows `assert.h`/SDK.
   Exact local HEAD cannot acquire native Windows CI without the separately
-  prohibited publication; older CI runs do not certify these files.
-- Next: reconcile the exact-candidate review and its source delta, then port
-  remaining executable Apply orchestration rather than promote a replay model
-  to full parity. Run native target gates where authorized.
+  prohibited publication. Older CI runs do not certify this candidate.
+- Next: port and compare the remaining executable Apply orchestration on the
+  exact candidate rather than promote a replay model to full parity. Keep the
+  `todo` audit/evidence, DOM and vector contracts deferred unless their
+  two-consumer demand is established.
 
 ## Active slice — CoreKit #288 Rust LLM transport
 
