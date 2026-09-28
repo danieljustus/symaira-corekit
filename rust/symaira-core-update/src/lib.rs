@@ -8,6 +8,8 @@ pub mod cache;
 pub mod extract;
 pub mod install_method;
 
+pub mod request;
+
 /// Whether the running version is a stable release eligible for an update check.
 /// Invalid versions return before the Go checker performs HTTP or cache access.
 #[must_use]
