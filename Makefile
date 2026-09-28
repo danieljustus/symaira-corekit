@@ -118,6 +118,7 @@ rust-update-contract: rust-update-version-contract
 	GOTOOLCHAIN=go1.26.6 CGO_ENABLED=0 $(GO_RUN) test -count=1 ./updatecheck/...
 	GOTOOLCHAIN=go1.26.6 CGO_ENABLED=0 python3 scripts/rust-port/update-response-differential.py
 	GOTOOLCHAIN=go1.26.6 CGO_ENABLED=0 python3 scripts/rust-port/update-response-differential.py --negative-control
+	GOTOOLCHAIN=go1.26.6 CGO_ENABLED=0 python3 scripts/rust-port/update-request-differential.py
 	GOTOOLCHAIN=go1.26.6 CGO_ENABLED=0 python3 scripts/rust-port/update-cache-differential.py
 	GOTOOLCHAIN=go1.26.6 CGO_ENABLED=0 python3 scripts/rust-port/update-cache-differential.py --negative-control
 	GOTOOLCHAIN=go1.26.6 CGO_ENABLED=0 python3 scripts/rust-port/install-method-differential.py

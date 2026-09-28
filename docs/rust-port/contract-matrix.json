@@ -1059,8 +1059,8 @@
         "linux",
         "windows"
       ],
-      "rust_test": "symaira-core-update/tests/parity.rs",
-      "status": "todo"
+      "rust_test": "symaira-core-update/tests/request.rs",
+      "status": "parity"
     },
     {
       "id": "UPD-005",
@@ -1074,8 +1074,8 @@
         "linux",
         "windows"
       ],
-      "rust_test": "symaira-core-update/tests/parity.rs",
-      "status": "todo"
+      "rust_test": "symaira-core-update/tests/request.rs",
+      "status": "parity"
     },
     {
       "id": "UPD-006",
