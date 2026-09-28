@@ -16,6 +16,41 @@
     "provider_version": "2023-06-01"
   },
   "anthropic_mixed_content": "firstsecond",
+  "anthropic_stream": {
+    "deltas": [
+      "first",
+      " second"
+    ],
+    "error": null,
+    "events": [
+      "delta:first",
+      "delta: second",
+      "finish:end_turn"
+    ],
+    "finish": "end_turn",
+    "finished": true,
+    "kind": "anthropic_stream_ok",
+    "request": {
+      "auth_header": "x-api-key",
+      "body": {
+        "max_tokens": 64,
+        "messages": [
+          {
+            "content": "question",
+            "role": "user"
+          }
+        ],
+        "model": "claude",
+        "stream": true,
+        "system": "system prompt"
+      },
+      "path": "/messages",
+      "provider_version": "2023-06-01"
+    },
+    "response": "data: {\"type\":\"content_block_delta\",\"delta\":{\"type\":\"text_delta\",\"text\":\"first\"}}\n\ndata: {\"type\":\"content_block_delta\",\"delta\":{\"type\":\"text_delta\",\"text\":\" second\"}}\n\ndata: {\"type\":\"message_delta\",\"delta\":{\"stop_reason\":\"end_turn\"},\"usage\":{\"output_tokens\":2}}\n\n",
+    "response_bytes": 263,
+    "response_sha256": "8a9ddbb7f97cabbe5ff72a4ff2859c6e3d7382d86325a8eb7a09bac00b4ec4d0"
+  },
   "casefold_discovery_models": [
     {
       "id": "vendor/current-model"
@@ -252,10 +287,164 @@
     "path": "/v1/chat/completions",
     "query": "api-version=2026-01-01"
   },
+  "openai_stream": {
+    "deltas": [
+      "first",
+      " second"
+    ],
+    "error": null,
+    "events": [
+      "delta:first",
+      "finish:stop",
+      "delta: second"
+    ],
+    "finish": "stop",
+    "finished": true,
+    "kind": "openai_stream_ok",
+    "request": {
+      "auth_header": "bearer",
+      "body": {
+        "max_tokens": 64,
+        "messages": [
+          {
+            "content": "system prompt",
+            "role": "system"
+          },
+          {
+            "content": "question",
+            "role": "user"
+          }
+        ],
+        "model": "gpt-5",
+        "stream": true,
+        "temperature": 0.5
+      },
+      "path": "/v1/chat/completions"
+    },
+    "response": "data: {\"choices\":[{\"delta\":{\"content\":\"first\"}}]}\n\ndata: {\"choices\":[{\"delta\":{\"content\":\" second\"},\"finish_reason\":\"stop\"}]}\n\ndata: [DONE]\n\n",
+    "response_bytes": 141,
+    "response_sha256": "a26bbbae7ec5bafa994e4f1a3bf237d8139c6b01495818e66ebb22793d0d38fe"
+  },
+  "openai_stream_errors": {
+    "bad_chunk": {
+      "deltas": [],
+      "error": {
+        "code": "provider_error",
+        "error": "llmkit: provider_error: decode stream chunk: invalid character 'b' looking for beginning of object key string"
+      },
+      "events": [],
+      "finish": "",
+      "finished": false,
+      "kind": "openai_stream_bad_chunk",
+      "request": {
+        "auth_header": "bearer",
+        "body": {
+          "messages": [
+            {
+              "content": "question",
+              "role": "user"
+            }
+          ],
+          "model": "gpt-5",
+          "stream": true
+        },
+        "path": "/v1/chat/completions"
+      },
+      "response": "data: {bad}\n\n",
+      "response_bytes": 13,
+      "response_sha256": "8b132d0da00542c96c69c51b4d99b44b34fca5f92390d77bcc67f74845ec55f5"
+    },
+    "no_data": {
+      "deltas": [],
+      "error": {
+        "code": "provider_error",
+        "error": "llmkit: provider_error: no stream data received"
+      },
+      "events": [],
+      "finish": "",
+      "finished": false,
+      "kind": "openai_stream_no_data",
+      "request": {
+        "auth_header": "bearer",
+        "body": {
+          "messages": [
+            {
+              "content": "question",
+              "role": "user"
+            }
+          ],
+          "model": "gpt-5",
+          "stream": true
+        },
+        "path": "/v1/chat/completions"
+      },
+      "response": ": keep-alive\n\n",
+      "response_bytes": 14,
+      "response_sha256": "c0a04c98433f9a066f43eb53c3b42c9f11238491c12bc549a8b51262051d7bc1"
+    },
+    "oversized_after": {
+      "deltas": [
+        "first"
+      ],
+      "error": {
+        "code": "transport_error",
+        "error": "llmkit: transport_error: stream interrupted: bufio.Scanner: token too long"
+      },
+      "events": [
+        "delta:first"
+      ],
+      "finish": "",
+      "finished": false,
+      "kind": "openai_stream_oversized_after",
+      "request": {
+        "auth_header": "bearer",
+        "body": {
+          "messages": [
+            {
+              "content": "question",
+              "role": "user"
+            }
+          ],
+          "model": "gpt-5",
+          "stream": true
+        },
+        "path": "/v1/chat/completions"
+      },
+      "response_bytes": 1048635,
+      "response_sha256": "7a7907c64a25bc2957ecb5c6f38faa4756d1a982e02a82efa4581453d569a971"
+    },
+    "oversized_first": {
+      "deltas": [],
+      "error": {
+        "code": "transport_error",
+        "error": "llmkit: transport_error: bufio.Scanner: token too long"
+      },
+      "events": [],
+      "finish": "",
+      "finished": false,
+      "kind": "openai_stream_oversized_first",
+      "request": {
+        "auth_header": "bearer",
+        "body": {
+          "messages": [
+            {
+              "content": "question",
+              "role": "user"
+            }
+          ],
+          "model": "gpt-5",
+          "stream": true
+        },
+        "path": "/v1/chat/completions"
+      },
+      "response_bytes": 1048584,
+      "response_sha256": "d8e62f99b4364dcee63e83c88433de911e660bf2f830303675972f0b6f03b45f"
+    }
+  },
   "provenance": {
     "go_source_sha256": "9083f34389a8d37c89a54676c069432ec69daa1fd2d40a68081695a9ade6260c",
     "oracle_command": "GOTOOLCHAIN=go1.26.6 go run ./scripts/rust-port/llm-oracle",
-    "oracle_sha256": "575370bf7cb463594883e9592ffebf264fed87593313fa6c82fd0a3f6c1b1e21",
+    "oracle_sha256": "06381e92f44d9f113533c6b6eb536538b86cbe1d650d52f09cb097abc1408096",
     "runner_sha256": "11316e72374a747087589a09d7aad26e32c8136d0e8db8407a557e97a81edb21"
   },
   "providers": [

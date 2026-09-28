@@ -235,7 +235,7 @@ fn decode_go_json<T: DeserializeOwned>(line: &[u8], operation: &str) -> Result<T
     }
 }
 
-fn go_json_error(line: &[u8], error: &serde_json::Error) -> String {
+pub(crate) fn go_json_error(line: &[u8], error: &serde_json::Error) -> String {
     let line = line.strip_suffix(b"\n").unwrap_or(line);
     let line = line.strip_suffix(b"\r").unwrap_or(line);
     let message = error.to_string();

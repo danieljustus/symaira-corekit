@@ -3,8 +3,10 @@ package main
 import (
 	"bytes"
 	"context"
+	"crypto/sha256"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -35,6 +37,19 @@ type streamErrorResult struct {
 	Error string `json:"error"`
 }
 
+type streamCase struct {
+	Kind           string             `json:"kind"`
+	Request        request            `json:"request"`
+	Response       string             `json:"response,omitempty"`
+	ResponseBytes  int                `json:"response_bytes"`
+	ResponseSHA256 string             `json:"response_sha256"`
+	Deltas         []string           `json:"deltas"`
+	Events         []string           `json:"events"`
+	Finish         string             `json:"finish"`
+	Finished       bool               `json:"finished"`
+	Error          *streamErrorResult `json:"error"`
+}
+
 type observation struct {
 	Providers                []llmkit.Descriptor `json:"providers"`
 	OpenAI                   request             `json:"openai_chat"`
@@ -46,16 +61,24 @@ type observation struct {
 	ZeroTimeoutAllowed       bool                `json:"zero_timeout_allowed"`
 	Anthropic                request             `json:"anthropic_chat"`
 	AnthropicMixedContent    string              `json:"anthropic_mixed_content"`
-	RateLimit                errorResult         `json:"rate_limit"`
-	StructuredAuth           errorResult         `json:"structured_auth"`
-	StructuredAuthCasefold   errorResult         `json:"structured_auth_casefold"`
-	MalformedEnvelope        errorResult         `json:"malformed_error_envelope"`
-	MalformedChoice          errorResult         `json:"malformed_error_choice"`
-	MalformedChoiceAlias     errorResult         `json:"malformed_error_choice_alias_collision"`
-	MalformedNestedAlias     errorResult         `json:"malformed_error_nested_alias_collision"`
-	NullChoiceContent        string              `json:"null_choice_content"`
-	InvalidUTF8ErrorBody     string              `json:"invalid_utf8_error_body"`
-	NativeGenerate           struct {
+	OpenAIStream             streamCase          `json:"openai_stream"`
+	AnthropicStream          streamCase          `json:"anthropic_stream"`
+	OpenAIStreamErrors       struct {
+		NoData         streamCase `json:"no_data"`
+		BadChunk       streamCase `json:"bad_chunk"`
+		OversizedFirst streamCase `json:"oversized_first"`
+		OversizedAfter streamCase `json:"oversized_after"`
+	} `json:"openai_stream_errors"`
+	RateLimit              errorResult `json:"rate_limit"`
+	StructuredAuth         errorResult `json:"structured_auth"`
+	StructuredAuthCasefold errorResult `json:"structured_auth_casefold"`
+	MalformedEnvelope      errorResult `json:"malformed_error_envelope"`
+	MalformedChoice        errorResult `json:"malformed_error_choice"`
+	MalformedChoiceAlias   errorResult `json:"malformed_error_choice_alias_collision"`
+	MalformedNestedAlias   errorResult `json:"malformed_error_nested_alias_collision"`
+	NullChoiceContent      string      `json:"null_choice_content"`
+	InvalidUTF8ErrorBody   string      `json:"invalid_utf8_error_body"`
+	NativeGenerate         struct {
 		Request request                   `json:"request"`
 		Chunks  []llmkit.GenerateResponse `json:"chunks"`
 	} `json:"native_generate"`
@@ -133,6 +156,76 @@ func captureWithSuffix(provider, response string, status int, suffix string) (*r
 		return got, nil, func() {}, err
 	}
 	return got, client, server.Close, nil
+}
+
+// runStream records one SSE streaming observation: the wire request, the raw
+// response bytes, every callback delta, the finish reason, and any llmkit
+// error. Response bodies over four KiB are recorded by kind and SHA-256 only
+// so oversized scanner fixtures stay out of the committed JSON.
+func runStream(kind, provider, model, response string, opts *llmkit.ChatOptions) streamCase {
+	sum := sha256.Sum256([]byte(response))
+	result := streamCase{
+		Kind:           kind,
+		Response:       response,
+		ResponseBytes:  len(response),
+		ResponseSHA256: fmt.Sprintf("%x", sum),
+		Deltas:         []string{},
+		Events:         []string{},
+	}
+	if result.ResponseBytes > 4096 {
+		result.Response = ""
+	}
+	got := &request{}
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		got.Path = r.URL.Path
+		got.Query = r.URL.RawQuery
+		if strings.HasPrefix(r.Header.Get("Authorization"), "Bearer ") {
+			got.Auth = "bearer"
+		}
+		if r.Header.Get("x-api-key") != "" {
+			got.Auth = "x-api-key"
+		}
+		got.ProviderVersion = r.Header.Get("anthropic-version")
+		_ = json.NewDecoder(r.Body).Decode(&got.Body)
+		w.Header().Set("Content-Type", "text/event-stream")
+		_, _ = w.Write([]byte(response))
+	}))
+	desc, ok := llmkit.Lookup(provider)
+	if !ok {
+		server.Close()
+		panic(kind + ": provider not found")
+	}
+	baseURL := server.URL
+	if provider == "openai" {
+		baseURL += "/v1"
+	}
+	client, err := llmkit.NewClient(desc, "", llmkit.WithBaseURL(baseURL), llmkit.WithAPIKey("dummy-key"))
+	if err != nil {
+		server.Close()
+		panic(err)
+	}
+	callErr := client.StreamChat(context.Background(), model,
+		[]llmkit.Message{{Role: "user", Content: "question"}}, opts,
+		func(delta string) error {
+			result.Deltas = append(result.Deltas, delta)
+			result.Events = append(result.Events, "delta:"+delta)
+			return nil
+		},
+		llmkit.WithStreamFinished(func(reason string) {
+			result.Finish = reason
+			result.Finished = true
+			result.Events = append(result.Events, "finish:"+reason)
+		}))
+	server.Close()
+	result.Request = *got
+	if callErr != nil {
+		var providerErr *llmkit.Error
+		if !errors.As(callErr, &providerErr) {
+			panic(kind + ": expected llmkit stream error: " + callErr.Error())
+		}
+		result.Error = &streamErrorResult{Code: string(providerErr.Code), Error: callErr.Error()}
+	}
+	return result
 }
 
 func main() {
@@ -444,6 +537,24 @@ func main() {
 		panic(err)
 	}
 	closeServer()
+
+	// SSE streaming parity: record Go StreamChat wire bytes, callback order,
+	// finish reasons, and malformed-stream errors for the Rust replay tests.
+	temp := 0.5
+	chatOpts := &llmkit.ChatOptions{Temperature: &temp, MaxTokens: 64, System: "system prompt"}
+	openAIChunks := "data: {\"choices\":[{\"delta\":{\"content\":\"first\"}}]}\n\n" +
+		"data: {\"choices\":[{\"delta\":{\"content\":\" second\"},\"finish_reason\":\"stop\"}]}\n\n" +
+		"data: [DONE]\n\n"
+	out.OpenAIStream = runStream("openai_stream_ok", "openai", "gpt-5", openAIChunks, chatOpts)
+	out.AnthropicStream = runStream("anthropic_stream_ok", "anthropic", "claude", "data: {\"type\":\"content_block_delta\",\"delta\":{\"type\":\"text_delta\",\"text\":\"first\"}}\n\n"+
+		"data: {\"type\":\"content_block_delta\",\"delta\":{\"type\":\"text_delta\",\"text\":\" second\"}}\n\n"+
+		"data: {\"type\":\"message_delta\",\"delta\":{\"stop_reason\":\"end_turn\"},\"usage\":{\"output_tokens\":2}}\n\n", chatOpts)
+	out.OpenAIStreamErrors.NoData = runStream("openai_stream_no_data", "openai", "gpt-5", ": keep-alive\n\n", nil)
+	out.OpenAIStreamErrors.BadChunk = runStream("openai_stream_bad_chunk", "openai", "gpt-5", "data: {bad}\n\n", nil)
+	oversizedLine := "data: " + strings.Repeat("x", 1024*1024+1) + "\n"
+	out.OpenAIStreamErrors.OversizedFirst = runStream("openai_stream_oversized_first", "openai", "gpt-5", oversizedLine, nil)
+	out.OpenAIStreamErrors.OversizedAfter = runStream("openai_stream_oversized_after", "openai", "gpt-5",
+		"data: {\"choices\":[{\"delta\":{\"content\":\"first\"}}]}\n\n"+oversizedLine, nil)
 	if err := json.NewEncoder(os.Stdout).Encode(out); err != nil {
 		panic(err)
 	}

@@ -445,7 +445,10 @@ impl Client {
                 let chunk: OpenAiChunk = serde_json::from_str(data).map_err(|e| {
                     Error::local(
                         ErrorCode::ProviderError,
-                        format!("llmkit: decode stream chunk: {e}"),
+                        format!(
+                            "llmkit: decode stream chunk: {}",
+                            crate::ollama::go_json_error(data.as_bytes(), &e)
+                        ),
                     )
                 })?;
                 if let Some(choice) = chunk.choices.first() {
@@ -591,7 +594,11 @@ impl Client {
             pending.extend_from_slice(&chunk);
             while let Some(index) = pending.iter().position(|byte| *byte == b'\n') {
                 if index + 1 > 1024 * 1024 {
-                    return Err(Error::transport("llmkit: stream line exceeds 1 MiB"));
+                    return Err(Error::transport(if started {
+                        "llmkit: stream interrupted: bufio.Scanner: token too long"
+                    } else {
+                        "llmkit: bufio.Scanner: token too long"
+                    }));
                 }
                 let line: Vec<u8> = pending.drain(..=index).collect();
                 process_cancellable_stream_line(
@@ -603,7 +610,11 @@ impl Client {
                 )?;
             }
             if pending.len() > 1024 * 1024 {
-                return Err(Error::transport("llmkit: stream line exceeds 1 MiB"));
+                return Err(Error::transport(if started {
+                    "llmkit: stream interrupted: bufio.Scanner: token too long"
+                } else {
+                    "llmkit: bufio.Scanner: token too long"
+                }));
             }
         }
         if !pending.is_empty() {
@@ -649,7 +660,10 @@ where
         let chunk: OpenAiChunk = serde_json::from_str(data).map_err(|error| {
             Error::local(
                 ErrorCode::ProviderError,
-                format!("llmkit: decode stream chunk: {error}"),
+                format!(
+                    "llmkit: decode stream chunk: {}",
+                    crate::ollama::go_json_error(data.as_bytes(), &error)
+                ),
             )
         })?;
         if let Some(choice) = chunk.choices.first() {
