@@ -10,4 +10,9 @@
 /testdata/rust-port/sqlite/*.json text eol=lf
 /assets/branding/SymairaCoreKit/** -text
 /llmkit/providers.json text eol=lf
+/llmkit/*.go text eol=lf
+/secretref/*.go text eol=lf
+/exitcodes/*.go text eol=lf
+/scripts/rust-port/llm-oracle/main.go text eol=lf
+/scripts/rust-port/llm-differential.py text eol=lf
 /.gitattributes text eol=lf
