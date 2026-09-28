@@ -38,6 +38,7 @@ type input struct {
 	UseZip         bool   `json:"use_zip,omitempty"`
 	OmitAsset      bool   `json:"omit_asset,omitempty"`
 	BlockedParent  bool   `json:"blocked_parent,omitempty"`
+	NestedParent   bool   `json:"nested_parent,omitempty"`
 }
 
 type file struct {
@@ -75,6 +76,7 @@ func main() {
 		{ID: "tar-traversal", AssetName: "mytool_linux_amd64.tar.gz", PayloadHex: hex.EncodeToString(tarGz("../mytool", "escaped")), ChecksumOK: true, InitialExists: true, InitialContent: "old-binary", InitialMode: 0o755, ExtractBinary: "mytool"},
 		{ID: "missing-asset", AssetName: "mytool_linux_amd64", PayloadHex: hex.EncodeToString([]byte("new-binary")), ChecksumOK: true, InitialExists: true, InitialContent: "old-binary", InitialMode: 0o755, OmitAsset: true},
 		{ID: "blocked-parent", AssetName: "mytool_linux_amd64", PayloadHex: hex.EncodeToString([]byte("new-binary")), ChecksumOK: true, BlockedParent: true},
+		{ID: "nested-install", AssetName: "mytool_linux_amd64", PayloadHex: hex.EncodeToString([]byte("new-binary")), ChecksumOK: true, InitialExists: true, InitialContent: "old-binary", InitialMode: 0o755, NestedParent: true},
 	}
 	zipPath := filepath.Join("scripts", "rust-port", "update-extract-oracle", "testdata", "zip-success.zip")
 	if archive, err := os.ReadFile(zipPath); err == nil { //nolint:gosec // path is built from this repository's own fixture table
@@ -130,6 +132,13 @@ func run(test input) result {
 		}
 		target = filepath.Join(parent, "mytool")
 	}
+	if test.NestedParent {
+		parent := filepath.Join(root, "nested")
+		if err := os.Mkdir(parent, 0o700); err != nil {
+			panic(err)
+		}
+		target = filepath.Join(parent, "mytool")
+	}
 	if test.InitialExists {
 		if err := os.WriteFile(target, []byte(test.InitialContent), os.FileMode(test.InitialMode)); err != nil {
 			panic(err)
@@ -157,7 +166,7 @@ func run(test input) result {
 		BinaryName:    test.ExtractBinary,
 		ExtractBinary: test.ExtractBinary,
 		Progress: func(int64, int64) {
-			seenStage = seenStage || globHas(filepath.Join(root, "updateapply-*"))
+			seenStage = seenStage || globHas(filepath.Join(filepath.Dir(target), "updateapply-*"))
 			seenTemp = seenTemp || globHas(filepath.Join(os.TempDir(), "updateapply-*"))
 		},
 	}

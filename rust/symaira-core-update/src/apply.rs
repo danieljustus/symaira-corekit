@@ -1,6 +1,6 @@
 use crate::extract;
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
 
 static TEMP_ID: AtomicU64 = AtomicU64::new(0);
@@ -19,6 +19,7 @@ pub struct Input {
     pub use_zip: bool,
     pub omit_asset: bool,
     pub blocked_parent: bool,
+    pub nested_parent: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -46,6 +47,12 @@ pub struct Observation {
 /// Optional post-install validation callback.
 pub type BinaryValidator<'a> = &'a mut dyn FnMut(&Path) -> Result<(), String>;
 
+fn backup_path(target: &Path) -> PathBuf {
+    let mut path = target.as_os_str().to_os_string();
+    path.push(".bak");
+    PathBuf::from(path)
+}
+
 /// Replace a staged binary, restoring the previous target on a failed rename
 /// or rejected validation. The staged path must reside on the target filesystem.
 ///
@@ -56,10 +63,7 @@ pub fn atomic_swap(
     target: &Path,
     mut validate: Option<BinaryValidator<'_>>,
 ) -> Result<(), String> {
-    let backup = target.with_file_name(format!(
-        "{}.bak",
-        target.file_name().unwrap_or_default().to_string_lossy()
-    ));
+    let backup = backup_path(target);
     let had_existing = fs::metadata(target).is_ok();
     if had_existing {
         let _ = fs::remove_file(&backup);
@@ -107,6 +111,13 @@ pub fn replay(input: &Input) -> Observation {
             return empty_error("apply_failed");
         }
         parent.join("mytool")
+    } else if input.nested_parent {
+        let parent = root.join("nested");
+        if fs::create_dir(&parent).is_err() {
+            let _ = fs::remove_dir_all(&root);
+            return empty_error("apply_failed");
+        }
+        parent.join("mytool")
     } else {
         root.join("mytool")
     };
@@ -138,7 +149,7 @@ pub fn replay(input: &Input) -> Observation {
         input.asset_name.contains("linux") && input.asset_name.contains("amd64")
     };
     let writable = !asset_matches || check_writable(&target).is_ok();
-    let staged = root.join("updateapply-replay");
+    let staged = target.with_file_name("updateapply-replay");
     let mut stage_seen = false;
     if !asset_matches {
         error_code = "missing_asset".into();
@@ -176,7 +187,7 @@ pub fn replay(input: &Input) -> Observation {
                 } else {
                     let mut validator = |path: &Path| {
                         validator_saw_target = path == target && path.exists();
-                        validator_saw_backup = root.join("mytool.bak").exists();
+                        validator_saw_backup = backup_path(&target).exists();
                         validator_target_content = fs::read_to_string(path).unwrap_or_default();
                         Err(input.validate_error.clone())
                     };
@@ -224,29 +235,47 @@ fn observe(
     let target_exists = target.exists();
     let target_content = fs::read_to_string(target).unwrap_or_default();
     let target_mode = mode(target).unwrap_or_default();
-    let mut files = fs::read_dir(root)
-        .into_iter()
-        .flatten()
-        .filter_map(Result::ok)
-        .filter_map(|entry| {
-            if !entry.file_type().ok()?.is_file() {
-                return None;
+    let mut files = Vec::new();
+    let mut pending = vec![root.to_path_buf()];
+    while let Some(dir) = pending.pop() {
+        if let Ok(entries) = fs::read_dir(dir) {
+            for entry in entries.flatten() {
+                let path = entry.path();
+                let Ok(kind) = entry.file_type() else {
+                    continue;
+                };
+                if kind.is_dir() {
+                    pending.push(path);
+                    continue;
+                }
+                if !kind.is_file() {
+                    continue;
+                }
+                if let (Ok(relative), Ok(content), Ok(file_mode)) = (
+                    path.strip_prefix(root),
+                    fs::read_to_string(&path),
+                    mode(&path),
+                ) {
+                    files.push(FileObservation {
+                        path: relative
+                            .components()
+                            .map(|part| part.as_os_str().to_string_lossy())
+                            .collect::<Vec<_>>()
+                            .join("/"),
+                        content,
+                        mode: file_mode,
+                    });
+                }
             }
-            let path = entry.path();
-            Some(FileObservation {
-                path: entry.file_name().to_string_lossy().into_owned(),
-                content: fs::read_to_string(&path).ok()?,
-                mode: mode(&path).ok()?,
-            })
-        })
-        .collect::<Vec<_>>();
+        }
+    }
     files.sort_by(|a, b| a.path.cmp(&b.path));
     Observation {
         error_code,
         target_exists,
         target_content,
         target_mode,
-        backup_exists: root.join("mytool.bak").exists(),
+        backup_exists: backup_path(target).exists(),
         stage_during_download: stage_seen,
         temp_during_download: false,
         validator_saw_target,

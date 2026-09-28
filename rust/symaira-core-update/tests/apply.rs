@@ -33,6 +33,8 @@ struct ExpectedInput {
     omit_asset: bool,
     #[serde(default)]
     blocked_parent: bool,
+    #[serde(default)]
+    nested_parent: bool,
 }
 
 #[derive(serde::Deserialize)]
@@ -76,6 +78,7 @@ impl ExpectedCase {
             use_zip: self.input.use_zip,
             omit_asset: self.input.omit_asset,
             blocked_parent: self.input.blocked_parent,
+            nested_parent: self.input.nested_parent,
         }
     }
 
@@ -141,15 +144,19 @@ fn apply_filesystem_observations_match_go_fixture() {
         eprintln!("SKIP {reason}");
         return;
     }
-    assert_eq!(fixture.cases.len(), 9);
+    assert_eq!(fixture.cases.len(), 10);
+    let mut replayed = 0;
     for case in fixture.cases {
         if case.input.use_zip {
             // ZIP replay needs a dependency absent from this crate; keep the
             // Go API observation in the fixture and replay tar.gz cases here.
+            assert_eq!(case.input.id, "zip-extract-blocked");
             continue;
         }
         let input = case.input();
         let actual = replay(&input);
         assert_eq!(actual, case.observation(), "{} observation", input.id);
+        replayed += 1;
     }
+    assert_eq!(replayed, 9, "one recorded ZIP case remains unreplayed");
 }

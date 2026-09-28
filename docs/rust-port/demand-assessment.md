@@ -37,10 +37,13 @@ and native target-platform evidence are not complete. See
 The local UPD-012 subset now runs four direct `atomicSwap` Go test-oracle cases
 against the Rust filesystem operation (missing staged source, validator rollback,
 failed first install and stale-backup replacement), with a mutation rejection.
-The Apply oracle also records a blocked parent directory and verifies no asset
-staging. `make rust-update-contract` executes both comparisons. This does **not**
-prove full update orchestration, ZIP replay, every cleanup fault or native
-Linux/Windows behavior; UPD-012 is therefore not promoted to `parity`.
+The Apply oracle records ten cases, including a blocked parent directory with
+no asset staging and a nested target with recursive filesystem observations;
+Rust replays nine (the ZIP apply case is still unported). Independent mutations
+of install, blocked-parent and nested-target observations are rejected.
+`make rust-update-contract` executes both comparisons. This does **not** prove
+full update orchestration, ZIP replay, every cleanup fault or native Windows
+behavior; UPD-012 is therefore not promoted to `parity`.
 No Vault or Brain cutover is implied by this library slice.
 
 ## RUST-008 — Descriptor-driven LLM provider slice (`LLM-*`) — in progress

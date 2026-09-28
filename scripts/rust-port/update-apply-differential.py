@@ -33,8 +33,8 @@ def observed():
         ["go", "run", "./scripts/rust-port/update-apply-oracle"], cwd=ROOT, env=env
     )
     cases = json.loads(output)
-    if len(cases) < 7:
-        raise ValueError(f"apply oracle ran {len(cases)} cases, expected at least 7")
+    if len(cases) != 10:
+        raise ValueError(f"apply oracle ran {len(cases)} cases, expected 10")
     go_source = b"\0".join(
         path.read_bytes()
         for path in (
@@ -126,7 +126,16 @@ def main():
         negative = replay(path)
     if negative.returncode == 0 or "blocked-parent observation" not in negative.stdout:
         raise RuntimeError("blocked-parent mutation was not rejected at its intended assertion")
-    print("PASS install and blocked-parent mutations rejected at their assertions")
+    nested_mutated = json.loads(json.dumps(current))
+    nested = next(row for row in nested_mutated["cases"] if row["input"]["id"] == "nested-install")
+    nested["observation"]["files"][0]["path"] = "wrong-nested/mytool"
+    with tempfile.TemporaryDirectory(prefix="update-apply-nested-negative-") as temp:
+        path = Path(temp) / "mutated.json"
+        path.write_text(json.dumps(nested_mutated), encoding="utf-8")
+        negative = replay(path)
+    if negative.returncode == 0 or "nested-install observation" not in negative.stdout:
+        raise RuntimeError("nested-install mutation was not rejected at its intended assertion")
+    print("PASS install, blocked-parent and nested-install mutations rejected at their assertions")
     return 0
 
 
