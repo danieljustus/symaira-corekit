@@ -1,3 +1,4 @@
+use crate::Asset;
 use crate::extract;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -51,6 +52,15 @@ fn backup_path(target: &Path) -> PathBuf {
     let mut path = target.as_os_str().to_os_string();
     path.push(".bak");
     PathBuf::from(path)
+}
+
+fn select_asset<'a>(assets: &'a [Asset], goos: &str, goarch: &str) -> Option<&'a Asset> {
+    let goos = goos.to_lowercase();
+    let goarch = goarch.to_lowercase();
+    assets.iter().find(|asset| {
+        let name = asset.name.to_lowercase();
+        !name.contains("checksums") && name.contains(&goos) && name.contains(&goarch)
+    })
 }
 
 /// Replace a staged binary, restoring the previous target on a failed rename
@@ -153,14 +163,22 @@ pub fn replay(input: &Input) -> Observation {
     let mut validator_saw_backup = false;
     let mut validator_target_content = String::new();
 
-    let asset_name = input.asset_name.to_ascii_lowercase();
-    let asset_matches = if input.omit_asset || asset_name.contains("checksums") {
-        false
-    } else if input.use_zip {
-        asset_name.contains("windows") && asset_name.contains("amd64")
-    } else {
-        asset_name.contains("linux") && asset_name.contains("amd64")
-    };
+    let assets = [
+        Asset {
+            name: if input.omit_asset {
+                "other_darwin_arm64".into()
+            } else {
+                input.asset_name.clone()
+            },
+            ..Asset::default()
+        },
+        Asset {
+            name: "checksums.txt".into(),
+            ..Asset::default()
+        },
+    ];
+    let goos = if input.use_zip { "windows" } else { "linux" };
+    let asset_matches = select_asset(&assets, goos, "amd64").is_some();
     let writable = !asset_matches || check_writable(&target).is_ok();
     let staged = target.with_file_name("updateapply-replay");
     let mut stage_seen = false;
