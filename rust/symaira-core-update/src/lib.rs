@@ -4,6 +4,7 @@
 //! caching and archive extraction shared by update consumers. The signature,
 //! download transport and atomic installation seams remain unported.
 
+pub mod apply;
 pub mod cache;
 pub mod cosign_contract;
 pub mod extract;

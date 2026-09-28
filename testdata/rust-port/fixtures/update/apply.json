@@ -1,0 +1,237 @@
+{
+  "go_source_sha256": "bff3e7be09de630ac2dba8070040443852e7bd9fc8ee5dd76abe614df7d30a0a",
+  "oracle_sha256": "08c96b6526808ffdcef469c9dd3c145c70ce7431b1e3de9d491d666e734b5b31",
+  "goos": "darwin",
+  "cases": [
+    {
+      "input": {
+        "id": "install",
+        "asset_name": "mytool_linux_amd64",
+        "payload_hex": "6e65772d62696e617279",
+        "checksum_ok": true,
+        "initial_exists": true,
+        "initial_content": "old-binary",
+        "initial_mode": 493
+      },
+      "observation": {
+        "target_exists": true,
+        "target_content": "new-binary",
+        "target_mode": 493,
+        "backup_exists": false,
+        "stage_during_download": true,
+        "temp_during_download": false,
+        "validator_saw_target": false,
+        "validator_saw_backup": false,
+        "files": [
+          {
+            "path": "mytool",
+            "content": "new-binary",
+            "mode": 493
+          }
+        ]
+      }
+    },
+    {
+      "input": {
+        "id": "checksum-abort",
+        "asset_name": "mytool_linux_amd64",
+        "payload_hex": "6e65772d62696e617279",
+        "checksum_ok": false,
+        "initial_exists": true,
+        "initial_content": "old-binary",
+        "initial_mode": 493
+      },
+      "observation": {
+        "error_code": "checksum_mismatch",
+        "target_exists": true,
+        "target_content": "old-binary",
+        "target_mode": 493,
+        "backup_exists": false,
+        "stage_during_download": true,
+        "temp_during_download": false,
+        "validator_saw_target": false,
+        "validator_saw_backup": false,
+        "files": [
+          {
+            "path": "mytool",
+            "content": "old-binary",
+            "mode": 493
+          }
+        ]
+      }
+    },
+    {
+      "input": {
+        "id": "validation-rollback",
+        "asset_name": "mytool_linux_amd64",
+        "payload_hex": "696e76616c69642d62696e617279",
+        "checksum_ok": true,
+        "initial_exists": true,
+        "initial_content": "old-binary",
+        "initial_mode": 416,
+        "validate_error": "installed binary does not start"
+      },
+      "observation": {
+        "error_code": "validation_failed",
+        "target_exists": true,
+        "target_content": "old-binary",
+        "target_mode": 416,
+        "backup_exists": false,
+        "stage_during_download": true,
+        "temp_during_download": false,
+        "validator_saw_target": true,
+        "validator_saw_backup": true,
+        "validator_target_content": "invalid-binary",
+        "files": [
+          {
+            "path": "mytool",
+            "content": "old-binary",
+            "mode": 416
+          }
+        ]
+      }
+    },
+    {
+      "input": {
+        "id": "validation-first-install",
+        "asset_name": "mytool_linux_amd64",
+        "payload_hex": "696e76616c69642d62696e617279",
+        "checksum_ok": true,
+        "initial_exists": false,
+        "initial_content": "",
+        "initial_mode": 0,
+        "validate_error": "installed binary does not start"
+      },
+      "observation": {
+        "error_code": "validation_failed",
+        "target_exists": false,
+        "backup_exists": false,
+        "stage_during_download": true,
+        "temp_during_download": false,
+        "validator_saw_target": true,
+        "validator_saw_backup": false,
+        "validator_target_content": "invalid-binary",
+        "files": []
+      }
+    },
+    {
+      "input": {
+        "id": "tar-extract",
+        "asset_name": "mytool_linux_amd64.tar.gz",
+        "payload_hex": "1f8b08000000000000ff4a2acd4bc949d5cfad2cc9cfcf61a00d3030303030373505d3060606e8b48181a119820d123734343732615030a0917b504069714962118301c576a17b6e8880c4a2e48cccb254dda4ccbcc4a2ca8176cd281805a360148c027a0140000000ffffd3842daa00080000",
+        "checksum_ok": true,
+        "initial_exists": true,
+        "initial_content": "old-binary",
+        "initial_mode": 493,
+        "extract_binary": "mytool"
+      },
+      "observation": {
+        "target_exists": true,
+        "target_content": "archive-binary",
+        "target_mode": 493,
+        "backup_exists": false,
+        "stage_during_download": true,
+        "temp_during_download": false,
+        "validator_saw_target": false,
+        "validator_saw_backup": false,
+        "files": [
+          {
+            "path": "mytool",
+            "content": "archive-binary",
+            "mode": 493
+          }
+        ]
+      }
+    },
+    {
+      "input": {
+        "id": "tar-traversal",
+        "asset_name": "mytool_linux_amd64.tar.gz",
+        "payload_hex": "1f8b08000000000000ffd2d3d3cfad2cc9cfcf61a01d3030303030373505d3060606e8344816896dc0606068606666c6a060404337c14169714962118301c576a17b6e8880d4e2e4c482d4948176c6281805a360148c023a0340000000ffffd7c6c35600080000",
+        "checksum_ok": true,
+        "initial_exists": true,
+        "initial_content": "old-binary",
+        "initial_mode": 493,
+        "extract_binary": "mytool"
+      },
+      "observation": {
+        "error_code": "path_traversal",
+        "target_exists": true,
+        "target_content": "old-binary",
+        "target_mode": 493,
+        "backup_exists": false,
+        "stage_during_download": true,
+        "temp_during_download": false,
+        "validator_saw_target": false,
+        "validator_saw_backup": false,
+        "files": [
+          {
+            "path": "mytool",
+            "content": "old-binary",
+            "mode": 493
+          }
+        ]
+      }
+    },
+    {
+      "input": {
+        "id": "missing-asset",
+        "asset_name": "other_darwin_arm64",
+        "payload_hex": "6e65772d62696e617279",
+        "checksum_ok": true,
+        "initial_exists": true,
+        "initial_content": "old-binary",
+        "initial_mode": 493,
+        "omit_asset": true
+      },
+      "observation": {
+        "error_code": "missing_asset",
+        "target_exists": true,
+        "target_content": "old-binary",
+        "target_mode": 493,
+        "backup_exists": false,
+        "stage_during_download": false,
+        "temp_during_download": false,
+        "validator_saw_target": false,
+        "validator_saw_backup": false,
+        "files": [
+          {
+            "path": "mytool",
+            "content": "old-binary",
+            "mode": 493
+          }
+        ]
+      }
+    },
+    {
+      "input": {
+        "id": "zip-extract-blocked",
+        "asset_name": "mytool_windows_amd64.zip",
+        "payload_hex": "504b0304140008000800000000000000000000000000000000000f00000062756e646c652f746f6f6c2e6578654acacc4b2caad44dcecf2b49cd2bd12dcfcc03040000ffff504b070880353f6a1800000012000000504b0304140008000800000000000000000000000000000000000e00000062756e646c652f4c4943454e5345f2f50c01040000ffff504b070820a6beca0900000003000000504b010214031400080008000000000080353f6a18000000120000000f0000000000000000000000e9810000000062756e646c652f746f6f6c2e657865504b010214031400080008000000000020a6beca09000000030000000e0000000000000000000000a0815500000062756e646c652f4c4943454e5345504b05060000000002000200790000009a0000000000",
+        "checksum_ok": true,
+        "initial_exists": true,
+        "initial_content": "old-binary",
+        "initial_mode": 493,
+        "extract_binary": "tool.exe",
+        "use_zip": true
+      },
+      "observation": {
+        "target_exists": true,
+        "target_content": "binary-content-win",
+        "target_mode": 493,
+        "backup_exists": false,
+        "stage_during_download": true,
+        "temp_during_download": false,
+        "validator_saw_target": false,
+        "validator_saw_backup": false,
+        "files": [
+          {
+            "path": "mytool",
+            "content": "binary-content-win",
+            "mode": 493
+          }
+        ]
+      }
+    }
+  ]
+}
