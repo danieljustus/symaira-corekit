@@ -99,7 +99,7 @@ rust-mcpcfg-contract:
 	cargo test -p symaira-core-mcpcfg --all-features --locked
 
 rust-llm-contract:
-	GOTOOLCHAIN=go1.26.6 CGO_ENABLED=0 $(GO_RUN) test -count=1 ./llmkit/... ./secretref ./contracts
+	GOTOOLCHAIN=go1.26.6 CGO_ENABLED=0 $(GO_RUN) test -count=1 ./llmkit/... ./ollamakit/... ./secretref ./contracts
 	python3 scripts/rust-port/llm-differential.py
 	$(CARGO_RUN) fmt --all --check
 	$(CARGO_RUN) clippy --manifest-path "$(CURDIR)/Cargo.toml" -p symaira-core-llm --all-targets --all-features --locked -- -D warnings
