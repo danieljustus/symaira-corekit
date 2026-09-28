@@ -138,62 +138,66 @@ pub fn replay(input: &Input) -> Observation {
         input.asset_name.contains("linux") && input.asset_name.contains("amd64")
     };
     let writable = !asset_matches || check_writable(&target).is_ok();
-    let stage_seen = asset_matches && writable;
+    let staged = root.join("updateapply-replay");
+    let mut stage_seen = false;
     if !asset_matches {
         error_code = "missing_asset".into();
-    } else if !writable {
+    } else if !writable || fs::write(&staged, &payload).is_err() {
         error_code = "apply_failed".into();
-    } else if !input.checksum_ok {
-        error_code = "checksum_mismatch".into();
     } else {
-        let mut install_bytes = payload;
-        if !input.extract_binary.is_empty() {
-            let kind = if input.use_zip { "zip" } else { "tar.gz" };
-            let extracted = extract::observe(kind, &install_bytes, &input.extract_binary);
-            if let Some(err) = extracted.error {
-                error_code = match err.code.as_str() {
-                    "path_traversal" => "path_traversal",
-                    _ => "apply_failed",
-                }
-                .into();
-            } else if let Some(file) = extracted
-                .files
-                .iter()
-                .find(|file| file.path == extracted.selected_binary)
-            {
-                install_bytes = file.content.as_bytes().to_vec();
-            } else {
-                error_code = "apply_failed".into();
-            }
-        }
-        if error_code.is_empty() {
-            let staged = root.join("updateapply-replay");
-            if fs::write(&staged, &install_bytes).is_err() || set_mode(&staged, 0o755).is_err() {
-                error_code = "apply_failed".into();
-            } else {
-                let mut validator = |path: &Path| {
-                    validator_saw_target = path == target && path.exists();
-                    validator_saw_backup = root.join("mytool.bak").exists();
-                    validator_target_content = fs::read_to_string(path).unwrap_or_default();
-                    Err(input.validate_error.clone())
-                };
-                let check = if input.validate_error.is_empty() {
-                    None
-                } else {
-                    Some(&mut validator as &mut dyn FnMut(&Path) -> Result<(), String>)
-                };
-                if atomic_swap(&staged, &target, check).is_err() {
-                    error_code = if validator_saw_target {
-                        "validation_failed"
-                    } else {
-                        "apply_failed"
+        stage_seen = staged.exists();
+        if !input.checksum_ok {
+            error_code = "checksum_mismatch".into();
+        } else {
+            let mut install_bytes = payload;
+            if !input.extract_binary.is_empty() {
+                let kind = if input.use_zip { "zip" } else { "tar.gz" };
+                let extracted = extract::observe(kind, &install_bytes, &input.extract_binary);
+                if let Some(err) = extracted.error {
+                    error_code = match err.code.as_str() {
+                        "path_traversal" => "path_traversal",
+                        _ => "apply_failed",
                     }
                     .into();
+                } else if let Some(file) = extracted
+                    .files
+                    .iter()
+                    .find(|file| file.path == extracted.selected_binary)
+                {
+                    install_bytes = file.content.as_bytes().to_vec();
+                } else {
+                    error_code = "apply_failed".into();
                 }
             }
-            let _ = fs::remove_file(staged);
+            if error_code.is_empty() {
+                if fs::write(&staged, &install_bytes).is_err() || set_mode(&staged, 0o755).is_err()
+                {
+                    error_code = "apply_failed".into();
+                } else {
+                    let mut validator = |path: &Path| {
+                        validator_saw_target = path == target && path.exists();
+                        validator_saw_backup = root.join("mytool.bak").exists();
+                        validator_target_content = fs::read_to_string(path).unwrap_or_default();
+                        Err(input.validate_error.clone())
+                    };
+                    let check = if input.validate_error.is_empty() {
+                        None
+                    } else {
+                        Some(&mut validator as &mut dyn FnMut(&Path) -> Result<(), String>)
+                    };
+                    if atomic_swap(&staged, &target, check).is_err() {
+                        error_code = if validator_saw_target {
+                            "validation_failed"
+                        } else {
+                            "apply_failed"
+                        }
+                        .into();
+                    }
+                }
+            }
         }
     }
+    let _ = fs::remove_file(staged);
 
     let observation = observe(
         &root,
