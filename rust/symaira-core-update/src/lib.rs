@@ -92,6 +92,8 @@ pub fn check_response(current: &str, response: Response) -> Result<Option<Releas
     }))
 }
 
+pub mod extract;
+
 fn parse_stable(raw: &str) -> Option<(isize, isize, isize)> {
     let trimmed = raw.trim().strip_prefix('v').unwrap_or(raw.trim());
     if trimmed.contains(['-', '+']) {
