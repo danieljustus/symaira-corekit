@@ -28,8 +28,9 @@ def goos_name():
 
 
 def observed():
+    env = dict(os.environ, GOTOOLCHAIN="go1.26.6", CGO_ENABLED="0")
     output = subprocess.check_output(
-        ["go", "run", "./scripts/rust-port/update-apply-oracle"], cwd=ROOT
+        ["go", "run", "./scripts/rust-port/update-apply-oracle"], cwd=ROOT, env=env
     )
     cases = json.loads(output)
     if len(cases) < 7:
@@ -93,7 +94,7 @@ def main():
             replay_path = Path(temp) / "platform.json"
             replay_path.write_text(json.dumps(current, indent=2) + "\n", encoding="utf-8")
             result = replay(replay_path)
-        if result.returncode:
+        if result.returncode or "test result: ok. 1 passed;" not in result.stdout:
             raise RuntimeError(result.stdout)
         print(
             f"PASS Go/Rust update apply on {current['goos']} "
@@ -103,7 +104,7 @@ def main():
 
     if replay_path is not None:
         result = replay(replay_path)
-        if result.returncode:
+        if result.returncode or "test result: ok. 1 passed;" not in result.stdout:
             raise RuntimeError(result.stdout)
         print("PASS Rust apply replay")
 
@@ -114,17 +115,18 @@ def main():
         path = Path(temp) / "mutated.json"
         path.write_text(json.dumps(mutated), encoding="utf-8")
         negative = replay(path)
-    if negative.returncode == 0:
-        raise RuntimeError("mutated fixture was incorrectly accepted")
-    blocked = next(row for row in mutated["cases"] if row["input"]["id"] == "blocked-parent")
+    if negative.returncode == 0 or "install observation" not in negative.stdout:
+        raise RuntimeError("install mutation was not rejected at its intended assertion")
+    blocked_mutated = json.loads(json.dumps(current))
+    blocked = next(row for row in blocked_mutated["cases"] if row["input"]["id"] == "blocked-parent")
     blocked["observation"]["stage_during_download"] = True
     with tempfile.TemporaryDirectory(prefix="update-apply-blocked-negative-") as temp:
         path = Path(temp) / "mutated.json"
-        path.write_text(json.dumps(mutated), encoding="utf-8")
+        path.write_text(json.dumps(blocked_mutated), encoding="utf-8")
         negative = replay(path)
-    if negative.returncode == 0:
-        raise RuntimeError("blocked-parent mutation was incorrectly accepted")
-    print("PASS mutated-fixture negative control rejected")
+    if negative.returncode == 0 or "blocked-parent observation" not in negative.stdout:
+        raise RuntimeError("blocked-parent mutation was not rejected at its intended assertion")
+    print("PASS install and blocked-parent mutations rejected at their assertions")
     return 0
 
 
