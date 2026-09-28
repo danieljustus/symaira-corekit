@@ -28,9 +28,12 @@ subsequently implemented its own release checker and signed installer:
 `crates/symvault-cli/src/update_apply.rs:1-7,28-165`. These are independent
 product consumers with duplicated release-download, Cosign, archive and
 atomic-install concerns. **Verdict: demand met; RUST-007 can proceed.**
-`rust/symaira-core-update` currently implements only the stable-version
-decision (UPD-001) against a recorded Go `Checker.Check` corpus. UPD-002..012,
-including the secure download and rollback contracts, remain unimplemented.
+`rust/symaira-core-update` has executable Go/Rust parity evidence for
+UPD-001..011, covering version decisions, response and request behavior,
+cache, extraction, install-method detection, Cosign contracts and apply
+behavior. UPD-012 remains `fixture-ready`; the full RUST-007 acceptance gate
+and native target-platform evidence are not complete. See
+[`contract-matrix.json`](contract-matrix.json) for each row's current status.
 No Vault or Brain cutover is implied by this library slice.
 
 ## RUST-008 — Descriptor-driven LLM provider slice (`LLM-*`) — in progress
