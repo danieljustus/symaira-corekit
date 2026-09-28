@@ -3,6 +3,7 @@
 //! Stable release-version decisions shared by update consumers.
 //! Network, cache, archive, signature and installation contracts remain unported.
 
+pub mod cache;
 pub mod install_method;
 
 /// Whether the running version is a stable release eligible for an update check.
