@@ -5,6 +5,7 @@
 //! download transport and atomic installation seams remain unported.
 
 pub mod cache;
+pub mod cosign_contract;
 pub mod extract;
 pub mod install_method;
 
