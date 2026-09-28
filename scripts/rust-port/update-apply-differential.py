@@ -135,7 +135,16 @@ def main():
         negative = replay(path)
     if negative.returncode == 0 or "nested-install observation" not in negative.stdout:
         raise RuntimeError("nested-install mutation was not rejected at its intended assertion")
-    print("PASS install, blocked-parent and nested-install mutations rejected at their assertions")
+    zip_mutated = json.loads(json.dumps(current))
+    zip_case = next(row for row in zip_mutated["cases"] if row["input"]["id"] == "zip-extract-blocked")
+    zip_case["observation"]["target_content"] = "wrong ZIP installation"
+    with tempfile.TemporaryDirectory(prefix="update-apply-zip-negative-") as temp:
+        path = Path(temp) / "mutated.json"
+        path.write_text(json.dumps(zip_mutated), encoding="utf-8")
+        negative = replay(path)
+    if negative.returncode == 0 or "zip-extract-blocked observation" not in negative.stdout:
+        raise RuntimeError("ZIP mutation was not rejected at its intended assertion")
+    print("PASS install, blocked-parent, nested-install and ZIP mutations rejected at their assertions")
     return 0
 
 

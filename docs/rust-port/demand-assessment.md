@@ -38,12 +38,12 @@ The local UPD-012 subset now runs six direct `atomicSwap` Go test-oracle cases
 against the Rust filesystem operation (missing staged source, validator rollback,
 failed first install, stale-backup replacement and two rollback/remove fault
 paths). Both filesystem observations and rollback error families reject mutations.
-The Apply oracle records ten cases, including a blocked parent directory with
-no asset staging and a nested target with recursive filesystem observations;
-Rust replays nine (the ZIP apply case is still unported). Independent mutations
-of install, blocked-parent and nested-target observations are rejected.
+The Apply oracle records and Rust replays ten cases, including a blocked parent
+directory with no asset staging, a nested target with recursive filesystem
+observations and ZIP installation. Independent mutations of install,
+blocked-parent, nested-target and ZIP observations are rejected.
 `make rust-update-contract` executes both comparisons. This does **not** prove
-full update orchestration, ZIP replay, every cleanup fault or native Windows
+full update orchestration, every cleanup fault or native Windows
 behavior; UPD-012 is therefore not promoted to `parity`.
 No Vault or Brain cutover is implied by this library slice.
 
