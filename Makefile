@@ -125,6 +125,8 @@ rust-update-contract: rust-update-version-contract
 	GOTOOLCHAIN=go1.26.6 CGO_ENABLED=0 python3 scripts/rust-port/install-method-differential.py --negative-control
 	GOTOOLCHAIN=go1.26.6 CGO_ENABLED=0 python3 scripts/rust-port/update-extract-differential.py
 	GOTOOLCHAIN=go1.26.6 CGO_ENABLED=0 python3 scripts/rust-port/update-extract-differential.py --negative-control
+	GOTOOLCHAIN=go1.26.6 CGO_ENABLED=0 python3 scripts/rust-port/cosign-contract-differential.py
+	GOTOOLCHAIN=go1.26.6 CGO_ENABLED=0 python3 scripts/rust-port/update-apply-differential.py
 
 rust-release-contract: consumer-pin-regression
 	cargo semver-checks check-release

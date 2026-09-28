@@ -1134,8 +1134,8 @@
         "linux",
         "windows"
       ],
-      "rust_test": "symaira-core-update/tests/parity.rs",
-      "status": "todo"
+      "rust_test": "symaira-core-update/tests/cosign_contract.rs",
+      "status": "parity"
     },
     {
       "id": "UPD-010",
@@ -1149,8 +1149,8 @@
         "linux",
         "windows"
       ],
-      "rust_test": "symaira-core-update/tests/parity.rs",
-      "status": "todo"
+      "rust_test": "symaira-core-update/tests/apply.rs",
+      "status": "parity"
     },
     {
       "id": "UPD-011",
@@ -1164,8 +1164,8 @@
         "linux",
         "windows"
       ],
-      "rust_test": "symaira-core-update/tests/parity.rs",
-      "status": "todo"
+      "rust_test": "symaira-core-update/tests/apply.rs",
+      "status": "parity"
     },
     {
       "id": "UPD-012",
@@ -1179,8 +1179,8 @@
         "linux",
         "windows"
       ],
-      "rust_test": "symaira-core-update/tests/parity.rs",
-      "status": "todo"
+      "rust_test": "symaira-core-update/tests/apply.rs",
+      "status": "fixture-ready"
     },
     {
       "id": "LLM-001",

@@ -19,6 +19,7 @@ import (
 	"runtime"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/danieljustus/symaira-corekit/updatecheck"
 	"github.com/danieljustus/symaira-corekit/updatecheck/updateapply"
@@ -74,7 +75,7 @@ func main() {
 		{ID: "missing-asset", AssetName: "mytool_linux_amd64", PayloadHex: hex.EncodeToString([]byte("new-binary")), ChecksumOK: true, InitialExists: true, InitialContent: "old-binary", InitialMode: 0o755, OmitAsset: true},
 	}
 	zipPath := filepath.Join("scripts", "rust-port", "update-extract-oracle", "testdata", "zip-success.zip")
-	if archive, err := os.ReadFile(zipPath); err == nil {
+	if archive, err := os.ReadFile(zipPath); err == nil { //nolint:gosec // path is built from this repository's own fixture table
 		cases = append(cases, input{ID: "zip-extract-blocked", AssetName: "mytool_windows_amd64.zip", PayloadHex: hex.EncodeToString(archive), ChecksumOK: true, InitialExists: true, InitialContent: "old-binary", InitialMode: 0o755, ExtractBinary: "tool.exe", UseZip: true})
 	}
 	results := make([]result, 0, len(cases))
@@ -110,7 +111,7 @@ func run(test input) result {
 	if err != nil {
 		panic(err)
 	}
-	server := &httptest.Server{Config: &http.Server{Handler: handler}, Listener: listener}
+	server := &httptest.Server{Config: &http.Server{Handler: handler, ReadHeaderTimeout: 5 * time.Second}, Listener: listener}
 	server.Start()
 	defer server.Close()
 
@@ -158,7 +159,7 @@ func run(test input) result {
 		applier.ValidateBinary = func(path string) error {
 			validatorSawTarget = path == target
 			validatorSawBackup = exists(target + ".bak")
-			body, readErr := os.ReadFile(path)
+			body, readErr := os.ReadFile(path) //nolint:gosec // path is produced by this oracle's own temp dir walk
 			if readErr == nil {
 				validatorContent = string(body)
 			}
@@ -182,7 +183,7 @@ func run(test input) result {
 			obs.ErrorCode = "apply_failed"
 		}
 	}
-	if data, readErr := os.ReadFile(target); readErr == nil {
+	if data, readErr := os.ReadFile(target); readErr == nil { //nolint:gosec // target path is built by this oracle
 		obs.TargetExists, obs.TargetContent = true, string(data)
 		if info, statErr := os.Stat(target); statErr == nil {
 			obs.TargetMode = uint32(info.Mode().Perm())
@@ -225,7 +226,7 @@ func listFiles(root string) []file {
 			return nil
 		}
 		name, _ := filepath.Rel(root, path)
-		data, readErr := os.ReadFile(path)
+		data, readErr := os.ReadFile(path) //nolint:gosec // path comes from this oracle's own temp dir walk
 		if readErr == nil {
 			files = append(files, file{Path: filepath.ToSlash(name), Content: string(data), Mode: uint32(info.Mode().Perm())})
 		}

@@ -118,11 +118,11 @@ func verifyCase(cfg cosign.Config, id string, fail bool) observation {
 	if runtime.GOOS == "windows" {
 		stub += ".exe"
 	}
-	data, err := os.ReadFile(exe)
+	data, err := os.ReadFile(exe) //nolint:gosec // path comes from this oracle's own stub setup
 	if err != nil {
 		panic(err)
 	}
-	if err := os.WriteFile(stub, data, 0o700); err != nil {
+	if err := os.WriteFile(stub, data, 0o700); err != nil { //nolint:gosec // stub must stay executable for the recorded exec observation
 		panic(err)
 	}
 	capture := filepath.Join(dir, "capture.json")
@@ -169,7 +169,7 @@ func captureStub() bool {
 	for i := 0; i+1 < len(args); i++ {
 		key := map[string]string{"--certificate": "certificate", "--signature": "signature"}[args[i]]
 		if key != "" {
-			body, err := os.ReadFile(args[i+1])
+			body, err := os.ReadFile(args[i+1]) //nolint:gosec // G703: path comes from this oracle's own argument table
 			if err != nil {
 				fmt.Fprintln(os.Stderr, err)
 				os.Exit(2)
@@ -178,14 +178,14 @@ func captureStub() bool {
 		}
 	}
 	if len(args) > 0 {
-		body, err := os.ReadFile(args[len(args)-1])
+		body, err := os.ReadFile(args[len(args)-1]) //nolint:gosec // G703: path comes from this oracle's own argument table
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(2)
 		}
 		files["content"] = string(body)
 	}
-	if err := os.WriteFile(path, mustJSON(map[string]any{"args": args, "files": files}), 0o600); err != nil {
+	if err := os.WriteFile(path, mustJSON(map[string]any{"args": args, "files": files}), 0o600); err != nil { //nolint:gosec // G703: path is built by this oracle
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(2)
 	}
@@ -227,7 +227,7 @@ func mustJSON(value any) []byte {
 	return data
 }
 func readJSON(path string, target any) error {
-	data, err := os.ReadFile(path)
+	data, err := os.ReadFile(path) //nolint:gosec // path comes from this oracle's own recording dir
 	if err != nil {
 		return err
 	}

@@ -1,6 +1,6 @@
 {
   "go_source_sha256": "bff3e7be09de630ac2dba8070040443852e7bd9fc8ee5dd76abe614df7d30a0a",
-  "oracle_sha256": "08c96b6526808ffdcef469c9dd3c145c70ce7431b1e3de9d491d666e734b5b31",
+  "oracle_sha256": "d05178a7d67ac56f2c77f43c68e3a19f5a1b00944708b577978dfd4bb2603dbd",
   "goos": "darwin",
   "cases": [
     {
