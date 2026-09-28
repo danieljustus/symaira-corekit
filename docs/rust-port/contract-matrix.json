@@ -1171,7 +1171,7 @@
       "id": "UPD-012",
       "seam": "update and self-update",
       "fixture": "unwritable/failure cleanup/atomic rollback/staging",
-      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./updatecheck/updateapply -run \"TestApplyFails|TestApplyCleans|TestApplyRolls|TestAtomicSwap|TestStagingDir\"",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./updatecheck/updateapply -run \"TestApplyFails|TestApplyCleans|TestApplyRolls|TestApplyRemoves|TestApplyStages|TestAtomicSwap|TestStagingDir\"",
       "expected": "no partial binary; prior binary restored; staging cleaned",
       "comparison": "filesystem",
       "platforms": [

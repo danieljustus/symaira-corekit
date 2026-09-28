@@ -3,9 +3,9 @@
 ## Current local candidate — UPD-012 partial parity (2026-09-28)
 
 - Mode: execute; branch `migration/corekit-ledger-20260928` in
-  `.worktrees/corekit-rust-ledger-20260928`, based on local `c8e7d9f7`.
-  The working tree has uncommitted UPD-012 files; no new push, release,
-  cutover, Go removal or cleanup was authorized.
+  `.worktrees/corekit-rust-ledger-20260928`, committed locally as `b8037153`.
+  The working tree was clean at that commit; no new push, release, cutover,
+  Go removal or cleanup was authorized.
 - Four direct Go `atomicSwap` cases now replay the Rust filesystem operation;
   the exported Apply oracle has a ninth, blocked-parent case. Both differentials
   reject mutated observations. The Rust Apply replay now uses its actual
@@ -15,13 +15,14 @@
   mutation rejection); `golangci-lint run ./...` 0 issues;
   `generate.py --check-source` and `--check` plus the ledger validator passed.
   Strict crate Clippy, formatting and all crate tests ran inside the Make gate.
-  Mimo read-only feasibility review is pending delivery; verify its actual
-  checkout/base before using the result.
+  Mimo read-only feasibility review ran on an older `994ee3c` checkout and
+  identified two omitted Go test names in the UPD-012 row; the executable
+  selector was extended locally. A separate exact-candidate review is pending.
 - Residuals: UPD-012 stays `fixture-ready` until the remaining failure cleanup
   and full orchestrated apply path are exercised on Linux/macOS/Windows.
   Exact local HEAD cannot acquire native Windows CI without the separately
   prohibited publication; older CI runs do not certify these files.
-- Next: reconcile the Mimo finding, finish the remaining executable UPD-012
+- Next: reconcile the exact-candidate review, finish the remaining executable UPD-012
   cases, then run integrated and native target gates where authorized.
 
 ## Active slice — CoreKit #288 Rust LLM transport
