@@ -21,11 +21,17 @@ struct Input {
     source: String,
     backup: String,
     reject: bool,
+    #[serde(default)]
+    sabotage_backup: bool,
+    #[serde(default)]
+    block_removal: bool,
 }
 
 #[derive(Debug, Deserialize, PartialEq, Eq)]
 struct Observation {
     error: bool,
+    #[serde(default)]
+    error_prefix: String,
     target_exists: bool,
     target_content: String,
     source_exists: bool,
@@ -46,7 +52,7 @@ fn atomic_swap_failure_and_rollback_match_go() {
         });
     let fixture: Fixture = serde_json::from_slice(&fs::read(path).expect("read Go swap fixture"))
         .expect("parse Go swap fixture");
-    assert_eq!(fixture.cases.len(), 4);
+    assert_eq!(fixture.cases.len(), 6);
     let mut ids = Vec::new();
     for (index, case) in fixture.cases.into_iter().enumerate() {
         ids.push(case.input.id.clone());
@@ -78,6 +84,14 @@ fn atomic_swap_failure_and_rollback_match_go() {
             saw_target = path == target;
             saw_backup = backup.exists();
             saw_content = fs::read_to_string(path).expect("validator reads new target");
+            if case.input.sabotage_backup {
+                fs::remove_file(&backup).expect("sabotage old backup");
+            }
+            if case.input.block_removal {
+                fs::remove_file(path).expect("replace installed binary with directory");
+                fs::create_dir(path).expect("block removal with directory");
+                fs::write(path.join("blocker"), "block").expect("make directory nonempty");
+            }
             Err("reject installed binary".to_owned())
         };
         let check: Option<BinaryValidator<'_>> = if case.input.reject {
@@ -85,7 +99,16 @@ fn atomic_swap_failure_and_rollback_match_go() {
         } else {
             None
         };
-        let error = atomic_swap(&staged, &target, check).is_err();
+        let swap = atomic_swap(&staged, &target, check);
+        let error = swap.is_err();
+        if !case.observation.error_prefix.is_empty() {
+            assert!(
+                swap.as_ref()
+                    .is_err_and(|message| message.starts_with(&case.observation.error_prefix)),
+                "{} error family: {swap:?}",
+                case.input.id
+            );
+        }
         let mut names: Vec<_> = fs::read_dir(&root)
             .expect("read swap root")
             .map(|entry| {
@@ -99,6 +122,8 @@ fn atomic_swap_failure_and_rollback_match_go() {
         names.sort();
         let actual = Observation {
             error,
+            // The prefix is compared against the actual error above, not inferred from the fixture.
+            error_prefix: case.observation.error_prefix.clone(),
             target_exists: target.exists(),
             target_content: fs::read_to_string(&target).unwrap_or_default(),
             source_exists: staged.exists(),
@@ -118,7 +143,9 @@ fn atomic_swap_failure_and_rollback_match_go() {
             "missing-source",
             "preexisting-backup",
             "validation-first-install",
-            "validation-rollback"
+            "validation-remove-failed",
+            "validation-rollback",
+            "validation-rollback-failed"
         ]
     );
 }

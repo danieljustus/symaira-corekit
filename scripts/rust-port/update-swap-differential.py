@@ -23,7 +23,7 @@ def digest(path):
 
 def capture(output):
     env = dict(os.environ, COREKIT_SWAP_ORACLE_OUT=str(output))
-    env.setdefault("GOTOOLCHAIN", "go1.26.6")
+    env["GOTOOLCHAIN"] = "go1.26.6"
     env["CGO_ENABLED"] = "0"
     subprocess.run(
         ["go", "test", "-count=1", "-run", "^TestAtomicSwapOracle$", "./updatecheck/updateapply"],
@@ -31,7 +31,7 @@ def capture(output):
     )
     cases = json.loads(output.read_text(encoding="utf-8"))
     ids = [case["input"]["id"] for case in cases]
-    expected = {"missing-source", "validation-rollback", "validation-first-install", "preexisting-backup"}
+    expected = {"missing-source", "validation-rollback", "validation-first-install", "preexisting-backup", "validation-rollback-failed", "validation-remove-failed"}
     if len(ids) != len(expected) or set(ids) != expected:
         raise ValueError(f"Go swap oracle case mismatch: {ids}")
     return {
@@ -82,7 +82,14 @@ def main():
         negative = replay(replay_path)
         if negative.returncode == 0:
             raise RuntimeError("Rust swap replay accepted mutated Go observation")
-    print(f"PASS Go/Rust atomic swap: {len(current['cases'])} cases, {current['goos']}; mutation rejected")
+        mutated = json.loads(json.dumps(current))
+        rollback = next(case for case in mutated["cases"] if case["input"]["id"] == "validation-rollback-failed")
+        rollback["observation"]["error_prefix"] = "wrong rollback error family"
+        replay_path.write_text(json.dumps(mutated), encoding="utf-8")
+        negative = replay(replay_path)
+        if negative.returncode == 0 or "validation-rollback-failed error family" not in negative.stdout:
+            raise RuntimeError("Rust swap replay accepted mutated rollback error family")
+    print(f"PASS Go/Rust atomic swap: {len(current['cases'])} cases, {current['goos']}; filesystem and error mutations rejected")
     return 0
 
 

@@ -34,9 +34,10 @@ cache, extraction, install-method detection, Cosign contracts and apply
 behavior. UPD-012 remains `fixture-ready`; the full RUST-007 acceptance gate
 and native target-platform evidence are not complete. See
 [`contract-matrix.json`](contract-matrix.json) for each row's current status.
-The local UPD-012 subset now runs four direct `atomicSwap` Go test-oracle cases
+The local UPD-012 subset now runs six direct `atomicSwap` Go test-oracle cases
 against the Rust filesystem operation (missing staged source, validator rollback,
-failed first install and stale-backup replacement), with a mutation rejection.
+failed first install, stale-backup replacement and two rollback/remove fault
+paths). Both filesystem observations and rollback error families reject mutations.
 The Apply oracle records ten cases, including a blocked parent directory with
 no asset staging and a nested target with recursive filesystem observations;
 Rust replays nine (the ZIP apply case is still unported). Independent mutations

@@ -82,11 +82,23 @@ pub fn atomic_swap(
         match fs::remove_file(target) {
             Ok(()) => {}
             Err(remove) if remove.kind() == std::io::ErrorKind::NotFound => {}
-            Err(remove) => return Err(format!("remove failed installed binary: {remove}")),
+            Err(remove) => {
+                if had_existing {
+                    return Err(format!(
+                        "validate installed binary failed ({err}) and rollback failed: remove failed installed binary: {remove}"
+                    ));
+                }
+                return Err(format!(
+                    "validate installed binary failed ({err}) and remove failed: {remove}"
+                ));
+            }
         }
         if had_existing {
-            fs::rename(&backup, target)
-                .map_err(|rollback| format!("restore previous binary: {rollback}"))?;
+            fs::rename(&backup, target).map_err(|rollback| {
+                format!(
+                    "validate installed binary failed ({err}) and rollback failed: restore previous binary: {rollback}"
+                )
+            })?;
         }
         return Err(format!("validate installed binary: {err}"));
     }
