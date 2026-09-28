@@ -28,6 +28,7 @@ PURE_PACKAGES = (
     "symaira-core-env",
     "symaira-core-log",
     "symaira-core-mcp",
+    "symaira-core-update",
 )
 
 # These tests intentionally exercise filesystem/process/environment boundaries.

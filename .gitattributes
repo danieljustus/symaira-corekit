@@ -13,6 +13,11 @@
 /llmkit/*.go text eol=lf
 /secretref/*.go text eol=lf
 /exitcodes/*.go text eol=lf
+/updatecheck/*.go text eol=lf
+/scripts/rust-port/update-oracle/main.go text eol=lf
+/scripts/rust-port/update-version-differential.py text eol=lf
+/scripts/rust-port/update-response-oracle/main.go text eol=lf
+/scripts/rust-port/update-response-differential.py text eol=lf
 /scripts/rust-port/llm-oracle/main.go text eol=lf
 /scripts/rust-port/llm-differential.py text eol=lf
 /.gitattributes text eol=lf

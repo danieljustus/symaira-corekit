@@ -45,6 +45,44 @@ format/lint, and test the Rust crate. Refresh the observation deliberately with
 contract change.
 The `Rust foundation` CI matrix runs this gate on Linux, macOS, and Windows.
 
+## Streaming parity (LLM-006, LLM-007)
+
+`scripts/rust-port/llm-oracle/main.go` additionally records six SSE observations
+through the public `llmkit.Client.StreamChat`: the OpenAI and Anthropic happy
+paths (request bytes, callback order, finish reason) and four malformed OpenAI
+streams (comment-only body, undecodable chunk, oversized line before and after
+the first data line). Bodies over four KiB are stored by kind, length and
+SHA-256 so the multi-megabyte scanner fixtures stay out of the committed JSON.
+
+`rust/symaira-core-llm/tests/stream_contract.rs` rebuilds every recorded body,
+verifies its digest, replays it through **both** transports — the blocking
+`stream_chat` and the cancellable `stream_chat_cancellable` — and compares the
+wire request, the event order, and the exact `llmkit` error code and message.
+The replay exposed two real drifts that are fixed here: Rust's `serde_json`
+text replaced Go's `encoding/json` text in `decode stream chunk`, and the
+cancellable transport reported `stream line exceeds 1 MiB` where Go reports
+`bufio.Scanner: token too long`.
+
+## Row evidence
+
+Every row below executes inside `make rust-llm-contract`, which CI runs on
+`ubuntu-latest`, `macos-26` and `windows-latest` (`Rust foundation` matrix):
+
+| Row | Rust evidence (executed) |
+| --- | --- |
+| LLM-001 | `registry_and_go_generated_snapshot_are_available` |
+| LLM-002 | `empty_api_key_uses_credential_resolution`, `base_query_stays_after_the_joined_chat_path`, `dialect_override_follows_go_builder_behavior`, `zero_timeout_keeps_go_unbounded_request_behavior`, `caller_agent_routes_requests_through_its_proxy` |
+| LLM-003 | `credentials_fail_closed_and_redirects_are_not_followed`, `openai_and_anthropic_dialects_emit_their_go_wire_shapes` (auth header) |
+| LLM-004 | `openai_and_anthropic_dialects_emit_their_go_wire_shapes`, `cancellable_chat_preserves_go_openai_wire_contract`, `openai_null_choice_matches_go_zero_value_choice` |
+| LLM-005 | `openai_and_anthropic_dialects_emit_their_go_wire_shapes`, `anthropic_content_includes_text_from_every_block_like_go` |
+| LLM-006 | `go_recorded_stream_wire_and_callback_order_match`, `go_recorded_malformed_stream_errors_match`, `streaming_and_embedding_calls_preserve_openai_wire_options` |
+| LLM-007 | `go_recorded_stream_wire_and_callback_order_match`, `go_recorded_malformed_stream_errors_match`, `anthropic_stream_and_openrouter_model_discovery_are_normalized` |
+| LLM-008 | `streaming_and_embedding_calls_preserve_openai_wire_options`, `embedding_response_fields_match_go_case_insensitive_json`, `openrouter_model_discovery_uses_go_casefold_alias_order`, `generic_ollama_discovery_uses_go_casefold_alias_order`, `native_ollama_calls_match_go_recordings` |
+| LLM-009 | `native_ollama_calls_match_go_recordings`, `native_ollama_generate_accepts_go_scanner_large_chunks`, `native_ollama_generate_scanner_errors_match_go_before_and_after_data`, `native_ollama_generate_json_errors_match_go` |
+| LLM-010 | `taxonomy_maps_status_retry_and_exit_codes`, `malformed_openai_error_envelopes_keep_go_http_classification`, `structured_error_fields_follow_go_json_casefolding`, `cancellable_chat_preserves_go_rate_limit_and_header_classification`, `provider_error_truncates_raw_bytes_before_utf8_decode` |
+| LLM-011 | `registry_and_go_generated_snapshot_are_available` plus `go test ./llmkit/gen` in the gate |
+| LLM-012 | `go test ./ollamakit` in the gate plus `assert_no_rust_ollamakit()` in `scripts/rust-port/llm-differential.py` (workspace member scan, negative control: injected `symaira-core-ollamakit` member is rejected) |
+
 ## Residual boundary
 
 The existing `chat` and `stream_chat` methods remain synchronous and are not

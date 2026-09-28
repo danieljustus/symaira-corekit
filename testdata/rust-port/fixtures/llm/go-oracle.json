@@ -445,7 +445,7 @@
     "go_source_sha256": "9083f34389a8d37c89a54676c069432ec69daa1fd2d40a68081695a9ade6260c",
     "oracle_command": "GOTOOLCHAIN=go1.26.6 go run ./scripts/rust-port/llm-oracle",
     "oracle_sha256": "06381e92f44d9f113533c6b6eb536538b86cbe1d650d52f09cb097abc1408096",
-    "runner_sha256": "11316e72374a747087589a09d7aad26e32c8136d0e8db8407a557e97a81edb21"
+    "runner_sha256": "ec1847fe3488c655d5d34c23c78855bba812ef9f921e425e86555199b3ae8c85"
   },
   "providers": [
     {

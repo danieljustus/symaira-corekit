@@ -1015,7 +1015,7 @@
         "windows"
       ],
       "rust_test": "symaira-core-update/tests/parity.rs",
-      "status": "fixture-ready"
+      "status": "parity"
     },
     {
       "id": "UPD-002",
@@ -1029,8 +1029,8 @@
         "linux",
         "windows"
       ],
-      "rust_test": "symaira-core-update/tests/parity.rs",
-      "status": "todo"
+      "rust_test": "symaira-core-update/tests/response.rs",
+      "status": "fixture-ready"
     },
     {
       "id": "UPD-003",
@@ -1195,7 +1195,7 @@
         "windows"
       ],
       "rust_test": "symaira-core-llm/tests/provider_contract.rs",
-      "status": "todo"
+      "status": "parity"
     },
     {
       "id": "LLM-002",
@@ -1210,7 +1210,7 @@
         "windows"
       ],
       "rust_test": "symaira-core-llm/tests/provider_contract.rs",
-      "status": "todo"
+      "status": "parity"
     },
     {
       "id": "LLM-003",
@@ -1225,7 +1225,7 @@
         "windows"
       ],
       "rust_test": "symaira-core-llm/tests/provider_contract.rs",
-      "status": "todo"
+      "status": "parity"
     },
     {
       "id": "LLM-004",
@@ -1240,7 +1240,7 @@
         "windows"
       ],
       "rust_test": "symaira-core-llm/tests/provider_contract.rs",
-      "status": "todo"
+      "status": "parity"
     },
     {
       "id": "LLM-005",
@@ -1255,7 +1255,7 @@
         "windows"
       ],
       "rust_test": "symaira-core-llm/tests/provider_contract.rs",
-      "status": "todo"
+      "status": "parity"
     },
     {
       "id": "LLM-006",
@@ -1269,8 +1269,8 @@
         "linux",
         "windows"
       ],
-      "rust_test": "symaira-core-llm/tests/provider_contract.rs",
-      "status": "todo"
+      "rust_test": "symaira-core-llm/tests/stream_contract.rs",
+      "status": "parity"
     },
     {
       "id": "LLM-007",
@@ -1284,8 +1284,8 @@
         "linux",
         "windows"
       ],
-      "rust_test": "symaira-core-llm/tests/provider_contract.rs",
-      "status": "todo"
+      "rust_test": "symaira-core-llm/tests/stream_contract.rs",
+      "status": "parity"
     },
     {
       "id": "LLM-008",
@@ -1300,7 +1300,7 @@
         "windows"
       ],
       "rust_test": "symaira-core-llm/tests/provider_contract.rs",
-      "status": "todo"
+      "status": "parity"
     },
     {
       "id": "LLM-009",
@@ -1315,7 +1315,7 @@
         "windows"
       ],
       "rust_test": "symaira-core-llm/tests/provider_contract.rs",
-      "status": "todo"
+      "status": "parity"
     },
     {
       "id": "LLM-010",
@@ -1330,7 +1330,7 @@
         "windows"
       ],
       "rust_test": "symaira-core-llm/tests/provider_contract.rs",
-      "status": "todo"
+      "status": "parity"
     },
     {
       "id": "LLM-011",
@@ -1345,7 +1345,7 @@
         "windows"
       ],
       "rust_test": "symaira-core-llm/tests/provider_contract.rs",
-      "status": "todo"
+      "status": "parity"
     },
     {
       "id": "LLM-012",
@@ -1360,7 +1360,7 @@
         "windows"
       ],
       "rust_test": "no Rust crate; compatibility retention gate",
-      "status": "todo"
+      "status": "parity"
     },
     {
       "id": "AUD-001",
