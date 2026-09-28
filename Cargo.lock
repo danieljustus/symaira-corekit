@@ -1540,6 +1540,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "symaira-core-update"
+version = "0.0.0"
+dependencies = [
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "symaira-core-version"
 version = "0.0.0"
 dependencies = [

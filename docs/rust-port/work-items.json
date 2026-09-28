@@ -206,15 +206,16 @@
         "UPD-011",
         "UPD-012"
       ],
-      "status": "deferred",
+      "status": "in_progress",
       "demand_class": "demand_driven",
       "demand_evidence": "demand-assessment.md",
       "acceptance_commands": [
+        "make rust-update-version-contract",
         "make rust-update-contract",
         "python3 scripts/rust-port/diff.py --suite update --native",
         "cargo nextest run -p symaira-core-update"
       ],
-      "stop_rule": "Keep deferred until two Rust consumers need the same update pipeline. Stop on redirect/TLS weakening, traversal/symlink writes, checksum-byte drift, broken rollback or replacement of a known-good binary."
+      "stop_rule": "Do not mark complete until UPD-001..012 have executable Go/Rust parity and native evidence on every required target. Stop on redirect/TLS weakening, traversal/symlink writes, checksum-byte drift, broken rollback or replacement of a known-good binary."
     },
     {
       "id": "RUST-008",

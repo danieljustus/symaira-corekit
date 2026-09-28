@@ -275,6 +275,8 @@ jobs:
         run: make rust-foundation-contract
       - name: LLM provider contract gate
         run: make rust-llm-contract
+      - name: Update stable-version contract gate
+        run: make rust-update-version-contract
       - name: Dependency policy (Linux)
         if: runner.os == 'Linux'
         run: |

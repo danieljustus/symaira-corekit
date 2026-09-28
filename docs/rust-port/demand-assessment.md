@@ -10,22 +10,28 @@ rather than an unexamined default.
 
 Method: read-only searches over the Rust sources of every current Rust consumer
 in the workspace (`symaira-desktop`, `symaira-eraseme`, `symaira-vault`,
-`symaira-brain`, including its `browse/` module), rechecked 2026-09-23. Paths are relative to
+`symaira-brain`, including its `browse/` module), rechecked 2026-09-28 for
+RUST-007 and 2026-09-23 for the other deferred slices. Paths are relative to
 `/Volumes/1TB_NVMe_SN850X/Dev/Symaira_Dev/Repos`.
 
-## RUST-007 — Update, archive, Cosign and atomic apply (`UPD-*`) — deferred
+## RUST-007 — Update, archive, Cosign and atomic apply (`UPD-*`) — in progress
 
 ```sh
 rg -l -i -g '*.rs' "updatecheck|update_check|latest release|self_update|cosign|atomic.apply" \
   symaira-brain/rust symaira-brain/browse/crates symaira-desktop/crates symaira-eraseme/crates symaira-vault/crates
 ```
 
-Brain's `rust/symbrain-managed/src/install.rs` implements release download,
-publisher verification, extraction and atomic installation. Vault's
-`crates/symvault-cli/src/update_commands.rs` explicitly keeps `update check`
-and `update apply` unavailable; its `update info` reports the installation
-method, not the same pipeline. **Verdict: deferred — one Rust consumer needs
-the full pipeline; nothing to de-duplicate yet.**
+Brain's `rust/symbrain-managed/src/install.rs:77-151` implements release
+download, publisher verification, extraction and atomic installation. Vault
+subsequently implemented its own release checker and signed installer:
+`crates/symvault-cli/src/update_commands.rs:1-12,90-95,142-156` and
+`crates/symvault-cli/src/update_apply.rs:1-7,28-165`. These are independent
+product consumers with duplicated release-download, Cosign, archive and
+atomic-install concerns. **Verdict: demand met; RUST-007 can proceed.**
+`rust/symaira-core-update` currently implements only the stable-version
+decision (UPD-001) against a recorded Go `Checker.Check` corpus. UPD-002..012,
+including the secure download and rollback contracts, remain unimplemented.
+No Vault or Brain cutover is implied by this library slice.
 
 ## RUST-008 — Descriptor-driven LLM provider slice (`LLM-*`) — in progress
 

@@ -1,4 +1,4 @@
-.PHONY: build test lint fmt-check clean consumer-drift port-consumer-verify consumer-pin-regression golangci-lint rust-port-validate port-fixture-source-check port-oracle-selftest port-contract rust-lint rust-test rust-foundation-contract rust-fs-secret-contract rust-mcp-contract rust-mcpcfg-contract rust-llm-contract rust-release-contract rust-miri rust-hardening mcp-differential mcp-fuzz-smoke port-consumer-smoke rust-sqlite-refreeze
+.PHONY: build test lint fmt-check clean consumer-drift port-consumer-verify consumer-pin-regression golangci-lint rust-port-validate port-fixture-source-check port-oracle-selftest port-contract rust-lint rust-test rust-foundation-contract rust-fs-secret-contract rust-mcp-contract rust-mcpcfg-contract rust-llm-contract rust-update-version-contract rust-release-contract rust-miri rust-hardening mcp-differential mcp-fuzz-smoke port-consumer-smoke rust-sqlite-refreeze
 
 DEV_EXTERNAL := $(if $(wildcard $(HOME)/.local/bin/dev-external),$(HOME)/.local/bin/dev-external,)
 CARGO_RUN := $(if $(DEV_EXTERNAL),$(DEV_EXTERNAL) cargo,cargo)
@@ -104,6 +104,13 @@ rust-llm-contract:
 	$(CARGO_RUN) fmt --all --check
 	$(CARGO_RUN) clippy --manifest-path "$(CURDIR)/Cargo.toml" -p symaira-core-llm --all-targets --all-features --locked -- -D warnings
 	$(CARGO_RUN) test --manifest-path "$(CURDIR)/Cargo.toml" -p symaira-core-llm --all-targets --all-features --locked
+
+rust-update-version-contract:
+	GOTOOLCHAIN=go1.26.6 CGO_ENABLED=0 $(GO_RUN) test -count=1 ./updatecheck
+	GOTOOLCHAIN=go1.26.6 CGO_ENABLED=0 python3 scripts/rust-port/update-version-differential.py
+	$(CARGO_RUN) fmt --all --check
+	$(CARGO_RUN) clippy --manifest-path "$(CURDIR)/Cargo.toml" -p symaira-core-update --all-targets --all-features --locked -- -D warnings
+	$(CARGO_RUN) test --manifest-path "$(CURDIR)/Cargo.toml" -p symaira-core-update --all-targets --all-features --locked
 
 rust-release-contract: consumer-pin-regression
 	cargo semver-checks check-release

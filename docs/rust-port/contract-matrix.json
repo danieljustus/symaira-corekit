@@ -1015,7 +1015,7 @@
         "windows"
       ],
       "rust_test": "symaira-core-update/tests/parity.rs",
-      "status": "todo"
+      "status": "fixture-ready"
     },
     {
       "id": "UPD-002",
