@@ -34,6 +34,13 @@ cache, extraction, install-method detection, Cosign contracts and apply
 behavior. UPD-012 remains `fixture-ready`; the full RUST-007 acceptance gate
 and native target-platform evidence are not complete. See
 [`contract-matrix.json`](contract-matrix.json) for each row's current status.
+The local UPD-012 subset now runs four direct `atomicSwap` Go test-oracle cases
+against the Rust filesystem operation (missing staged source, validator rollback,
+failed first install and stale-backup replacement), with a mutation rejection.
+The Apply oracle also records a blocked parent directory and verifies no asset
+staging. `make rust-update-contract` executes both comparisons. This does **not**
+prove full update orchestration, ZIP replay, every cleanup fault or native
+Linux/Windows behavior; UPD-012 is therefore not promoted to `parity`.
 No Vault or Brain cutover is implied by this library slice.
 
 ## RUST-008 — Descriptor-driven LLM provider slice (`LLM-*`) — in progress

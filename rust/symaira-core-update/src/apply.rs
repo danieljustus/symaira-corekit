@@ -18,6 +18,7 @@ pub struct Input {
     pub validate_error: String,
     pub use_zip: bool,
     pub omit_asset: bool,
+    pub blocked_parent: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -42,16 +43,73 @@ pub struct Observation {
     pub files: Vec<FileObservation>,
 }
 
+/// Optional post-install validation callback.
+pub type BinaryValidator<'a> = &'a mut dyn FnMut(&Path) -> Result<(), String>;
+
+/// Replace a staged binary, restoring the previous target on a failed rename
+/// or rejected validation. The staged path must reside on the target filesystem.
+///
+/// # Errors
+/// Returns a filesystem or validation error, including rollback failure.
+pub fn atomic_swap(
+    staged: &Path,
+    target: &Path,
+    mut validate: Option<BinaryValidator<'_>>,
+) -> Result<(), String> {
+    let backup = target.with_file_name(format!(
+        "{}.bak",
+        target.file_name().unwrap_or_default().to_string_lossy()
+    ));
+    let had_existing = fs::metadata(target).is_ok();
+    if had_existing {
+        let _ = fs::remove_file(&backup);
+        fs::rename(target, &backup).map_err(|err| format!("backup current binary: {err}"))?;
+    }
+    if let Err(err) = fs::rename(staged, target) {
+        if had_existing {
+            fs::rename(&backup, target).map_err(|rollback| {
+                format!("install new binary failed ({err}) and rollback failed ({rollback})")
+            })?;
+        }
+        return Err(format!("install new binary: {err}"));
+    }
+    let validation_error = validate.as_mut().and_then(|check| check(target).err());
+    if let Some(err) = validation_error {
+        match fs::remove_file(target) {
+            Ok(()) => {}
+            Err(remove) if remove.kind() == std::io::ErrorKind::NotFound => {}
+            Err(remove) => return Err(format!("remove failed installed binary: {remove}")),
+        }
+        if had_existing {
+            fs::rename(&backup, target)
+                .map_err(|rollback| format!("restore previous binary: {rollback}"))?;
+        }
+        return Err(format!("validate installed binary: {err}"));
+    }
+    if had_existing {
+        let _ = fs::remove_file(backup);
+    }
+    Ok(())
+}
+
 /// Replays the filesystem effects of the Go Applier from an oracle case.
 pub fn replay(input: &Input) -> Observation {
     let id = TEMP_ID.fetch_add(1, Ordering::Relaxed);
     let root =
         std::env::temp_dir().join(format!("symaira-update-apply-{}-{id}", std::process::id()));
-    let _ = fs::remove_dir_all(&root);
-    if fs::create_dir_all(&root).is_err() {
+    if fs::create_dir(&root).is_err() {
         return empty_error("apply_failed");
     }
-    let target = root.join("mytool");
+    let target = if input.blocked_parent {
+        let parent = root.join("blocked-parent");
+        if fs::write(&parent, "blocker").is_err() || set_mode(&parent, 0o600).is_err() {
+            let _ = fs::remove_dir_all(&root);
+            return empty_error("apply_failed");
+        }
+        parent.join("mytool")
+    } else {
+        root.join("mytool")
+    };
     if input.initial_exists
         && (fs::write(&target, &input.initial_content).is_err()
             || set_mode(&target, input.initial_mode).is_err())
@@ -67,7 +125,6 @@ pub fn replay(input: &Input) -> Observation {
             return empty_error("apply_failed");
         }
     };
-    let stage_seen = !input.omit_asset;
     let mut error_code = String::new();
     let mut validator_saw_target = false;
     let mut validator_saw_backup = false;
@@ -80,8 +137,12 @@ pub fn replay(input: &Input) -> Observation {
     } else {
         input.asset_name.contains("linux") && input.asset_name.contains("amd64")
     };
+    let writable = !asset_matches || check_writable(&target).is_ok();
+    let stage_seen = asset_matches && writable;
     if !asset_matches {
         error_code = "missing_asset".into();
+    } else if !writable {
+        error_code = "apply_failed".into();
     } else if !input.checksum_ok {
         error_code = "checksum_mismatch".into();
     } else {
@@ -109,33 +170,28 @@ pub fn replay(input: &Input) -> Observation {
             let staged = root.join("updateapply-replay");
             if fs::write(&staged, &install_bytes).is_err() || set_mode(&staged, 0o755).is_err() {
                 error_code = "apply_failed".into();
-            } else if input.initial_exists {
-                if fs::rename(&target, root.join("mytool.bak")).is_err()
-                    || fs::rename(&staged, &target).is_err()
-                {
-                    error_code = "apply_failed".into();
-                }
-            } else if fs::rename(&staged, &target).is_err() {
-                error_code = "apply_failed".into();
-            }
-            if error_code.is_empty() && !input.validate_error.is_empty() {
-                validator_saw_target = target.exists();
-                validator_saw_backup = root.join("mytool.bak").exists();
-                validator_target_content = fs::read_to_string(&target).unwrap_or_default();
-                if input.initial_exists {
-                    let _ = fs::remove_file(&target);
-                    if fs::rename(root.join("mytool.bak"), &target).is_err() {
-                        error_code = "apply_failed".into();
+            } else {
+                let mut validator = |path: &Path| {
+                    validator_saw_target = path == target && path.exists();
+                    validator_saw_backup = root.join("mytool.bak").exists();
+                    validator_target_content = fs::read_to_string(path).unwrap_or_default();
+                    Err(input.validate_error.clone())
+                };
+                let check = if input.validate_error.is_empty() {
+                    None
+                } else {
+                    Some(&mut validator as &mut dyn FnMut(&Path) -> Result<(), String>)
+                };
+                if atomic_swap(&staged, &target, check).is_err() {
+                    error_code = if validator_saw_target {
+                        "validation_failed"
+                    } else {
+                        "apply_failed"
                     }
-                } else if fs::remove_file(&target).is_err() {
-                    error_code = "apply_failed".into();
+                    .into();
                 }
-                if error_code.is_empty() {
-                    error_code = "validation_failed".into();
-                }
-            } else if error_code.is_empty() && input.initial_exists {
-                let _ = fs::remove_file(root.join("mytool.bak"));
             }
+            let _ = fs::remove_file(staged);
         }
     }
 
@@ -164,14 +220,23 @@ fn observe(
     let target_exists = target.exists();
     let target_content = fs::read_to_string(target).unwrap_or_default();
     let target_mode = mode(target).unwrap_or_default();
-    let mut files = Vec::new();
-    if target_exists {
-        files.push(FileObservation {
-            path: "mytool".into(),
-            content: target_content.clone(),
-            mode: target_mode,
-        });
-    }
+    let mut files = fs::read_dir(root)
+        .into_iter()
+        .flatten()
+        .filter_map(Result::ok)
+        .filter_map(|entry| {
+            if !entry.file_type().ok()?.is_file() {
+                return None;
+            }
+            let path = entry.path();
+            Some(FileObservation {
+                path: entry.file_name().to_string_lossy().into_owned(),
+                content: fs::read_to_string(&path).ok()?,
+                mode: mode(&path).ok()?,
+            })
+        })
+        .collect::<Vec<_>>();
+    files.sort_by(|a, b| a.path.cmp(&b.path));
     Observation {
         error_code,
         target_exists,
@@ -201,6 +266,28 @@ fn empty_error(error_code: &str) -> Observation {
         validator_target_content: String::new(),
         files: Vec::new(),
     }
+}
+
+fn check_writable(target: &Path) -> std::io::Result<()> {
+    let parent = target.parent().ok_or(std::io::ErrorKind::InvalidInput)?;
+    let probe = parent.join(".updateapply-writecheck");
+    let file = fs::OpenOptions::new()
+        .create(true)
+        .write(true)
+        .truncate(false)
+        .open(&probe)?;
+    drop(file);
+    let _ = fs::remove_file(probe);
+    if fs::metadata(target).is_ok() {
+        #[cfg(unix)]
+        let readonly = mode(target)? & 0o200 == 0;
+        #[cfg(not(unix))]
+        let readonly = fs::metadata(target)?.permissions().readonly();
+        if readonly {
+            return Err(std::io::ErrorKind::PermissionDenied.into());
+        }
+    }
+    Ok(())
 }
 
 fn decode_hex(raw: &str) -> Option<Vec<u8>> {

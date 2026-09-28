@@ -1,0 +1,94 @@
+{
+  "cases": [
+    {
+      "input": {
+        "backup": "",
+        "id": "missing-source",
+        "initial": "old-binary",
+        "reject": false,
+        "source": ""
+      },
+      "observation": {
+        "backup_exists": false,
+        "error": true,
+        "remaining_file_names": [
+          "mytool"
+        ],
+        "source_exists": false,
+        "target_content": "old-binary",
+        "target_exists": true,
+        "validator_saw_backup": false,
+        "validator_saw_content": "",
+        "validator_saw_target": false
+      }
+    },
+    {
+      "input": {
+        "backup": "",
+        "id": "validation-rollback",
+        "initial": "old-binary",
+        "reject": true,
+        "source": "invalid-binary"
+      },
+      "observation": {
+        "backup_exists": false,
+        "error": true,
+        "remaining_file_names": [
+          "mytool"
+        ],
+        "source_exists": false,
+        "target_content": "old-binary",
+        "target_exists": true,
+        "validator_saw_backup": true,
+        "validator_saw_content": "invalid-binary",
+        "validator_saw_target": true
+      }
+    },
+    {
+      "input": {
+        "backup": "",
+        "id": "validation-first-install",
+        "initial": "",
+        "reject": true,
+        "source": "invalid-binary"
+      },
+      "observation": {
+        "backup_exists": false,
+        "error": true,
+        "remaining_file_names": [],
+        "source_exists": false,
+        "target_content": "",
+        "target_exists": false,
+        "validator_saw_backup": false,
+        "validator_saw_content": "invalid-binary",
+        "validator_saw_target": true
+      }
+    },
+    {
+      "input": {
+        "backup": "stale-backup",
+        "id": "preexisting-backup",
+        "initial": "old-binary",
+        "reject": false,
+        "source": "new-binary"
+      },
+      "observation": {
+        "backup_exists": false,
+        "error": false,
+        "remaining_file_names": [
+          "mytool"
+        ],
+        "source_exists": false,
+        "target_content": "new-binary",
+        "target_exists": true,
+        "validator_saw_backup": false,
+        "validator_saw_content": "",
+        "validator_saw_target": false
+      }
+    }
+  ],
+  "go_source_sha256": "c4fbbd243076103a1f909bf1f1f54a3478dfef8f96ac2c125942fd35ca395cbf",
+  "goos": "darwin",
+  "oracle_sha256": "2591ee07998719a24e6f842c3647ae5e8eb2f2af52fc1c3c12c2cf9a5e7779f6",
+  "runner_sha256": "780d8f42cc29c4d3ecbbda2f617b74f1249eaf2cbe6bef529922008e2e76a223"
+}

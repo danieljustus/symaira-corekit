@@ -1,6 +1,6 @@
 {
   "go_source_sha256": "bff3e7be09de630ac2dba8070040443852e7bd9fc8ee5dd76abe614df7d30a0a",
-  "oracle_sha256": "d05178a7d67ac56f2c77f43c68e3a19f5a1b00944708b577978dfd4bb2603dbd",
+  "oracle_sha256": "d9368dcf890a291bf63d5a0effe90d5671fc17f0b15a56e1ef9adcb3cafd856f",
   "goos": "darwin",
   "cases": [
     {
@@ -199,6 +199,34 @@
             "path": "mytool",
             "content": "old-binary",
             "mode": 493
+          }
+        ]
+      }
+    },
+    {
+      "input": {
+        "id": "blocked-parent",
+        "asset_name": "mytool_linux_amd64",
+        "payload_hex": "6e65772d62696e617279",
+        "checksum_ok": true,
+        "initial_exists": false,
+        "initial_content": "",
+        "initial_mode": 0,
+        "blocked_parent": true
+      },
+      "observation": {
+        "error_code": "apply_failed",
+        "target_exists": false,
+        "backup_exists": false,
+        "stage_during_download": false,
+        "temp_during_download": false,
+        "validator_saw_target": false,
+        "validator_saw_backup": false,
+        "files": [
+          {
+            "path": "blocked-parent",
+            "content": "blocker",
+            "mode": 384
           }
         ]
       }

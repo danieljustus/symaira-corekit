@@ -116,6 +116,14 @@ def main():
         negative = replay(path)
     if negative.returncode == 0:
         raise RuntimeError("mutated fixture was incorrectly accepted")
+    blocked = next(row for row in mutated["cases"] if row["input"]["id"] == "blocked-parent")
+    blocked["observation"]["stage_during_download"] = True
+    with tempfile.TemporaryDirectory(prefix="update-apply-blocked-negative-") as temp:
+        path = Path(temp) / "mutated.json"
+        path.write_text(json.dumps(mutated), encoding="utf-8")
+        negative = replay(path)
+    if negative.returncode == 0:
+        raise RuntimeError("blocked-parent mutation was incorrectly accepted")
     print("PASS mutated-fixture negative control rejected")
     return 0
 

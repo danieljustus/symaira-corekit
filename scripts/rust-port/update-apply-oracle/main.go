@@ -37,6 +37,7 @@ type input struct {
 	ValidateError  string `json:"validate_error,omitempty"`
 	UseZip         bool   `json:"use_zip,omitempty"`
 	OmitAsset      bool   `json:"omit_asset,omitempty"`
+	BlockedParent  bool   `json:"blocked_parent,omitempty"`
 }
 
 type file struct {
@@ -73,6 +74,7 @@ func main() {
 		{ID: "tar-extract", AssetName: "mytool_linux_amd64.tar.gz", PayloadHex: hex.EncodeToString(tarGz("bundle/mytool", "archive-binary")), ChecksumOK: true, InitialExists: true, InitialContent: "old-binary", InitialMode: 0o755, ExtractBinary: "mytool"},
 		{ID: "tar-traversal", AssetName: "mytool_linux_amd64.tar.gz", PayloadHex: hex.EncodeToString(tarGz("../mytool", "escaped")), ChecksumOK: true, InitialExists: true, InitialContent: "old-binary", InitialMode: 0o755, ExtractBinary: "mytool"},
 		{ID: "missing-asset", AssetName: "mytool_linux_amd64", PayloadHex: hex.EncodeToString([]byte("new-binary")), ChecksumOK: true, InitialExists: true, InitialContent: "old-binary", InitialMode: 0o755, OmitAsset: true},
+		{ID: "blocked-parent", AssetName: "mytool_linux_amd64", PayloadHex: hex.EncodeToString([]byte("new-binary")), ChecksumOK: true, BlockedParent: true},
 	}
 	zipPath := filepath.Join("scripts", "rust-port", "update-extract-oracle", "testdata", "zip-success.zip")
 	if archive, err := os.ReadFile(zipPath); err == nil { //nolint:gosec // path is built from this repository's own fixture table
@@ -121,6 +123,13 @@ func run(test input) result {
 	}
 	defer os.RemoveAll(root)
 	target := filepath.Join(root, "mytool")
+	if test.BlockedParent {
+		parent := filepath.Join(root, "blocked-parent")
+		if err := os.WriteFile(parent, []byte("blocker"), 0o600); err != nil { //nolint:gosec // isolated fixture root
+			panic(err)
+		}
+		target = filepath.Join(parent, "mytool")
+	}
 	if test.InitialExists {
 		if err := os.WriteFile(target, []byte(test.InitialContent), os.FileMode(test.InitialMode)); err != nil {
 			panic(err)

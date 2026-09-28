@@ -1,8 +1,9 @@
 #![deny(unsafe_code)]
 
 //! Version decisions, response mapping, install-method detection, response
-//! caching and archive extraction shared by update consumers. The signature,
-//! download transport and atomic installation seams remain unported.
+//! caching and archive extraction shared by update consumers. Atomic swap has
+//! a Go-recorded filesystem replay; signature execution, download transport
+//! and full installation orchestration remain unported.
 
 pub mod apply;
 pub mod cache;

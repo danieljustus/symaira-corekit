@@ -31,6 +31,8 @@ struct ExpectedInput {
     use_zip: bool,
     #[serde(default)]
     omit_asset: bool,
+    #[serde(default)]
+    blocked_parent: bool,
 }
 
 #[derive(serde::Deserialize)]
@@ -73,6 +75,7 @@ impl ExpectedCase {
             validate_error: self.input.validate_error.clone(),
             use_zip: self.input.use_zip,
             omit_asset: self.input.omit_asset,
+            blocked_parent: self.input.blocked_parent,
         }
     }
 
@@ -138,7 +141,7 @@ fn apply_filesystem_observations_match_go_fixture() {
         eprintln!("SKIP {reason}");
         return;
     }
-    assert_eq!(fixture.cases.len(), 8);
+    assert_eq!(fixture.cases.len(), 9);
     for case in fixture.cases {
         if case.input.use_zip {
             // ZIP replay needs a dependency absent from this crate; keep the
