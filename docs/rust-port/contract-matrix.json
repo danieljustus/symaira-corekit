@@ -45,7 +45,7 @@
         "windows"
       ],
       "rust_test": "symaira-contract-fixtures/tests/con_001.rs",
-      "status": "fixture-ready"
+      "status": "parity"
     },
     {
       "id": "CON-002",
@@ -60,7 +60,7 @@
         "windows"
       ],
       "rust_test": "symaira-contract-fixtures/tests/con_002.rs",
-      "status": "fixture-ready"
+      "status": "parity"
     },
     {
       "id": "CON-003",
@@ -74,8 +74,8 @@
         "linux",
         "windows"
       ],
-      "rust_test": "symaira-contract-fixtures/tests/con_003.rs",
-      "status": "fixture-ready"
+      "rust_test": "symaira-core-mcp/tests/con_003.rs",
+      "status": "parity"
     },
     {
       "id": "CON-004",
@@ -89,8 +89,8 @@
         "linux",
         "windows"
       ],
-      "rust_test": "symaira-contract-fixtures/tests/con_004.rs",
-      "status": "fixture-ready"
+      "rust_test": "symaira-core-secretref/tests/parity.rs",
+      "status": "parity"
     },
     {
       "id": "CON-005",
@@ -104,8 +104,8 @@
         "linux",
         "windows"
       ],
-      "rust_test": "symaira-contract-fixtures/tests/con_005.rs",
-      "status": "fixture-ready"
+      "rust_test": "symaira-core-update/tests/con_005.rs",
+      "status": "parity"
     },
     {
       "id": "CON-006",
@@ -119,8 +119,8 @@
         "linux",
         "windows"
       ],
-      "rust_test": "symaira-contract-fixtures/tests/con_006.rs",
-      "status": "fixture-ready"
+      "rust_test": "symaira-core-mcp/tests/con_006.rs",
+      "status": "parity"
     },
     {
       "id": "CON-007",
@@ -134,8 +134,8 @@
         "linux",
         "windows"
       ],
-      "rust_test": "symaira-contract-fixtures/tests/con_007.rs",
-      "status": "fixture-ready"
+      "rust_test": "symaira-core-mcp/tests/con_007.rs",
+      "status": "parity"
     },
     {
       "id": "CON-008",
@@ -149,8 +149,8 @@
         "linux",
         "windows"
       ],
-      "rust_test": "symaira-contract-fixtures/tests/con_008.rs",
-      "status": "fixture-ready"
+      "rust_test": "symaira-core-llm/tests/con_008.rs",
+      "status": "parity"
     },
     {
       "id": "DEFECT-001",
