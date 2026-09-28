@@ -178,33 +178,25 @@ fn update_request_and_errors_match_go_oracle() {
     let listener = TcpListener::bind("127.0.0.1:0").unwrap();
     let address = listener.local_addr().unwrap();
     drop(listener);
-    // A freed loopback port is normally refused at once, but a host may filter it
-    // instead. Probe what THIS host does and require Rust to classify that same
-    // outcome: the assertion is then environment evidence, not a hardcoded string.
-    let host_refuses = matches!(
-        std::net::TcpStream::connect_timeout(&address, Duration::from_millis(500)),
-        Err(error) if error.kind() == std::io::ErrorKind::ConnectionRefused
-    );
-    let expected = if host_refuses {
-        "connection_refused"
-    } else {
-        "timeout"
-    };
     let error = fetch(
         &format!("http://{address}/refused"),
         "1.2.3",
         Duration::from_secs(2),
     )
     .unwrap_err();
-    assert_eq!(
-        error.code,
-        expected,
-        "freed loopback port: host_refuses={host_refuses}, fixture={}",
-        go(&fixture, "connection-refused")
-            .error_code
-            .as_deref()
-            .unwrap()
+    let refused = go(&fixture, "connection-refused");
+    assert_eq!(refused.error_code.as_deref(), Some("connection_refused"));
+    // A closed ephemeral port is not a deterministic Windows refusal: the
+    // runner has observed both a timeout and a refusal on consecutive connects.
+    // Test the refusal classifier with an injected I/O error in request.rs.
+    #[cfg(windows)]
+    assert!(
+        matches!(error.code, "connection_refused" | "timeout"),
+        "unexpected closed-port error: {}",
+        error.code
     );
+    #[cfg(not(windows))]
+    assert_eq!(error.code, refused.error_code.as_deref().unwrap());
     assert_eq!(
         error.message,
         go(&fixture, "connection-refused")

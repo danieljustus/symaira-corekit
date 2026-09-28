@@ -161,3 +161,16 @@ fn classify_network(error: ureq::Error) -> Error {
         },
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::classify_network;
+    use std::io::{Error, ErrorKind};
+
+    #[test]
+    fn refused_io_error_has_go_request_classification() {
+        let actual = classify_network(ureq::Error::Io(Error::from(ErrorKind::ConnectionRefused)));
+        assert_eq!(actual.code, "connection_refused");
+        assert_eq!(actual.message, "request latest release");
+    }
+}
