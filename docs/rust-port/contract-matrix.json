@@ -14,8 +14,8 @@
         "linux",
         "windows"
       ],
-      "rust_test": "port/contracts/meta_public_api.rs",
-      "status": "fixture-ready"
+      "rust_test": "scripts/rust-port/generate.py --check (port contract gate)",
+      "status": "parity"
     },
     {
       "id": "META-002",
@@ -29,8 +29,8 @@
         "linux",
         "windows"
       ],
-      "rust_test": "port/contracts/meta_provenance.rs",
-      "status": "fixture-ready"
+      "rust_test": "scripts/rust-port/generate.py --check-source (port contract gate)",
+      "status": "parity"
     },
     {
       "id": "CON-001",
