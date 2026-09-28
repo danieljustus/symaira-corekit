@@ -243,6 +243,53 @@ fn cancellable_api_does_not_silently_ignore_an_injected_agent() {
 }
 
 #[test]
+fn cancellable_chat_uses_injected_async_transport_alongside_sync_agent() {
+    let (url, server) = mock_server(
+        200,
+        r#"{"choices":[{"message":{"content":"configured"},"finish_reason":"stop"}]}"#,
+    );
+    let mut headers = reqwest::header::HeaderMap::new();
+    headers.insert(
+        "X-Async-Transport",
+        reqwest::header::HeaderValue::from_static("configured"),
+    );
+    let async_client = reqwest::Client::builder()
+        .default_headers(headers)
+        .redirect(reqwest::redirect::Policy::none())
+        .build()
+        .unwrap();
+    let client = ClientBuilder::new(lookup("openai").unwrap().clone(), "")
+        .base_url(format!("{url}/v1"))
+        .api_key("dummy-key")
+        .agent(Agent::new_with_defaults())
+        .async_client(async_client)
+        .build()
+        .unwrap();
+    let runtime = tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+        .unwrap();
+    let choice = runtime
+        .block_on(client.chat_cancellable(
+            &CancellationToken::new(),
+            "gpt-5",
+            &[Message {
+                role: "user".into(),
+                content: "question".into(),
+            }],
+            None,
+        ))
+        .unwrap();
+    let (request_headers, _, _) = server.join().unwrap();
+    assert!(
+        request_headers
+            .to_ascii_lowercase()
+            .contains("x-async-transport: configured")
+    );
+    assert_eq!(choice.content, "configured");
+}
+
+#[test]
 fn cancellable_chat_preserves_go_rate_limit_and_header_classification() {
     let fixture: Value = serde_json::from_str(include_str!(
         "../../../testdata/rust-port/fixtures/llm/go-oracle.json"
@@ -404,6 +451,7 @@ fn cancellation_closes_connection_while_waiting_for_response_headers() {
     let client = ClientBuilder::new(lookup("openai").unwrap().clone(), "")
         .base_url(format!("http://{address}/v1"))
         .api_key("dummy-key")
+        .async_client(reqwest::Client::builder().build().unwrap())
         .build()
         .unwrap();
     let token = CancellationToken::new();

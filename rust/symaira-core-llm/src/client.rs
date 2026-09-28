@@ -17,6 +17,7 @@ pub struct ClientBuilder {
     timeout: Duration,
     api_key: Option<String>,
     agent: Option<Agent>,
+    async_client: Option<reqwest::Client>,
 }
 
 impl ClientBuilder {
@@ -29,6 +30,7 @@ impl ClientBuilder {
             timeout: DEFAULT_TIMEOUT,
             api_key: None,
             agent: None,
+            async_client: None,
         }
     }
 
@@ -53,6 +55,12 @@ impl ClientBuilder {
     /// `timeout` applies only when the default agent is used.
     pub fn agent(mut self, value: Agent) -> Self {
         self.agent = Some(value);
+        self
+    }
+    /// Replaces the default transport for cancellable chat and stream calls.
+    /// Redirects, timeout, proxy, and TLS behavior are caller-controlled.
+    pub fn async_client(mut self, value: reqwest::Client) -> Self {
+        self.async_client = Some(value);
         self
     }
 
@@ -105,7 +113,11 @@ impl ClientBuilder {
                 .build()
                 .into()
         });
-        let cancellable_agent = (!has_injected_agent).then(OnceLock::new);
+        let cancellable_agent = match self.async_client {
+            Some(client) => Some(OnceLock::from(Ok(client))),
+            None if !has_injected_agent => Some(OnceLock::new()),
+            None => None,
+        };
         Ok(Client {
             descriptor: self.descriptor,
             base_url: base_url.trim_end_matches('/').to_owned(),
