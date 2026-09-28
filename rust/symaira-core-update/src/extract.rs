@@ -335,6 +335,8 @@ fn open_with_mode(path: &Path, mode: u32) -> io::Result<File> {
         use std::os::unix::fs::OpenOptionsExt;
         options.mode(mode);
     }
+    #[cfg(not(unix))]
+    let _ = mode;
     options.open(path)
 }
 

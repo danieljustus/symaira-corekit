@@ -44,24 +44,24 @@ func main() {
 	defer os.RemoveAll(tmp)
 	home := filepath.Join(tmp, "home")
 	readOnly := filepath.Join(tmp, "readonly")
-	if err := os.MkdirAll(home, 0755); err != nil {
+	if err := os.MkdirAll(home, 0755); err != nil { //nolint:gosec // fixture lives in an isolated temp dir
 		fatal(err)
 	}
-	if err := os.MkdirAll(readOnly, 0555); err != nil {
+	if err := os.MkdirAll(readOnly, 0555); err != nil { //nolint:gosec // read-only mode is the recorded observation
 		fatal(err)
 	}
-	if err := os.Chmod(readOnly, 0555); err != nil {
+	if err := os.Chmod(readOnly, 0555); err != nil { //nolint:gosec // read-only mode is the recorded observation
 		fatal(err)
 	}
 	cellarBinary := filepath.Join(tmp, "Cellar", "tool", "1.0.0", "bin", "tool")
-	if err := os.MkdirAll(filepath.Dir(cellarBinary), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(cellarBinary), 0755); err != nil { //nolint:gosec // fixture lives in an isolated temp dir
 		fatal(err)
 	}
-	if err := os.WriteFile(cellarBinary, []byte("fixture"), 0644); err != nil {
+	if err := os.WriteFile(cellarBinary, []byte("fixture"), 0644); err != nil { //nolint:gosec // fixture mode is the recorded observation
 		fatal(err)
 	}
 	link := filepath.Join(tmp, "link", "tool")
-	if err := os.MkdirAll(filepath.Dir(link), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(link), 0755); err != nil { //nolint:gosec // fixture lives in an isolated temp dir
 		fatal(err)
 	}
 	if err := os.Symlink(cellarBinary, link); err != nil {

@@ -57,7 +57,7 @@ type observation struct {
 
 func main() {
 	dir := filepath.Join("scripts", "rust-port", "update-extract-oracle", "testdata")
-	if err := os.MkdirAll(dir, 0o755); err != nil {
+	if err := os.MkdirAll(dir, 0o755); err != nil { //nolint:gosec // fixture lives in an isolated temp dir
 		fail(err)
 	}
 	var cases []observation
@@ -68,7 +68,7 @@ func main() {
 		}
 		ext := map[string]string{"tar.gz": ".tar.gz", "zip": ".zip"}[c.kind]
 		name := c.id + ext
-		if err := os.WriteFile(filepath.Join(dir, name), archive, 0o644); err != nil {
+		if err := os.WriteFile(filepath.Join(dir, name), archive, 0o644); err != nil { //nolint:gosec // archive mode is not observed
 			fail(err)
 		}
 		cases = append(cases, observe(c, name, archive))
@@ -133,7 +133,7 @@ func makeArchive(c archiveCase) ([]byte, error) {
 	zw := zip.NewWriter(&buf)
 	for _, e := range c.entries {
 		h := &zip.FileHeader{Name: e.name, Method: zip.Deflate}
-		h.SetMode(os.FileMode(e.mode))
+		h.SetMode(os.FileMode(e.mode)) //nolint:gosec // G115: mode comes from this file's fixed fixture table
 		w, err := zw.CreateHeader(h)
 		if err != nil {
 			return nil, err
@@ -186,7 +186,7 @@ func observe(c archiveCase, name string, archive []byte) observation {
 		if statErr != nil {
 			return statErr
 		}
-		data, readErr := os.ReadFile(path)
+		data, readErr := os.ReadFile(path) //nolint:gosec // path is produced by walking this oracle's own temp dir
 		if readErr != nil {
 			return readErr
 		}

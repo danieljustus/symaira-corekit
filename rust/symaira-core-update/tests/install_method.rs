@@ -7,6 +7,8 @@ use symaira_core_update::install_method::detect_with;
 
 #[derive(Deserialize)]
 struct Fixture {
+    #[serde(default)]
+    goos: Option<String>,
     cases: Vec<Case>,
 }
 
@@ -22,6 +24,27 @@ struct Case {
     guidance: String,
 }
 
+/// The committed fixture records one platform's Go observations. On another
+/// platform the fresh Go oracle plus the Rust replay in `make rust-update-contract`
+/// assert parity instead of replaying foreign expectations.
+fn platform_mismatch(recorded: Option<&str>) -> Option<String> {
+    let current = if cfg!(target_os = "windows") {
+        "windows"
+    } else if cfg!(target_os = "macos") {
+        "darwin"
+    } else if cfg!(target_os = "linux") {
+        "linux"
+    } else {
+        ""
+    };
+    match recorded {
+        Some(recorded) if recorded != current => Some(format!(
+            "fixture recorded on {recorded}, running on {current}; cross-platform parity is asserted by make rust-update-contract"
+        )),
+        _ => None,
+    }
+}
+
 #[test]
 fn install_method_observations_match_go_api() {
     let default_fixture = Path::new(env!("CARGO_MANIFEST_DIR"))
@@ -30,6 +53,10 @@ fn install_method_observations_match_go_api() {
         .map(PathBuf::from)
         .unwrap_or(default_fixture);
     let fixture: Fixture = serde_json::from_slice(&fs::read(fixture_path).unwrap()).unwrap();
+    if let Some(reason) = platform_mismatch(fixture.goos.as_deref()) {
+        eprintln!("SKIP {reason}");
+        return;
+    }
     assert_eq!(fixture.cases.len(), 15);
 
     let temp = std::env::temp_dir().join(format!("upd008-rust-{}", std::process::id()));

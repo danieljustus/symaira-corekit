@@ -121,11 +121,12 @@ func run(id, endpoint string, line *string, headers *map[string]string, client *
 	checker.HTTPClient = client
 	_, err := checker.Check(context.Background(), " 1.2.3 ")
 	result := observation{ID: id, URL: normalizeURL(trimmed), RequestLine: *line, Headers: *headers}
-	if id == "404" {
+	switch id {
+	case "404":
 		result.Status = http.StatusNotFound
-	} else if id == "429-retry-after" {
+	case "429-retry-after":
 		result.Status = http.StatusTooManyRequests
-	} else if id == "request" || id == "malformed-json" || id == "timeout" {
+	case "request", "malformed-json", "timeout":
 		result.Status = http.StatusOK
 	}
 	if err != nil {
@@ -161,7 +162,7 @@ func localServer(handler http.Handler, tlsEnabled bool) *httptest.Server {
 	if err != nil {
 		panic(err)
 	}
-	server := &httptest.Server{Config: &http.Server{Handler: handler}, Listener: listener}
+	server := &httptest.Server{Config: &http.Server{Handler: handler, ReadHeaderTimeout: 5 * time.Second}, Listener: listener}
 	if tlsEnabled {
 		server.StartTLS()
 	} else {

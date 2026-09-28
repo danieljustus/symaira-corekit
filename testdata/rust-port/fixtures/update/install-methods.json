@@ -1,6 +1,6 @@
 {
   "go_source_sha256": "4aa34358dd24ab9f03c1507e910d162e5c7cc20a5c95042e01786f1ab6f928ed",
-  "oracle_sha256": "0ca5196e071e398ba7615e7ae1937bc37f4a9fc90c003098d213ba1068a5ac3b",
+  "oracle_sha256": "ae06f1ae9360b8a0a22847f753917ff43cfbc607e655a4cfb95fea7e36736749",
   "cases": [
     {
       "id": "empty",
