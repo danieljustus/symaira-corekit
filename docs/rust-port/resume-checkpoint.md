@@ -3,8 +3,8 @@
 ## Current local candidate — UPD-012 partial parity (2026-09-28)
 
 - Mode: execute; branch `migration/corekit-ledger-20260928` in
-  `.worktrees/corekit-rust-ledger-20260928`, committed locally as `b8037153`.
-  The working tree was clean at that commit; no new push, release, cutover,
+  `.worktrees/corekit-rust-ledger-20260928`, latest tested source `39deb404`.
+  No new push, release, cutover,
   Go removal or cleanup was authorized.
 - Four direct Go `atomicSwap` cases now replay the Rust filesystem operation;
   the exported Apply oracle has a ninth, blocked-parent case. Both differentials
@@ -17,13 +17,25 @@
   Strict crate Clippy, formatting and all crate tests ran inside the Make gate.
   Mimo read-only feasibility review ran on an older `994ee3c` checkout and
   identified two omitted Go test names in the UPD-012 row; the executable
-  selector was extended locally. A separate exact-candidate review is pending.
+  selector was extended locally. The Apply replay now creates a staged file
+  before checking its checksum and observes it through the filesystem rather
+  than inferring staging from the asset name. A separate review of the earlier
+  `b8037153` implementation is pending; later source changes need delta review.
+- Native Linux/arm64, non-root UID 65534, Go 1.26.6 and Rust 1.98.0: a
+  source archive of `39deb404` passed `make rust-update-contract` in an
+  isolated Colima/Docker VM (exit 0). Fresh Linux Go observations replayed
+  UPD request, install method, extraction, apply and four swap cases in Rust;
+  the install-method negative control was repaired to actually reject a
+  mutation on Linux. macOS/arm64 ran the same gate after that harness repair,
+  also with exit 0. Native Windows remains untested: local MSVC
+  cross-check fails compiling `ring` without Windows `assert.h`/SDK.
 - Residuals: UPD-012 stays `fixture-ready` until the remaining failure cleanup
   and full orchestrated apply path are exercised on Linux/macOS/Windows.
   Exact local HEAD cannot acquire native Windows CI without the separately
   prohibited publication; older CI runs do not certify these files.
-- Next: reconcile the exact-candidate review, finish the remaining executable UPD-012
-  cases, then run integrated and native target gates where authorized.
+- Next: reconcile the exact-candidate review and its source delta, then port
+  remaining executable Apply orchestration rather than promote a replay model
+  to full parity. Run native target gates where authorized.
 
 ## Active slice — CoreKit #288 Rust LLM transport
 
