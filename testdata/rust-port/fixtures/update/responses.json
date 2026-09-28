@@ -1,0 +1,166 @@
+{
+  "go_source_sha256": "1f8fb17f32aa36f38dbe4e5dfea982e14eb19d798251021c3c454aba2c2a82f4",
+  "oracle_sha256": "896ea430890635976b58528fa29f2ff27838d00dba5e459dc9b28942eba0e08f",
+  "cases": [
+    {
+      "id": "available-assets",
+      "current": "v1.2.3",
+      "response": "{\"tag_name\":\" v1.3.0 \",\"body\":\"Release notes\\nFixes\",\"html_url\":\" https://github.com/acme/tool/releases/tag/v1.3.0 \",\"assets\":[{\"name\":\"tool-darwin-arm64.tar.gz\",\"browser_download_url\":\"https://github.com/acme/tool/releases/download/v1.3.0/tool-darwin-arm64.tar.gz\",\"size\":12345},{\"name\":\"checksums.txt\",\"browser_download_url\":\"https://github.com/acme/tool/releases/download/v1.3.0/checksums.txt\",\"size\":87}]}",
+      "result": {
+        "release": {
+          "tag_name": "v1.3.0",
+          "body": "Release notes\nFixes",
+          "html_url": "https://github.com/acme/tool/releases/tag/v1.3.0",
+          "assets": [
+            {
+              "name": "tool-darwin-arm64.tar.gz",
+              "browser_download_url": "https://github.com/acme/tool/releases/download/v1.3.0/tool-darwin-arm64.tar.gz",
+              "size": 12345
+            },
+            {
+              "name": "checksums.txt",
+              "browser_download_url": "https://github.com/acme/tool/releases/download/v1.3.0/checksums.txt",
+              "size": 87
+            }
+          ]
+        },
+        "error": null
+      },
+      "request": {
+        "count": 1,
+        "method": "GET",
+        "path": "/releases/latest",
+        "accept": "application/vnd.github+json",
+        "user_agent": "symaira-updatecheck/v1.2.3"
+      }
+    },
+    {
+      "id": "up-to-date",
+      "current": "v1.2.3",
+      "response": "{\"tag_name\":\"v1.2.3\",\"body\":\"Current\",\"html_url\":\"https://github.com/acme/tool/releases/tag/v1.2.3\",\"assets\":[]}",
+      "result": {
+        "release": null,
+        "error": null
+      },
+      "request": {
+        "count": 1,
+        "method": "GET",
+        "path": "/releases/latest",
+        "accept": "application/vnd.github+json",
+        "user_agent": "symaira-updatecheck/v1.2.3"
+      }
+    },
+    {
+      "id": "older-release",
+      "current": "v1.2.3",
+      "response": "{\"tag_name\":\"v1.2.2\",\"body\":\"Old\",\"html_url\":\"https://github.com/acme/tool/releases/tag/v1.2.2\",\"assets\":[]}",
+      "result": {
+        "release": null,
+        "error": null
+      },
+      "request": {
+        "count": 1,
+        "method": "GET",
+        "path": "/releases/latest",
+        "accept": "application/vnd.github+json",
+        "user_agent": "symaira-updatecheck/v1.2.3"
+      }
+    },
+    {
+      "id": "draft",
+      "current": "v1.2.3",
+      "response": "{\"tag_name\":\"v1.3.0\",\"draft\":true}",
+      "result": {
+        "release": null,
+        "error": "latest release response returned a draft release"
+      },
+      "request": {
+        "count": 1,
+        "method": "GET",
+        "path": "/releases/latest",
+        "accept": "application/vnd.github+json",
+        "user_agent": "symaira-updatecheck/v1.2.3"
+      }
+    },
+    {
+      "id": "prerelease",
+      "current": "v1.2.3",
+      "response": "{\"tag_name\":\"v1.3.0-rc.1\",\"prerelease\":true}",
+      "result": {
+        "release": null,
+        "error": "latest release response returned a prerelease"
+      },
+      "request": {
+        "count": 1,
+        "method": "GET",
+        "path": "/releases/latest",
+        "accept": "application/vnd.github+json",
+        "user_agent": "symaira-updatecheck/v1.2.3"
+      }
+    },
+    {
+      "id": "empty-tag",
+      "current": "v1.2.3",
+      "response": "{\"tag_name\":\"  \"}",
+      "result": {
+        "release": null,
+        "error": "latest release response did not include a tag name"
+      },
+      "request": {
+        "count": 1,
+        "method": "GET",
+        "path": "/releases/latest",
+        "accept": "application/vnd.github+json",
+        "user_agent": "symaira-updatecheck/v1.2.3"
+      }
+    },
+    {
+      "id": "malformed-prerelease-tag",
+      "current": "v1.2.3",
+      "response": "{\"tag_name\":\"v1.3.0-rc.1\"}",
+      "result": {
+        "release": null,
+        "error": "latest release tag \"v1.3.0-rc.1\" is not a stable semantic version"
+      },
+      "request": {
+        "count": 1,
+        "method": "GET",
+        "path": "/releases/latest",
+        "accept": "application/vnd.github+json",
+        "user_agent": "symaira-updatecheck/v1.2.3"
+      }
+    },
+    {
+      "id": "malformed-tag",
+      "current": "v1.2.3",
+      "response": "{\"tag_name\":\"latest\"}",
+      "result": {
+        "release": null,
+        "error": "latest release tag \"latest\" is not a stable semantic version"
+      },
+      "request": {
+        "count": 1,
+        "method": "GET",
+        "path": "/releases/latest",
+        "accept": "application/vnd.github+json",
+        "user_agent": "symaira-updatecheck/v1.2.3"
+      }
+    },
+    {
+      "id": "invalid-current",
+      "current": "dev",
+      "response": "{\"tag_name\":\"v1.3.0\"}",
+      "result": {
+        "release": null,
+        "error": null
+      },
+      "request": {
+        "count": 0,
+        "method": "",
+        "path": "",
+        "accept": "",
+        "user_agent": ""
+      }
+    }
+  ]
+}
