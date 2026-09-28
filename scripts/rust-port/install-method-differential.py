@@ -5,11 +5,23 @@ import argparse
 import json
 import os
 from pathlib import Path
+import platform
 import subprocess
+import sys
 import tempfile
 
 ROOT = Path(__file__).resolve().parents[2]
 FIXTURE = ROOT / "testdata/rust-port/fixtures/update/install-methods.json"
+
+
+def goos_name() -> str:
+    if sys.platform.startswith("linux"):
+        return "linux"
+    if sys.platform == "darwin":
+        return "darwin"
+    if sys.platform.startswith("win"):
+        return "windows"
+    return platform.system().lower()
 
 
 def oracle():
@@ -48,15 +60,31 @@ def main():
     parser.add_argument("--fixture", type=Path, default=FIXTURE)
     args = parser.parse_args()
     observed = oracle()
+    observed["goos"] = goos_name()
 
     if args.write:
         args.fixture.parent.mkdir(parents=True, exist_ok=True)
         args.fixture.write_text(json.dumps(observed, indent=2) + "\n", encoding="utf-8")
-        print(f"PASS Go install-method oracle: {len(observed['cases'])} cases written")
+        print(f"PASS Go install-method oracle: {len(observed['cases'])} cases written for {observed['goos']}")
         return
 
     committed = json.loads(args.fixture.read_text(encoding="utf-8"))
     if observed != committed:
+        recorded = committed.get("goos")
+        if recorded != goos_name():
+            # Filesystem detection is platform specific: replay this platform's Go
+            # observations instead of the fixture recorded on another platform.
+            with tempfile.TemporaryDirectory(prefix="upd008-platform-") as directory:
+                candidate = Path(directory) / "platform.json"
+                candidate.write_text(json.dumps(observed, indent=2) + "\n", encoding="utf-8")
+                result = replay(candidate)
+            if result.returncode:
+                raise RuntimeError(result.stdout)
+            print(
+                f"PASS Go/Rust install-method differential on {goos_name()} "
+                f"(committed fixture recorded on {recorded})"
+            )
+            return
         raise ValueError("install-method Go oracle disagrees with committed fixture")
     if args.negative_control:
         mutated = json.loads(json.dumps(committed))

@@ -137,5 +137,6 @@
       "self_update": false,
       "guidance": "Unable to determine installation method. Reinstall from the GitHub releases page"
     }
-  ]
+  ],
+  "goos": "darwin"
 }

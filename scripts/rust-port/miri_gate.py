@@ -28,7 +28,6 @@ PURE_PACKAGES = (
     "symaira-core-env",
     "symaira-core-log",
     "symaira-core-mcp",
-    "symaira-core-update",
 )
 
 # These tests intentionally exercise filesystem/process/environment boundaries.
@@ -48,6 +47,7 @@ NON_ISOLATED_PACKAGES = (
 MIRI_EXCLUDED_PACKAGES = {
     "symaira-core-llm": "HTTP networking and TLS execution are covered by the native LLM contract gate, not Miri",
     "symaira-core-sqlite": "bundled SQLite FFI and unsupported native filesystem flags",
+    "symaira-core-update": "local HTTP cache, filesystem and symlink extraction contracts are covered by the native update contract gate",
 }
 
 NEGATIVE_PACKAGE = "symaira-contract-fixtures"

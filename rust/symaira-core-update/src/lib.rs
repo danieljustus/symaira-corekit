@@ -1,9 +1,11 @@
 #![deny(unsafe_code)]
 
-//! Stable release-version decisions shared by update consumers.
-//! Network, cache, archive, signature and installation contracts remain unported.
+//! Version decisions, response mapping, install-method detection, response
+//! caching and archive extraction shared by update consumers. The signature,
+//! download transport and atomic installation seams remain unported.
 
 pub mod cache;
+pub mod extract;
 pub mod install_method;
 
 /// Whether the running version is a stable release eligible for an update check.
@@ -91,8 +93,6 @@ pub fn check_response(current: &str, response: Response) -> Result<Option<Releas
         assets: response.assets,
     }))
 }
-
-pub mod extract;
 
 fn parse_stable(raw: &str) -> Option<(isize, isize, isize)> {
     let trimmed = raw.trim().strip_prefix('v').unwrap_or(raw.trim());

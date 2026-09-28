@@ -16,9 +16,14 @@ struct Case {
 
 #[test]
 fn release_response_outcomes_match_go_checker() {
-    let fixture: Fixture = serde_json::from_str(include_str!(
-        "../../../testdata/rust-port/fixtures/update/responses.json"
-    ))
+    let default_fixture = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("../../testdata/rust-port/fixtures/update/responses.json");
+    let fixture_path = std::env::var_os("RESPONSE_FIXTURE")
+        .map(std::path::PathBuf::from)
+        .unwrap_or(default_fixture);
+    let fixture: Fixture = serde_json::from_str(
+        &std::fs::read_to_string(&fixture_path).expect("read generated response fixture"),
+    )
     .unwrap();
     assert_eq!(fixture.cases.len(), 9);
 

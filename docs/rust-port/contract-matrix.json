@@ -1030,7 +1030,7 @@
         "windows"
       ],
       "rust_test": "symaira-core-update/tests/response.rs",
-      "status": "fixture-ready"
+      "status": "parity"
     },
     {
       "id": "UPD-003",
@@ -1044,8 +1044,8 @@
         "linux",
         "windows"
       ],
-      "rust_test": "symaira-core-update/tests/parity.rs",
-      "status": "todo"
+      "rust_test": "symaira-core-update/tests/cache.rs",
+      "status": "parity"
     },
     {
       "id": "UPD-004",
@@ -1089,8 +1089,8 @@
         "linux",
         "windows"
       ],
-      "rust_test": "symaira-core-update/tests/parity.rs",
-      "status": "todo"
+      "rust_test": "symaira-core-update/tests/extract.rs",
+      "status": "parity"
     },
     {
       "id": "UPD-007",
@@ -1104,8 +1104,8 @@
         "linux",
         "windows"
       ],
-      "rust_test": "symaira-core-update/tests/parity.rs",
-      "status": "todo"
+      "rust_test": "symaira-core-update/tests/extract.rs",
+      "status": "parity"
     },
     {
       "id": "UPD-008",
@@ -1119,8 +1119,8 @@
         "linux",
         "windows"
       ],
-      "rust_test": "symaira-core-update/tests/parity.rs",
-      "status": "todo"
+      "rust_test": "symaira-core-update/tests/install_method.rs",
+      "status": "parity"
     },
     {
       "id": "UPD-009",

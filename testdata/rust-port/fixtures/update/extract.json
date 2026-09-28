@@ -1,6 +1,7 @@
 {
   "go_source_sha256": "49a0c1ca9f6cd867314bc4b4755917b4c22c51275c63529b1178c7b6b852f0fa",
   "oracle_sha256": "4eff230e6b81826616fd714dcb6c7dfaf291fa005e0aa7b5015f1cdeb9645423",
+  "goos": "darwin",
   "cases": [
     {
       "id": "tar-success",

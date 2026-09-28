@@ -34,9 +34,14 @@ struct ExpectedError {
 
 #[test]
 fn extraction_matches_go_archives_and_filesystem_observations() {
-    let fixture: Fixture = serde_json::from_str(include_str!(
-        "../../../testdata/rust-port/fixtures/update/extract.json"
-    ))
+    let default_fixture = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("../../testdata/rust-port/fixtures/update/extract.json");
+    let fixture_path = std::env::var_os("EXTRACT_FIXTURE")
+        .map(PathBuf::from)
+        .unwrap_or(default_fixture);
+    let fixture: Fixture = serde_json::from_str(
+        &std::fs::read_to_string(&fixture_path).expect("read generated extraction fixture"),
+    )
     .expect("valid generated extraction fixture");
     assert_eq!(fixture.cases.len(), 12);
     let root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
