@@ -6,12 +6,24 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import platform
 import subprocess
+import sys
 import tempfile
 
 ROOT = Path(__file__).resolve().parents[2]
 FIXTURE = ROOT / "testdata/rust-port/fixtures/update/requests.json"
 RUST_TEST = "symaira-core-update"
+
+
+def goos_name() -> str:
+    if sys.platform.startswith("linux"):
+        return "linux"
+    if sys.platform == "darwin":
+        return "darwin"
+    if sys.platform.startswith("win"):
+        return "windows"
+    return platform.system().lower()
 
 
 def observed():
@@ -67,12 +79,29 @@ def main():
     parser.add_argument("--fixture", type=Path, default=FIXTURE)
     args = parser.parse_args()
     current = observed()
+    current["goos"] = goos_name()
     if args.write:
         args.fixture.parent.mkdir(parents=True, exist_ok=True)
         args.fixture.write_text(json.dumps(current, indent=2) + "\n", encoding="utf-8")
-        print(f"PASS wrote {len(current['cases'])} Go request observations")
+        print(f"PASS wrote {len(current['cases'])} Go request observations for {current['goos']}")
         return
-    if current != json.loads(args.fixture.read_text(encoding="utf-8")):
+    committed = json.loads(args.fixture.read_text(encoding="utf-8"))
+    if current != committed:
+        recorded = committed.get("goos")
+        if recorded != goos_name():
+            # Loopback/socket behavior is host specific: replay this platform's Go
+            # observations instead of the fixture recorded on another platform.
+            with tempfile.TemporaryDirectory(prefix="update-request-platform-") as temp:
+                path = Path(temp) / "platform.json"
+                path.write_text(json.dumps(current, indent=2) + "\n", encoding="utf-8")
+                replay = rust_replay(path)
+            if replay.returncode:
+                raise RuntimeError(replay.stdout)
+            print(
+                f"PASS Go/Rust update request observations on {goos_name()} "
+                f"(committed fixture recorded on {recorded})"
+            )
+            return
         raise ValueError("Go request oracle disagrees with committed fixture")
     replay = rust_replay(args.fixture)
     if replay.returncode:

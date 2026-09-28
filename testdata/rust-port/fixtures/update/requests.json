@@ -113,5 +113,6 @@
       "error_code": "refused",
       "error_message": "stopped after 10 redirects"
     }
-  ]
+  ],
+  "goos": "darwin"
 }
