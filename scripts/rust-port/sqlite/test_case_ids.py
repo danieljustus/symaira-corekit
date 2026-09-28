@@ -15,7 +15,7 @@ ID_ERROR = r'case IDs/order mismatch|Rust executed case IDs differ from declared
 
 class CaseIdControls(unittest.TestCase):
     def setUp(self):
-        self.record = json.loads((diff.ROOT / 'testdata/rust-port/sqlite/differential-macos-refreeze-20260928T170834Z.json').read_text())
+        self.record = json.loads((diff.ROOT / 'testdata/rust-port/sqlite/differential-macos-refreeze-20260928T172358Z.json').read_text())
         self.manifest, self.manifest_sha = candidate.load()
 
     def compare(self, entrypoint, go, rust):
