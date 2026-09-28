@@ -53,6 +53,17 @@ def replay(fixture):
     )
 
 
+def reject_mutation(source):
+    mutated = json.loads(json.dumps(source))
+    mutated["cases"][0]["method"] = "mutated-fixture"
+    with tempfile.TemporaryDirectory(prefix="upd008-negative-") as directory:
+        candidate = Path(directory) / "mutated.json"
+        candidate.write_text(json.dumps(mutated), encoding="utf-8")
+        result = replay(candidate)
+    if result.returncode == 0:
+        raise ValueError("mutated-fixture negative control unexpectedly passed")
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--write", action="store_true")
@@ -80,6 +91,10 @@ def main():
                 result = replay(candidate)
             if result.returncode:
                 raise RuntimeError(result.stdout)
+            if args.negative_control:
+                reject_mutation(observed)
+                print(f"PASS Rust rejected mutated install-method fixture on {goos_name()}")
+                return
             print(
                 f"PASS Go/Rust install-method differential on {goos_name()} "
                 f"(committed fixture recorded on {recorded})"
@@ -87,14 +102,7 @@ def main():
             return
         raise ValueError("install-method Go oracle disagrees with committed fixture")
     if args.negative_control:
-        mutated = json.loads(json.dumps(committed))
-        mutated["cases"][0]["method"] = "mutated-fixture"
-        with tempfile.TemporaryDirectory(prefix="upd008-negative-") as directory:
-            candidate = Path(directory) / "mutated.json"
-            candidate.write_text(json.dumps(mutated), encoding="utf-8")
-            result = replay(candidate)
-        if result.returncode == 0:
-            raise ValueError("mutated-fixture negative control unexpectedly passed")
+        reject_mutation(committed)
         print("PASS Rust rejected mutated install-method fixture")
         return
 
