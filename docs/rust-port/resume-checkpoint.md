@@ -4,28 +4,33 @@
 
 - Mode: execute; branch `migration/corekit-ledger-20260928` in
   `.worktrees/corekit-rust-ledger-20260928`, latest tested source
-  `baa661014aad59935300265681e498cbd709ee82`. No new push, release,
+  `8bb5f1fac0d0a153e3f4e6397ad0c720271919f7`. No new push, release,
   cutover, Go removal or destructive cleanup was authorized.
 - Six direct Go `atomicSwap` cases replay the Rust filesystem operation,
-  including rollback and remove faults with Go-verified error families. Ten
-  Apply cases replay, including blocked-parent, nested-target and ZIP install;
-  independent mutations of install, blocked-parent, nested and ZIP observations
-  are rejected at their intended assertions. The Rust Apply replay stages a
+  including rollback and remove faults with Go-verified error families. Twelve
+  Apply cases replay, including blocked-parent, nested-target, ZIP install and
+  asset-selection edges; independent mutations of install, blocked-parent,
+  nested, ZIP and asset-selection observations are rejected at their intended
+  assertions. The Rust Apply replay stages a
   real file and calls the shared `atomic_swap` operation. The four findings
   from Mimo's read-only review of `b8037153` were addressed locally: isolated
   negative controls, pinned Go runner, nested path/backup observations and
   double-failure error prefixes. This is not a new review of the final head.
-- On native macOS/arm64 at `baa6610`, `make rust-update-contract`, full
+- On native macOS/arm64 at `8bb5f1f`, `make rust-update-contract`, full
   `cargo test --workspace --all-features --locked`, workspace strict Clippy,
   `make test lint build`, generator source/fixture checks and ledger validation
-  all exited 0. `golangci-lint run ./...` reported 0 issues. A separately
+  all exited 0. `golangci-lint run ./...` reported 0 issues on the preceding
+  apply change. A separately
   documented source archive of the same exact head was run on native
   Linux/arm64 in Colima/Docker as non-root UID 65534, Go 1.26.6 and Rust
   1.98.0; `make rust-update-contract` exited 0. The downloaded official Go
   tarball matched SHA-256
   `d0507e9e9d7fe012aae570108cbd76c15de879e17130ab8cb90d4d7445cb1f2e`.
-  Its live Linux Go observations replayed all ten Apply and six swap cases,
-  with mutation rejection. Both Colima profiles were stopped afterward.
+  Its live Linux Go observations replayed all twelve Apply and six swap cases,
+  with mutation rejection. An expected-red test showed that the Rust archive
+  observation deleted a preexisting temp root; `extract::observe` now refuses
+  that root and preserves its sentinel, verified on both macOS and Linux.
+  Both Colima profiles were stopped afterward.
 - Residuals: UPD-012 stays `fixture-ready` because the current Rust Apply
   replay is not the full downloaded, signed update orchestration and not all
   fault paths are covered. Native Windows remains untested; a local MSVC
