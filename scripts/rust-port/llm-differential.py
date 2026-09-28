@@ -47,7 +47,12 @@ def oracle_command() -> list[str]:
 
 def compare(observed: dict, expected: dict) -> None:
     if observed != expected:
-        raise ValueError("Go oracle output differs from the committed LLM contract fixture")
+        differing = [key for key in observed.keys() | expected.keys() if observed.get(key) != expected.get(key)]
+        key = sorted(differing)[0]
+        raise ValueError(
+            f"Go oracle output differs at {key}: observed={str(observed.get(key))[:300]!r}, "
+            f"expected={str(expected.get(key))[:300]!r}"
+        )
 
 
 def main() -> int:
