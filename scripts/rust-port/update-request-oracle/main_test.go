@@ -5,13 +5,18 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"runtime"
 	"syscall"
 	"testing"
 )
 
 func TestClassifyNativeRefusalAndDeadline(t *testing.T) {
+	refusalErrno := syscall.ECONNREFUSED
+	if runtime.GOOS == "windows" {
+		refusalErrno = syscall.Errno(10061)
+	}
 	refused := fmt.Errorf("request latest release: %w", &net.OpError{
-		Op: "dial", Net: "tcp", Err: os.NewSyscallError("connectex", syscall.ECONNREFUSED),
+		Op: "dial", Net: "tcp", Err: os.NewSyscallError("connectex", refusalErrno),
 	})
 	for _, tc := range []struct {
 		err  error

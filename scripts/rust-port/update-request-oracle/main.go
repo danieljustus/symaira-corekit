@@ -17,6 +17,7 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"os"
+	"runtime"
 	"sort"
 	"strings"
 	"syscall"
@@ -251,6 +252,11 @@ func classify(err error) (string, string) {
 		return "", ""
 	}
 	text := err.Error()
+	refusalErrno := syscall.ECONNREFUSED
+	if runtime.GOOS == "windows" {
+		// Winsock WSAECONNREFUSED is not Go's synthetic Windows ECONNREFUSED.
+		refusalErrno = syscall.Errno(10061)
+	}
 	switch {
 	case strings.Contains(text, "HTTP 404"):
 		return "http_404", text
@@ -262,7 +268,7 @@ func classify(err error) (string, string) {
 		return "tls_certificate", "update check failed: TLS certificate verification error"
 	case errors.Is(err, context.DeadlineExceeded) || strings.Contains(text, "Client.Timeout"):
 		return "timeout", "request latest release"
-	case errors.Is(err, syscall.ECONNREFUSED) || strings.Contains(text, "connection refused"):
+	case errors.Is(err, refusalErrno) || strings.Contains(text, "connection refused"):
 		return "connection_refused", "request latest release"
 	default:
 		return "network", "request latest release"
