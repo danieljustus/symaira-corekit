@@ -7,6 +7,7 @@ import hashlib
 import json
 from pathlib import Path
 import subprocess
+import sys
 import tempfile
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -62,6 +63,8 @@ def main():
         print("PASS mutated fixture rejected")
         return
     if not compare(observed, args.fixture):
+        print(json.dumps({"observed": observed, "fixture": json.loads(
+            args.fixture.read_text(encoding="utf-8"))}, indent=2), file=sys.stderr)
         raise SystemExit("FAIL Go cache oracle disagrees with committed fixture")
     subprocess.run(
         ["cargo", "test", "-p", "symaira-core-update", "--test", "cache", "--locked"],
