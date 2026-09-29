@@ -45,6 +45,16 @@ provider code, a Rust `ollamakit` clone, or a process/release surface.
   remains an explicit error for cancellable calls. Synchronous calls without a
   shared client continue to use the configured `ureq::Agent`.
 
+## Known response-limit difference
+
+Go reads response bodies through `io.LimitReader`, which returns the bytes up
+to the configured cap and then EOF. The shared `http_client` path follows that
+behavior with bounded reads. The legacy `ureq::Agent` path uses
+`BodyWithConfig::limit`, which returns a body-limit error if the reader is
+asked for more bytes after reaching the cap. That pre-existing transport
+difference remains; callers can observe it when switching between the legacy
+agent and the shared client.
+
 ## Differential evidence
 
 `scripts/rust-port/llm-oracle` records requests, cancellation classifications,
