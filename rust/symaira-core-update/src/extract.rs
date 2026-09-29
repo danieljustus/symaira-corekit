@@ -1,5 +1,6 @@
+use cap_std::fs::{Dir, OpenOptions};
 use flate2::read::GzDecoder;
-use std::fs::{self, File, OpenOptions};
+use std::fs::{self, File};
 use std::io::{self, Cursor, Read, Write};
 use std::path::{Component, Path};
 use std::sync::atomic::{AtomicU64, Ordering};
@@ -144,6 +145,8 @@ fn extract_tar_gz(data: &[u8], root: &Path, expected: &str) -> Result<String, Ex
             "decompress gzip: gzip: invalid header",
         ));
     }
+    let root = Dir::open_ambient_dir(root, cap_std::ambient_authority())
+        .map_err(|err| ExtractError::new("io", format!("open destination directory: {err}")))?;
     let mut archive = tar::Archive::new(GzDecoder::new(Cursor::new(data)));
     let entries = archive
         .entries()
@@ -162,18 +165,18 @@ fn extract_tar_gz(data: &[u8], root: &Path, expected: &str) -> Result<String, Ex
         validate_name(&name)?;
         let entry_type = entry.header().entry_type();
         if entry_type.is_dir() {
-            fs::create_dir_all(root.join(&name)).map_err(|err| {
+            root.create_dir_all(&name).map_err(|err| {
                 ExtractError::new("io", format!("create directory {name:?}: {err}"))
             })?;
         } else if entry_type.is_file() {
-            let path = root.join(&name);
+            let path = Path::new(&name);
             if let Some(parent) = path.parent() {
-                fs::create_dir_all(parent).map_err(|err| {
+                root.create_dir_all(parent).map_err(|err| {
                     ExtractError::new("io", format!("create parent dir for {name:?}: {err}"))
                 })?;
             }
             let mode = entry.header().mode().unwrap_or(0o600) & 0o777;
-            let mut out = open_with_mode(&path, mode)
+            let mut out = open_with_mode(&root, path, mode)
                 .map_err(|err| ExtractError::new("io", format!("create file {name:?}: {err}")))?;
             let mut limited = (&mut entry).take(MAX_EXTRACT_SIZE - total);
             let copied = io::copy(&mut limited, &mut out)
@@ -203,13 +206,15 @@ fn extract_tar_gz(data: &[u8], root: &Path, expected: &str) -> Result<String, Ex
 
 fn extract_zip(data: &[u8], root: &Path, expected: &str) -> Result<String, ExtractError> {
     let records = zip_records(data)?;
+    let root = Dir::open_ambient_dir(root, cap_std::ambient_authority())
+        .map_err(|err| ExtractError::new("io", format!("open destination directory: {err}")))?;
     let mut selected = None;
     let mut total = 0u64;
     for record in records {
         let name = clean_name(&record.name);
         validate_name(&name)?;
         if record.name.ends_with('/') || record.is_dir {
-            fs::create_dir_all(root.join(&name)).map_err(|err| {
+            root.create_dir_all(&name).map_err(|err| {
                 ExtractError::new("io", format!("create directory {name:?}: {err}"))
             })?;
             continue;
@@ -251,13 +256,13 @@ fn extract_zip(data: &[u8], root: &Path, expected: &str) -> Result<String, Extra
                 format!("archive exceeds maximum extraction size of {MAX_EXTRACT_SIZE} bytes"),
             ));
         }
-        let path = root.join(&name);
+        let path = Path::new(&name);
         if let Some(parent) = path.parent() {
-            fs::create_dir_all(parent).map_err(|err| {
+            root.create_dir_all(parent).map_err(|err| {
                 ExtractError::new("io", format!("create parent dir for {name:?}: {err}"))
             })?;
         }
-        let mut out = open_with_mode(&path, record.mode)
+        let mut out = open_with_mode(&root, path, record.mode)
             .map_err(|err| ExtractError::new("io", format!("create file {name:?}: {err}")))?;
         out.write_all(&body)
             .map_err(|err| ExtractError::new("io", format!("write file {name:?}: {err}")))?;
@@ -329,9 +334,12 @@ fn invalid_zip() -> ExtractError {
 fn validate_name(name: &str) -> Result<(), ExtractError> {
     if name.is_empty()
         || name.starts_with('/')
-        || Path::new(name)
-            .components()
-            .any(|part| matches!(part, Component::ParentDir))
+        || Path::new(name).components().any(|part| {
+            matches!(
+                part,
+                Component::ParentDir | Component::RootDir | Component::Prefix(_)
+            )
+        })
     {
         return Err(ExtractError::new(
             "path_traversal",
@@ -339,6 +347,23 @@ fn validate_name(name: &str) -> Result<(), ExtractError> {
         ));
     }
     Ok(())
+}
+
+#[cfg(all(test, windows))]
+mod windows_path_tests {
+    #[test]
+    fn reject_drive_relative_absolute_unc_and_device_paths() {
+        for name in [
+            "C:/escape",
+            "C:escape",
+            "//server/share/escape",
+            "//?/C:/escape",
+            "/escape",
+        ] {
+            assert!(super::validate_name(name).is_err(), "accepted {name:?}");
+        }
+        assert!(super::validate_name("bundle/tool.exe").is_ok());
+    }
 }
 
 fn clean_name(raw: &str) -> String {
@@ -365,17 +390,18 @@ fn clean_name(raw: &str) -> String {
     }
 }
 
-fn open_with_mode(path: &Path, mode: u32) -> io::Result<File> {
+fn open_with_mode(root: &Dir, path: &Path, mode: u32) -> io::Result<File> {
     let mut options = OpenOptions::new();
     options.write(true).create(true).truncate(true);
     #[cfg(unix)]
     {
-        use std::os::unix::fs::OpenOptionsExt;
+        use cap_std::fs::OpenOptionsExt;
         options.mode(mode);
     }
     #[cfg(not(unix))]
     let _ = mode;
-    options.open(path)
+    root.open_with(path, &options)
+        .map(cap_std::fs::File::into_std)
 }
 
 fn observe_files(root: &Path, output: &mut Vec<FileObservation>) -> io::Result<()> {

@@ -49,14 +49,20 @@ impl InstallMethod {
 
 /// Detects an install method using the current process environment.
 pub fn detect(binary_path: &Path) -> Result<InstallMethod, &'static str> {
-    let env: HashMap<String, String> = ["HOMEBREW_PREFIX", "GOPATH", "GOMODCACHE", "HOME"]
-        .into_iter()
-        .filter_map(|key| env::var(key).ok().map(|value| (key.to_owned(), value)))
-        .collect();
-    let home = env
-        .get("HOME")
-        .map(PathBuf::from)
-        .or_else(|| env::var_os("HOME").map(PathBuf::from));
+    let env: HashMap<String, String> = [
+        "HOMEBREW_PREFIX",
+        "GOPATH",
+        "GOMODCACHE",
+        "HOME",
+        "USERPROFILE",
+    ]
+    .into_iter()
+    .filter_map(|key| env::var(key).ok().map(|value| (key.to_owned(), value)))
+    .collect();
+    let home_key = if cfg!(windows) { "USERPROFILE" } else { "HOME" };
+    let home = env::var_os(home_key)
+        .filter(|value| !value.is_empty())
+        .map(PathBuf::from);
     detect_with(binary_path, &env, home.as_deref())
 }
 
@@ -69,7 +75,9 @@ pub fn detect_with(
     if binary_path.as_os_str().is_empty() {
         return Err("binary path must not be empty");
     }
-    let real_path = fs::canonicalize(binary_path).unwrap_or_else(|_| binary_path.to_owned());
+    let resolved = fs::canonicalize(binary_path);
+    let canonical_binary = resolved.is_ok();
+    let real_path = resolved.unwrap_or_else(|_| binary_path.to_owned());
     let absolute = if real_path.is_absolute() {
         real_path
     } else {
@@ -124,9 +132,17 @@ pub fn detect_with(
         }
     }
     if let Some(home) = home {
+        // Windows canonicalization introduces a verbatim prefix. Match it only
+        // when the binary was also canonicalized; nonexistent fixture paths
+        // must retain their lexical home, as must the Unix Go contract.
+        let home = if cfg!(windows) && canonical_binary {
+            fs::canonicalize(home).unwrap_or_else(|_| home.to_owned())
+        } else {
+            home.to_owned()
+        };
         let go_bin = format!(
             "{}{}",
-            home.join("go/bin").display(),
+            home.join("go").join("bin").display(),
             std::path::MAIN_SEPARATOR
         );
         if absolute.starts_with(&go_bin) {
@@ -134,8 +150,8 @@ pub fn detect_with(
         }
         for dir in [
             home.join("bin"),
-            home.join(".local/bin"),
-            home.join(".cargo/bin"),
+            home.join(".local").join("bin"),
+            home.join(".cargo").join("bin"),
         ] {
             let prefix = format!("{}{}", dir.display(), std::path::MAIN_SEPARATOR);
             if absolute.starts_with(&prefix) {

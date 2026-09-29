@@ -128,6 +128,13 @@ fn production_applier_matches_go_filesystem_observations() {
                     }
                     Err(error) => panic!("fixture HTTP accept: {error}"),
                 };
+                stream.set_nonblocking(false).unwrap();
+                stream
+                    .set_read_timeout(Some(Duration::from_secs(10)))
+                    .unwrap();
+                stream
+                    .set_write_timeout(Some(Duration::from_secs(10)))
+                    .unwrap();
                 let mut reader = BufReader::new(&stream);
                 let mut request = String::new();
                 reader.read_line(&mut request).unwrap();

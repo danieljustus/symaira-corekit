@@ -1600,6 +1600,7 @@ dependencies = [
 name = "symaira-core-update"
 version = "0.0.0"
 dependencies = [
+ "cap-std",
  "flate2",
  "reqwest",
  "serde",

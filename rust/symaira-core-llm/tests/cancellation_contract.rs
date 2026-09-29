@@ -340,5 +340,9 @@ fn server_observes_close(stream: &mut TcpStream) -> bool {
         .set_read_timeout(Some(Duration::from_secs(5)))
         .unwrap();
     let mut byte = [0_u8; 1];
-    matches!(stream.read(&mut byte), Ok(0))
+    match stream.read(&mut byte) {
+        Ok(0) => true,
+        Err(error) if error.kind() == std::io::ErrorKind::ConnectionReset => true,
+        outcome => panic!("expected FIN or RST after cancellation, got {outcome:?}"),
+    }
 }
