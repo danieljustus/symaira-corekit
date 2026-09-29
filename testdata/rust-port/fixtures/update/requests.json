@@ -1,6 +1,6 @@
 {
-  "go_source_sha256": "1f8fb17f32aa36f38dbe4e5dfea982e14eb19d798251021c3c454aba2c2a82f4",
-  "oracle_sha256": "519762f6159db6d7383b1c7f47b2586146044a27a9ea8ba0386796864b71e32c",
+  "go_source_sha256": "638c263835c1d72982f6fc3391092edc44318f3f5993e83c7c190fae25329cc9",
+  "oracle_sha256": "4f2cef35c3e5127767dd17c3924bf27b6b1e279ea3192b3889920db9e40a4f20",
   "cases": [
     {
       "id": "request",
@@ -91,6 +91,13 @@
       "error_message": "update check failed: TLS certificate verification error"
     },
     {
+      "id": "redirect-relative-foreign",
+      "url_after_trim": "http://127.0.0.1:<port>",
+      "status": 302,
+      "error_code": "network",
+      "error_message": "request latest release"
+    },
+    {
       "id": "secure-client",
       "url_after_trim": "",
       "error_code": "tls_minimum",
@@ -101,6 +108,12 @@
       "url_after_trim": "",
       "error_code": "refused",
       "error_message": "refusing redirect to non-GitHub host \"evil.example\""
+    },
+    {
+      "id": "redirect-http-downgrade",
+      "url_after_trim": "",
+      "error_code": "refused",
+      "error_message": "refusing redirect to non-HTTPS scheme \"http\""
     },
     {
       "id": "redirect-github",

@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 """Generate and replay Go cosign verification contract observations."""
-
 import argparse
 import hashlib
 import json
@@ -16,7 +15,6 @@ FIXTURE = ROOT / "testdata/rust-port/fixtures/update/cosign.json"
 ORACLE = ROOT / "scripts/rust-port/cosign-contract-oracle/main.go"
 GO_SOURCE = ROOT / "updatecheck/cosign/cosign.go"
 
-
 def goos_name():
     if sys.platform.startswith("linux"):
         return "linux"
@@ -25,7 +23,6 @@ def goos_name():
     if sys.platform.startswith("win"):
         return "windows"
     return platform.system().lower()
-
 
 def observe():
     output = subprocess.check_output(
@@ -40,7 +37,6 @@ def observe():
         raise ValueError(f"oracle goos {result['goos']} differs from host {goos_name()}")
     return result
 
-
 def rust_replay(fixture):
     env = dict(os.environ, COSIGN_CONTRACT_FIXTURE=str(fixture))
     return subprocess.run(
@@ -53,6 +49,48 @@ def rust_replay(fixture):
         check=False,
     )
 
+def rust_network_replay(fixture):
+    with tempfile.TemporaryDirectory(prefix="cosign-tls-") as directory:
+        server = subprocess.Popen(
+            ["go", "run", "./scripts/rust-port/update-request-oracle", "--serve-tls13"],
+            cwd=ROOT,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+            text=True,
+        )
+        try:
+            assert server.stdout is not None
+            line = server.stdout.readline().strip()
+            if not line:
+                raise RuntimeError("Go TLS 1.3 artifact server failed to start")
+            details = json.loads(line)
+            certificate = Path(directory) / "localhost.der"
+            certificate.write_bytes(bytes.fromhex(details["cert_hex"]))
+            env = dict(
+                os.environ,
+                COSIGN_CONTRACT_FIXTURE=str(fixture),
+                UPDATE_REQUEST_TLS13_URL=details["url"],
+                UPDATE_REQUEST_TLS13_CERT=str(certificate),
+            )
+            result = subprocess.run(
+                ["cargo", "test", "-p", "symaira-core-update", "--lib", "--locked",
+                 "cosign::network_tests::cosign_artifact_fetch_replays_go_observations",
+                 "--", "--ignored", "--exact"],
+                cwd=ROOT,
+                env=env,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                check=False,
+                timeout=180,
+            )
+            if result.returncode or "test result: ok. 1 passed;" not in result.stdout:
+                raise RuntimeError("Cosign transport gate failed:\n" + result.stdout)
+        finally:
+            if server.stdin is not None:
+                server.stdin.close()
+            server.wait(timeout=3)
 
 def main():
     parser = argparse.ArgumentParser()
@@ -86,6 +124,12 @@ def main():
             raise RuntimeError(replay.stdout)
         print(f"PASS Go/Rust cosign observations: {len(current['cases'])} cases")
 
+    with tempfile.TemporaryDirectory(prefix="cosign-fresh-oracle-") as directory:
+        fresh = Path(directory) / "cosign.json"
+        fresh.write_text(json.dumps(current, indent=2) + "\n", encoding="utf-8")
+        rust_network_replay(fresh)
+    print("PASS native Cosign TLS fetch, bounded body and refused foreign/cleartext redirects")
+
     mutated = json.loads(json.dumps(current))
     mutated["cases"][0]["result"]["body"] += "-mutated"
     with tempfile.TemporaryDirectory(prefix="cosign-contract-negative-") as directory:
@@ -96,7 +140,6 @@ def main():
         raise RuntimeError("mutated cosign fixture was incorrectly accepted")
     print("PASS mutated-fixture negative control rejected")
     return 0
-
 
 if __name__ == "__main__":
     raise SystemExit(main())

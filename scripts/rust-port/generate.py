@@ -312,7 +312,7 @@ def generate_tree(target: Path) -> dict[str, Any]:
         "harness": {"input_digest_sha256": path_digest(HARNESS_INPUTS), "input_files": sorted(HARNESS_INPUTS)},
         "public_api": {"targets": api_targets},
         "contracts": contract_records,
-        "known_contract_corrections": ["DEFECT-001"],
+        "known_contract_corrections": ["DEFECT-001", "DEFECT-002"],
     }
     (target / "index.json").write_text(json.dumps(index, indent=2) + "\n")
     return index

@@ -13,5 +13,6 @@ serde_json.workspace = true
 
 [dependencies]
 flate2 = "=1.1.2"
+reqwest = { version = "=0.13.4", default-features = false, features = ["blocking", "rustls", "system-proxy"] }
+sha2 = "=0.11.0"
 tar = { version = "=0.4.45", default-features = false }
-ureq.workspace = true

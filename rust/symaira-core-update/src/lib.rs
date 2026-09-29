@@ -1,12 +1,14 @@
 #![deny(unsafe_code)]
 
 //! Version decisions, response mapping, install-method detection, response
-//! caching and archive extraction shared by update consumers. Atomic swap has
-//! a Go-recorded filesystem replay; signature execution, download transport
-//! and full installation orchestration remain unported.
+//! caching and archive extraction shared by update consumers. The Applier
+//! stages downloads, checksums, optional signatures and archives before a
+//! validated atomic swap. Consumer rollout and native platform parity remain gated.
 
+pub mod applier;
 pub mod apply;
 pub mod cache;
+pub mod cosign;
 pub mod cosign_contract;
 pub mod extract;
 pub mod install_method;

@@ -204,7 +204,8 @@
         "UPD-009",
         "UPD-010",
         "UPD-011",
-        "UPD-012"
+        "UPD-012",
+        "DEFECT-002"
       ],
       "status": "in_progress",
       "demand_class": "demand_driven",
@@ -213,7 +214,7 @@
         "make rust-update-version-contract",
         "python3 scripts/rust-port/update-response-differential.py",
         "make rust-update-contract",
-        "python3 scripts/rust-port/diff.py --suite update --native",
+        "make rust-update-signed-contract",
         "cargo nextest run -p symaira-core-update",
         "python3 scripts/rust-port/update-cache-differential.py",
         "python3 scripts/rust-port/install-method-differential.py",

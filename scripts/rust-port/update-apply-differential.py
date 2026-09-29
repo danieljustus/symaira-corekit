@@ -16,7 +16,6 @@ FIXTURE = ROOT / "testdata/rust-port/fixtures/update/apply.json"
 ORACLE = ROOT / "scripts/rust-port/update-apply-oracle/main.go"
 RUST_MANIFEST = ROOT / "rust/symaira-core-update/Cargo.toml"
 
-
 def goos_name():
     if sys.platform.startswith("linux"):
         return "linux"
@@ -26,15 +25,14 @@ def goos_name():
         return "windows"
     return platform.system().lower()
 
-
 def observed():
     env = dict(os.environ, GOTOOLCHAIN="go1.26.6", CGO_ENABLED="0")
     output = subprocess.check_output(
         ["go", "run", "./scripts/rust-port/update-apply-oracle"], cwd=ROOT, env=env
     )
     cases = json.loads(output)
-    if len(cases) != 12:
-        raise ValueError(f"apply oracle ran {len(cases)} cases, expected 12")
+    if len(cases) != 17:
+        raise ValueError(f"apply oracle ran {len(cases)} cases, expected 17")
     go_source = b"\0".join(
         path.read_bytes()
         for path in (
@@ -48,7 +46,6 @@ def observed():
         "goos": goos_name(),
         "cases": cases,
     }
-
 
 def replay(fixture):
     env = dict(os.environ, UPDATE_APPLY_FIXTURE=str(fixture))
@@ -70,6 +67,18 @@ def replay(fixture):
         check=False,
     )
 
+def production_replay(fixture):
+    env = dict(os.environ, UPDATE_APPLY_FIXTURE=str(fixture))
+    return subprocess.run(
+        ["cargo", "test", "--manifest-path", str(RUST_MANIFEST),
+         "--test", "applier", "--locked"],
+        cwd=ROOT,
+        env=env,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        check=False,
+    )
 
 def main():
     parser = argparse.ArgumentParser()
@@ -94,8 +103,11 @@ def main():
             replay_path = Path(temp) / "platform.json"
             replay_path.write_text(json.dumps(current, indent=2) + "\n", encoding="utf-8")
             result = replay(replay_path)
+            production = production_replay(replay_path)
         if result.returncode or "test result: ok. 1 passed;" not in result.stdout:
             raise RuntimeError(result.stdout)
+        if production.returncode or "test result: ok. 1 passed;" not in production.stdout:
+            raise RuntimeError(production.stdout)
         print(
             f"PASS Go/Rust update apply on {current['goos']} "
             f"(committed fixture recorded on {fixture.get('goos')})"
@@ -106,7 +118,11 @@ def main():
         result = replay(replay_path)
         if result.returncode or "test result: ok. 1 passed;" not in result.stdout:
             raise RuntimeError(result.stdout)
+        production = production_replay(replay_path)
+        if production.returncode or "test result: ok. 1 passed;" not in production.stdout:
+            raise RuntimeError(production.stdout)
         print("PASS Rust apply replay")
+    print("PASS native production Applier Go filesystem cases")
 
     mutated = json.loads(json.dumps(current))
     case = next(row for row in mutated["cases"] if row["input"]["id"] == "install")
@@ -115,8 +131,11 @@ def main():
         path = Path(temp) / "mutated.json"
         path.write_text(json.dumps(mutated), encoding="utf-8")
         negative = replay(path)
+        production_negative = production_replay(path)
     if negative.returncode == 0 or "install observation" not in negative.stdout:
         raise RuntimeError("install mutation was not rejected at its intended assertion")
+    if production_negative.returncode == 0 or "install target content" not in production_negative.stdout:
+        raise RuntimeError("production Applier accepted mutated Go install observation")
     blocked_mutated = json.loads(json.dumps(current))
     blocked = next(row for row in blocked_mutated["cases"] if row["input"]["id"] == "blocked-parent")
     blocked["observation"]["stage_during_download"] = True
@@ -153,7 +172,16 @@ def main():
         negative = replay(path)
     if negative.returncode == 0 or "checksums-shaped-asset observation" not in negative.stdout:
         raise RuntimeError("checksums-shaped asset mutation was not rejected at its intended assertion")
-    print("PASS install, blocked-parent, nested, ZIP and asset-selection mutations rejected")
+    checksums_mutated = json.loads(json.dumps(current))
+    malformed = next(row for row in checksums_mutated["cases"] if row["input"]["id"] == "malformed-checksums")
+    malformed["observation"]["stage_during_download"] = True
+    with tempfile.TemporaryDirectory(prefix="update-apply-checksums-negative-") as temp:
+        path = Path(temp) / "mutated.json"
+        path.write_text(json.dumps(checksums_mutated), encoding="utf-8")
+        negative = replay(path)
+    if negative.returncode == 0 or "malformed-checksums observation" not in negative.stdout:
+        raise RuntimeError("malformed checksums mutation was not rejected at its intended assertion")
+    print("PASS install, blocked-parent, nested, ZIP, asset and checksums mutations rejected")
     return 0
 
 

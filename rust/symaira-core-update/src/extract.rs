@@ -47,6 +47,45 @@ impl ExtractError {
     }
 }
 
+/// Extract the named binary into an existing, private staging directory.
+/// Archive suffixes select tar.gz/tgz or ZIP; unknown suffixes probe both.
+/// The returned file remains in `root` until the caller installs or removes it.
+///
+/// # Errors
+/// Refuses traversal, malformed archives, missing binaries and oversized output.
+pub fn extract_binary_to_dir(
+    archive: &[u8],
+    asset_name: &str,
+    root: &Path,
+    expected: &str,
+) -> Result<std::path::PathBuf, String> {
+    let name = asset_name.to_ascii_lowercase();
+    let extracted = if name.ends_with(".zip") {
+        extract_zip(archive, root, expected)
+    } else if name.ends_with(".tar.gz") || name.ends_with(".tgz") {
+        extract_tar_gz(archive, root, expected)
+    } else {
+        let tar = extract_tar_gz(archive, root, expected);
+        match tar {
+            Ok(path) => Ok(path),
+            Err(error) if error.code == "path_traversal" => Err(error),
+            Err(error) => match extract_zip(archive, root, expected) {
+                Ok(path) => Ok(path),
+                Err(_) if error.code == "binary_not_found" => Err(error),
+                Err(zip_error) => Err(zip_error),
+            },
+        }
+    }
+    .map_err(|error| error.message)?;
+    // Go's Apply additionally rejects a returned path containing "..".
+    if extracted.contains("..") {
+        return Err(format!(
+            "extracted binary path {extracted:?} escapes extraction directory"
+        ));
+    }
+    Ok(root.join(extracted))
+}
+
 /// Replays a Go archive extraction case and observes the resulting files.
 pub fn observe(kind: &str, archive: &[u8], expected: &str) -> Observation {
     let id = TEMP_ID.fetch_add(1, Ordering::Relaxed);

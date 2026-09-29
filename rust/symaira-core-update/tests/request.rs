@@ -52,6 +52,8 @@ fn serve(status: u16, body: &'static str, delay: Duration) -> (String, thread::J
             body.len(),
             if status == 429 {
                 "Retry-After: 17\r\n"
+            } else if status == 302 {
+                "Location: //evil.example/steal\r\n"
             } else {
                 ""
             },
@@ -59,6 +61,20 @@ fn serve(status: u16, body: &'static str, delay: Duration) -> (String, thread::J
         );
         let _ = stream.write_all(response.as_bytes());
         request
+    });
+    (format!("http://{address}"), handle)
+}
+
+fn serve_redirect(location: &'static str) -> (String, thread::JoinHandle<()>) {
+    let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+    let address = listener.local_addr().unwrap();
+    let handle = thread::spawn(move || {
+        let (mut stream, _) = listener.accept().unwrap();
+        read_headers(&mut stream);
+        let response = format!(
+            "HTTP/1.1 302 Found\r\nLocation: {location}\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"
+        );
+        stream.write_all(response.as_bytes()).unwrap();
     });
     (format!("http://{address}"), handle)
 }
@@ -106,7 +122,7 @@ fn request_headers(raw: &str) -> BTreeMap<String, String> {
 #[test]
 fn update_request_and_errors_match_go_oracle() {
     let fixture = fixture();
-    assert_eq!(fixture.cases.len(), 11);
+    assert_eq!(fixture.cases.len(), 13);
 
     let (base, request) = serve(200, r#"{"tag_name":"v1.2.4"}"#, Duration::ZERO);
     let url = format!("  {base}/request?x=1  ");
@@ -209,6 +225,32 @@ fn update_request_and_errors_match_go_oracle() {
 #[test]
 fn secure_redirect_policy_matches_go_oracle() {
     let fixture = fixture();
+    let (base, server) = serve(302, "", Duration::ZERO);
+    let error = fetch(&base, "1.2.3", Duration::from_secs(2)).unwrap_err();
+    let redirect = go(&fixture, "redirect-relative-foreign");
+    assert_eq!(redirect.status, Some(302));
+    assert_eq!(error.code, redirect.error_code.as_deref().unwrap());
+    assert!(
+        error
+            .message
+            .contains("refusing redirect to non-HTTPS scheme \"http\""),
+        "protocol-relative redirect from cleartext must be refused before connecting: {}",
+        error.message
+    );
+    server.join().unwrap();
+    let (base, server) = serve_redirect("http://github.com/insecure");
+    let error = fetch(&base, "1.2.3", Duration::from_secs(2)).unwrap_err();
+    let downgrade = go(&fixture, "redirect-http-downgrade");
+    assert_eq!(downgrade.error_code.as_deref(), Some("refused"));
+    assert_eq!(error.code, "network");
+    assert!(
+        error
+            .message
+            .contains(downgrade.error_message.as_deref().unwrap()),
+        "HTTP downgrade must be refused before connecting: {}",
+        error.message
+    );
+    server.join().unwrap();
     assert_eq!(
         go(&fixture, "secure-client").error_code.as_deref(),
         Some("tls_minimum")

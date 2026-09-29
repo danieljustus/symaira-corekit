@@ -29,6 +29,12 @@ behavior and updated the vendored Swift AppKit fixture plus a cross-instance
 cache test. The row is now `fixture-ready`; Rust must preserve this corrected
 behavior.
 
+`DEFECT-002` records a security-sensitive correction discovered during the
+update slice: the pinned Go redirect check accepted an HTTPS-to-HTTP downgrade
+to a GitHub host. Go and both Rust request paths now refuse non-HTTPS redirects
+before connecting. The differential oracle and native TLS/Cosign tests keep
+that correction executable; the pinned release oracle remains unchanged.
+
 ## Why now
 
 `symaira-fritz` has completed its Rust migration, while Brain, Browse, Desktop, Vault and EraseMe already contain Rust workspaces. Waiting until they finish would force each repository to invent local versions of shared contracts. Starting with executable contracts now lets proven common code move into CoreKit without designing speculative abstractions.

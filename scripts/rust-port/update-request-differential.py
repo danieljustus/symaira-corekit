@@ -14,6 +14,7 @@ import tempfile
 ROOT = Path(__file__).resolve().parents[2]
 FIXTURE = ROOT / "testdata/rust-port/fixtures/update/requests.json"
 RUST_TEST = "symaira-core-update"
+GO_ENV = dict(os.environ, GOTOOLCHAIN="go1.26.6", CGO_ENABLED="0")
 
 
 def goos_name() -> str:
@@ -28,11 +29,11 @@ def goos_name() -> str:
 
 def observed():
     output = subprocess.check_output(
-        ["go", "run", "./scripts/rust-port/update-request-oracle"], cwd=ROOT
+        ["go", "run", "./scripts/rust-port/update-request-oracle"], cwd=ROOT, env=GO_ENV
     )
     cases = json.loads(output)
-    if len(cases) != 11:
-        raise ValueError(f"request oracle executed {len(cases)} cases, expected 11")
+    if len(cases) != 13:
+        raise ValueError(f"request oracle executed {len(cases)} cases, expected 13")
     return {
         "go_source_sha256": hashlib.sha256(
             (ROOT / "updatecheck/updatecheck.go").read_bytes()
@@ -45,32 +46,51 @@ def observed():
 
 
 def rust_replay(fixture):
-    tls_server = subprocess.Popen(
-        ["go", "run", "./scripts/rust-port/update-request-oracle", "--serve-tls"],
-        cwd=ROOT,
-        env=os.environ.copy(),
-        stdin=subprocess.PIPE,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.DEVNULL,
-        text=True,
-    )
-    try:
-        tls_url = tls_server.stdout.readline().strip()
-        if not tls_url:
-            raise RuntimeError("local Go TLS fixture server failed to start")
-        env = dict(os.environ, UPDATE_REQUEST_FIXTURE=str(fixture), UPDATE_REQUEST_TLS_URL=tls_url)
-        return subprocess.run(
-            ["cargo", "test", "-p", RUST_TEST, "--test", "request", "--", "--nocapture"],
-            cwd=ROOT,
-            env=env,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            text=True,
-            check=False,
-        )
-    finally:
-        tls_server.stdin.close()
-        tls_server.wait(timeout=3)
+    servers = []
+    with tempfile.TemporaryDirectory(prefix="update-request-certs-") as temp:
+        try:
+            env = dict(GO_ENV, UPDATE_REQUEST_FIXTURE=str(fixture))
+            for mode in ("tls", "tls12", "tls13"):
+                server = subprocess.Popen(
+                    ["go", "run", "./scripts/rust-port/update-request-oracle", f"--serve-{mode}"],
+                    cwd=ROOT,
+                    env=GO_ENV,
+                    stdin=subprocess.PIPE,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.DEVNULL,
+                    text=True,
+                )
+                servers.append(server)
+                assert server.stdout is not None
+                line = server.stdout.readline().strip()
+                if not line:
+                    raise RuntimeError(f"local Go {mode} fixture server failed to start")
+                if mode == "tls":
+                    env["UPDATE_REQUEST_TLS_URL"] = line
+                else:
+                    details = json.loads(line)
+                    cert = Path(temp) / f"{mode}.der"
+                    cert.write_bytes(bytes.fromhex(details["cert_hex"]))
+                    env[f"UPDATE_REQUEST_{mode.upper()}_URL"] = details["url"]
+                    env[f"UPDATE_REQUEST_{mode.upper()}_CERT"] = str(cert)
+            protocol = subprocess.run(
+                ["cargo", "test", "-p", RUST_TEST, "--lib", "request::tests::tls_protocol_minimum_rejects_1_2", "--", "--ignored", "--exact"],
+                cwd=ROOT, env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                text=True, check=False, timeout=180,
+            )
+            if protocol.returncode or "test result: ok. 1 passed;" not in protocol.stdout:
+                raise RuntimeError("TLS protocol minimum gate failed:\n" + protocol.stdout)
+            print("PASS native TLS 1.2 rejection, TLS 1.2 weak control, and TLS 1.3 acceptance")
+            return subprocess.run(
+                ["cargo", "test", "-p", RUST_TEST, "--test", "request", "--", "--nocapture"],
+                cwd=ROOT, env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                text=True, check=False, timeout=180,
+            )
+        finally:
+            for server in servers:
+                assert server.stdin is not None
+                server.stdin.close()
+                server.wait(timeout=3)
 
 
 def main():
@@ -101,12 +121,13 @@ def main():
                 f"PASS Go/Rust update request observations on {goos_name()} "
                 f"(committed fixture recorded on {recorded})"
             )
-            return
-        raise ValueError("Go request oracle disagrees with committed fixture")
-    replay = rust_replay(args.fixture)
-    if replay.returncode:
-        raise RuntimeError(replay.stdout)
-    print(f"PASS Go/Rust update request observations: {len(current['cases'])} cases")
+        else:
+            raise ValueError("Go request oracle disagrees with committed fixture")
+    else:
+        replay = rust_replay(args.fixture)
+        if replay.returncode:
+            raise RuntimeError(replay.stdout)
+        print(f"PASS Go/Rust update request observations: {len(current['cases'])} cases")
     mutated = json.loads(json.dumps(current))
     request_case = next(case for case in mutated["cases"] if case["id"] == "request")
     request_case["headers"]["User-Agent"] += "-mutated"

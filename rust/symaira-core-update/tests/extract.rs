@@ -1,6 +1,6 @@
 use serde::Deserialize;
 use std::path::PathBuf;
-use symaira_core_update::extract::observe;
+use symaira_core_update::extract::{extract_binary_to_dir, observe};
 
 #[derive(Deserialize)]
 struct Fixture {
@@ -115,4 +115,60 @@ fn extraction_matches_go_archives_and_filesystem_observations() {
             assert_eq!(actual_file.mode, expected_file.mode, "{} mode", expected.id);
         }
     }
+}
+
+#[test]
+fn production_extraction_keeps_binary_in_staging_and_rejects_traversal() {
+    let fixture: Fixture = serde_json::from_str(
+        &std::fs::read_to_string(
+            PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+                .join("../../testdata/rust-port/fixtures/update/extract.json"),
+        )
+        .unwrap(),
+    )
+    .unwrap();
+    let archive_root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let root = std::env::temp_dir().join(format!(
+        "symaira-update-extract-install-{}",
+        std::process::id()
+    ));
+    std::fs::create_dir(&root).unwrap();
+    std::fs::write(root.join("sentinel"), b"keep").unwrap();
+    for (id, asset_name) in [
+        ("tar-success", "tool.tar.gz"),
+        ("zip-success", "tool.zip"),
+        ("tar-success", "custom-release"),
+        ("zip-success", "custom-release"),
+        ("tar-traversal", "tool.tar.gz"),
+        ("zip-traversal", "tool.zip"),
+    ] {
+        let case = fixture.cases.iter().find(|case| case.id == id).unwrap();
+        let archive = std::fs::read(archive_root.join(&case.archive)).unwrap();
+        let destination = root.join(format!("{id}-{}", asset_name.replace('.', "_")));
+        std::fs::create_dir(&destination).unwrap();
+        let result =
+            extract_binary_to_dir(&archive, asset_name, &destination, &case.expected_binary);
+        if let Some(error) = &case.error {
+            assert_eq!(result.unwrap_err(), error.message, "{id}");
+            assert!(!destination.join("escape").exists(), "{id}");
+        } else {
+            let path = result.unwrap();
+            assert_eq!(
+                path.strip_prefix(&destination).unwrap().to_string_lossy(),
+                case.selected_binary
+            );
+            let selected = case
+                .files
+                .iter()
+                .find(|file| file.path == case.selected_binary)
+                .unwrap();
+            assert_eq!(
+                std::fs::read(path).unwrap(),
+                selected.content.as_bytes(),
+                "{id}"
+            );
+        }
+    }
+    assert_eq!(std::fs::read(root.join("sentinel")).unwrap(), b"keep");
+    std::fs::remove_dir_all(root).unwrap();
 }

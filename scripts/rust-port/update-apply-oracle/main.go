@@ -26,19 +26,20 @@ import (
 )
 
 type input struct {
-	ID             string `json:"id"`
-	AssetName      string `json:"asset_name"`
-	PayloadHex     string `json:"payload_hex"`
-	ChecksumOK     bool   `json:"checksum_ok"`
-	InitialExists  bool   `json:"initial_exists"`
-	InitialContent string `json:"initial_content"`
-	InitialMode    uint32 `json:"initial_mode"`
-	ExtractBinary  string `json:"extract_binary,omitempty"`
-	ValidateError  string `json:"validate_error,omitempty"`
-	UseZip         bool   `json:"use_zip,omitempty"`
-	OmitAsset      bool   `json:"omit_asset,omitempty"`
-	BlockedParent  bool   `json:"blocked_parent,omitempty"`
-	NestedParent   bool   `json:"nested_parent,omitempty"`
+	ID             string  `json:"id"`
+	AssetName      string  `json:"asset_name"`
+	PayloadHex     string  `json:"payload_hex"`
+	ChecksumOK     bool    `json:"checksum_ok"`
+	ChecksumsText  *string `json:"checksums_text,omitempty"`
+	InitialExists  bool    `json:"initial_exists"`
+	InitialContent string  `json:"initial_content"`
+	InitialMode    uint32  `json:"initial_mode"`
+	ExtractBinary  string  `json:"extract_binary,omitempty"`
+	ValidateError  string  `json:"validate_error,omitempty"`
+	UseZip         bool    `json:"use_zip,omitempty"`
+	OmitAsset      bool    `json:"omit_asset,omitempty"`
+	BlockedParent  bool    `json:"blocked_parent,omitempty"`
+	NestedParent   bool    `json:"nested_parent,omitempty"`
 }
 
 type file struct {
@@ -79,6 +80,11 @@ func main() {
 		{ID: "nested-install", AssetName: "mytool_linux_amd64", PayloadHex: hex.EncodeToString([]byte("new-binary")), ChecksumOK: true, InitialExists: true, InitialContent: "old-binary", InitialMode: 0o755, NestedParent: true},
 		{ID: "mixed-case-asset", AssetName: "MyTool_LiNuX_AmD64", PayloadHex: hex.EncodeToString([]byte("new-binary")), ChecksumOK: true, InitialExists: true, InitialContent: "old-binary", InitialMode: 0o755},
 		{ID: "checksums-shaped-asset", AssetName: "mytool_checksums_linux_amd64", PayloadHex: hex.EncodeToString([]byte("new-binary")), ChecksumOK: true, InitialExists: true, InitialContent: "old-binary", InitialMode: 0o755},
+		{ID: "empty-checksums", AssetName: "mytool_linux_amd64", PayloadHex: hex.EncodeToString([]byte("new-binary")), ChecksumOK: true, ChecksumsText: stringPtr(""), InitialExists: true, InitialContent: "old-binary", InitialMode: 0o755},
+		{ID: "malformed-checksums", AssetName: "mytool_linux_amd64", PayloadHex: hex.EncodeToString([]byte("new-binary")), ChecksumOK: true, ChecksumsText: stringPtr("invalid\nthree words here\n"), InitialExists: true, InitialContent: "old-binary", InitialMode: 0o755},
+		{ID: "missing-checksum-entry", AssetName: "mytool_linux_amd64", PayloadHex: hex.EncodeToString([]byte("new-binary")), ChecksumOK: true, ChecksumsText: stringPtr("a  unrelated-file\n"), InitialExists: true, InitialContent: "old-binary", InitialMode: 0o755},
+		{ID: "case-sensitive-checksum-entry", AssetName: "MyTool_LiNuX_AmD64", PayloadHex: hex.EncodeToString([]byte("new-binary")), ChecksumOK: true, ChecksumsText: stringPtr(fmt.Sprintf("%x  mytool_linux_amd64\n", sha256.Sum256([]byte("new-binary")))), InitialExists: true, InitialContent: "old-binary", InitialMode: 0o755},
+		{ID: "duplicate-checksum-last-wins", AssetName: "mytool_linux_amd64", PayloadHex: hex.EncodeToString([]byte("new-binary")), ChecksumOK: true, ChecksumsText: stringPtr(fmt.Sprintf("a  mytool_linux_amd64\n%x	mytool_linux_amd64\r\n", sha256.Sum256([]byte("new-binary")))), InitialExists: true, InitialContent: "old-binary", InitialMode: 0o755},
 	}
 	zipPath := filepath.Join("scripts", "rust-port", "update-extract-oracle", "testdata", "zip-success.zip")
 	if archive, err := os.ReadFile(zipPath); err == nil { //nolint:gosec // path is built from this repository's own fixture table
@@ -104,6 +110,9 @@ func run(test input) result {
 		checksummed = []byte("different payload")
 	}
 	checksums := fmt.Sprintf("%x  %s\n", sha256.Sum256(checksummed), test.AssetName)
+	if test.ChecksumsText != nil {
+		checksums = *test.ChecksumsText
+	}
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if strings.HasSuffix(r.URL.Path, "/checksums") {
 			_, _ = w.Write([]byte(checksums))
@@ -236,8 +245,9 @@ func tarGz(name, content string) []byte {
 	return buffer.Bytes()
 }
 
-func globHas(pattern string) bool { matches, _ := filepath.Glob(pattern); return len(matches) != 0 }
-func exists(path string) bool     { _, err := os.Stat(path); return err == nil }
+func stringPtr(value string) *string { return &value }
+func globHas(pattern string) bool    { matches, _ := filepath.Glob(pattern); return len(matches) != 0 }
+func exists(path string) bool        { _, err := os.Stat(path); return err == nil }
 
 func listFiles(root string) []file {
 	files := make([]file, 0)

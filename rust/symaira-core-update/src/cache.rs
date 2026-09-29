@@ -30,23 +30,16 @@ pub fn check(url: &str, cache_path: &Path, ttl: Duration, force: bool, now_ms: u
             error: None,
         };
     }
-    let agent = ureq::Agent::new_with_defaults();
-    let mut response = match agent.get(url).call() {
+    let response = match crate::request::fetch(url, "", Duration::from_secs(3)) {
         Ok(response) => response,
         Err(error) => {
             return Outcome {
                 release: None,
-                error: Some(error.to_string()),
+                error: Some(error.message),
             };
         }
     };
-    if response.status().as_u16() >= 300 {
-        return Outcome {
-            release: None,
-            error: Some(format!("HTTP {}", response.status().as_u16())),
-        };
-    }
-    let raw = match response.body_mut().read_to_string() {
+    let raw = match String::from_utf8(response.body) {
         Ok(raw) => raw,
         Err(error) => {
             return Outcome {

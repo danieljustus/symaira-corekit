@@ -3,9 +3,15 @@ package main
 
 import (
 	"context"
+	"crypto/ed25519"
+	"crypto/rand"
+	"crypto/tls"
+	"crypto/x509"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math/big"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -37,6 +43,57 @@ type scenario struct {
 }
 
 func main() {
+	if len(os.Args) == 2 && (os.Args[1] == "--serve-tls12" || os.Args[1] == "--serve-tls13") {
+		version := uint16(tls.VersionTLS12)
+		if os.Args[1] == "--serve-tls13" {
+			version = tls.VersionTLS13
+		}
+		server := httptest.NewUnstartedServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			switch {
+			case strings.Contains(r.URL.Path, "_foreign_"):
+				w.Header().Set("Location", "//evil.example/steal")
+				w.WriteHeader(http.StatusFound)
+			case strings.Contains(r.URL.Path, "_downgrade_"):
+				w.Header().Set("Location", "http://github.com/insecure")
+				w.WriteHeader(http.StatusFound)
+			case strings.Contains(r.URL.Path, "_404_"):
+				w.WriteHeader(http.StatusNotFound)
+			case strings.Contains(r.URL.Path, "_large_"):
+				_, _ = w.Write([]byte(strings.Repeat("x", (1<<20)+1)))
+			case strings.HasSuffix(r.URL.Path, ".sig"):
+				_, _ = w.Write([]byte("signature-bytes\n"))
+			case strings.HasSuffix(r.URL.Path, ".pem"):
+				_, _ = w.Write([]byte("certificate-bytes\n"))
+			default:
+				_, _ = w.Write([]byte(`{"tag_name":"v1.2.4"}`))
+			}
+		}))
+		public, private, err := ed25519.GenerateKey(rand.Reader)
+		if err != nil {
+			panic(err)
+		}
+		template := x509.Certificate{
+			SerialNumber: big.NewInt(1),
+			NotBefore:    time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC),
+			NotAfter:     time.Date(2040, 1, 1, 0, 0, 0, 0, time.UTC),
+			KeyUsage:     x509.KeyUsageDigitalSignature,
+			ExtKeyUsage:  []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
+			IPAddresses:  []net.IP{net.IPv4(127, 0, 0, 1)},
+		}
+		der, err := x509.CreateCertificate(rand.Reader, &template, &template, public, private)
+		if err != nil {
+			panic(err)
+		}
+		server.TLS = &tls.Config{MinVersion: version, MaxVersion: version, Certificates: []tls.Certificate{{Certificate: [][]byte{der}, PrivateKey: private}}}
+		server.StartTLS()
+		if err := json.NewEncoder(os.Stdout).Encode(map[string]string{"url": server.URL, "cert_hex": hex.EncodeToString(server.Certificate().Raw)}); err != nil {
+			panic(err)
+		}
+		var stop [1]byte
+		_, _ = os.Stdin.Read(stop[:])
+		server.Close()
+		return
+	}
 	if len(os.Args) == 2 && os.Args[1] == "--serve-tls" {
 		server := localServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 			_, _ = w.Write([]byte(`{"tag_name":"v1.2.4"}`))
@@ -55,11 +112,13 @@ func main() {
 		observeRefusal(),
 		observe(scenario{id: "timeout", body: `{"tag_name":"v1.2.4"}`, status: http.StatusOK, delay: 100 * time.Millisecond}, "%s/slow", timeoutClient(20*time.Millisecond)),
 		observeTLSFailure(),
+		observeRedirectForeign(),
 	}
 	client := updatecheck.NewSecureClient()
 	tr := client.Transport.(*http.Transport)
 	results = append(results, observation{ID: "secure-client", ErrorCode: "tls_minimum", Error: fmt.Sprintf("min_tls_version=%d; timeout=%dms", tr.TLSClientConfig.MinVersion, client.Timeout/time.Millisecond)})
 	results = append(results, observation{ID: "redirect-foreign", ErrorCode: "refused", Error: redirectError(client, "https://evil.example/x", "https://api.github.com/x")})
+	results = append(results, observation{ID: "redirect-http-downgrade", ErrorCode: "refused", Error: redirectError(client, "http://github.com/x", "https://api.github.com/x")})
 	results = append(results, observation{ID: "redirect-github", ErrorCode: "allowed", Error: redirectError(client, "https://github.com/x", "https://api.github.com/x")})
 	via := make([]*http.Request, 10)
 	for i := range via {
@@ -155,6 +214,19 @@ func observeTLSFailure() observation {
 	var line string
 	var headers map[string]string
 	return run("tls-certificate", server.URL, &line, &headers, updatecheck.NewSecureClientWithTimeout(2*time.Second))
+}
+
+func observeRedirectForeign() observation {
+	server := localServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Location", "//evil.example/steal")
+		w.WriteHeader(http.StatusFound)
+	}), false)
+	defer server.Close()
+	var line string
+	var headers map[string]string
+	result := run("redirect-relative-foreign", server.URL, &line, &headers, updatecheck.NewSecureClientWithTimeout(2*time.Second))
+	result.Status = http.StatusFound
+	return result
 }
 
 func localServer(handler http.Handler, tlsEnabled bool) *httptest.Server {

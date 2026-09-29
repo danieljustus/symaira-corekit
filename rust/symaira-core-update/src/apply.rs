@@ -1,5 +1,8 @@
 use crate::Asset;
 use crate::extract;
+use sha2::{Digest, Sha256};
+use std::collections::HashMap;
+use std::fmt::Write as _;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
@@ -12,6 +15,7 @@ pub struct Input {
     pub asset_name: String,
     pub payload_hex: String,
     pub checksum_ok: bool,
+    pub checksums_text: Option<String>,
     pub initial_exists: bool,
     pub initial_content: String,
     pub initial_mode: u32,
@@ -54,13 +58,41 @@ fn backup_path(target: &Path) -> PathBuf {
     PathBuf::from(path)
 }
 
-fn select_asset<'a>(assets: &'a [Asset], goos: &str, goarch: &str) -> Option<&'a Asset> {
+pub(crate) fn select_asset<'a>(assets: &'a [Asset], goos: &str, goarch: &str) -> Option<&'a Asset> {
     let goos = goos.to_lowercase();
     let goarch = goarch.to_lowercase();
     assets.iter().find(|asset| {
         let name = asset.name.to_lowercase();
         !name.contains("checksums") && name.contains(&goos) && name.contains(&goarch)
     })
+}
+
+/// Parses Go's checksums.txt format, preserving duplicate-last semantics.
+/// Retain the original bytes separately for signature verification.
+///
+/// # Errors
+/// Returns an error if no line has exactly two whitespace-separated fields.
+pub fn parse_checksums(data: &[u8]) -> Result<HashMap<String, String>, &'static str> {
+    let mut sums = HashMap::new();
+    for line in String::from_utf8_lossy(data).split('\n') {
+        let mut fields = line.split_whitespace();
+        if let (Some(sum), Some(name), None) = (fields.next(), fields.next(), fields.next()) {
+            sums.insert(name.to_owned(), sum.to_owned());
+        }
+    }
+    if sums.is_empty() {
+        Err("checksums.txt contained no parseable entries")
+    } else {
+        Ok(sums)
+    }
+}
+
+pub(crate) fn sha256_hex(data: &[u8]) -> String {
+    let mut hex = String::with_capacity(64);
+    for byte in Sha256::digest(data) {
+        write!(hex, "{byte:02x}").expect("formatting into String cannot fail");
+    }
+    hex
 }
 
 /// Replace a staged binary, restoring the previous target on a failed rename
@@ -179,16 +211,33 @@ pub fn replay(input: &Input) -> Observation {
     ];
     let goos = if input.use_zip { "windows" } else { "linux" };
     let asset_matches = select_asset(&assets, goos, "amd64").is_some();
-    let writable = !asset_matches || check_writable(&target).is_ok();
+    let checksummed: &[u8] = if input.checksum_ok {
+        &payload
+    } else {
+        b"different payload"
+    };
+    let default_checksums = format!("{}  {}\n", sha256_hex(checksummed), input.asset_name);
+    let sums = parse_checksums(
+        input
+            .checksums_text
+            .as_deref()
+            .unwrap_or(&default_checksums)
+            .as_bytes(),
+    );
+    let wanted = sums
+        .as_ref()
+        .ok()
+        .and_then(|entries| entries.get(&assets[0].name));
+    let writable = wanted.is_none() || check_writable(&target).is_ok();
     let staged = target.with_file_name("updateapply-replay");
     let mut stage_seen = false;
     if !asset_matches {
         error_code = "missing_asset".into();
-    } else if !writable || fs::write(&staged, &payload).is_err() {
+    } else if wanted.is_none() || !writable || fs::write(&staged, &payload).is_err() {
         error_code = "apply_failed".into();
     } else {
         stage_seen = staged.exists();
-        if !input.checksum_ok {
+        if !sha256_hex(&payload).eq_ignore_ascii_case(wanted.unwrap()) {
             error_code = "checksum_mismatch".into();
         } else {
             let mut install_bytes = payload;
@@ -332,11 +381,15 @@ fn empty_error(error_code: &str) -> Observation {
     }
 }
 
-fn check_writable(target: &Path) -> std::io::Result<()> {
+pub(crate) fn check_writable(target: &Path) -> std::io::Result<()> {
     let parent = target.parent().ok_or(std::io::ErrorKind::InvalidInput)?;
-    let probe = parent.join(".updateapply-writecheck");
+    let id = TEMP_ID.fetch_add(1, Ordering::Relaxed);
+    let probe = parent.join(format!(
+        ".updateapply-writecheck-{}-{id}",
+        std::process::id()
+    ));
     let file = fs::OpenOptions::new()
-        .create(true)
+        .create_new(true)
         .write(true)
         .truncate(false)
         .open(&probe)?;

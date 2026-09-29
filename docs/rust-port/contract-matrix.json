@@ -168,6 +168,21 @@
       "status": "fixture-ready"
     },
     {
+      "id": "DEFECT-002",
+      "seam": "update redirect HTTPS downgrade",
+      "fixture": "update request redirect oracle and native TLS/Cosign redirect tests",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./updatecheck -run TestSecureClientRedirect",
+      "expected": "GitHub-host redirects over HTTP are refused before connecting; HTTPS GitHub redirects remain allowed in manual and automatic request clients",
+      "comparison": "network",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "scripts/rust-port/update-request-differential.py plus symaira-core-update/tests/request.rs and src/request.rs and src/cosign.rs native TLS tests",
+      "status": "fixture-ready"
+    },
+    {
       "id": "VER-001",
       "seam": "version payload",
       "fixture": "Info{tool:\"symx\",version:\"v1.2.3\",schema_version:7}",
@@ -1075,7 +1090,7 @@
         "windows"
       ],
       "rust_test": "symaira-core-update/tests/request.rs",
-      "status": "parity"
+      "status": "fixture-ready"
     },
     {
       "id": "UPD-006",
@@ -1135,7 +1150,7 @@
         "windows"
       ],
       "rust_test": "symaira-core-update/tests/cosign_contract.rs",
-      "status": "parity"
+      "status": "fixture-ready"
     },
     {
       "id": "UPD-010",
@@ -1150,7 +1165,7 @@
         "windows"
       ],
       "rust_test": "symaira-core-update/tests/apply.rs",
-      "status": "parity"
+      "status": "fixture-ready"
     },
     {
       "id": "UPD-011",
@@ -1165,7 +1180,7 @@
         "windows"
       ],
       "rust_test": "symaira-core-update/tests/apply.rs",
-      "status": "parity"
+      "status": "fixture-ready"
     },
     {
       "id": "UPD-012",

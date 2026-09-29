@@ -2,14 +2,18 @@
 package cosign
 
 import (
+	"bytes"
 	"context"
+	"crypto/sha256"
 	"crypto/tls"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"testing"
@@ -557,6 +561,54 @@ func TestFetchArtifactAcceptsNormalBody(t *testing.T) {
 	}
 	if string(got) != string(want) {
 		t.Errorf("FetchSignature() = %q, want %q", got, want)
+	}
+}
+
+// Opt-in: compare Go with the Rust verifier against one pinned, publicly
+// released keyless signature, not a fixture executable that always succeeds.
+func TestRealSignedReleaseAcceptsAndRejects(t *testing.T) {
+	dir := os.Getenv("COSIGN_VALID_FIXTURE_DIR")
+	if dir == "" {
+		t.Skip("requires the pinned release assets and real cosign CLI")
+	}
+	if _, err := exec.LookPath("cosign"); err != nil {
+		t.Fatal(err)
+	}
+	readPinned := func(suffix, want string) []byte {
+		t.Helper()
+		data, err := os.ReadFile(filepath.Join(dir, "symaira-vault_0.22.1_checksums.txt"+suffix))
+		if err != nil {
+			t.Fatal(err)
+		}
+		got := sha256.Sum256(data)
+		if fmt.Sprintf("%x", got) != want {
+			t.Fatalf("pinned release asset %q has unexpected digest", suffix)
+		}
+		return data
+	}
+	content := readPinned("", "e722249e12a560717f67af31db4d5153186442a243aee1a14b2a42a02f97ee05")
+	signature := readPinned(".sig", "2012a27ad4bf0a7ce080f04d04557a664f26987597b58af4a7be44a66166560f")
+	certificate := readPinned(".pem", "32295da270034818625e04e51a0f8cd41796de3cf125cecf3e764e1f85c6b4a4")
+	config := Config{Repo: "danieljustus/symaira-vault", BinaryName: "symaira-vault"}
+	gotSig, err := config.FetchSignature(context.Background(), "v0.22.1")
+	if err != nil || !bytes.Equal(gotSig, signature) {
+		t.Fatalf("fetch pinned signature: %v, equal=%t", err, bytes.Equal(gotSig, signature))
+	}
+	gotCert, err := config.FetchCertificate(context.Background(), "v0.22.1")
+	if err != nil || !bytes.Equal(gotCert, certificate) {
+		t.Fatalf("fetch pinned certificate: %v, equal=%t", err, bytes.Equal(gotCert, certificate))
+	}
+	if err := config.VerifySignature(content, signature, certificate); err != nil {
+		t.Fatalf("genuine signed manifest rejected: %v", err)
+	}
+	tampered := bytes.Clone(content)
+	tampered[0] ^= 1
+	if err := config.VerifySignature(tampered, signature, certificate); err == nil {
+		t.Fatal("tampered manifest accepted")
+	}
+	config.IdentityRegexp = "^not-the-release-workflow$"
+	if err := config.VerifySignature(content, signature, certificate); err == nil {
+		t.Fatal("unrelated certificate identity accepted")
 	}
 }
 

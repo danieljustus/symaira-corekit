@@ -1,8 +1,11 @@
 //! Update-release HTTP request behavior shared with the Go checker.
 
-use std::io::Read;
+use reqwest::blocking::{Client, ClientBuilder};
+use reqwest::redirect::Policy;
+use reqwest::tls::Version;
+use std::error::Error as _;
+use std::io::{self, Read};
 use std::time::Duration;
-use ureq::{Agent, tls::TlsConfig};
 
 const MAX_RESPONSE: u64 = 1 << 20;
 
@@ -20,16 +23,48 @@ pub struct Response {
 
 /// Fetches a latest-release response from an explicit URL.
 pub fn fetch(url: &str, current_version: &str, timeout: Duration) -> Result<Response, Error> {
-    let mut config = Agent::config_builder()
-        .http_status_as_error(false)
-        .max_redirects(0)
-        .timeout_global((!timeout.is_zero()).then_some(timeout));
-    // ureq exposes certificate roots but not a TLS minimum-version setting.
-    config = config.tls_config(TlsConfig::builder().build());
-    let agent: Agent = config.build().into();
+    let client = secure_client_builder(timeout)
+        .build()
+        .map_err(classify_network)?;
+    fetch_with_client(&client, url, current_version)
+}
+
+pub(crate) fn secure_client_builder(timeout: Duration) -> ClientBuilder {
+    let mut builder = Client::builder()
+        .redirect(Policy::none())
+        .tls_version_min(Version::TLS_1_3);
+    if !timeout.is_zero() {
+        builder = builder.timeout(timeout);
+    }
+    builder
+}
+
+pub(crate) fn secure_download_client_builder(timeout: Duration) -> ClientBuilder {
+    secure_client_builder(timeout).redirect(Policy::custom(|attempt| {
+        let host = attempt.url().host_str().unwrap_or_default().to_owned();
+        let scheme = attempt.url().scheme().to_owned();
+        if scheme != "https" {
+            attempt.error(io::Error::new(
+                io::ErrorKind::PermissionDenied,
+                format!("refusing redirect to non-HTTPS scheme {scheme:?}"),
+            ))
+        } else if !is_github_host(&host) {
+            attempt.error(io::Error::new(
+                io::ErrorKind::PermissionDenied,
+                format!("refusing redirect to non-GitHub host {host:?}"),
+            ))
+        } else if attempt.previous().len() >= 10 {
+            attempt.error(io::Error::other("stopped after 10 redirects"))
+        } else {
+            attempt.follow()
+        }
+    }))
+}
+
+fn fetch_with_client(client: &Client, url: &str, current_version: &str) -> Result<Response, Error> {
     let mut target = url.trim().to_owned();
     for redirects in 0..=10 {
-        let result = agent
+        let result = client
             .get(&target)
             .header("Accept", "application/vnd.github+json")
             .header("Accept-Encoding", "gzip")
@@ -37,7 +72,7 @@ pub fn fetch(url: &str, current_version: &str, timeout: Duration) -> Result<Resp
                 "User-Agent",
                 &format!("symaira-updatecheck/{}", current_version.trim()),
             )
-            .call();
+            .send();
         let mut response = match result {
             Ok(response) => response,
             Err(error) => return Err(classify_network(error)),
@@ -46,7 +81,7 @@ pub fn fetch(url: &str, current_version: &str, timeout: Duration) -> Result<Resp
         if (300..400).contains(&status) {
             let next = response
                 .headers()
-                .get("location")
+                .get(reqwest::header::LOCATION)
                 .and_then(|value| value.to_str().ok())
                 .ok_or_else(|| Error {
                     code: "redirect",
@@ -62,14 +97,25 @@ pub fn fetch(url: &str, current_version: &str, timeout: Duration) -> Result<Resp
                 code: "redirect",
                 message: format!("invalid redirect URL {next:?}"),
             })?;
-            let host = url_host(&target_next).unwrap_or_default();
-            if !is_github_host(host) {
+            if target_next.scheme() != "https" {
                 return Err(Error {
-                    code: "redirect",
-                    message: format!("refusing redirect to non-GitHub host {host:?}"),
+                    code: "network",
+                    message: format!(
+                        "request latest release: refusing redirect to non-HTTPS scheme {:?}",
+                        target_next.scheme()
+                    ),
                 });
             }
-            target = target_next;
+            let host = target_next.host_str().unwrap_or_default();
+            if !is_github_host(host) {
+                return Err(Error {
+                    code: "network",
+                    message: format!(
+                        "request latest release: refusing redirect to non-GitHub host {host:?}"
+                    ),
+                });
+            }
+            target = target_next.to_string();
             continue;
         }
         if status != 200 {
@@ -85,9 +131,7 @@ pub fn fetch(url: &str, current_version: &str, timeout: Duration) -> Result<Resp
             });
         }
         let mut body = Vec::new();
-        response
-            .body_mut()
-            .as_reader()
+        (&mut response)
             .take(MAX_RESPONSE)
             .read_to_end(&mut body)
             .map_err(|error| Error {
@@ -109,44 +153,29 @@ pub fn is_github_host(host: &str) -> bool {
         || host.ends_with(".githubusercontent.com")
 }
 
-fn resolve_redirect(base: &str, next: &str) -> Option<String> {
-    if next.contains("://") {
-        return Some(next.to_owned());
+fn resolve_redirect(base: &str, next: &str) -> Option<reqwest::Url> {
+    reqwest::Url::parse(base).ok()?.join(next).ok()
+}
+
+fn classify_network(error: reqwest::Error) -> Error {
+    let mut details = format!("{error:?}").to_ascii_lowercase();
+    let mut source = error.source();
+    let mut refused = false;
+    while let Some(cause) = source {
+        details.push_str(&cause.to_string().to_ascii_lowercase());
+        refused |= cause
+            .downcast_ref::<io::Error>()
+            .is_some_and(|io| io.kind() == io::ErrorKind::ConnectionRefused);
+        source = cause.source();
     }
-    let scheme_end = base.find("://")? + 3;
-    let origin_end = base[scheme_end..]
-        .find('/')
-        .map_or(base.len(), |index| scheme_end + index);
-    let origin = &base[..origin_end];
-    if next.starts_with('/') {
-        Some(format!("{origin}{next}"))
+    let code = if error.is_timeout() {
+        "timeout"
+    } else if details.contains("certificate") || details.contains("unknownissuer") {
+        "tls_certificate"
+    } else if refused || details.contains("connection refused") {
+        "connection_refused"
     } else {
-        let path_end = base.rfind('/')?;
-        Some(format!("{}/{next}", &base[..path_end]))
-    }
-}
-
-fn url_host(url: &str) -> Option<&str> {
-    url.split_once("://")?
-        .1
-        .split('/')
-        .next()?
-        .split('@')
-        .next_back()
-}
-
-fn classify_network(error: ureq::Error) -> Error {
-    let detail = format!("{error:?}").to_ascii_lowercase();
-    let code = match &error {
-        ureq::Error::Timeout(_) => "timeout",
-        ureq::Error::Tls(_) | ureq::Error::Rustls(_) => "tls_certificate",
-        _ if detail.contains("certificate") || detail.contains("unknownissuer") => {
-            "tls_certificate"
-        }
-        ureq::Error::Io(error) if error.kind() == std::io::ErrorKind::ConnectionRefused => {
-            "connection_refused"
-        }
-        _ => "network",
+        "network"
     };
     Error {
         code,
@@ -164,13 +193,86 @@ fn classify_network(error: ureq::Error) -> Error {
 
 #[cfg(test)]
 mod tests {
-    use super::classify_network;
-    use std::io::{Error, ErrorKind};
+    use super::{
+        fetch, fetch_with_client, is_github_host, resolve_redirect, secure_client_builder,
+    };
+    use reqwest::tls::{Certificate, Version};
+    use std::time::Duration;
 
     #[test]
-    fn refused_io_error_has_go_request_classification() {
-        let actual = classify_network(ureq::Error::Io(Error::from(ErrorKind::ConnectionRefused)));
+    fn redirect_location_uses_url_semantics_before_host_check() {
+        let base = "https://api.github.com/repos/org/repo/releases/latest";
+        let foreign = resolve_redirect(base, "//evil.example/steal").unwrap();
+        assert_eq!(foreign.as_str(), "https://evil.example/steal");
+        assert!(!is_github_host(foreign.host_str().unwrap()));
+        assert_eq!(
+            resolve_redirect(base, "../tags?per_page=1")
+                .unwrap()
+                .as_str(),
+            "https://api.github.com/repos/org/repo/tags?per_page=1"
+        );
+    }
+
+    #[test]
+    fn refused_connection_has_go_request_classification() {
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let addr = listener.local_addr().unwrap();
+        drop(listener);
+        let actual =
+            fetch(&format!("http://{addr}/"), "1.0.0", Duration::from_secs(2)).unwrap_err();
         assert_eq!(actual.code, "connection_refused");
         assert_eq!(actual.message, "request latest release");
+    }
+
+    #[test]
+    #[ignore = "requires the Go TLS 1.2 and 1.3 fixture servers"]
+    fn tls_protocol_minimum_rejects_1_2() {
+        fn trusted_client(cert_path: &str, minimum: Option<Version>) -> reqwest::blocking::Client {
+            let certificate = Certificate::from_der(&std::fs::read(cert_path).unwrap()).unwrap();
+            let mut builder =
+                secure_client_builder(Duration::from_secs(2)).tls_certs_only([certificate]);
+            if let Some(version) = minimum {
+                builder = builder.tls_version_min(version);
+            }
+            builder.build().unwrap()
+        }
+
+        let tls12_url = std::env::var("UPDATE_REQUEST_TLS12_URL").unwrap();
+        let tls12_cert = std::env::var("UPDATE_REQUEST_TLS12_CERT").unwrap();
+        let tls13_url = std::env::var("UPDATE_REQUEST_TLS13_URL").unwrap();
+        let tls13_cert = std::env::var("UPDATE_REQUEST_TLS13_CERT").unwrap();
+        let tls12 = trusted_client(&tls12_cert, None);
+        assert!(
+            fetch_with_client(&tls12, &tls12_url, "1.2.3").is_err(),
+            "TLS 1.2-only peer must not negotiate with the production client"
+        );
+        let weak_control = trusted_client(&tls12_cert, Some(Version::TLS_1_2));
+        assert_eq!(
+            fetch_with_client(&weak_control, &tls12_url, "1.2.3")
+                .expect("control proves the TLS 1.2 server and certificate work")
+                .status,
+            200
+        );
+        let tls13 = trusted_client(&tls13_cert, None);
+        assert_eq!(
+            fetch_with_client(&tls13, &tls13_url, "1.2.3")
+                .expect("TLS 1.3 with a trusted certificate must work")
+                .status,
+            200
+        );
+        let foreign =
+            fetch_with_client(&tls13, &format!("{tls13_url}/_foreign_"), "1.2.3").unwrap_err();
+        assert!(
+            foreign
+                .message
+                .contains("refusing redirect to non-GitHub host")
+        );
+        let downgrade =
+            fetch_with_client(&tls13, &format!("{tls13_url}/_downgrade_"), "1.2.3").unwrap_err();
+        assert!(
+            downgrade
+                .message
+                .contains("refusing redirect to non-HTTPS scheme")
+        );
     }
 }

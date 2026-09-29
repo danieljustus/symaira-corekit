@@ -20,6 +20,8 @@ struct ExpectedInput {
     asset_name: String,
     payload_hex: String,
     checksum_ok: bool,
+    #[serde(default)]
+    checksums_text: Option<String>,
     initial_exists: bool,
     initial_content: String,
     initial_mode: u32,
@@ -70,6 +72,7 @@ impl ExpectedCase {
             asset_name: self.input.asset_name.clone(),
             payload_hex: self.input.payload_hex.clone(),
             checksum_ok: self.input.checksum_ok,
+            checksums_text: self.input.checksums_text.clone(),
             initial_exists: self.input.initial_exists,
             initial_content: self.input.initial_content.clone(),
             initial_mode: self.input.initial_mode,
@@ -144,7 +147,7 @@ fn apply_filesystem_observations_match_go_fixture() {
         eprintln!("SKIP {reason}");
         return;
     }
-    assert_eq!(fixture.cases.len(), 12);
+    assert_eq!(fixture.cases.len(), 17);
     for case in fixture.cases {
         let input = case.input();
         let actual = replay(&input);

@@ -1,6 +1,6 @@
 {
   "go_source_sha256": "bff3e7be09de630ac2dba8070040443852e7bd9fc8ee5dd76abe614df7d30a0a",
-  "oracle_sha256": "158f0d5395231f0326922ae90d5434f38d3e4f18717a6b203eaec8d438a5c6d6",
+  "oracle_sha256": "b01ffbac0a9b687bcd5544e8e9668441423ebfb7f55c177c258c5ecaa2eb3d41",
   "goos": "darwin",
   "cases": [
     {
@@ -312,6 +312,155 @@
           {
             "path": "mytool",
             "content": "old-binary",
+            "mode": 493
+          }
+        ]
+      }
+    },
+    {
+      "input": {
+        "id": "empty-checksums",
+        "asset_name": "mytool_linux_amd64",
+        "payload_hex": "6e65772d62696e617279",
+        "checksum_ok": true,
+        "checksums_text": "",
+        "initial_exists": true,
+        "initial_content": "old-binary",
+        "initial_mode": 493
+      },
+      "observation": {
+        "error_code": "apply_failed",
+        "target_exists": true,
+        "target_content": "old-binary",
+        "target_mode": 493,
+        "backup_exists": false,
+        "stage_during_download": false,
+        "temp_during_download": false,
+        "validator_saw_target": false,
+        "validator_saw_backup": false,
+        "files": [
+          {
+            "path": "mytool",
+            "content": "old-binary",
+            "mode": 493
+          }
+        ]
+      }
+    },
+    {
+      "input": {
+        "id": "malformed-checksums",
+        "asset_name": "mytool_linux_amd64",
+        "payload_hex": "6e65772d62696e617279",
+        "checksum_ok": true,
+        "checksums_text": "invalid\nthree words here\n",
+        "initial_exists": true,
+        "initial_content": "old-binary",
+        "initial_mode": 493
+      },
+      "observation": {
+        "error_code": "apply_failed",
+        "target_exists": true,
+        "target_content": "old-binary",
+        "target_mode": 493,
+        "backup_exists": false,
+        "stage_during_download": false,
+        "temp_during_download": false,
+        "validator_saw_target": false,
+        "validator_saw_backup": false,
+        "files": [
+          {
+            "path": "mytool",
+            "content": "old-binary",
+            "mode": 493
+          }
+        ]
+      }
+    },
+    {
+      "input": {
+        "id": "missing-checksum-entry",
+        "asset_name": "mytool_linux_amd64",
+        "payload_hex": "6e65772d62696e617279",
+        "checksum_ok": true,
+        "checksums_text": "a  unrelated-file\n",
+        "initial_exists": true,
+        "initial_content": "old-binary",
+        "initial_mode": 493
+      },
+      "observation": {
+        "error_code": "apply_failed",
+        "target_exists": true,
+        "target_content": "old-binary",
+        "target_mode": 493,
+        "backup_exists": false,
+        "stage_during_download": false,
+        "temp_during_download": false,
+        "validator_saw_target": false,
+        "validator_saw_backup": false,
+        "files": [
+          {
+            "path": "mytool",
+            "content": "old-binary",
+            "mode": 493
+          }
+        ]
+      }
+    },
+    {
+      "input": {
+        "id": "case-sensitive-checksum-entry",
+        "asset_name": "MyTool_LiNuX_AmD64",
+        "payload_hex": "6e65772d62696e617279",
+        "checksum_ok": true,
+        "checksums_text": "3e2b640c4a45777e3e885018961a7f04d722259075f43de7d0b0511d1547b2d8  mytool_linux_amd64\n",
+        "initial_exists": true,
+        "initial_content": "old-binary",
+        "initial_mode": 493
+      },
+      "observation": {
+        "error_code": "apply_failed",
+        "target_exists": true,
+        "target_content": "old-binary",
+        "target_mode": 493,
+        "backup_exists": false,
+        "stage_during_download": false,
+        "temp_during_download": false,
+        "validator_saw_target": false,
+        "validator_saw_backup": false,
+        "files": [
+          {
+            "path": "mytool",
+            "content": "old-binary",
+            "mode": 493
+          }
+        ]
+      }
+    },
+    {
+      "input": {
+        "id": "duplicate-checksum-last-wins",
+        "asset_name": "mytool_linux_amd64",
+        "payload_hex": "6e65772d62696e617279",
+        "checksum_ok": true,
+        "checksums_text": "a  mytool_linux_amd64\n3e2b640c4a45777e3e885018961a7f04d722259075f43de7d0b0511d1547b2d8\tmytool_linux_amd64\r\n",
+        "initial_exists": true,
+        "initial_content": "old-binary",
+        "initial_mode": 493
+      },
+      "observation": {
+        "target_exists": true,
+        "target_content": "new-binary",
+        "target_mode": 493,
+        "backup_exists": false,
+        "stage_during_download": true,
+        "temp_during_download": false,
+        "validator_saw_target": false,
+        "validator_saw_backup": false,
+        "files": [
+          {
+            "path": "mytool",
+            "content": "new-binary",
             "mode": 493
           }
         ]
