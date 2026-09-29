@@ -5,7 +5,7 @@
 > **Nachtrag 2026-08-20:** Die frühere Kopplung von Phase 2 an ADR-0002 *Unified Identity* (vault-pro) entfällt — es gibt keine Pro-Variante und kein `symaira-vault-pro` mehr. Phase 2 hängt allein am Zweit-Consumer-Kriterium.
 > **Date**: 2026-06-18
 > **Scope**: corekit (`authkit`), Erst-Consumer `symmemory`; optionaler Broker-Agent als Phase 2
-> **Verwandt**: vault `internal/session`, `../ECOSYSTEM.md`
+> **Verwandt**: vault `internal/session`, [Produktgrenzen](../product-boundaries.md)
 
 ## Context
 

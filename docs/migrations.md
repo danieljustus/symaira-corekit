@@ -5,9 +5,10 @@ forward, one minor release at a time. Each entry summarizes the actual
 release content (see the linked GitHub release for the full changelog) and
 calls out anything a consumer should verify — not just what was added.
 
-Strict SemVer within a major version means these are additive/non-breaking
-by contract; "check" below means "new capability you may want to adopt or a
-behavior change worth confirming," not "your build will fail."
+The current API contract is strict SemVer within a major version. Entries
+also preserve historical removals, including `embedkit` in v0.12.0; those
+require migration. Otherwise "check" means a new capability to adopt or a
+behavior change worth confirming.
 
 ## v0.17.0
 
@@ -101,7 +102,7 @@ behavior change worth confirming," not "your build will fail."
 
 [Release notes](https://github.com/danieljustus/symaira-corekit/releases/tag/v0.12.1)
 
-## v0.9.1 → v0.9.2
+## v0.12.0
 
 - `updatecheck` exports the hardened HTTP client that was previously internal:
   `NewSecureClient()` (TLS 1.3 minimum, `DefaultAPITimeout`, redirects refused
@@ -120,6 +121,29 @@ behavior change worth confirming," not "your build will fail."
   Consumers that worked around this with a hand-written `IdentityRegexp` can
   drop the override; verify once before removing it.
 - `updatecheck/cosign`: signature and certificate responses are size-capped.
+
+The former `embedkit` package was removed in this release. Consumers still
+importing it must remove or migrate those imports before raising their pin.
+
+[Release notes](https://github.com/danieljustus/symaira-corekit/releases/tag/v0.12.0)
+
+## v0.11.0
+
+- New `auditkit` package provides shared tamper-evident SHA-256-chain audit
+  logging, checkpoints and verification.
+- Consumer action: existing imports remain unchanged; adopt `auditkit` only
+  where a shared audit sink is needed.
+
+[Release notes](https://github.com/danieljustus/symaira-corekit/releases/tag/v0.11.0)
+
+## v0.10.0
+
+- New `mcpcfgkit` package discovers MCP server configuration across local AI
+  clients and resolves configured commands.
+- Consumer action: existing imports remain unchanged; consumers can replace
+  duplicated MCP configuration discovery with this package.
+
+[Release notes](https://github.com/danieljustus/symaira-corekit/releases/tag/v0.10.0)
 
 ## v0.8.0 → v0.9.0
 

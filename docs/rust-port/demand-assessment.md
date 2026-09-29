@@ -28,10 +28,11 @@ subsequently implemented its own release checker and signed installer:
 `crates/symvault-cli/src/update_apply.rs:1-7,28-165`. These are independent
 product consumers with duplicated release-download, Cosign, archive and
 atomic-install concerns. **Verdict: demand met; RUST-007 can proceed.**
-`rust/symaira-core-update` has executable Go/Rust parity evidence for
+`rust/symaira-core-update` has executable Go/Rust comparisons for
 UPD-001..011, covering version decisions, response and request behavior,
 cache, extraction, install-method detection, Cosign contracts and apply
-behavior. UPD-012 remains `fixture-ready`; the full RUST-007 acceptance gate
+behavior. UPD-005/009/010/011/012 remain `fixture-ready`, not completed parity;
+the full RUST-007 acceptance gate
 and native target-platform evidence are not complete. See
 [`contract-matrix.json`](contract-matrix.json) for each row's current status.
 The local UPD-012 subset now runs six direct `atomicSwap` Go test-oracle cases

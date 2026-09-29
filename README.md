@@ -71,7 +71,8 @@ cloud-specific behavior.
 | `logkit` | v0.1.0 | Structured logging (`log/slog`) to stderr, configurable via `SYM<APP>_LOG_LEVEL` |
 | `mcpcfgkit` | v0.10.0 | MCP server config discovery across AI client applications (JSONC/JSON/YAML) |
 | `mcpserver` | v0.1.0 | Generic JSON-RPC 2.0 stdio server for MCP tool registration |
-| `ollamakit` | v0.4.1 | Deprecated: superseded by `llmkit` (Ollama is now a provider descriptor); thin shim, removal after one minor release |
+| `ollamakit` | v0.4.1 | Deprecated: superseded by `llmkit` (Ollama is now a provider descriptor); retained compatibility shim |
+| `secretref` | v0.16.2 | Shared secret-reference resolver for `symvault://`, `keychain://`, `env://` and bare environment names |
 | `sqlitekit` | v0.1.0 | `modernc.org/sqlite` wrapper with WAL mode and embedded migrations |
 | `updatecheck` | v0.1.0 | GitHub release checker (opt-in, max 1×/24h) |
 | `updatecheck/cosign` | v0.6.0 | Cosign keyless signature verification for release checksums (Repo/BinaryName/IdentityRegexp parametrisierbar) |

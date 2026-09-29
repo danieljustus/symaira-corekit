@@ -9,12 +9,11 @@ captures the shared contracts that keep the ecosystem consistent.
 | Tool | Language | Imports corekit | Notes |
 |------|----------|-----------------|-------|
 | `symvault` | Go + Rust migration | yes (Go) | Wraps some corekit packages in `internal/` adapters |
-| `symbrain` | Go + Rust migration | yes (Go) | Direct consumer (also carries the absorbed memory, skills and guard packages) |
+| `symbrain` | Go + Rust migration | yes (Go) | Direct consumer (also carries the absorbed memory, skills, guard and Browse modules) |
 | `symdesk` | Go + Rust migration | yes (Go) | Direct consumer (also carries the absorbed ingest, print, relate, room and seek modules) |
-| `symbrowse` | Go + Rust migration | yes (Go) | Direct consumer (also carries the absorbed static fetch engine) |
 | `symeraseme` | Go + Rust migration | yes (Go) | Data-broker removal product |
 | `symfritz` | Rust | no | Rust-only since v0.8.0; v0.7.0 is the immutable Go rollback release |
-| `symcockpit` | Swift | no | macOS: thermals/power, GUI automation, port and MCP inventory |
+| `symcockpit` | Swift | no | macOS thermals/power (tune-only); operate/scope moved to Brain |
 
 The row per tool is one **repository**, not one binary: the 2026-08 repo
 consolidation folded fourteen tools into four products, so a single consumer
@@ -59,7 +58,7 @@ Use the prefix `SYM<NAME>_` for tool-specific environment variables:
 - `SYMTUNE_*` (e.g. `SYMTUNE_EXTBRIGHT_MIN`)
 - `SYMERASEME_*` (e.g. `SYMERASEME_DATA_DIR`)
 
-The Go helper `corekit/envutil.Get(name, aliases...)` supports reading a
+The Go helper `corekit/envutil.Getenv(name, aliases...)` supports reading a
 variable under multiple aliases, which is useful during migration or for
 supporting `XDG_*` overrides.
 
@@ -107,7 +106,7 @@ The canonical MCP server transport for Symaira tools is **stdio with
 Content-Length: <n>\r\n\r\n<json-rpc-body>
 ```
 
-- The `operate` and `tune` families of `symcockpit` use this framing.
+- The `tune` family of `symcockpit` uses this framing.
 - `symeraseme` uses HTTP (`127.0.0.1:8000`) for its MCP server, which is a
   documented divergence.
 
@@ -198,7 +197,7 @@ version from package metadata (e.g. `importlib.metadata.version("symeraseme")`).
 
 Prefer typed domain errors that map to exit codes. Examples:
 
-- `symcockpit` (operate module) — `SymOperateCore.AutomationError`
+- Historical operate module — `SymOperateCore.AutomationError` (no longer routed by `symcockpit`)
 - `symcockpit` (tune module) — `SymTuneCore.TuneError`
 - `symeraseme.SymerasemeError`
 
@@ -219,8 +218,8 @@ least these fields:
 }
 ```
 
-Both implement a `doctor` subcommand, reachable as `symcockpit operate doctor`
-and `symcockpit tune doctor`.
+Cockpit exposes `symcockpit tune doctor`. The former `symcockpit operate doctor`
+alias was removed at the tune-only cutover; see [product boundaries](product-boundaries.md).
 
 ## Candidates for Future Corekit Extraction
 
@@ -231,6 +230,6 @@ candidate pointed at no longer exists.
 
 ## References
 
-- `../ECOSYSTEM.md` — product ecosystem overview
-- `../symaira-corekit/README.md` — corekit package index
-- `../symaira-corekit/AGENTS.md` — corekit implementation boundaries
+- [Product boundaries](product-boundaries.md) — standalone ecosystem ownership contract
+- [CoreKit package index](../README.md)
+- [CoreKit implementation boundaries](../AGENTS.md)

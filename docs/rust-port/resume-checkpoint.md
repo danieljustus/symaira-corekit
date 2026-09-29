@@ -252,9 +252,10 @@
   secretref resolution, and Go-compatible error categories. The local Go oracle
   and Rust integration tests cover request shapes and error taxonomy. See
   `llm-contract.md`.
-- Residual parity is explicit: Rust requests are synchronous and do not have
-  Go `context.Context` per-request cancellation or the custom HTTP-client
-  injection hook. This remains a library slice; no consumer cutover, release,
+- At this historical checkpoint Rust requests lacked per-request cancellation
+  and HTTP-client injection. Later commits `6068b0f` and `13a7a6d` added these
+  contracts; see `llm-contract.md` for current coverage. This remains a library
+  slice; no consumer cutover, release,
   tag, Go removal, or publication is authorized. Acceptance runs and PR status
   Local checks pass: `make rust-llm-contract` (Go packages, differential fixture,
   Rust fmt, strict Clippy, and all seven provider-contract tests). The branch is

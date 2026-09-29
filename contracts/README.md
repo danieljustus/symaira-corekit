@@ -15,6 +15,8 @@ implementations of the same contract fails a build instead of going unnoticed.
 | `config_paths.json` | XDG-style config/cache/data path conventions (`corekit/configkit`) |
 | `json_encoding.json` | JSON key casing and stdio transport rules for MCP servers (`corekit/mcpserver`) |
 | `mcp_tool_errors.json` | Structured error metadata on a failed `tools/call` (`corekit/mcpserver.ToolErrorData`) |
+| `mcp_tool_annotations.json` | MCP tool annotation fields and defaults (`corekit/mcpserver`) |
+| `secret_refs.json` | Shared secret-reference schemes and resolver behavior (`corekit/secretref`) |
 | `llm_providers.json` | Shared LLM provider descriptor registry (`llm-provider-contract.md`, issue #172); consumed by Go `llmkit` and appkit `SymairaProviderKit` |
 | `llm_errors.json` | Shared LLM provider error taxonomy mapped to exit codes (`llm-provider-contract.md`) |
 
