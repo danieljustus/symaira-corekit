@@ -95,10 +95,11 @@ fn install_method_observations_match_go_api() {
             .iter()
             .map(|(key, value)| (key.clone(), value.replace("${TMP}", temp.to_str().unwrap())))
             .collect();
+        let home_key = if cfg!(windows) { "USERPROFILE" } else { "HOME" };
         let home = environment
-            .get("HOME")
+            .get(home_key)
             .map(PathBuf::from)
-            .or_else(|| std::env::var_os("HOME").map(PathBuf::from));
+            .or_else(|| std::env::var_os(home_key).map(PathBuf::from));
         let result = detect_with(Path::new(&path), &environment, home.as_deref());
         assert_eq!(
             result.as_ref().err().copied().unwrap_or(""),

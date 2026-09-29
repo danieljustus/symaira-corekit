@@ -78,7 +78,11 @@ pub fn detect_with(
     let resolved = fs::canonicalize(binary_path);
     let canonical_binary = resolved.is_ok();
     let real_path = resolved.unwrap_or_else(|_| binary_path.to_owned());
-    let absolute = if real_path.is_absolute() {
+    let absolute = if cfg!(windows) {
+        // Match Go filepath.Abs/GetFullPathNameW even for nonexistent paths
+        // and mixed separators; canonicalize alone only handles existing files.
+        std::path::absolute(&real_path).unwrap_or(real_path)
+    } else if real_path.is_absolute() {
         real_path
     } else {
         env::current_dir().unwrap_or_default().join(real_path)
@@ -99,7 +103,14 @@ pub fn detect_with(
         return Ok(InstallMethod::Homebrew);
     }
     if let Some(gopath) = env_path("GOPATH")
-        && absolute.starts_with(&Path::new(&gopath).join("bin").to_string_lossy().to_string())
+        && absolute.starts_with(
+            Path::new(&gopath)
+                .join("bin")
+                .components()
+                .collect::<PathBuf>()
+                .to_string_lossy()
+                .as_ref(),
+        )
     {
         return Ok(InstallMethod::GoInstall);
     }
@@ -124,7 +135,11 @@ pub fn detect_with(
     if let Some(gopath) = env_path("GOPATH") {
         let bin = format!(
             "{}{}",
-            Path::new(&gopath).join("bin").display(),
+            Path::new(&gopath)
+                .join("bin")
+                .components()
+                .collect::<PathBuf>()
+                .display(),
             std::path::MAIN_SEPARATOR
         );
         if absolute.starts_with(&bin) {
@@ -142,7 +157,11 @@ pub fn detect_with(
         };
         let go_bin = format!(
             "{}{}",
-            home.join("go").join("bin").display(),
+            home.join("go")
+                .join("bin")
+                .components()
+                .collect::<PathBuf>()
+                .display(),
             std::path::MAIN_SEPARATOR
         );
         if absolute.starts_with(&go_bin) {
@@ -153,7 +172,11 @@ pub fn detect_with(
             home.join(".local").join("bin"),
             home.join(".cargo").join("bin"),
         ] {
-            let prefix = format!("{}{}", dir.display(), std::path::MAIN_SEPARATOR);
+            let prefix = format!(
+                "{}{}",
+                dir.components().collect::<PathBuf>().display(),
+                std::path::MAIN_SEPARATOR
+            );
             if absolute.starts_with(&prefix) {
                 return Ok(InstallMethod::DirectDownload);
             }

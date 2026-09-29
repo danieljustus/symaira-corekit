@@ -51,3 +51,23 @@ fn existing_home_binaries_use_native_home_and_path_components() {
     fs::remove_dir_all(root).unwrap();
     assert!(status.success());
 }
+
+#[test]
+fn mixed_separator_inputs_match_native_go_environment_rules() {
+    let root = std::env::temp_dir().join(format!("native-install-mixed-{}", std::process::id()));
+    assert!(!root.exists());
+    for (directory, key, expected) in [
+        ("brew", "HOMEBREW_PREFIX", InstallMethod::BuildFromSource),
+        ("gopath", "GOPATH", InstallMethod::GoInstall),
+        ("modcache", "GOMODCACHE", InstallMethod::BuildFromSource),
+    ] {
+        let prefix = format!("{}/{directory}", root.display());
+        let binary = format!("{prefix}/bin/tool.exe");
+        let environment = std::collections::HashMap::from([(key.to_owned(), prefix)]);
+        assert_eq!(
+            detect_with(std::path::Path::new(&binary), &environment, None).unwrap(),
+            expected,
+            "{key}"
+        );
+    }
+}
