@@ -418,8 +418,7 @@ impl Client {
         };
         let mut response = self.request("POST", path, Some(&body))?;
         use std::io::BufReader;
-        let reader = BufReader::new(response.body_mut().as_reader());
-        let mut reader = reader;
+        let mut reader = BufReader::new(&mut response);
         let mut started = false;
         while let Some(raw_line) = read_bounded_line(&mut reader, 1024 * 1024).map_err(|e| {
             Error::transport(if started {

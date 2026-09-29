@@ -21,7 +21,13 @@ provider code, a Rust `ollamakit` clone, or a process/release surface.
 - HTTPS is required for non-loopback remote endpoints. The default HTTP agent
   disables redirects and uses a two-minute request timeout. Callers can inject
   a configured `ureq::Agent` with `ClientBuilder::agent`; its transport settings
-  are caller-controlled.
+  are caller-controlled. `ClientBuilder::http_client` accepts one configured
+  `reqwest::Client` for both synchronous and cancellable calls, matching Go's
+  `WithHTTPClient`. The synchronous adapter streams response chunks through a
+  bounded reader and joins its worker before returning; it does not detach a
+  request or buffer streaming responses wholesale. The existing `agent` and
+  `async_client` methods remain available for separate legacy configurations;
+  combining either with `http_client` is rejected.
 - `chat_cancellable`, `stream_chat_cancellable`, `embed_cancellable`,
   `list_models_cancellable`, `embed_native_cancellable`,
   `list_ollama_models_cancellable`, `generate_cancellable`,
@@ -33,11 +39,11 @@ provider code, a Rust `ollamakit` clone, or a process/release surface.
   and classifies `Do` errors with `errTransport`). Static model listing stays
   local and succeeds even when the token is already canceled. Cancellable
   Ollama NDJSON calls preserve Go's `stream interrupted` prefix after at least
-  one non-empty record. Callers can supply a `reqwest::Client` through
-  `ClientBuilder::async_client` for custom async transport settings. An
-  injected blocking `ureq::Agent` without an async client remains an explicit
-  error for cancellable calls. Synchronous calls continue to use the configured
-  `ureq::Agent`.
+  one non-empty record. Callers can supply a shared `reqwest::Client` through
+  `ClientBuilder::http_client` so both request modes use the same transport
+  configuration. An injected blocking `ureq::Agent` without an async client
+  remains an explicit error for cancellable calls. Synchronous calls without a
+  shared client continue to use the configured `ureq::Agent`.
 
 ## Differential evidence
 
@@ -45,7 +51,11 @@ provider code, a Rust `ollamakit` clone, or a process/release surface.
 and responses from the shipped Go implementation against local HTTP test
 servers. The committed
 `testdata/rust-port/fixtures/llm/go-oracle.json` binds that observation to the
-Go source, oracle, and runner hashes. Run `make rust-llm-contract` to execute
+Go source, oracle, and runner hashes. Its injected-client case sends regular
+chat, incremental SSE, and canceled embedding through one Go `http.Client`;
+the Rust replay checks the same paths through `ClientBuilder::http_client` and
+verifies that cancellation closes the response while synchronous streaming
+remains incremental. Run `make rust-llm-contract` to execute
 the focused Go package checks, compare the pinned oracle observation, run Rust
 format/lint, and test the Rust crate. Refresh the observation deliberately with
 `python3 scripts/rust-port/llm-differential.py --write` after a reviewed Go

@@ -7,11 +7,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"strings"
 	"sync/atomic"
+	"time"
 
 	"github.com/danieljustus/symaira-corekit/llmkit"
 )
@@ -42,6 +44,145 @@ type cancellationResult struct {
 	Operation       string `json:"operation"`
 	ErrorCode       string `json:"error_code"`
 	RequestObserved bool   `json:"request_observed"`
+}
+
+type injectedHTTPClientResult struct {
+	RegularPath          string `json:"regular_path"`
+	RegularContent       string `json:"regular_content"`
+	StreamPath           string `json:"stream_path"`
+	StreamDelta          string `json:"stream_delta"`
+	StreamFinished       string `json:"stream_finished"`
+	CancellablePath      string `json:"cancellable_path"`
+	CancellationObserved bool   `json:"cancellation_observed"`
+	CancellationError    string `json:"cancellation_error"`
+}
+
+type injectedHTTPTransport struct {
+	started         chan struct{}
+	canceled        chan struct{}
+	regularPath     string
+	streamPath      string
+	cancellablePath string
+	regularCalls    atomic.Int32
+}
+
+func (transport *injectedHTTPTransport) RoundTrip(request *http.Request) (*http.Response, error) {
+	if request.URL.Path == "/v1/chat/completions" {
+		call := transport.regularCalls.Add(1)
+		if call == 1 {
+			transport.regularPath = request.URL.Path
+			return &http.Response{
+				StatusCode: http.StatusOK,
+				Header:     http.Header{"Content-Type": []string{"application/json"}},
+				Body:       io.NopCloser(strings.NewReader(`{"choices":[{"message":{"content":"injected"}}]}`)),
+				Request:    request,
+			}, nil
+		}
+		transport.streamPath = request.URL.Path
+		return &http.Response{
+			StatusCode: http.StatusOK,
+			Header:     http.Header{"Content-Type": []string{"text/event-stream"}},
+			Body: io.NopCloser(strings.NewReader(
+				"data: {\"choices\":[{\"delta\":{\"content\":\"first\"}}]}\n\n" +
+					"data: {\"choices\":[{\"delta\":{\"content\":\" second\"},\"finish_reason\":\"stop\"}]}\n\n" +
+					"data: [DONE]\n\n",
+			)),
+			Request: request,
+		}, nil
+	}
+	if request.URL.Path == "/v1/embeddings" {
+		transport.cancellablePath = request.URL.Path
+		select {
+		case transport.started <- struct{}{}:
+		default:
+		}
+		<-request.Context().Done()
+		select {
+		case transport.canceled <- struct{}{}:
+		default:
+		}
+		return nil, request.Context().Err()
+	}
+	return nil, fmt.Errorf("unexpected injected transport path %s", request.URL.Path)
+}
+
+func recordInjectedHTTPClient() injectedHTTPClientResult {
+	transport := &injectedHTTPTransport{started: make(chan struct{}, 1), canceled: make(chan struct{}, 1)}
+	descriptor, ok := llmkit.Lookup("openai")
+	if !ok {
+		panic("openai provider not found")
+	}
+	client, err := llmkit.NewClient(
+		descriptor,
+		"",
+		llmkit.WithBaseURL("http://127.0.0.1:1/v1"),
+		llmkit.WithAPIKey("dummy-key"),
+		llmkit.WithHTTPClient(&http.Client{Transport: transport}),
+	)
+	if err != nil {
+		panic(err)
+	}
+	choice, err := client.Chat(context.Background(), "gpt-5", []llmkit.Message{{Role: "user", Content: "question"}}, nil)
+	if err != nil {
+		panic("custom HTTP client regular request failed: " + err.Error())
+	}
+	var streamDelta, streamFinished string
+	err = client.StreamChat(
+		context.Background(),
+		"gpt-5",
+		[]llmkit.Message{{Role: "user", Content: "question"}},
+		nil,
+		func(delta string) error {
+			streamDelta += delta
+			return nil
+		},
+		llmkit.WithStreamFinished(func(reason string) { streamFinished = reason }),
+	)
+	if err != nil {
+		panic("custom HTTP client stream request failed: " + err.Error())
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	done := make(chan error, 1)
+	go func() {
+		_, err := client.Embed(ctx, "", []string{"input"})
+		done <- err
+	}()
+	select {
+	case <-transport.started:
+	case <-time.After(2 * time.Second):
+		cancel()
+		panic("custom HTTP client cancellable request did not start")
+	}
+	cancel()
+	select {
+	case err = <-done:
+	case <-time.After(2 * time.Second):
+		panic("custom HTTP client cancellable request did not return")
+	}
+	providerErr := llmkit.AsError(err)
+	if providerErr == nil || providerErr.Code != llmkit.ErrCodeTransport {
+		panic(fmt.Sprintf("custom HTTP client cancellation returned unexpected error: %v", err))
+	}
+	cancellationObserved := false
+	select {
+	case <-transport.canceled:
+		cancellationObserved = true
+	case <-time.After(2 * time.Second):
+		panic("custom HTTP transport did not observe cancellation")
+	}
+	if transport.regularCalls.Load() != 2 {
+		panic("custom HTTP transport did not receive both chat requests")
+	}
+	return injectedHTTPClientResult{
+		RegularPath:          transport.regularPath,
+		RegularContent:       choice.Content,
+		StreamPath:           transport.streamPath,
+		StreamDelta:          streamDelta,
+		StreamFinished:       streamFinished,
+		CancellablePath:      transport.cancellablePath,
+		CancellationObserved: cancellationObserved,
+		CancellationError:    string(providerErr.Code),
+	}
 }
 
 type streamCase struct {
@@ -130,6 +271,7 @@ type observation struct {
 	CasefoldDiscoveryModels     []llmkit.ModelInfo       `json:"casefold_discovery_models"`
 	GenericOllamaCasefoldModels []llmkit.ModelInfo       `json:"generic_ollama_casefold_models"`
 	CancellableCalls            []cancellationResult     `json:"cancellable_calls"`
+	InjectedHTTPClient          injectedHTTPClientResult `json:"injected_http_client"`
 }
 
 func canceledCall(operation string, requests *atomic.Int32, call func(context.Context) error) cancellationResult {
@@ -311,6 +453,7 @@ func main() {
 	}
 	var out observation
 	out.Providers = providers
+	out.InjectedHTTPClient = recordInjectedHTTPClient()
 	var canceledRequests atomic.Int32
 	cancelServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		canceledRequests.Add(1)

@@ -100,7 +100,7 @@ fn mock_connect_proxy(response: &'static str) -> (String, thread::JoinHandle<(St
     (format!("http://{address}"), handle)
 }
 
-fn read_request(stream: &mut std::net::TcpStream) {
+fn read_request(stream: &mut std::net::TcpStream) -> String {
     let mut request = Vec::new();
     let mut chunk = [0_u8; 4096];
     let header_end = loop {
@@ -126,6 +126,7 @@ fn read_request(stream: &mut std::net::TcpStream) {
         assert_ne!(n, 0, "client closed before sending request body");
         request.extend_from_slice(&chunk[..n]);
     }
+    String::from_utf8_lossy(&request).into_owned()
 }
 
 fn server_observes_close(stream: &mut std::net::TcpStream) -> bool {
@@ -240,6 +241,193 @@ fn cancellable_api_does_not_silently_ignore_an_injected_agent() {
         .unwrap_err();
     assert_eq!(error.code, ErrorCode::ProviderError);
     assert!(error.detail.contains("cannot use an injected ureq Agent"));
+}
+
+#[test]
+fn unified_http_client_rejects_conflicting_transport_configuration() {
+    let shared = reqwest::Client::builder().no_proxy().build().unwrap();
+    let error = ClientBuilder::new(lookup("openai").unwrap().clone(), "")
+        .http_client(shared.clone())
+        .agent(Agent::new_with_defaults())
+        .api_key("dummy-key")
+        .build()
+        .err()
+        .expect("conflicting sync transport must fail");
+    assert!(error.detail.contains("cannot be combined"));
+
+    let error = ClientBuilder::new(lookup("openai").unwrap().clone(), "")
+        .http_client(shared.clone())
+        .async_client(shared)
+        .api_key("dummy-key")
+        .build()
+        .err()
+        .expect("conflicting async transport must fail");
+    assert!(error.detail.contains("cannot be combined"));
+}
+
+#[test]
+fn one_injected_http_client_handles_blocking_and_cancellable_calls() {
+    let fixture: Value = serde_json::from_str(include_str!(
+        "../../../testdata/rust-port/fixtures/llm/go-oracle.json"
+    ))
+    .unwrap();
+    let expected = &fixture["injected_http_client"];
+    let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+    let address = listener.local_addr().unwrap();
+    let (started_tx, started_rx) = std::sync::mpsc::channel();
+    let (delta_tx, delta_rx) = std::sync::mpsc::channel();
+    let server = thread::spawn(move || {
+        let (mut stream, _) = listener.accept().unwrap();
+        let regular = read_request(&mut stream);
+        stream
+            .write_all(b"HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: 48\r\nConnection: close\r\n\r\n{\"choices\":[{\"message\":{\"content\":\"injected\"}}]}")
+            .unwrap();
+
+        let (mut stream, _) = listener.accept().unwrap();
+        let streaming = read_request(&mut stream);
+        let first = b"data: {\"choices\":[{\"delta\":{\"content\":\"first\"}}]}\n\n";
+        let first_chunk = format!("{:X}\r\n", first.len());
+        stream
+            .write_all(b"HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nTransfer-Encoding: chunked\r\nConnection: close\r\n\r\n")
+            .unwrap();
+        stream.write_all(first_chunk.as_bytes()).unwrap();
+        stream.write_all(first).unwrap();
+        stream.write_all(b"\r\n").unwrap();
+        stream.flush().unwrap();
+        let delivered_before_rest = delta_rx.recv_timeout(Duration::from_secs(2)).is_ok();
+        let rest = b"data: {\"choices\":[{\"delta\":{\"content\":\" second\"},\"finish_reason\":\"stop\"}]}\n\ndata: [DONE]\n\n";
+        let rest_chunk = format!("{:X}\r\n", rest.len());
+        stream.write_all(rest_chunk.as_bytes()).unwrap();
+        stream.write_all(rest).unwrap();
+        stream.write_all(b"\r\n0\r\n\r\n").unwrap();
+        stream.flush().unwrap();
+
+        let (mut stream, _) = listener.accept().unwrap();
+        let cancellable = read_request(&mut stream);
+        stream
+            .write_all(b"HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: 256\r\nConnection: close\r\n\r\n{\"data\":[")
+            .unwrap();
+        stream.flush().unwrap();
+        started_tx.send(()).unwrap();
+        stream
+            .set_read_timeout(Some(Duration::from_secs(5)))
+            .unwrap();
+        let mut byte = [0_u8; 1];
+        let (close_observation, closed) = match stream.read(&mut byte) {
+            Ok(0) => ("eof".to_owned(), true),
+            Ok(count) => (
+                format!("unexpected client byte: {:?}", &byte[..count]),
+                false,
+            ),
+            Err(error) => (
+                format!("read error: {error}"),
+                error.kind() == std::io::ErrorKind::ConnectionReset,
+            ),
+        };
+        (
+            regular,
+            streaming,
+            cancellable,
+            delivered_before_rest,
+            closed,
+            close_observation,
+        )
+    });
+    let client = ClientBuilder::new(lookup("openai").unwrap().clone(), "")
+        .base_url(format!("http://{address}/v1"))
+        .api_key("dummy-key")
+        .http_client(
+            reqwest::Client::builder()
+                .no_proxy()
+                .redirect(reqwest::redirect::Policy::none())
+                .build()
+                .unwrap(),
+        )
+        .build()
+        .unwrap();
+
+    // Exercise the sync API while already inside a Tokio runtime. The shared
+    // client adapter must drive its response without nested-runtime panics.
+    let runtime = tokio::runtime::Builder::new_multi_thread()
+        .enable_all()
+        .build()
+        .unwrap();
+    let choice = runtime
+        .block_on(async {
+            client.chat(
+                "gpt-5",
+                &[Message {
+                    role: "user".into(),
+                    content: "question".into(),
+                }],
+                None,
+            )
+        })
+        .unwrap();
+    assert_eq!(choice.content, expected["regular_content"]);
+    assert_eq!(expected["regular_path"], "/v1/chat/completions");
+
+    let mut deltas = Vec::new();
+    let mut finish = String::new();
+    runtime
+        .block_on(async {
+            client.stream_chat(
+                "gpt-5",
+                &[Message {
+                    role: "user".into(),
+                    content: "question".into(),
+                }],
+                None,
+                |delta| {
+                    deltas.push(delta.to_owned());
+                    if delta == "first" {
+                        delta_tx.send(()).unwrap();
+                    }
+                    Ok(())
+                },
+                |reason| finish = reason.to_owned(),
+            )
+        })
+        .unwrap();
+
+    let token = CancellationToken::new();
+    let worker_token = token.clone();
+    let worker = runtime.spawn(async move {
+        client
+            .embed_cancellable(&worker_token, "", &["input".into()], None)
+            .await
+    });
+    started_rx
+        .recv_timeout(Duration::from_secs(2))
+        .expect("the shared request did not reach its response body");
+    token.cancel();
+    let error = runtime
+        .block_on(async { tokio::time::timeout(Duration::from_secs(2), worker).await })
+        .expect("cancellable shared request did not return")
+        .unwrap()
+        .unwrap_err();
+    assert_eq!(error.code, ErrorCode::TransportError);
+    let (regular, streaming, cancellable, delivered_before_rest, closed, close_observation) =
+        server.join().unwrap();
+    assert!(regular.starts_with("POST /v1/chat/completions "));
+    assert!(streaming.starts_with("POST /v1/chat/completions "));
+    assert!(cancellable.starts_with("POST /v1/embeddings "));
+    assert!(
+        delivered_before_rest,
+        "stream callback waited for the full response body"
+    );
+    assert_eq!(deltas, ["first", " second"]);
+    assert_eq!(deltas.concat(), expected["stream_delta"]);
+    assert_eq!(finish, "stop");
+    assert_eq!(finish, expected["stream_finished"]);
+    assert!(
+        closed,
+        "cancellation did not close the shared HTTP response: {close_observation}"
+    );
+    assert_eq!(expected["regular_path"], "/v1/chat/completions");
+    assert_eq!(expected["cancellable_path"], "/v1/embeddings");
+    assert_eq!(expected["cancellation_observed"], true);
+    assert_eq!(expected["cancellation_error"], "transport_error");
 }
 
 #[test]
