@@ -1,9 +1,11 @@
 use crate::error::{Error, ErrorCode, Result};
 use crate::provider::{AuthScheme, Descriptor, WireDialect};
 use serde::Serialize;
+use std::future::Future;
 use std::net::IpAddr;
 use std::sync::OnceLock;
 use std::time::Duration;
+use tokio_util::sync::CancellationToken;
 use ureq::{Agent, http};
 
 pub const DEFAULT_TIMEOUT: Duration = Duration::from_secs(120);
@@ -57,7 +59,7 @@ impl ClientBuilder {
         self.agent = Some(value);
         self
     }
-    /// Replaces the default transport for cancellable chat and stream calls.
+    /// Replaces the default transport for cancellable calls.
     /// Redirects, timeout, proxy, and TLS behavior are caller-controlled.
     pub fn async_client(mut self, value: reqwest::Client) -> Self {
         self.async_client = Some(value);
@@ -127,6 +129,17 @@ impl ClientBuilder {
             cancellable_agent,
             timeout: self.timeout,
         })
+    }
+}
+
+pub(crate) async fn cancel_on<T>(
+    token: &CancellationToken,
+    operation: impl Future<Output = Result<T>>,
+) -> Result<T> {
+    tokio::select! {
+        biased;
+        _ = token.cancelled() => Err(Error::transport("llmkit: context canceled")),
+        result = operation => result,
     }
 }
 

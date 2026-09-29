@@ -1,4 +1,4 @@
-use crate::client::{Client, read_limited, read_reqwest_limited};
+use crate::client::{Client, cancel_on, read_limited, read_reqwest_limited};
 use crate::error::{Error, ErrorCode, Result};
 use crate::provider::WireDialect;
 use serde::de::{IgnoredAny, MapAccess, Visitor};
@@ -90,11 +90,7 @@ impl Client {
         messages: &[Message],
         options: Option<&ChatOptions>,
     ) -> Result<Choice> {
-        tokio::select! {
-            biased;
-            _ = token.cancelled() => Err(Error::transport("llmkit: context canceled")),
-            result = self.chat_cancellable_inner(model, messages, options) => result,
-        }
+        cancel_on(token, self.chat_cancellable_inner(model, messages, options)).await
     }
 
     async fn chat_cancellable_inner(
@@ -503,17 +499,17 @@ impl Client {
         F: FnMut(&str) -> Result<()>,
         G: FnMut(&str),
     {
-        tokio::select! {
-            biased;
-            _ = token.cancelled() => Err(Error::transport("llmkit: context canceled")),
-            result = self.stream_chat_cancellable_inner(
+        cancel_on(
+            token,
+            self.stream_chat_cancellable_inner(
                 model,
                 messages,
                 options,
                 &mut callback,
                 &mut on_finish,
-            ) => result,
-        }
+            ),
+        )
+        .await
     }
 
     async fn stream_chat_cancellable_inner<F, G>(

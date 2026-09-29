@@ -51,6 +51,43 @@
     "response_bytes": 263,
     "response_sha256": "8a9ddbb7f97cabbe5ff72a4ff2859c6e3d7382d86325a8eb7a09bac00b4ec4d0"
   },
+  "cancellable_calls": [
+    {
+      "error_code": "transport_error",
+      "operation": "embed",
+      "request_observed": false
+    },
+    {
+      "error_code": "transport_error",
+      "operation": "list_models",
+      "request_observed": false
+    },
+    {
+      "error_code": "transport_error",
+      "operation": "embed_native",
+      "request_observed": false
+    },
+    {
+      "error_code": "transport_error",
+      "operation": "list_ollama_models",
+      "request_observed": false
+    },
+    {
+      "error_code": "transport_error",
+      "operation": "generate",
+      "request_observed": false
+    },
+    {
+      "error_code": "transport_error",
+      "operation": "chat_stream",
+      "request_observed": false
+    },
+    {
+      "error_code": "transport_error",
+      "operation": "ping",
+      "request_observed": false
+    }
+  ],
   "casefold_discovery_models": [
     {
       "id": "vendor/current-model"
@@ -272,6 +309,25 @@
     "path": "/api/chat/completions",
     "query": "api-version=2026-01-01"
   },
+  "openai_embed": {
+    "request": {
+      "auth_header": "bearer",
+      "body": {
+        "dimensions": 2,
+        "input": [
+          "input"
+        ],
+        "model": "gpt-5"
+      },
+      "path": "/v1/embeddings"
+    },
+    "vectors": [
+      [
+        0.25,
+        0.5
+      ]
+    ]
+  },
   "openai_query_chat": {
     "auth_header": "bearer",
     "body": {
@@ -441,10 +497,18 @@
       "response_sha256": "d8e62f99b4364dcee63e83c88433de911e660bf2f830303675972f0b6f03b45f"
     }
   },
+  "ping_ollama": {
+    "request": {
+      "auth_header": "",
+      "body": null,
+      "path": "/api/tags"
+    },
+    "response": "{\"data\":[{\"id\":\"pong\"}]}"
+  },
   "provenance": {
     "go_source_sha256": "9083f34389a8d37c89a54676c069432ec69daa1fd2d40a68081695a9ade6260c",
     "oracle_command": "GOTOOLCHAIN=go1.26.6 go run ./scripts/rust-port/llm-oracle",
-    "oracle_sha256": "06381e92f44d9f113533c6b6eb536538b86cbe1d650d52f09cb097abc1408096",
+    "oracle_sha256": "372a9dafc4c108993dc3e43fc39d1d6419976a522b36178fdd1d8272be62497b",
     "runner_sha256": "ec1847fe3488c655d5d34c23c78855bba812ef9f921e425e86555199b3ae8c85"
   },
   "providers": [

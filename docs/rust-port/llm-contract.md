@@ -22,21 +22,28 @@ provider code, a Rust `ollamakit` clone, or a process/release surface.
   disables redirects and uses a two-minute request timeout. Callers can inject
   a configured `ureq::Agent` with `ClientBuilder::agent`; its transport settings
   are caller-controlled.
-- `chat_cancellable` and `stream_chat_cancellable` provide async cancellation
+- `chat_cancellable`, `stream_chat_cancellable`, `embed_cancellable`,
+  `list_models_cancellable`, `embed_native_cancellable`,
+  `list_ollama_models_cancellable`, `generate_cancellable`,
+  `chat_stream_cancellable`, and `ping_cancellable` provide async cancellation
   through a `CancellationToken`. Cancelling drops the active async request or
   response read, closing the provider connection, and reports
-  `transport_error`, matching Go `llmkit`'s `context.Context` cancellation path
+  `transport_error`, matching Go `llmkit`'s `context.Context` path
   (`llmkit/client.go`: `do` passes the context to `http.NewRequestWithContext`
-  and classifies `Do` errors with `errTransport`). Callers can supply a
-  `reqwest::Client` through `ClientBuilder::async_client` for custom async
-  transport settings. An injected blocking `ureq::Agent` without an async client
-  remains an explicit error for cancellable calls. Synchronous calls continue
-  to use the configured `ureq::Agent`.
+  and classifies `Do` errors with `errTransport`). Static model listing stays
+  local and succeeds even when the token is already canceled. Cancellable
+  Ollama NDJSON calls preserve Go's `stream interrupted` prefix after at least
+  one non-empty record. Callers can supply a `reqwest::Client` through
+  `ClientBuilder::async_client` for custom async transport settings. An
+  injected blocking `ureq::Agent` without an async client remains an explicit
+  error for cancellable calls. Synchronous calls continue to use the configured
+  `ureq::Agent`.
 
 ## Differential evidence
 
-`scripts/rust-port/llm-oracle` records requests and classifications from the
-shipped Go implementation against local HTTP test servers. The committed
+`scripts/rust-port/llm-oracle` records requests, cancellation classifications,
+and responses from the shipped Go implementation against local HTTP test
+servers. The committed
 `testdata/rust-port/fixtures/llm/go-oracle.json` binds that observation to the
 Go source, oracle, and runner hashes. Run `make rust-llm-contract` to execute
 the focused Go package checks, compare the pinned oracle observation, run Rust
@@ -77,16 +84,17 @@ Every row below executes inside `make rust-llm-contract`, which CI runs on
 | LLM-005 | `openai_and_anthropic_dialects_emit_their_go_wire_shapes`, `anthropic_content_includes_text_from_every_block_like_go` |
 | LLM-006 | `go_recorded_stream_wire_and_callback_order_match`, `go_recorded_malformed_stream_errors_match`, `streaming_and_embedding_calls_preserve_openai_wire_options` |
 | LLM-007 | `go_recorded_stream_wire_and_callback_order_match`, `go_recorded_malformed_stream_errors_match`, `anthropic_stream_and_openrouter_model_discovery_are_normalized` |
-| LLM-008 | `streaming_and_embedding_calls_preserve_openai_wire_options`, `embedding_response_fields_match_go_case_insensitive_json`, `openrouter_model_discovery_uses_go_casefold_alias_order`, `generic_ollama_discovery_uses_go_casefold_alias_order`, `native_ollama_calls_match_go_recordings` |
-| LLM-009 | `native_ollama_calls_match_go_recordings`, `native_ollama_generate_accepts_go_scanner_large_chunks`, `native_ollama_generate_scanner_errors_match_go_before_and_after_data`, `native_ollama_generate_json_errors_match_go` |
-| LLM-010 | `taxonomy_maps_status_retry_and_exit_codes`, `malformed_openai_error_envelopes_keep_go_http_classification`, `structured_error_fields_follow_go_json_casefolding`, `cancellable_chat_preserves_go_rate_limit_and_header_classification`, `provider_error_truncates_raw_bytes_before_utf8_decode` |
+| LLM-008 | `streaming_and_embedding_calls_preserve_openai_wire_options`, `embedding_response_fields_match_go_case_insensitive_json`, `openrouter_model_discovery_uses_go_casefold_alias_order`, `generic_ollama_discovery_uses_go_casefold_alias_order`, `native_ollama_calls_match_go_recordings`, `cancellable_embedding_discovery_and_ollama_calls_match_go_recordings` |
+| LLM-009 | `native_ollama_calls_match_go_recordings`, `cancellable_ollama_streams_match_go_recordings`, `native_ollama_generate_accepts_go_scanner_large_chunks`, `native_ollama_generate_scanner_errors_match_go_before_and_after_data`, `native_ollama_generate_json_errors_match_go` |
+| LLM-010 | `taxonomy_maps_status_retry_and_exit_codes`, `malformed_openai_error_envelopes_keep_go_http_classification`, `structured_error_fields_follow_go_json_casefolding`, `cancellable_chat_preserves_go_rate_limit_and_header_classification`, `cancellable_context_methods_match_go_and_do_not_send_requests`, `cancellable_guards_keep_local_errors_ahead_of_cancellation`, `cancellation_drops_embedding_discovery_and_ollama_stream_reads`, `provider_error_truncates_raw_bytes_before_utf8_decode` |
 | LLM-011 | `registry_and_go_generated_snapshot_are_available` plus `go test ./llmkit/gen` in the gate |
 | LLM-012 | `go test ./ollamakit` in the gate plus `assert_no_rust_ollamakit()` in `scripts/rust-port/llm-differential.py` (workspace member scan, negative control: injected `symaira-core-ollamakit` member is rejected) |
 
 ## Residual boundary
 
-The existing `chat` and `stream_chat` methods remain synchronous and are not
-cancellable. The async cancellation methods require an executor and a separate
-async client when custom transport settings are needed; `ureq::Agent` settings
-cannot be transferred automatically. This slice does not authorize a consumer
-cutover, release, tag, Go removal, or publication.
+The existing synchronous methods remain synchronous and are not cancellable.
+The async cancellation methods require an executor and a separate async client
+when custom transport settings are needed; `ureq::Agent` settings cannot be
+transferred automatically. Go-context cancellation is proven by local Go and
+Rust fixtures; remote-provider behavior and consumer cutover remain outside
+this contract slice.

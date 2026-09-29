@@ -1362,6 +1362,202 @@ fn native_ollama_calls_match_go_recordings() {
 }
 
 #[test]
+fn cancellable_embedding_discovery_and_ollama_calls_match_go_recordings() {
+    let fixture: Value = serde_json::from_str(include_str!(
+        "../../../testdata/rust-port/fixtures/llm/go-oracle.json"
+    ))
+    .unwrap();
+    let runtime = tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+        .unwrap();
+
+    let (url, server) = mock_server(200, r#"{"data":[{"embedding":[0.25,0.5]}]}"#);
+    let client = ClientBuilder::new(lookup("openai").unwrap().clone(), "")
+        .base_url(format!("{url}/v1"))
+        .api_key("dummy-key")
+        .build()
+        .unwrap();
+    let embeddings = runtime
+        .block_on(client.embed_cancellable(
+            &CancellationToken::new(),
+            "",
+            &["input".into()],
+            Some(2),
+        ))
+        .unwrap();
+    let (headers, body, _) = server.join().unwrap();
+    assert!(headers.starts_with("POST /v1/embeddings HTTP/1.1"));
+    assert_eq!(
+        serde_json::from_str::<Value>(&body).unwrap(),
+        fixture["openai_embed"]["request"]["body"]
+    );
+    assert_eq!(
+        serde_json::to_value(vec![embeddings[0].vector.clone()]).unwrap(),
+        fixture["openai_embed"]["vectors"]
+    );
+
+    let (url, server) = mock_server(
+        200,
+        r#"{"data":[{"id":"older-model"}],"DaTa":[{"ID":"vendor/current-model"}]}"#,
+    );
+    let client = ClientBuilder::new(lookup("openrouter").unwrap().clone(), "")
+        .base_url(format!("{url}/api/v1"))
+        .api_key("dummy-key")
+        .build()
+        .unwrap();
+    let models = runtime
+        .block_on(client.list_models_cancellable(&CancellationToken::new()))
+        .unwrap();
+    let (headers, _, _) = server.join().unwrap();
+    assert!(headers.starts_with("GET /api/v1/models HTTP/1.1"));
+    assert_eq!(
+        serde_json::to_value(models).unwrap(),
+        fixture["casefold_discovery_models"]
+    );
+
+    let (url, server) = mock_server(200, r#"{"embeddings":[[0.25,0.5]]}"#);
+    let client = ClientBuilder::new(lookup("ollama").unwrap().clone(), "")
+        .base_url(url)
+        .build()
+        .unwrap();
+    let embeddings = runtime
+        .block_on(client.embed_native_cancellable(
+            &CancellationToken::new(),
+            "",
+            &["input".into()],
+            2,
+        ))
+        .unwrap();
+    let (headers, body, _) = server.join().unwrap();
+    assert!(headers.starts_with("POST /api/embed HTTP/1.1"));
+    assert_eq!(
+        serde_json::from_str::<Value>(&body).unwrap(),
+        fixture["native_embed"]["request"]["body"]
+    );
+    assert_eq!(
+        serde_json::to_value(embeddings).unwrap(),
+        fixture["native_embed"]["embeddings"]
+    );
+
+    let (url, server) = mock_server(
+        200,
+        r#"{"models":[{"name":"older-model","modified_at":"yesterday","size":99}],"MODELS":[{"NAME":"current-model","MODIFIED_AT":"today","SIZE":12}]}"#,
+    );
+    let client = ClientBuilder::new(lookup("ollama").unwrap().clone(), "")
+        .base_url(url)
+        .build()
+        .unwrap();
+    let models = runtime
+        .block_on(client.list_ollama_models_cancellable(&CancellationToken::new()))
+        .unwrap();
+    let (headers, _, _) = server.join().unwrap();
+    assert!(headers.starts_with("GET /api/tags HTTP/1.1"));
+    assert_eq!(
+        serde_json::to_value(models).unwrap(),
+        fixture["native_models_casefold_alias_order"]
+    );
+
+    let (url, server) = mock_server(200, r#"{"models":[{"name":"llama3.1"}]}"#);
+    let client = ClientBuilder::new(lookup("ollama").unwrap().clone(), "")
+        .base_url(url)
+        .build()
+        .unwrap();
+    runtime
+        .block_on(client.ping_cancellable(&CancellationToken::new()))
+        .unwrap();
+    let (headers, _, _) = server.join().unwrap();
+    assert!(headers.starts_with("GET /api/tags HTTP/1.1"));
+}
+
+#[test]
+fn cancellable_ollama_streams_match_go_recordings() {
+    let fixture: Value = serde_json::from_str(include_str!(
+        "../../../testdata/rust-port/fixtures/llm/go-oracle.json"
+    ))
+    .unwrap();
+    let runtime = tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+        .unwrap();
+
+    let (url, server) = mock_server(
+        200,
+        "{\"model\":\"llama3.1\",\"response\":\"piece\",\"done\":false}\n{\"model\":\"llama3.1\",\"response\":\"\",\"done\":true}\n",
+    );
+    let client = ClientBuilder::new(lookup("ollama").unwrap().clone(), "")
+        .base_url(url)
+        .build()
+        .unwrap();
+    let mut chunks = Vec::new();
+    runtime
+        .block_on(client.generate_cancellable(
+            &CancellationToken::new(),
+            "",
+            "prompt",
+            &GenerateOption {
+                system: Some("system".into()),
+                format: Some(json!("json")),
+                temperature: Some(0.25),
+                images: vec!["aW1hZ2U=".into()],
+            },
+            |chunk| {
+                chunks.push(chunk);
+                Ok(())
+            },
+        ))
+        .unwrap();
+    let (headers, body, _) = server.join().unwrap();
+    assert!(headers.starts_with("POST /api/generate HTTP/1.1"));
+    assert_eq!(
+        serde_json::from_str::<Value>(&body).unwrap(),
+        fixture["native_generate"]["request"]["body"]
+    );
+    assert_eq!(
+        serde_json::to_value(chunks).unwrap(),
+        fixture["native_generate"]["chunks"]
+    );
+
+    let (url, server) = mock_server(
+        200,
+        "{\"model\":\"llama3.1\",\"message\":{\"role\":\"assistant\",\"content\":\"piece\"},\"done\":true}\n",
+    );
+    let client = ClientBuilder::new(lookup("ollama").unwrap().clone(), "")
+        .base_url(url)
+        .build()
+        .unwrap();
+    let mut chunks = Vec::new();
+    runtime
+        .block_on(client.chat_stream_cancellable(
+            &CancellationToken::new(),
+            "",
+            &[Message {
+                role: "user".into(),
+                content: "question".into(),
+            }],
+            &NativeChatOption {
+                temperature: Some(0.5),
+                format: Some("json".into()),
+            },
+            |chunk| {
+                chunks.push(chunk);
+                Ok(())
+            },
+        ))
+        .unwrap();
+    let (headers, body, _) = server.join().unwrap();
+    assert!(headers.starts_with("POST /api/chat HTTP/1.1"));
+    assert_eq!(
+        serde_json::from_str::<Value>(&body).unwrap(),
+        fixture["native_chat"]["request"]["body"]
+    );
+    assert_eq!(
+        serde_json::to_value(chunks).unwrap(),
+        fixture["native_chat"]["chunks"]
+    );
+}
+
+#[test]
 fn openrouter_model_discovery_uses_go_casefold_alias_order() {
     let fixture: Value = serde_json::from_str(include_str!(
         "../../../testdata/rust-port/fixtures/llm/go-oracle.json"
@@ -1408,6 +1604,24 @@ fn generic_ollama_discovery_uses_go_casefold_alias_order() {
         serde_json::to_value(models).unwrap(),
         fixture["generic_ollama_casefold_models"]
     );
+}
+
+#[test]
+fn ollama_ping_uses_go_generic_discovery_response_shapes() {
+    let fixture: Value = serde_json::from_str(include_str!(
+        "../../../testdata/rust-port/fixtures/llm/go-oracle.json"
+    ))
+    .unwrap();
+    let (url, server) = mock_server(200, fixture["ping_ollama"]["response"].as_str().unwrap());
+    let client = ClientBuilder::new(lookup("ollama").unwrap().clone(), "")
+        .base_url(url)
+        .build()
+        .unwrap();
+
+    client.ping().unwrap();
+    let (headers, _, _) = server.join().unwrap();
+    assert!(headers.starts_with("GET /api/tags HTTP/1.1"));
+    assert_eq!(fixture["ping_ollama"]["request"]["path"], "/api/tags");
 }
 
 #[test]
@@ -1478,6 +1692,44 @@ fn native_ollama_generate_scanner_errors_match_go_before_and_after_data() {
                 callbacks += 1;
                 Ok(())
             })
+            .unwrap_err();
+        server.join().unwrap();
+
+        let expected = &fixture["native_generate_scanner_errors"][expected_case];
+        assert_eq!(error.code.as_str(), expected["code"]);
+        assert_eq!(error.to_string(), expected["error"]);
+        assert_eq!(callbacks, expected_callbacks);
+    }
+
+    let runtime = tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+        .unwrap();
+    for (prefix, expected_case, expected_callbacks) in [
+        ("", "before_data", 0),
+        (
+            "{\"model\":\"llama3.1\",\"response\":\"first\",\"done\":false}\n",
+            "after_data",
+            1,
+        ),
+    ] {
+        let (url, server) = mock_server(200, format!("{prefix}{oversized_line}"));
+        let client = ClientBuilder::new(lookup("ollama").unwrap().clone(), "")
+            .base_url(url)
+            .build()
+            .unwrap();
+        let mut callbacks = 0;
+        let error = runtime
+            .block_on(client.generate_cancellable(
+                &CancellationToken::new(),
+                "",
+                "prompt",
+                &GenerateOption::default(),
+                |_| {
+                    callbacks += 1;
+                    Ok(())
+                },
+            ))
             .unwrap_err();
         server.join().unwrap();
 

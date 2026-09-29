@@ -11,6 +11,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"strings"
+	"sync/atomic"
 
 	"github.com/danieljustus/symaira-corekit/llmkit"
 )
@@ -35,6 +36,12 @@ type errorResult struct {
 type streamErrorResult struct {
 	Code  string `json:"code"`
 	Error string `json:"error"`
+}
+
+type cancellationResult struct {
+	Operation       string `json:"operation"`
+	ErrorCode       string `json:"error_code"`
+	RequestObserved bool   `json:"request_observed"`
 }
 
 type streamCase struct {
@@ -101,6 +108,10 @@ type observation struct {
 		Request    request     `json:"request"`
 		Embeddings [][]float32 `json:"embeddings"`
 	} `json:"native_embed"`
+	OpenAIEmbed struct {
+		Request request     `json:"request"`
+		Vectors [][]float32 `json:"vectors"`
+	} `json:"openai_embed"`
 	CasefoldEmbedding struct {
 		DataThenAlias      []float32 `json:"data_then_alias"`
 		AliasThenData      []float32 `json:"alias_then_data"`
@@ -111,9 +122,74 @@ type observation struct {
 		Request request                  `json:"request"`
 		Models  []llmkit.OllamaModelInfo `json:"models"`
 	} `json:"native_models"`
+	PingOllama struct {
+		Request  request `json:"request"`
+		Response string  `json:"response"`
+	} `json:"ping_ollama"`
 	NativeModelsCasefold        []llmkit.OllamaModelInfo `json:"native_models_casefold_alias_order"`
 	CasefoldDiscoveryModels     []llmkit.ModelInfo       `json:"casefold_discovery_models"`
 	GenericOllamaCasefoldModels []llmkit.ModelInfo       `json:"generic_ollama_casefold_models"`
+	CancellableCalls            []cancellationResult     `json:"cancellable_calls"`
+}
+
+func canceledCall(operation string, requests *atomic.Int32, call func(context.Context) error) cancellationResult {
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	before := requests.Load()
+	err := call(ctx)
+	providerErr := llmkit.AsError(err)
+	if providerErr == nil || providerErr.Code != llmkit.ErrCodeTransport {
+		panic(operation + ": expected transport error for canceled context")
+	}
+	return cancellationResult{
+		Operation: operation, ErrorCode: string(providerErr.Code), RequestObserved: requests.Load() != before,
+	}
+}
+
+func recordCanceledCalls(baseURL string, requests *atomic.Int32) []cancellationResult {
+	openAI, _ := llmkit.Lookup("openai")
+	openAIClient, err := llmkit.NewClient(openAI, "", llmkit.WithBaseURL(baseURL+"/v1"), llmkit.WithAPIKey("dummy-key"))
+	if err != nil {
+		panic(err)
+	}
+	openRouter, _ := llmkit.Lookup("openrouter")
+	openRouterClient, err := llmkit.NewClient(openRouter, "", llmkit.WithBaseURL(baseURL+"/api/v1"), llmkit.WithAPIKey("dummy-key"))
+	if err != nil {
+		panic(err)
+	}
+	ollama, _ := llmkit.Lookup("ollama")
+	ollamaClient, err := llmkit.NewClient(ollama, "", llmkit.WithBaseURL(baseURL))
+	if err != nil {
+		panic(err)
+	}
+	message := []llmkit.Message{{Role: "user", Content: "question"}}
+	return []cancellationResult{
+		canceledCall("embed", requests, func(ctx context.Context) error {
+			_, err := openAIClient.Embed(ctx, "", []string{"input"})
+			return err
+		}),
+		canceledCall("list_models", requests, func(ctx context.Context) error {
+			_, err := openRouterClient.ListModels(ctx)
+			return err
+		}),
+		canceledCall("embed_native", requests, func(ctx context.Context) error {
+			_, err := ollamaClient.EmbedNative(ctx, "", []string{"input"}, 2)
+			return err
+		}),
+		canceledCall("list_ollama_models", requests, func(ctx context.Context) error {
+			_, err := ollamaClient.ListOllamaModels(ctx)
+			return err
+		}),
+		canceledCall("generate", requests, func(ctx context.Context) error {
+			return ollamaClient.Generate(ctx, "", "prompt", func(llmkit.GenerateResponse) error { return nil })
+		}),
+		canceledCall("chat_stream", requests, func(ctx context.Context) error {
+			return ollamaClient.ChatStream(ctx, "", message, func(llmkit.ChatStreamResponse) error { return nil })
+		}),
+		canceledCall("ping", requests, func(ctx context.Context) error {
+			return ollamaClient.Ping(ctx)
+		}),
+	}
 }
 
 func capture(provider, response string, status int) (*request, *llmkit.Client, func(), error) {
@@ -235,6 +311,16 @@ func main() {
 	}
 	var out observation
 	out.Providers = providers
+	var canceledRequests atomic.Int32
+	cancelServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		canceledRequests.Add(1)
+		_, _ = w.Write([]byte(`{}`))
+	}))
+	out.CancellableCalls = recordCanceledCalls(cancelServer.URL, &canceledRequests)
+	cancelServer.Close()
+	if canceledRequests.Load() != 0 {
+		panic("canceled calls unexpectedly reached HTTP server")
+	}
 	openAI, ok := llmkit.Lookup("openai")
 	if !ok {
 		panic("openai provider not found")
@@ -500,6 +586,17 @@ func main() {
 	out.CasefoldEmbedding.AliasThenData = casefoldVectors[1]
 	out.CasefoldEmbedding.EmbeddingThenAlias = casefoldVectors[2]
 	out.CasefoldEmbedding.AliasThenEmbedding = casefoldVectors[3]
+	got, client, closeServer, err = capture("openai", `{"data":[{"embedding":[0.25,0.5]}]}`, http.StatusOK)
+	if err != nil {
+		panic(err)
+	}
+	embeddings, err := client.Embed(context.Background(), "", []string{"input"}, llmkit.WithEmbedDimensions(2))
+	closeServer()
+	if err != nil || len(embeddings) != 1 {
+		panic("expected one OpenAI embedding")
+	}
+	out.OpenAIEmbed.Request = *got
+	out.OpenAIEmbed.Vectors = [][]float32{embeddings[0].Vector}
 	got, client, closeServer, err = capture("ollama", `{"models":[{"name":"llama3.1","modified_at":"today","size":12}]}`, http.StatusOK)
 	if err != nil {
 		panic(err)
@@ -536,6 +633,17 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	closeServer()
+	pingResponse := `{"data":[{"id":"pong"}]}`
+	got, client, closeServer, err = capture("ollama", pingResponse, http.StatusOK)
+	if err != nil {
+		panic(err)
+	}
+	if err := client.Ping(context.Background()); err != nil {
+		panic(err)
+	}
+	out.PingOllama.Request = *got
+	out.PingOllama.Response = pingResponse
 	closeServer()
 
 	// SSE streaming parity: record Go StreamChat wire bytes, callback order,
