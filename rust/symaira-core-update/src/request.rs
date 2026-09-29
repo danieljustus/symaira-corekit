@@ -218,8 +218,10 @@ mod tests {
         let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
         let addr = listener.local_addr().unwrap();
         drop(listener);
+        // Windows can take longer than two seconds to report the refused
+        // connect. Do not let the test's deadline replace that native error.
         let actual =
-            fetch(&format!("http://{addr}/"), "1.0.0", Duration::from_secs(2)).unwrap_err();
+            fetch(&format!("http://{addr}/"), "1.0.0", Duration::from_secs(30)).unwrap_err();
         assert_eq!(actual.code, "connection_refused");
         assert_eq!(actual.message, "request latest release");
     }

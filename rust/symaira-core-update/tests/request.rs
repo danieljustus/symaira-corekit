@@ -197,21 +197,11 @@ fn update_request_and_errors_match_go_oracle() {
     let error = fetch(
         &format!("http://{address}/refused"),
         "1.2.3",
-        Duration::from_secs(2),
+        Duration::from_secs(30),
     )
     .unwrap_err();
     let refused = go(&fixture, "connection-refused");
     assert_eq!(refused.error_code.as_deref(), Some("connection_refused"));
-    // A closed ephemeral port is not a deterministic Windows refusal: the
-    // runner has observed both a timeout and a refusal on consecutive connects.
-    // Test the refusal classifier with an injected I/O error in request.rs.
-    #[cfg(windows)]
-    assert!(
-        matches!(error.code, "connection_refused" | "timeout"),
-        "unexpected closed-port error: {}",
-        error.code
-    );
-    #[cfg(not(windows))]
     assert_eq!(error.code, refused.error_code.as_deref().unwrap());
     assert_eq!(
         error.message,

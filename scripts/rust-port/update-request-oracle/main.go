@@ -19,6 +19,7 @@ import (
 	"os"
 	"sort"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/danieljustus/symaira-corekit/updatecheck"
@@ -203,7 +204,7 @@ func observeRefusal() observation {
 	_ = listener.Close()
 	var line string
 	var headers map[string]string
-	return run("connection-refused", endpoint, &line, &headers, nil)
+	return run("connection-refused", endpoint, &line, &headers, timeoutClient(30*time.Second))
 }
 
 func observeTLSFailure() observation {
@@ -261,7 +262,7 @@ func classify(err error) (string, string) {
 		return "tls_certificate", "update check failed: TLS certificate verification error"
 	case errors.Is(err, context.DeadlineExceeded) || strings.Contains(text, "Client.Timeout"):
 		return "timeout", "request latest release"
-	case strings.Contains(text, "connection refused"):
+	case errors.Is(err, syscall.ECONNREFUSED) || strings.Contains(text, "connection refused"):
 		return "connection_refused", "request latest release"
 	default:
 		return "network", "request latest release"
