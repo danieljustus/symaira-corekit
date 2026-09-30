@@ -75,15 +75,19 @@ def main():
         return 0
     fixture = json.loads(args.fixture.read_text(encoding="utf-8"))
     if args.negative_control:
-        mutated = json.loads(json.dumps(fixture))
+        if fixture.get("goos") == observed["goos"]:
+            compare(fixture, observed)
+        mutated = json.loads(json.dumps(observed))
         mutated["cases"][0]["files"][0]["content"] = "mutated"
-        try:
-            compare(mutated, observed)
-        except ValueError:
-            print("PASS Rust rejected mutated extraction fixture")
-            return 0
-        print("ERROR mutated fixture was accepted", file=sys.stderr)
-        return 1
+        with tempfile.TemporaryDirectory(prefix="upd006-negative-") as directory:
+            candidate = Path(directory) / "mutated.json"
+            candidate.write_text(json.dumps(mutated), encoding="utf-8")
+            result = replay(candidate)
+        assertion = f"{mutated['cases'][0]['id']} content"
+        if result.returncode == 0 or assertion not in result.stdout:
+            raise RuntimeError("extraction mutation was not rejected at its intended assertion\n" + result.stdout)
+        print("PASS Rust rejected mutated extraction fixture")
+        return 0
     if observed != fixture and fixture.get("goos") != observed["goos"]:
         # Archive paths are platform specific: replay this platform's Go
         # observations instead of the fixture recorded on another platform.

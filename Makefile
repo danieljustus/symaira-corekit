@@ -115,6 +115,7 @@ rust-update-version-contract:
 # Update replay and production Apply against fresh Go observations, with
 # mutations rejected. The public signed-release gate below remains opt-in.
 rust-update-contract: rust-update-version-contract
+	python3 -m unittest discover -s scripts/rust-port -p 'test_update_harness.py'
 	GOTOOLCHAIN=go1.26.6 CGO_ENABLED=0 $(GO_RUN) test -count=1 ./updatecheck/...
 	GOTOOLCHAIN=go1.26.6 CGO_ENABLED=0 python3 scripts/rust-port/update-response-differential.py
 	GOTOOLCHAIN=go1.26.6 CGO_ENABLED=0 python3 scripts/rust-port/update-response-differential.py --negative-control

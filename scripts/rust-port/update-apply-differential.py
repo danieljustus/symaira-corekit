@@ -27,9 +27,13 @@ def goos_name():
 
 def observed():
     env = dict(os.environ, GOTOOLCHAIN="go1.26.6", CGO_ENABLED="0")
-    output = subprocess.check_output(
-        ["go", "run", "./scripts/rust-port/update-apply-oracle"], cwd=ROOT, env=env
-    )
+    # The oracle observes global updateapply-* files, so isolate its whole
+    # subprocess without changing the observations or their provenance.
+    with tempfile.TemporaryDirectory(prefix="update-apply-run-") as directory:
+        env.update(TMPDIR=directory, TMP=directory, TEMP=directory)
+        output = subprocess.check_output(
+            ["go", "run", "./scripts/rust-port/update-apply-oracle"], cwd=ROOT, env=env
+        )
     cases = json.loads(output)
     if len(cases) != 17:
         raise ValueError(f"apply oracle ran {len(cases)} cases, expected 17")
