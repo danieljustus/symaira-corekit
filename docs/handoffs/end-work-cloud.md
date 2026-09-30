@@ -9,6 +9,7 @@ Continue the code and integration work from the published repository, without ne
 - Base code commit before this document/checkpoint: `a8512c3e767801647b676b9e26d3044b39eb2eb9`.
 - Working directory for every command below: the checked-out repository root.
 - Publication does not authorize a merge, release, tag, destructive cleanup or paid service.
+- Continuation draft PR: #360. Keep it draft until its code/acceptance gates are independently satisfied.
 
 Preserve the shared Rust-library code candidate plus three independently captured incomplete variants. The cache-only variant and the two provider/cache variants are alternatives, not automatically merged or approved. The original source worktrees remain intact.
 
@@ -74,7 +75,14 @@ Prepublication secret-pattern/outgoing-history scans succeeded for the selected 
 
 Prepublication scoped CoreKit checks exited 0. Mock/provider tests were run locally; this remains unapproved WIP, not accepted functionality.
 
-Fresh remote-clone verification: pending publication and replay. Target cloud runtime, permissions, secrets and network gates: **not checked**.
+Fresh remote-clone verification was executed locally on macOS at published checkpoint `f4225300afb3a0e4c7eda82173f39aeefc4435cf`. The repository was cloned directly from GitHub, without copied worktree files, stashes or source/configuration overrides. The following scoped command chain exited **0**:
+
+```sh
+cargo test --locked -p symaira-core-update --test cache_eligibility
+cargo test --locked -p symaira-core-llm --test provider_contract
+```
+
+Rust compilation used two jobs, disabled dev/test debug info and a distinct build-output directory for each variant. Those output directories contained no required source or fixture inputs. Package manager dependency caches were allowed; application state and credentials were not supplied. This verifies repository-contained inputs and these scoped checks, not every product test or native acceptance criterion. Final documentation changes do not change the tested source; the published final HEAD must still be verified before continuation. Target cloud runtime, permissions, secrets and network gates: **not checked**.
 
 ## Copyable continuation request
 
