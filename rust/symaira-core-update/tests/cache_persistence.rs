@@ -90,6 +90,8 @@ fn live_cache_persistence_matches_public_go_checker() {
         wanted
     );
 
+    assert_eq!(fixture.unix_mode_supported, cfg!(unix));
+
     for expected in &fixture.cases {
         let actual = match expected.id.as_str() {
             "normal" => run_one(NORMAL_BODY, 1_000),
@@ -127,7 +129,6 @@ fn live_cache_persistence_matches_public_go_checker() {
                 expected.id
             );
         }
-        #[cfg(unix)]
         if fixture.unix_mode_supported && expected.cache_exists {
             assert_eq!(
                 actual.cache_mode, expected.cache_mode,

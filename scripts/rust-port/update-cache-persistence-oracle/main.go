@@ -104,7 +104,7 @@ func observe(id, body string) (observation, error) {
 	if release != nil {
 		item.Result.Tag = release.TagName
 	}
-	if raw, readErr := os.ReadFile(cachePath); readErr == nil {
+	if raw, readErr := readObservation(root, "cache/cache.json"); readErr == nil {
 		item.CacheExists = true
 		item.CacheBytes, err = normalizeTimestamp(raw)
 		if err != nil {
@@ -152,7 +152,7 @@ func observeAtomicReplace() (observation, error) {
 	if err := os.Link(cachePath, snapshot); err != nil {
 		return observation{}, fmt.Errorf("create cache hardlink: %w", err)
 	}
-	oldBytes, err := os.ReadFile(cachePath)
+	oldBytes, err := readObservation(root, "cache/cache.json")
 	if err != nil {
 		return observation{}, err
 	}
@@ -164,11 +164,11 @@ func observeAtomicReplace() (observation, error) {
 	if err != nil {
 		return observation{}, err
 	}
-	snapshotBytes, err := os.ReadFile(snapshot)
+	snapshotBytes, err := readObservation(root, "cache/cache.json.snapshot")
 	if err != nil {
 		return observation{}, err
 	}
-	currentBytes, err := os.ReadFile(cachePath)
+	currentBytes, err := readObservation(root, "cache/cache.json")
 	if err != nil {
 		return observation{}, err
 	}
@@ -217,7 +217,7 @@ func normalizeTimestamp(raw []byte) (string, error) {
 		return "", fmt.Errorf("cache timestamp is unterminated")
 	}
 	valueEnd := valueStart + valueEndRel
-	if bytes.Index(raw[valueEnd+1:], []byte(marker)) >= 0 {
+	if bytes.Contains(raw[valueEnd+1:], []byte(marker)) {
 		return "", fmt.Errorf("cache bytes contain multiple timestamp fields")
 	}
 	normalized := make([]byte, 0, len(raw)-valueEndRel)
@@ -239,4 +239,14 @@ func readModes(item *observation, cachePath string) error {
 	fileMode, dirMode := uint32(fileInfo.Mode().Perm()), uint32(dirInfo.Mode().Perm())
 	item.CacheMode, item.DirectoryMode = &fileMode, &dirMode
 	return nil
+}
+
+// readObservation confines observation reads to the private temporary root.
+func readObservation(root, name string) ([]byte, error) {
+	dir, err := os.OpenRoot(root)
+	if err != nil {
+		return nil, err
+	}
+	defer dir.Close()
+	return dir.ReadFile(name)
 }
