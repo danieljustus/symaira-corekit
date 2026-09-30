@@ -202,14 +202,16 @@ impl Client {
 
     pub fn ping(&self) -> Result<()> {
         self.require_ollama("Ping")?;
-        self.list_models().map(|_| ())
+        self.discover_models("/api/tags").map(|_| ())
     }
 
     /// Checks Ollama availability using the generic model discovery response
-    /// parser, matching Go Ping's call through ListModels.
+    /// parser at the fixed /api/tags endpoint, matching Go Ping.
     pub async fn ping_cancellable(&self, token: &CancellationToken) -> Result<()> {
         self.require_ollama("Ping")?;
-        self.list_models_cancellable(token).await.map(|_| ())
+        self.discover_models_cancellable(token, "/api/tags")
+            .await
+            .map(|_| ())
     }
 
     fn stream_ndjson<F>(&self, path: &str, body: &Value, mut callback: F) -> Result<()>

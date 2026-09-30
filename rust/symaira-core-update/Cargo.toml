@@ -7,10 +7,8 @@ license.workspace = true
 repository.workspace = true
 publish = false
 
-[dev-dependencies]
-serde.workspace = true
-
 [dependencies]
+serde.workspace = true
 serde_json.workspace = true
 cap-std = "=4.0.3"
 flate2 = "=1.1.2"

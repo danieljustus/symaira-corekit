@@ -1,0 +1,81 @@
+# Code continuation: symaira-corekit
+
+## Goal and immutable starting point
+
+Continue the code and integration work from the published repository, without needing a local chat, private reports or installed agent skills.
+
+- GitHub repository: `danieljustus/symaira-corekit`.
+- Branch: `handoff/20260930-signed-acceptance`.
+- Base code commit before this document/checkpoint: `a8512c3e767801647b676b9e26d3044b39eb2eb9`.
+- Working directory for every command below: the checked-out repository root.
+- Publication does not authorize a merge, release, tag, destructive cleanup or paid service.
+
+Preserve the shared Rust-library code candidate plus three independently captured incomplete variants. The cache-only variant and the two provider/cache variants are alternatives, not automatically merged or approved. The original source worktrees remain intact.
+
+## Requirements, decisions and next task
+
+Review the isolated cache/provider variants without silently selecting one; validate Go-byte parity, then reconcile the chosen fix and rerun native Windows checks. PR #353 is a distinct older candidate, not this checkpoint.
+
+Keep products and their optional modules standalone. Preserve exact dependency pins, snake_case contracts, data integrity, authorization and MCP stdout discipline. Keep frozen fixture evidence and original Oracle ancestry unchanged until an explicit preservation design is accepted. Do not rewrite history, force-push, bypass branch protection, delete unique work, close unproven issues or reinterpret a passing subset as complete acceptance.
+
+- No existing candidate PR was recorded for the selected code base.
+
+## Setup and scoped verification
+
+Clone the existing public repository, checkout `handoff/20260930-signed-acceptance`, verify its current remote HEAD, and read this file before making changes. Never substitute another branch or silently mix the alternatives.
+
+```sh
+git clone --branch handoff/20260930-signed-acceptance https://github.com/danieljustus/symaira-corekit.git
+cd symaira-corekit
+git rev-parse HEAD
+git ls-remote --exit-code origin refs/heads/handoff/20260930-signed-acceptance
+git status --porcelain=v1 -uall
+```
+
+Locally observed toolchains: Git 2.54.0, gh 2.102.0, Rust/Cargo 1.98.0, Go 1.27.1, Node 22.22.3, Ruby 2.6.10, Swift 6.4, regular Xcode. Rust repositories pin their toolchain in `rust-toolchain.toml`; honor the checked-in manifests. Go Oracle regeneration must use the exact Go version required by its own manifest/generator, not this observed machine version. Native Swift requires full Xcode. Package-manager caches are rebuildable, not required private inputs.
+
+Scoped reproduction commands, not a claim of the complete product suite:
+
+```sh
+cargo test --locked -p symaira-core-update --test cache_eligibility
+cargo test --locked -p symaira-core-llm --test provider_contract
+```
+
+Build command (not claimed executed unless listed in verification):
+
+```sh
+cargo build --locked --workspace
+```
+
+Start/help command (not executed for live services/devices):
+
+```sh
+Library repository: no daemon or application start command.
+```
+
+For Rust, optional resource limits are `CARGO_BUILD_JOBS=2`, `CARGO_PROFILE_TEST_DEBUG=0`, `CARGO_PROFILE_DEV_DEBUG=0`. `CARGO_TARGET_DIR` may name a fresh build-output directory on stable storage; it is never a source, fixture or configuration input. Do not reuse a build-target directory between code variants when validating changed tests. Each fresh verification uses its own build output. No provider/API secret is required for these scoped mock/unit checks. Do not use real credential, document, broker or router state. Do not enable paid model fallback.
+
+## Dependencies and exclusions
+
+Tracked lockfiles, manifests, generators and fixtures are the reproducible input. Build outputs (`target`, `.build`, `node_modules`, `dist`), dependency caches, coverage output and generated binaries are deliberately excluded and rebuilt. Older unrelated branches, private audit/planning reports, harness settings, personal records, real credential contents, local stores and original unrelated credential-store WIP are excluded, not hidden dependencies of the checks above. No raw chat or private memory is published.
+
+Pinned Git dependency commits found in the selected top-level manifest: none in the inspected top-level manifests. Package managers must resolve these through public repositories; a fresh-checkout failure to fetch any is a concrete reproducibility blocker, not permission to alter a pin.
+
+Real deployments, physical devices and Windows package installation are not part of the scoped local checks. Network access to GitHub and applicable package registries is required for dependency setup. Production access, signing credentials and live-service secrets must be separately supplied through approved secret management, never this repository. No cloud job is launched by this document.
+
+Additional independently retained CoreKit inputs:
+- `danieljustus/symaira-corekit`, branch `handoff/20260930-cloud`, code base `a8512c3e767801647b676b9e26d3044b39eb2eb9`, document `docs/handoffs/end-work-cloud.md`.
+- `danieljustus/symaira-corekit`, branch `handoff/20260930-signed-acceptance`, code base `a8512c3e767801647b676b9e26d3044b39eb2eb9`, document `docs/handoffs/end-work-cloud.md`.
+- `danieljustus/symaira-corekit`, branch `handoff/20260930-provider-repair`, code base `a8512c3e767801647b676b9e26d3044b39eb2eb9`, document `docs/handoffs/end-work-cloud.md`.
+
+## Verification record
+
+Prepublication secret-pattern/outgoing-history scans succeeded for the selected base. Exact WIP path/byte comparison is required for checkpoint variants. Product-acceptance and target-cloud runtime are **not checked** by these records.
+
+Prepublication scoped CoreKit checks exited 0. Mock/provider tests were run locally; this remains unapproved WIP, not accepted functionality.
+
+Fresh remote-clone verification: pending publication and replay. Target cloud runtime, permissions, secrets and network gates: **not checked**.
+
+## Copyable continuation request
+
+Work in `danieljustus/symaira-corekit` on `handoff/20260930-signed-acceptance`. Verify the exact remote HEAD given by the final publication record, read `docs/handoffs/end-work-cloud.md`, run the setup and scoped checks, then: Review the isolated cache/provider variants without silently selecting one; validate Go-byte parity, then reconcile the chosen fix and rerun native Windows checks. PR #353 is a distinct older candidate, not this checkpoint. Respect all preservation and integration gates above.
