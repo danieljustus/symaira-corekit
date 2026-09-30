@@ -26,7 +26,17 @@ pub fn fetch(url: &str, current_version: &str, timeout: Duration) -> Result<Resp
     let client = secure_client_builder(timeout)
         .build()
         .map_err(classify_network)?;
-    fetch_with_client(&client, url, current_version)
+    let started = std::time::Instant::now();
+    let result = fetch_with_client(&client, url, current_version);
+    // Reqwest's blocking wait polls a ready result before checking its deadline.
+    // A descheduled caller must not accept a response after the request budget.
+    if !timeout.is_zero() && started.elapsed() >= timeout {
+        return Err(Error {
+            code: "timeout",
+            message: "request latest release".into(),
+        });
+    }
+    result
 }
 
 pub(crate) fn secure_client_builder(timeout: Duration) -> ClientBuilder {
