@@ -55,6 +55,27 @@ pub fn check(url: &str, cache_path: &Path, ttl: Duration, force: bool, now_ms: u
             error: Some("response missing tag_name".to_owned()),
         };
     };
+    let document = decoded.as_ref().expect("validated release JSON");
+    let eligibility = crate::check_response(
+        "v0.0.0",
+        crate::Response {
+            draft: wire_field(document, "draft", "draft")
+                .as_bool()
+                .unwrap_or(false),
+            prerelease: wire_field(document, "prerelease", "prerelease")
+                .as_bool()
+                .unwrap_or(false),
+            tag_name: tag_name.clone(),
+            ..crate::Response::default()
+        },
+    );
+    // Only reuse response validation here, not current-version update selection.
+    if let Err(error) = eligibility {
+        return Outcome {
+            release: None,
+            error: Some(error),
+        };
+    }
     let release = CachedRelease {
         tag_name,
         response: raw,
