@@ -1,5 +1,172 @@
 //! Persistent update response cache used by the UPD-003 parity slice.
+use serde::de::{DeserializeSeed, IgnoredAny, MapAccess, SeqAccess, Visitor};
+use serde_json::Value;
 use std::{fs, path::Path, time::Duration};
+
+#[derive(Clone, Copy)]
+enum WireShape {
+    Cache,
+    ApiRelease,
+    DiskRelease,
+    ApiAssets,
+    DiskAssets,
+    ApiAsset,
+    DiskAsset,
+}
+
+struct WireSeed {
+    shape: WireShape,
+    value: Value,
+}
+
+fn decode_wire(raw: &str, shape: WireShape) -> Result<Value, serde_json::Error> {
+    let mut decoder = serde_json::Deserializer::from_str(raw);
+    let value = WireSeed {
+        shape,
+        value: Value::Null,
+    }
+    .deserialize(&mut decoder)?;
+    decoder.end()?;
+    Ok(finish_wire(value))
+}
+
+// Retain Go slice backing elements during decoding, but expose only its length.
+// These keys cannot come from input: recognized fields are schema-filtered.
+fn finish_wire(value: Value) -> Value {
+    match value {
+        Value::Object(mut object) => {
+            if let Some(Value::Number(length)) = object.remove("$asset_length") {
+                let mut assets = object.remove("$asset_backing").unwrap();
+                assets
+                    .as_array_mut()
+                    .unwrap()
+                    .truncate(length.as_u64().unwrap() as usize);
+                return finish_wire(assets);
+            }
+            Value::Object(
+                object
+                    .into_iter()
+                    .map(|(key, value)| (key, finish_wire(value)))
+                    .collect(),
+            )
+        }
+        Value::Array(assets) => Value::Array(assets.into_iter().map(finish_wire).collect()),
+        value => value,
+    }
+}
+
+impl<'de> DeserializeSeed<'de> for WireSeed {
+    type Value = Value;
+
+    fn deserialize<D: serde::Deserializer<'de>>(self, decoder: D) -> Result<Value, D::Error> {
+        decoder.deserialize_any(self)
+    }
+}
+
+impl<'de> Visitor<'de> for WireSeed {
+    type Value = Value;
+
+    fn expecting(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter.write_str("a Go release/cache object or asset array")
+    }
+
+    fn visit_unit<E: serde::de::Error>(self) -> Result<Value, E> {
+        // Null resets slices and pointers, but leaves existing struct fields intact.
+        Ok(match self.shape {
+            WireShape::ApiAsset | WireShape::DiskAsset => {
+                Value::Object(self.value.as_object().cloned().unwrap_or_default())
+            }
+            _ => Value::Null,
+        })
+    }
+
+    fn visit_seq<S: SeqAccess<'de>>(self, mut sequence: S) -> Result<Value, S::Error> {
+        let shape = match self.shape {
+            WireShape::ApiAssets => WireShape::ApiAsset,
+            WireShape::DiskAssets => WireShape::DiskAsset,
+            _ => return Err(serde::de::Error::custom("expected object")),
+        };
+        let previous = match self.value {
+            Value::Array(assets) => assets,
+            Value::Object(mut object) => match object.remove("$asset_backing") {
+                Some(Value::Array(assets)) => assets,
+                _ => Vec::new(),
+            },
+            _ => Vec::new(),
+        };
+        let mut assets = Vec::new();
+        while let Some(asset) = sequence.next_element_seed(WireSeed {
+            shape,
+            value: previous.get(assets.len()).cloned().unwrap_or(Value::Null),
+        })? {
+            assets.push(asset);
+        }
+        let length = assets.len();
+        if length > 0 {
+            assets.extend(previous.into_iter().skip(length));
+        }
+        Ok(serde_json::json!({"$asset_length": length, "$asset_backing": assets}))
+    }
+
+    fn visit_map<M: MapAccess<'de>>(self, mut map: M) -> Result<Value, M::Error> {
+        use WireShape::{
+            ApiAsset, ApiAssets, ApiRelease, Cache, DiskAsset, DiskAssets, DiskRelease,
+        };
+        if matches!(self.shape, ApiAssets | DiskAssets) {
+            return Err(serde::de::Error::custom("expected asset array"));
+        }
+        let mut object = self.value.as_object().cloned().unwrap_or_default();
+        while let Some(key) = map.next_key::<String>()? {
+            // Go's Unicode simple fold includes the long s and Kelvin sign.
+            let key = key.replace('ſ', "s").replace('K', "k").to_ascii_lowercase();
+            let field = match (self.shape, key.as_str()) {
+                (Cache, "timestamp") => Some(("timestamp", 0)),
+                (Cache, "release") => Some(("release", 3)),
+                (ApiRelease, "tag_name") | (DiskRelease, "tagname") => Some(("TagName", 0)),
+                (ApiRelease | DiskRelease, "body") => Some(("Body", 0)),
+                (ApiRelease, "html_url") | (DiskRelease, "htmlurl") => Some(("HTMLURL", 0)),
+                (ApiRelease, "draft") => Some(("draft", 1)),
+                (ApiRelease, "prerelease") => Some(("prerelease", 1)),
+                (ApiRelease | DiskRelease, "assets") => Some(("Assets", 4)),
+                (ApiAsset | DiskAsset, "name") => Some(("Name", 0)),
+                (ApiAsset, "browser_download_url") | (DiskAsset, "browserdownloadurl") => {
+                    Some(("BrowserDownloadURL", 0))
+                }
+                (ApiAsset | DiskAsset, "size") => Some(("Size", 2)),
+                _ => None,
+            };
+            let Some((name, kind)) = field else {
+                let _: IgnoredAny = map.next_value()?;
+                continue;
+            };
+            let value = match kind {
+                0 => map.next_value::<Option<String>>()?.map(Value::String),
+                1 => map.next_value::<Option<bool>>()?.map(Value::Bool),
+                2 => map
+                    .next_value::<Option<i64>>()?
+                    .map(|value| Value::Number(value.into())),
+                _ => {
+                    let shape = if kind == 3 {
+                        DiskRelease
+                    } else if matches!(self.shape, ApiRelease) {
+                        ApiAssets
+                    } else {
+                        DiskAssets
+                    };
+                    Some(map.next_value_seed(WireSeed {
+                        shape,
+                        value: object.remove(name).unwrap_or(Value::Null),
+                    })?)
+                }
+            };
+            // Go ignores null scalar assignments, including after an earlier alias.
+            if let Some(value) = value {
+                object.insert(name.to_owned(), value);
+            }
+        }
+        Ok(Value::Object(object))
+    }
+}
 
 /// Default update response lifetime, matching Go's `DefaultCacheTTL`.
 pub const DEFAULT_CACHE_TTL: Duration = Duration::from_secs(24 * 60 * 60);
@@ -48,13 +215,34 @@ pub fn check(url: &str, cache_path: &Path, ttl: Duration, force: bool, now_ms: u
             };
         }
     };
-    let decoded = serde_json::from_str::<serde_json::Value>(&raw);
+    let decoded = decode_wire(&raw, WireShape::ApiRelease);
     let Some(tag_name) = decoded.as_ref().ok().and_then(release_tag) else {
         return Outcome {
             release: None,
             error: Some("response missing tag_name".to_owned()),
         };
     };
+    let document = decoded.as_ref().expect("validated release JSON");
+    let eligibility = crate::check_response(
+        "v0.0.0",
+        crate::Response {
+            draft: wire_field(document, "draft", "draft")
+                .as_bool()
+                .unwrap_or(false),
+            prerelease: wire_field(document, "prerelease", "prerelease")
+                .as_bool()
+                .unwrap_or(false),
+            tag_name: tag_name.clone(),
+            ..crate::Response::default()
+        },
+    );
+    // Only reuse response validation here, not current-version update selection.
+    if let Err(error) = eligibility {
+        return Outcome {
+            release: None,
+            error: Some(error),
+        };
+    }
     let release = CachedRelease {
         tag_name,
         response: raw,
@@ -68,7 +256,7 @@ pub fn check(url: &str, cache_path: &Path, ttl: Duration, force: bool, now_ms: u
 
 fn read_cache(path: &Path) -> Option<(u128, CachedRelease)> {
     let raw = fs::read_to_string(path).ok()?;
-    let document: serde_json::Value = serde_json::from_str(&raw).ok()?;
+    let document = decode_wire(&raw, WireShape::Cache).ok()?;
     let timestamp = wire_field(&document, "timestamp", "timestamp").as_str()?;
     let created = parse_rfc3339_ms(timestamp)?;
     let release = wire_field(&document, "release", "release");
@@ -81,8 +269,8 @@ fn write_cache(path: &Path, now_ms: u128, release: &CachedRelease) -> std::io::R
     if let Some(parent) = path.parent() {
         fs::create_dir_all(parent)?;
     }
-    let response: serde_json::Value =
-        serde_json::from_str(&release.response).map_err(std::io::Error::other)?;
+    let response =
+        decode_wire(&release.response, WireShape::ApiRelease).map_err(std::io::Error::other)?;
     let assets: Vec<_> = wire_field(&response, "assets", "Assets")
         .as_array().into_iter().flatten().map(|asset| serde_json::json!({
             "Name": wire_field(asset, "name", "Name").as_str().unwrap_or_default(),
@@ -117,50 +305,8 @@ fn wire_field<'a>(value: &'a serde_json::Value, api: &str, disk: &str) -> &'a se
 }
 
 fn release_tag(value: &serde_json::Value) -> Option<String> {
-    let object = value.as_object()?;
-    for (key, value) in object {
-        if value.is_null() {
-            continue;
-        }
-        match key.to_ascii_lowercase().as_str() {
-            "tag_name" | "tagname" | "body" | "html_url" | "htmlurl" => {
-                value.as_str()?;
-            }
-            "draft" | "prerelease" => {
-                value.as_bool()?;
-            }
-            "assets" => {
-                for asset in value.as_array()? {
-                    if asset.is_null() {
-                        continue;
-                    }
-                    for (key, value) in asset.as_object()? {
-                        if value.is_null() {
-                            continue;
-                        }
-                        match key.to_ascii_lowercase().as_str() {
-                            "name" | "browser_download_url" | "browserdownloadurl" => {
-                                value.as_str()?;
-                            }
-                            "size" => {
-                                value.as_i64()?;
-                            }
-                            _ => {}
-                        }
-                    }
-                }
-            }
-            _ => {}
-        }
-    }
-    let tag = object
-        .iter()
-        .find(|(key, _)| {
-            key.eq_ignore_ascii_case("tag_name") || key.eq_ignore_ascii_case("TagName")
-        })?
-        .1
-        .as_str()?
-        .trim();
+    // All recognized assignments were type-checked in input order by WireSeed.
+    let tag = value.get("TagName")?.as_str()?.trim();
     if tag.is_empty() {
         None
     } else {
@@ -276,4 +422,49 @@ fn format_rfc3339_ms(ms: u128) -> String {
         daytime % 60,
         ms % 1000
     )
+}
+
+#[cfg(test)]
+mod ordered_wire_tests {
+    use super::{WireShape, decode_wire};
+    use serde_json::json;
+
+    #[test]
+    fn ordered_release_cache_and_asset_assignments_match_go_struct_rules() {
+        let api = decode_wire(
+            r#"{"tag_name":"v1.3.0","BODY":"first","body":"last","Body":null,"assets":[{"NAME":"first","name":"last","Name":null,"SIZE":1,"size":2},null],"TagName":42}"#,
+            WireShape::ApiRelease,
+        ).unwrap();
+        assert_eq!(api["TagName"], "v1.3.0");
+        assert_eq!(api["Body"], "last");
+        assert_eq!(api["Assets"][0], json!({"Name":"last", "Size":2}));
+        assert_eq!(api["Assets"][1], json!({}));
+        for body in [
+            r#"{"tag_name":false,"tag_name":"v1.3.0"}"#,
+            r#"{"draft":"false","draft":false}"#,
+            r#"{"assets":[{"size":1.5,"size":2}]}"#,
+            r#"{"assets":{},"assets":[]}"#,
+        ] {
+            assert!(decode_wire(body, WireShape::ApiRelease).is_err(), "{body}");
+        }
+        let disk = decode_wire(
+            r#"{"release":{"TAGNAME":"invalid","Body":"retained","Assets":[{"NAME":"first","name":"last","BrowserDownloadURL":"url","Size":7}]},"RELEASE":{"TagName":"v1.3.0","Body":null},"timestamp":"1970-01-01T00:00:01Z"}"#,
+            WireShape::Cache,
+        ).unwrap();
+        assert_eq!(disk["release"]["TagName"], "v1.3.0");
+        assert_eq!(disk["release"]["Body"], "retained");
+        assert_eq!(disk["release"]["Assets"][0]["Name"], "last");
+        let reset = decode_wire(
+            r#"{"release":{"TagName":"old"},"Release":null,"RELEASE":{"Body":"new"}}"#,
+            WireShape::Cache,
+        )
+        .unwrap();
+        assert!(reset["release"].get("TagName").is_none());
+        let assets = decode_wire(
+            r#"{"tag_name":"v1.3.0","assets":[{"name":"old"}],"ASSETS":null}"#,
+            WireShape::ApiRelease,
+        )
+        .unwrap();
+        assert!(assets["Assets"].is_null());
+    }
 }
