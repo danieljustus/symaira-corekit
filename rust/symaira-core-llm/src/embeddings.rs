@@ -111,13 +111,13 @@ impl Client {
         }
     }
 
-    fn discover_models(&self, path: &str) -> Result<Vec<ModelInfo>> {
+    pub(crate) fn discover_models(&self, path: &str) -> Result<Vec<ModelInfo>> {
         let mut response = self.request("GET", path, Option::<&()>::None)?;
         let raw = read_limited(&mut response, 16 << 20)?;
         parse_discovered_models(&raw, path)
     }
 
-    async fn discover_models_cancellable(
+    pub(crate) async fn discover_models_cancellable(
         &self,
         token: &CancellationToken,
         path: &str,

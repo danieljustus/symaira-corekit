@@ -1813,6 +1813,45 @@ fn ollama_ping_uses_go_generic_discovery_response_shapes() {
 }
 
 #[test]
+fn ollama_ping_ignores_static_and_overridden_discovery_descriptors() {
+    let runtime = tokio::runtime::Runtime::new().unwrap();
+    for mode in ["static", "discovered"] {
+        for cancellable in [false, true] {
+            let mut descriptor = lookup("ollama").unwrap().clone();
+            descriptor.models.mode = mode.to_owned();
+            descriptor.models.discovery_path = "/not-tags".to_owned();
+            let (url, server) = mock_server(503, r#"{"message":"unavailable"}"#);
+            let client = ClientBuilder::new(descriptor, "")
+                .base_url(url)
+                .build()
+                .unwrap();
+            if mode == "static" {
+                assert!(client.list_models().is_ok());
+                assert!(
+                    runtime
+                        .block_on(client.list_models_cancellable(&CancellationToken::new()))
+                        .is_ok()
+                );
+            }
+            let result = if cancellable {
+                runtime.block_on(client.ping_cancellable(&CancellationToken::new()))
+            } else {
+                client.ping()
+            };
+            assert_eq!(result.unwrap_err().status_code, 503);
+            let (headers, _, _) = server.join().unwrap();
+            assert!(headers.starts_with("GET /api/tags HTTP/1.1"));
+            let token = CancellationToken::new();
+            token.cancel();
+            let error = runtime
+                .block_on(client.ping_cancellable(&token))
+                .unwrap_err();
+            assert_eq!(error.code, ErrorCode::TransportError);
+        }
+    }
+}
+
+#[test]
 fn native_ollama_generate_accepts_go_scanner_large_chunks() {
     let fixture: Value = serde_json::from_str(include_str!(
         "../../../testdata/rust-port/fixtures/llm/go-oracle.json"

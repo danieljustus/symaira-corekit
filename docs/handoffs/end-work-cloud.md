@@ -15,6 +15,11 @@ Preserve the shared Rust-library code candidate plus three independently capture
 
 ## Requirements, decisions and next task
 
+After the published comparison, the maintainer authorized selection and repair.
+The provider-repair implementation was selected and reconciled onto this branch;
+see [the selection and acceptance record](corekit-selection-20260930.md).
+The original alternative checkpoints and their evidence remain unchanged.
+
 Review the isolated cache/provider variants without silently selecting one; validate Go-byte parity, then reconcile the chosen fix and rerun native Windows checks. PR #353 is a distinct older candidate, not this checkpoint.
 
 Keep products and their optional modules standalone. Preserve exact dependency pins, snake_case contracts, data integrity, authorization and MCP stdout discipline. Keep frozen fixture evidence and original Oracle ancestry unchanged until an explicit preservation design is accepted. Do not rewrite history, force-push, bypass branch protection, delete unique work, close unproven issues or reinterpret a passing subset as complete acceptance.
