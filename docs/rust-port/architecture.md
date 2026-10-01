@@ -16,7 +16,7 @@ rust/
   symaira-core-log                  stderr logging construction
   symaira-core-config               XDG/TOML/env precedence
   symaira-core-fs                   atomic/path-safe filesystem operations
-  symaira-core-secret               secret-reference parsing and process adapters
+  symaira-core-secretref            secret-reference parsing and process adapters
   symaira-core-mcp                  MCP models, raw framing and server adapter
   symaira-core-sqlite               SQLite open/migration policy
   symaira-core-update               check/extract/install/apply/cosign adapters
@@ -42,7 +42,7 @@ core-exit ─→ core-mcp
 core-fs ───→ core-audit
    ├───────→ core-sqlite
    └───────→ core-update
-core-secret → core-llm
+core-secretref → core-llm
 
 Independent leaves: core-version, core-evidence, core-dom, core-vector and
 core-mcpcfg. The private fixture helper may depend on
@@ -56,7 +56,7 @@ Allowed details:
 - Contract JSON remains the cross-language source; generated Rust types carry provenance and drift tests rather than becoming a second SSOT.
 - Small exit/version/env crates use only the minimum Serde/stdlib surface they actually need.
 - `core-fs` owns its errors unless a concrete shared error dependency is justified; never depend on consumers.
-- `core-secret` owns process-runner ports but not a hard dependency on `symvault`.
+- `core-secretref` owns process-runner ports but not a hard dependency on `symvault`.
 - `core-mcp` may provide an official-SDK adapter, but the owned wire model and raw-frame fixtures outrank SDK defaults.
 - `core-sqlite` depends only on filesystem policy plus SQLite; migration SQL stays consumer-provided.
 - `core-update` isolates HTTP, archives, checksums, Cosign process execution and replacement policy behind ports.

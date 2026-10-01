@@ -47,6 +47,19 @@ func TestSecureClientRedirectRefusesForeignHost(t *testing.T) {
 	}
 }
 
+// Even a GitHub-owned host must not be followed over cleartext: TLS minimum
+// versions do not apply to HTTP requests.
+func TestSecureClientRedirectRefusesHTTPDowngrade(t *testing.T) {
+	c := newSecureClient()
+	err := c.CheckRedirect(
+		&http.Request{URL: mustParseURL(t, "http://github.com/release")},
+		[]*http.Request{{URL: mustParseURL(t, "https://api.github.com/releases")}},
+	)
+	if err == nil {
+		t.Fatal("expected redirect from HTTPS to HTTP to be refused")
+	}
+}
+
 // TestSecureClientRedirectAllowsGitHubHost exercises the accept branch for
 // redirects that stay on GitHub hosts.
 func TestSecureClientRedirectAllowsGitHubHost(t *testing.T) {

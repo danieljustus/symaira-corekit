@@ -1,0 +1,131 @@
+{
+  "go_source_sha256": "638c263835c1d72982f6fc3391092edc44318f3f5993e83c7c190fae25329cc9",
+  "oracle_sha256": "f0dfdaa4d491f3a12e92ade557c8005e7c43cbb432413d01249b6c2969791dd5",
+  "cases": [
+    {
+      "id": "request",
+      "url_after_trim": "http://127.0.0.1:<port>/request?x=1",
+      "request_line": "GET /request?x=1 HTTP/1.1",
+      "headers": {
+        "Accept": "application/vnd.github+json",
+        "Accept-Encoding": "gzip",
+        "Host": "127.0.0.1:<port>",
+        "If-None-Match": "",
+        "User-Agent": "symaira-updatecheck/1.2.3"
+      },
+      "status": 200
+    },
+    {
+      "id": "404",
+      "url_after_trim": "http://127.0.0.1:<port>/not-found",
+      "request_line": "GET /not-found HTTP/1.1",
+      "headers": {
+        "Accept": "application/vnd.github+json",
+        "Accept-Encoding": "gzip",
+        "Host": "127.0.0.1:<port>",
+        "If-None-Match": "",
+        "User-Agent": "symaira-updatecheck/1.2.3"
+      },
+      "status": 404,
+      "error_code": "http_404",
+      "error_message": "GitHub API returned HTTP 404"
+    },
+    {
+      "id": "429-retry-after",
+      "url_after_trim": "http://127.0.0.1:<port>/rate-limited",
+      "request_line": "GET /rate-limited HTTP/1.1",
+      "headers": {
+        "Accept": "application/vnd.github+json",
+        "Accept-Encoding": "gzip",
+        "Host": "127.0.0.1:<port>",
+        "If-None-Match": "",
+        "User-Agent": "symaira-updatecheck/1.2.3"
+      },
+      "response_headers": {
+        "Retry-After": "17"
+      },
+      "status": 429,
+      "error_code": "http_429",
+      "error_message": "GitHub API returned HTTP 429"
+    },
+    {
+      "id": "malformed-json",
+      "url_after_trim": "http://127.0.0.1:<port>/malformed",
+      "request_line": "GET /malformed HTTP/1.1",
+      "headers": {
+        "Accept": "application/vnd.github+json",
+        "Accept-Encoding": "gzip",
+        "Host": "127.0.0.1:<port>",
+        "If-None-Match": "",
+        "User-Agent": "symaira-updatecheck/1.2.3"
+      },
+      "status": 200,
+      "error_code": "malformed_json",
+      "error_message": "decode latest release response: unexpected EOF"
+    },
+    {
+      "id": "connection-refused",
+      "url_after_trim": "http://127.0.0.1:<port>/refused",
+      "error_code": "connection_refused",
+      "error_message": "request latest release"
+    },
+    {
+      "id": "timeout",
+      "url_after_trim": "http://127.0.0.1:<port>/slow",
+      "request_line": "GET /slow HTTP/1.1",
+      "headers": {
+        "Accept": "application/vnd.github+json",
+        "Accept-Encoding": "gzip",
+        "Host": "127.0.0.1:<port>",
+        "If-None-Match": "",
+        "User-Agent": "symaira-updatecheck/1.2.3"
+      },
+      "status": 200,
+      "error_code": "timeout",
+      "error_message": "request latest release"
+    },
+    {
+      "id": "tls-certificate",
+      "url_after_trim": "https://127.0.0.1:<port>",
+      "error_code": "tls_certificate",
+      "error_message": "update check failed: TLS certificate verification error"
+    },
+    {
+      "id": "redirect-relative-foreign",
+      "url_after_trim": "http://127.0.0.1:<port>",
+      "status": 302,
+      "error_code": "network",
+      "error_message": "request latest release"
+    },
+    {
+      "id": "secure-client",
+      "url_after_trim": "",
+      "error_code": "tls_minimum",
+      "error_message": "min_tls_version=772; timeout=3000ms"
+    },
+    {
+      "id": "redirect-foreign",
+      "url_after_trim": "",
+      "error_code": "refused",
+      "error_message": "refusing redirect to non-GitHub host \"evil.example\""
+    },
+    {
+      "id": "redirect-http-downgrade",
+      "url_after_trim": "",
+      "error_code": "refused",
+      "error_message": "refusing redirect to non-HTTPS scheme \"http\""
+    },
+    {
+      "id": "redirect-github",
+      "url_after_trim": "",
+      "error_code": "allowed"
+    },
+    {
+      "id": "redirect-cap",
+      "url_after_trim": "",
+      "error_code": "refused",
+      "error_message": "stopped after 10 redirects"
+    }
+  ],
+  "goos": "darwin"
+}

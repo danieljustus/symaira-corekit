@@ -14,8 +14,8 @@
         "linux",
         "windows"
       ],
-      "rust_test": "port/contracts/meta_public_api.rs",
-      "status": "fixture-ready"
+      "rust_test": "scripts/rust-port/generate.py --check (port contract gate)",
+      "status": "parity"
     },
     {
       "id": "META-002",
@@ -29,8 +29,8 @@
         "linux",
         "windows"
       ],
-      "rust_test": "port/contracts/meta_provenance.rs",
-      "status": "fixture-ready"
+      "rust_test": "scripts/rust-port/generate.py --check-source (port contract gate)",
+      "status": "parity"
     },
     {
       "id": "CON-001",
@@ -45,7 +45,7 @@
         "windows"
       ],
       "rust_test": "symaira-contract-fixtures/tests/con_001.rs",
-      "status": "fixture-ready"
+      "status": "parity"
     },
     {
       "id": "CON-002",
@@ -60,7 +60,7 @@
         "windows"
       ],
       "rust_test": "symaira-contract-fixtures/tests/con_002.rs",
-      "status": "fixture-ready"
+      "status": "parity"
     },
     {
       "id": "CON-003",
@@ -74,8 +74,8 @@
         "linux",
         "windows"
       ],
-      "rust_test": "symaira-contract-fixtures/tests/con_003.rs",
-      "status": "fixture-ready"
+      "rust_test": "symaira-core-mcp/tests/con_003.rs",
+      "status": "parity"
     },
     {
       "id": "CON-004",
@@ -89,8 +89,8 @@
         "linux",
         "windows"
       ],
-      "rust_test": "symaira-contract-fixtures/tests/con_004.rs",
-      "status": "fixture-ready"
+      "rust_test": "symaira-core-secretref/tests/parity.rs",
+      "status": "parity"
     },
     {
       "id": "CON-005",
@@ -104,8 +104,8 @@
         "linux",
         "windows"
       ],
-      "rust_test": "symaira-contract-fixtures/tests/con_005.rs",
-      "status": "fixture-ready"
+      "rust_test": "symaira-core-update/tests/con_005.rs",
+      "status": "parity"
     },
     {
       "id": "CON-006",
@@ -119,8 +119,8 @@
         "linux",
         "windows"
       ],
-      "rust_test": "symaira-contract-fixtures/tests/con_006.rs",
-      "status": "fixture-ready"
+      "rust_test": "symaira-core-mcp/tests/con_006.rs",
+      "status": "parity"
     },
     {
       "id": "CON-007",
@@ -134,8 +134,8 @@
         "linux",
         "windows"
       ],
-      "rust_test": "symaira-contract-fixtures/tests/con_007.rs",
-      "status": "fixture-ready"
+      "rust_test": "symaira-core-mcp/tests/con_007.rs",
+      "status": "parity"
     },
     {
       "id": "CON-008",
@@ -149,8 +149,8 @@
         "linux",
         "windows"
       ],
-      "rust_test": "symaira-contract-fixtures/tests/con_008.rs",
-      "status": "fixture-ready"
+      "rust_test": "symaira-core-llm/tests/con_008.rs",
+      "status": "parity"
     },
     {
       "id": "DEFECT-001",
@@ -165,6 +165,21 @@
         "windows"
       ],
       "rust_test": "RUST-001 decision record and corrected cross-language drift test",
+      "status": "fixture-ready"
+    },
+    {
+      "id": "DEFECT-002",
+      "seam": "update redirect HTTPS downgrade",
+      "fixture": "update request redirect oracle and native TLS/Cosign redirect tests",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./updatecheck -run TestSecureClientRedirect",
+      "expected": "GitHub-host redirects over HTTP are refused before connecting; HTTPS GitHub redirects remain allowed in manual and automatic request clients",
+      "comparison": "network",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "scripts/rust-port/update-request-differential.py plus symaira-core-update/tests/request.rs and src/request.rs and src/cosign.rs native TLS tests",
       "status": "fixture-ready"
     },
     {
@@ -1015,7 +1030,7 @@
         "windows"
       ],
       "rust_test": "symaira-core-update/tests/parity.rs",
-      "status": "todo"
+      "status": "parity"
     },
     {
       "id": "UPD-002",
@@ -1029,8 +1044,8 @@
         "linux",
         "windows"
       ],
-      "rust_test": "symaira-core-update/tests/parity.rs",
-      "status": "todo"
+      "rust_test": "symaira-core-update/tests/response.rs",
+      "status": "parity"
     },
     {
       "id": "UPD-003",
@@ -1044,8 +1059,8 @@
         "linux",
         "windows"
       ],
-      "rust_test": "symaira-core-update/tests/parity.rs",
-      "status": "todo"
+      "rust_test": "symaira-core-update/tests/cache.rs",
+      "status": "parity"
     },
     {
       "id": "UPD-004",
@@ -1059,8 +1074,8 @@
         "linux",
         "windows"
       ],
-      "rust_test": "symaira-core-update/tests/parity.rs",
-      "status": "todo"
+      "rust_test": "symaira-core-update/tests/request.rs",
+      "status": "parity"
     },
     {
       "id": "UPD-005",
@@ -1074,8 +1089,8 @@
         "linux",
         "windows"
       ],
-      "rust_test": "symaira-core-update/tests/parity.rs",
-      "status": "todo"
+      "rust_test": "symaira-core-update/tests/request.rs",
+      "status": "fixture-ready"
     },
     {
       "id": "UPD-006",
@@ -1089,8 +1104,8 @@
         "linux",
         "windows"
       ],
-      "rust_test": "symaira-core-update/tests/parity.rs",
-      "status": "todo"
+      "rust_test": "symaira-core-update/tests/extract.rs",
+      "status": "parity"
     },
     {
       "id": "UPD-007",
@@ -1104,8 +1119,8 @@
         "linux",
         "windows"
       ],
-      "rust_test": "symaira-core-update/tests/parity.rs",
-      "status": "todo"
+      "rust_test": "symaira-core-update/tests/extract.rs",
+      "status": "parity"
     },
     {
       "id": "UPD-008",
@@ -1119,8 +1134,8 @@
         "linux",
         "windows"
       ],
-      "rust_test": "symaira-core-update/tests/parity.rs",
-      "status": "todo"
+      "rust_test": "symaira-core-update/tests/install_method.rs",
+      "status": "parity"
     },
     {
       "id": "UPD-009",
@@ -1134,8 +1149,8 @@
         "linux",
         "windows"
       ],
-      "rust_test": "symaira-core-update/tests/parity.rs",
-      "status": "todo"
+      "rust_test": "symaira-core-update/tests/cosign_contract.rs",
+      "status": "fixture-ready"
     },
     {
       "id": "UPD-010",
@@ -1149,8 +1164,8 @@
         "linux",
         "windows"
       ],
-      "rust_test": "symaira-core-update/tests/parity.rs",
-      "status": "todo"
+      "rust_test": "symaira-core-update/tests/apply.rs",
+      "status": "fixture-ready"
     },
     {
       "id": "UPD-011",
@@ -1164,14 +1179,14 @@
         "linux",
         "windows"
       ],
-      "rust_test": "symaira-core-update/tests/parity.rs",
-      "status": "todo"
+      "rust_test": "symaira-core-update/tests/apply.rs",
+      "status": "fixture-ready"
     },
     {
       "id": "UPD-012",
       "seam": "update and self-update",
       "fixture": "unwritable/failure cleanup/atomic rollback/staging",
-      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./updatecheck/updateapply -run \"TestApplyFails|TestApplyCleans|TestApplyRolls|TestAtomicSwap|TestStagingDir\"",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./updatecheck/updateapply -run \"TestApplyFails|TestApplyCleans|TestApplyRolls|TestApplyRemoves|TestApplyStages|TestAtomicSwap|TestStagingDir\"",
       "expected": "no partial binary; prior binary restored; staging cleaned",
       "comparison": "filesystem",
       "platforms": [
@@ -1179,8 +1194,8 @@
         "linux",
         "windows"
       ],
-      "rust_test": "symaira-core-update/tests/parity.rs",
-      "status": "todo"
+      "rust_test": "symaira-core-update/tests/apply.rs",
+      "status": "fixture-ready"
     },
     {
       "id": "LLM-001",
@@ -1195,7 +1210,7 @@
         "windows"
       ],
       "rust_test": "symaira-core-llm/tests/provider_contract.rs",
-      "status": "todo"
+      "status": "parity"
     },
     {
       "id": "LLM-002",
@@ -1210,7 +1225,7 @@
         "windows"
       ],
       "rust_test": "symaira-core-llm/tests/provider_contract.rs",
-      "status": "todo"
+      "status": "parity"
     },
     {
       "id": "LLM-003",
@@ -1225,7 +1240,7 @@
         "windows"
       ],
       "rust_test": "symaira-core-llm/tests/provider_contract.rs",
-      "status": "todo"
+      "status": "parity"
     },
     {
       "id": "LLM-004",
@@ -1240,7 +1255,7 @@
         "windows"
       ],
       "rust_test": "symaira-core-llm/tests/provider_contract.rs",
-      "status": "todo"
+      "status": "parity"
     },
     {
       "id": "LLM-005",
@@ -1255,7 +1270,7 @@
         "windows"
       ],
       "rust_test": "symaira-core-llm/tests/provider_contract.rs",
-      "status": "todo"
+      "status": "parity"
     },
     {
       "id": "LLM-006",
@@ -1269,8 +1284,8 @@
         "linux",
         "windows"
       ],
-      "rust_test": "symaira-core-llm/tests/provider_contract.rs",
-      "status": "todo"
+      "rust_test": "symaira-core-llm/tests/stream_contract.rs",
+      "status": "parity"
     },
     {
       "id": "LLM-007",
@@ -1284,8 +1299,8 @@
         "linux",
         "windows"
       ],
-      "rust_test": "symaira-core-llm/tests/provider_contract.rs",
-      "status": "todo"
+      "rust_test": "symaira-core-llm/tests/stream_contract.rs",
+      "status": "parity"
     },
     {
       "id": "LLM-008",
@@ -1300,7 +1315,7 @@
         "windows"
       ],
       "rust_test": "symaira-core-llm/tests/provider_contract.rs",
-      "status": "todo"
+      "status": "parity"
     },
     {
       "id": "LLM-009",
@@ -1315,7 +1330,7 @@
         "windows"
       ],
       "rust_test": "symaira-core-llm/tests/provider_contract.rs",
-      "status": "todo"
+      "status": "parity"
     },
     {
       "id": "LLM-010",
@@ -1330,7 +1345,7 @@
         "windows"
       ],
       "rust_test": "symaira-core-llm/tests/provider_contract.rs",
-      "status": "todo"
+      "status": "parity"
     },
     {
       "id": "LLM-011",
@@ -1345,7 +1360,7 @@
         "windows"
       ],
       "rust_test": "symaira-core-llm/tests/provider_contract.rs",
-      "status": "todo"
+      "status": "parity"
     },
     {
       "id": "LLM-012",
@@ -1360,7 +1375,7 @@
         "windows"
       ],
       "rust_test": "no Rust crate; compatibility retention gate",
-      "status": "todo"
+      "status": "parity"
     },
     {
       "id": "AUD-001",

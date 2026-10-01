@@ -1,0 +1,142 @@
+{
+  "go_source_sha256": "4aa34358dd24ab9f03c1507e910d162e5c7cc20a5c95042e01786f1ab6f928ed",
+  "oracle_sha256": "ae06f1ae9360b8a0a22847f753917ff43cfbc607e655a4cfb95fea7e36736749",
+  "cases": [
+    {
+      "id": "empty",
+      "path": "",
+      "method": "unknown",
+      "error": "binary path must not be empty",
+      "self_update": false,
+      "guidance": "Unable to determine installation method. Reinstall from the GitHub releases page"
+    },
+    {
+      "id": "homebrew-env",
+      "path": "${TMP}/brew/bin/tool",
+      "env": {
+        "HOMEBREW_PREFIX": "${TMP}/brew"
+      },
+      "method": "homebrew",
+      "error": "",
+      "self_update": false,
+      "guidance": "Update via Homebrew: brew update && brew upgrade symvault"
+    },
+    {
+      "id": "gopath-env",
+      "path": "${TMP}/gopath/bin/tool",
+      "env": {
+        "GOPATH": "${TMP}/gopath"
+      },
+      "method": "go-install",
+      "error": "",
+      "self_update": false,
+      "guidance": "Update via Go: go install github.com/danieljustus/symvault@latest"
+    },
+    {
+      "id": "gomodcache-env",
+      "path": "${TMP}/modcache/example/tool",
+      "env": {
+        "GOMODCACHE": "${TMP}/modcache"
+      },
+      "method": "go-install",
+      "error": "",
+      "self_update": false,
+      "guidance": "Update via Go: go install github.com/danieljustus/symvault@latest"
+    },
+    {
+      "id": "homebrew-path",
+      "path": "/opt/homebrew/bin/tool",
+      "method": "homebrew",
+      "error": "",
+      "self_update": false,
+      "guidance": "Update via Homebrew: brew update && brew upgrade symvault"
+    },
+    {
+      "id": "cellar-path",
+      "path": "/usr/local/Cellar/tool/1.0.0/bin/tool",
+      "method": "homebrew",
+      "error": "",
+      "self_update": false,
+      "guidance": "Update via Homebrew: brew update && brew upgrade symvault"
+    },
+    {
+      "id": "linuxbrew-path",
+      "path": "/home/linuxbrew/.linuxbrew/bin/tool",
+      "method": "homebrew",
+      "error": "",
+      "self_update": false,
+      "guidance": "Update via Homebrew: brew update && brew upgrade symvault"
+    },
+    {
+      "id": "package-path",
+      "path": "/usr/bin/tool",
+      "method": "package-manager",
+      "error": "",
+      "self_update": false,
+      "guidance": "Update via your system package manager (e.g., apt upgrade, yum update, pacman -Syu)"
+    },
+    {
+      "id": "direct-path",
+      "path": "/usr/local/bin/tool",
+      "method": "direct-download",
+      "error": "",
+      "self_update": true,
+      "guidance": "Re-run the quick install script or download the latest release from GitHub"
+    },
+    {
+      "id": "go-cache",
+      "path": "/go/pkg/mod/example/tool@v1/bin/tool",
+      "method": "go-install",
+      "error": "",
+      "self_update": false,
+      "guidance": "Update via Go: go install github.com/danieljustus/symvault@latest"
+    },
+    {
+      "id": "home-local-bin",
+      "path": "${TMP}/home/.local/bin/tool",
+      "env": {
+        "HOME": "${TMP}/home"
+      },
+      "method": "direct-download",
+      "error": "",
+      "self_update": true,
+      "guidance": "Re-run the quick install script or download the latest release from GitHub"
+    },
+    {
+      "id": "layered-env-priority",
+      "path": "/opt/homebrew/bin/tool",
+      "env": {
+        "HOMEBREW_PREFIX": "/opt/homebrew"
+      },
+      "method": "homebrew",
+      "error": "",
+      "self_update": false,
+      "guidance": "Update via Homebrew: brew update && brew upgrade symvault"
+    },
+    {
+      "id": "resolved-symlink",
+      "path": "${TMP}/link/tool",
+      "method": "homebrew",
+      "error": "",
+      "self_update": false,
+      "guidance": "Update via Homebrew: brew update && brew upgrade symvault"
+    },
+    {
+      "id": "source-readonly",
+      "path": "${TMP}/readonly/tool",
+      "method": "build-from-source",
+      "error": "",
+      "self_update": false,
+      "guidance": "Rebuild from source: git pull && go build"
+    },
+    {
+      "id": "missing-parent",
+      "path": "${TMP}/missing/tool",
+      "method": "unknown",
+      "error": "",
+      "self_update": false,
+      "guidance": "Unable to determine installation method. Reinstall from the GitHub releases page"
+    }
+  ],
+  "goos": "darwin"
+}

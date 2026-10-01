@@ -275,11 +275,44 @@ jobs:
         run: make rust-foundation-contract
       - name: LLM provider contract gate
         run: make rust-llm-contract
+      - name: Update contract gate
+        run: make rust-update-contract
       - name: Dependency policy (Linux)
         if: runner.os == 'Linux'
         run: |
           cargo install cargo-deny --version 0.20.2 --locked
           cargo deny check
+
+  rust-update-signed:
+    name: Rust update signed-release acceptance
+    needs: changes
+    if: needs.changes.outputs.full == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
+      - name: Set up Go oracle toolchain
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: "1.26.6"
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+      - name: Install pinned Rust toolchain
+        run: rustup toolchain install 1.98.0 --profile minimal
+      - name: Install pinned Cosign verifier
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --show-error --location --max-time 120 \
+            https://github.com/sigstore/cosign/releases/download/v3.0.5/cosign-linux-amd64 \
+            --output "$RUNNER_TEMP/cosign"
+          echo "db15cc99e6e4837daabab023742aaddc3841ce57f193d11b7c3e06c8003642b2  $RUNNER_TEMP/cosign" | sha256sum --check
+          chmod +x "$RUNNER_TEMP/cosign"
+          echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
+      - name: Verify real signed release and disposable Apply
+        run: make rust-update-signed-contract
 
   rust-mcp:
     name: Rust MCP (${{ matrix.os }})

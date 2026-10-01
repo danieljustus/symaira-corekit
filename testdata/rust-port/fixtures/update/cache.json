@@ -1,0 +1,63 @@
+{
+  "go_source_sha256": "638c263835c1d72982f6fc3391092edc44318f3f5993e83c7c190fae25329cc9",
+  "oracle_sha256": "bb7845921fe8255d56cef394f4a64ddcce3a63ce12b881c9d3528d970b9eaaa7",
+  "cases": [
+    {
+      "id": "initial-fetch",
+      "requests": 1,
+      "result": {
+        "release": "v1.2.0",
+        "error": false
+      }
+    },
+    {
+      "id": "cache-hit",
+      "requests": 1,
+      "result": {
+        "release": "v1.2.0",
+        "error": false
+      }
+    },
+    {
+      "id": "forced-refresh",
+      "requests": 2,
+      "result": {
+        "release": "v1.3.0",
+        "error": false
+      }
+    },
+    {
+      "id": "cache-after-force",
+      "requests": 2,
+      "result": {
+        "release": "v1.3.0",
+        "error": false
+      }
+    },
+    {
+      "id": "expired-fetch",
+      "requests": 3,
+      "result": {
+        "release": "v1.4.0",
+        "error": false
+      }
+    },
+    {
+      "id": "expired-refresh-failure",
+      "requests": 4,
+      "result": {
+        "release": null,
+        "error": true
+      }
+    },
+    {
+      "id": "persistent-across-checkers",
+      "requests": 4,
+      "result": {
+        "release": "v1.4.0",
+        "error": false
+      }
+    }
+  ],
+  "default_cache_ttl_seconds": 86400
+}

@@ -2,30 +2,38 @@
 
 ## Development setup
 
-Requirements: Go 1.26 or newer (the module sets `go 1.26.4`).
+Requirements: Go 1.26 or newer (the module sets `go 1.26.4`), golangci-lint,
+and the Rust toolchain pinned in `rust-toolchain.toml` for Rust changes.
 
 ```sh
 make build    # CGO_ENABLED=0 go build ./...
-make test     # CGO_ENABLED=0 go test -race ./...
-make lint     # gofmt check + go vet
+make test     # CGO_ENABLED=1 go test -race ./...
+make lint     # golangci-lint + gofmt check + go vet
+make rust-lint
+make rust-test
 ```
 
-All checks must stay green on linux, darwin, and windows (amd64+arm64)
-with `CGO_ENABLED=0`. The CI pipeline (`ci.yml`) runs the same gates plus
-`govulncheck` and `apidiff` (API compatibility against `main`).
+The Go build must remain CGO-free on linux, darwin, and windows (amd64+arm64).
+Race tests use CGO; CI also runs tests with `CGO_ENABLED=0`. The authoritative
+gate list is `.github/workflows/ci.yml`: Go test and cross-build matrices,
+lint, `govulncheck`, `apidiff`, port contracts, native Rust foundation/LLM/update,
+MCP, MCP-config and SQLite checks, hardening/Miri and release-manifest validation.
+The full `main` matrix includes Linux, macOS and Windows. Run the affected
+`rust-*-contract` Make targets before pushing Rust changes.
 
 ## Releasing
 
-Releases are cut manually; this is an intentional decision to keep the
-release step under human control for a shared library. There is no
-tag-triggered workflow in CI.
+The maintainer deliberately creates and pushes a release tag. The tag-triggered
+`.github/workflows/release.yml` then verifies the tagged commit and creates the
+GitHub release with generated notes. It requires an exact `## vX.Y.Z` heading
+in `docs/migrations.md` for that tag.
 
 Process for a new `vX.Y.Z` release (strict SemVer; breaking changes
 require a major bump and a `BREAKING CHANGE` commit trailer so the
 apidiff job skips):
 
 1. **Confirm `main` is green.** All CI checks on `main` must pass:
-   test matrix (ubuntu + macos), lint, govulncheck, apidiff.
+   all configured Go and Rust platform jobs, lint, govulncheck and apidiff.
 2. **Run the full local gates:**
    ```sh
    make test
@@ -43,13 +51,12 @@ apidiff job skips):
    git tag -a vX.Y.Z -m "vX.Y.Z"
    git push origin vX.Y.Z
    ```
-5. **Create the release with notes** derived from the merged PRs since
-   the previous tag:
+5. **Verify the release workflow and generated notes** derived from merged PRs:
    ```sh
-   gh release create vX.Y.Z --title "vX.Y.Z" --notes "…"
+   gh release view vX.Y.Z
    ```
-   Summarize user-facing changes (new packages, behavior changes,
-   fixes) and link the relevant PRs. Keep the notes in English.
+   Review user-facing changes and linked PRs; edit the generated notes if
+   necessary. Keep release notes in English.
 6. **Verify** the release page shows the correct tag, notes, and no
    attached assets unless intended.
 

@@ -404,7 +404,7 @@ func NewSecureClient() *http.Client {
 //
 // A non-positive timeout means no timeout.
 //
-// The redirect policy refuses any redirect that leaves a GitHub host. The
+// The redirect policy refuses cleartext and any redirect that leaves a GitHub host. The
 // initial request URL is not restricted, so a consumer pointing at a different
 // host still works; only being bounced off GitHub mid-request is refused.
 func NewSecureClientWithTimeout(timeout time.Duration) *http.Client {
@@ -419,6 +419,9 @@ func NewSecureClientWithTimeout(timeout time.Duration) *http.Client {
 		// bounced to an attacker-controlled origin (which would invalidate the
 		// "URL points to GitHub API" justification on the request call).
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			if !strings.EqualFold(req.URL.Scheme, "https") {
+				return fmt.Errorf("refusing redirect to non-HTTPS scheme %q", req.URL.Scheme)
+			}
 			if !isGitHubHost(req.URL.Host) {
 				return fmt.Errorf("refusing redirect to non-GitHub host %q", req.URL.Host)
 			}

@@ -40,7 +40,7 @@
         "make port-oracle-selftest",
         "make port-fixture-source-check"
       ],
-      "stop_rule": "No Rust production crate until Go↔Go self-equality, source-digest rejection, isolated side effects and a deliberate negative-control failure are proven."
+      "stop_rule": "No Rust production crate until Go\u2194Go self-equality, source-digest rejection, isolated side effects and a deliberate negative-control failure are proven."
     },
     {
       "id": "RUST-002",
@@ -204,17 +204,25 @@
         "UPD-009",
         "UPD-010",
         "UPD-011",
-        "UPD-012"
+        "UPD-012",
+        "DEFECT-002"
       ],
-      "status": "deferred",
+      "status": "in_progress",
       "demand_class": "demand_driven",
       "demand_evidence": "demand-assessment.md",
       "acceptance_commands": [
+        "make rust-update-version-contract",
+        "python3 scripts/rust-port/update-response-differential.py",
         "make rust-update-contract",
-        "python3 scripts/rust-port/diff.py --suite update --native",
-        "cargo nextest run -p symaira-core-update"
+        "make rust-update-signed-contract",
+        "cargo nextest run -p symaira-core-update",
+        "python3 scripts/rust-port/update-cache-differential.py",
+        "python3 scripts/rust-port/install-method-differential.py",
+        "python3 scripts/rust-port/update-extract-differential.py",
+        "python3 scripts/rust-port/cosign-contract-differential.py",
+        "python3 scripts/rust-port/update-apply-differential.py"
       ],
-      "stop_rule": "Keep deferred until two Rust consumers need the same update pipeline. Stop on redirect/TLS weakening, traversal/symlink writes, checksum-byte drift, broken rollback or replacement of a known-good binary."
+      "stop_rule": "Do not mark complete until UPD-001..012 have executable Go/Rust parity and native evidence on every required target. Stop on redirect/TLS weakening, traversal/symlink writes, checksum-byte drift, broken rollback or replacement of a known-good binary."
     },
     {
       "id": "RUST-008",

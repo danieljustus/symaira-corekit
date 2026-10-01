@@ -3,12 +3,17 @@ package main
 import (
 	"bytes"
 	"context"
+	"crypto/sha256"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"strings"
+	"sync/atomic"
+	"time"
 
 	"github.com/danieljustus/symaira-corekit/llmkit"
 )
@@ -35,6 +40,151 @@ type streamErrorResult struct {
 	Error string `json:"error"`
 }
 
+type cancellationResult struct {
+	Operation       string `json:"operation"`
+	ErrorCode       string `json:"error_code"`
+	RequestObserved bool   `json:"request_observed"`
+}
+
+type injectedHTTPClientResult struct {
+	RegularPath          string `json:"regular_path"`
+	RegularContent       string `json:"regular_content"`
+	StreamPath           string `json:"stream_path"`
+	StreamDelta          string `json:"stream_delta"`
+	StreamFinished       string `json:"stream_finished"`
+	CancellablePath      string `json:"cancellable_path"`
+	CancellationObserved bool   `json:"cancellation_observed"`
+	CancellationError    string `json:"cancellation_error"`
+}
+
+type injectedHTTPTransport struct {
+	started         chan struct{}
+	canceled        chan struct{}
+	regularPath     string
+	streamPath      string
+	cancellablePath string
+	regularCalls    atomic.Int32
+}
+
+func (transport *injectedHTTPTransport) RoundTrip(request *http.Request) (*http.Response, error) {
+	if request.URL.Path == "/v1/chat/completions" {
+		call := transport.regularCalls.Add(1)
+		if call == 1 {
+			transport.regularPath = request.URL.Path
+			return &http.Response{
+				StatusCode: http.StatusOK,
+				Header:     http.Header{"Content-Type": []string{"application/json"}},
+				Body:       io.NopCloser(strings.NewReader(`{"choices":[{"message":{"content":"injected"}}]}`)),
+				Request:    request,
+			}, nil
+		}
+		transport.streamPath = request.URL.Path
+		return &http.Response{
+			StatusCode: http.StatusOK,
+			Header:     http.Header{"Content-Type": []string{"text/event-stream"}},
+			Body: io.NopCloser(strings.NewReader(
+				"data: {\"choices\":[{\"delta\":{\"content\":\"first\"}}]}\n\n" +
+					"data: {\"choices\":[{\"delta\":{\"content\":\" second\"},\"finish_reason\":\"stop\"}]}\n\n" +
+					"data: [DONE]\n\n",
+			)),
+			Request: request,
+		}, nil
+	}
+	if request.URL.Path == "/v1/embeddings" {
+		transport.cancellablePath = request.URL.Path
+		select {
+		case transport.started <- struct{}{}:
+		default:
+		}
+		<-request.Context().Done()
+		select {
+		case transport.canceled <- struct{}{}:
+		default:
+		}
+		return nil, request.Context().Err()
+	}
+	return nil, fmt.Errorf("unexpected injected transport path %s", request.URL.Path)
+}
+
+func recordInjectedHTTPClient() injectedHTTPClientResult {
+	transport := &injectedHTTPTransport{started: make(chan struct{}, 1), canceled: make(chan struct{}, 1)}
+	descriptor, ok := llmkit.Lookup("openai")
+	if !ok {
+		panic("openai provider not found")
+	}
+	client, err := llmkit.NewClient(
+		descriptor,
+		"",
+		llmkit.WithBaseURL("http://127.0.0.1:1/v1"),
+		llmkit.WithAPIKey("dummy-key"),
+		llmkit.WithHTTPClient(&http.Client{Transport: transport}),
+	)
+	if err != nil {
+		panic(err)
+	}
+	choice, err := client.Chat(context.Background(), "gpt-5", []llmkit.Message{{Role: "user", Content: "question"}}, nil)
+	if err != nil {
+		panic("custom HTTP client regular request failed: " + err.Error())
+	}
+	var streamDelta, streamFinished string
+	err = client.StreamChat(
+		context.Background(),
+		"gpt-5",
+		[]llmkit.Message{{Role: "user", Content: "question"}},
+		nil,
+		func(delta string) error {
+			streamDelta += delta
+			return nil
+		},
+		llmkit.WithStreamFinished(func(reason string) { streamFinished = reason }),
+	)
+	if err != nil {
+		panic("custom HTTP client stream request failed: " + err.Error())
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	done := make(chan error, 1)
+	go func() {
+		_, err := client.Embed(ctx, "", []string{"input"})
+		done <- err
+	}()
+	select {
+	case <-transport.started:
+	case <-time.After(2 * time.Second):
+		cancel()
+		panic("custom HTTP client cancellable request did not start")
+	}
+	cancel()
+	select {
+	case err = <-done:
+	case <-time.After(2 * time.Second):
+		panic("custom HTTP client cancellable request did not return")
+	}
+	providerErr := llmkit.AsError(err)
+	if providerErr == nil || providerErr.Code != llmkit.ErrCodeTransport {
+		panic(fmt.Sprintf("custom HTTP client cancellation returned unexpected error: %v", err))
+	}
+	cancellationObserved := false
+	select {
+	case <-transport.canceled:
+		cancellationObserved = true
+	case <-time.After(2 * time.Second):
+		panic("custom HTTP transport did not observe cancellation")
+	}
+	if transport.regularCalls.Load() != 2 {
+		panic("custom HTTP transport did not receive both chat requests")
+	}
+	return injectedHTTPClientResult{
+		RegularPath:          transport.regularPath,
+		RegularContent:       choice.Content,
+		StreamPath:           transport.streamPath,
+		StreamDelta:          streamDelta,
+		StreamFinished:       streamFinished,
+		CancellablePath:      transport.cancellablePath,
+		CancellationObserved: cancellationObserved,
+		CancellationError:    string(providerErr.Code),
+	}
+}
+
 type openAISuccessToolCall struct {
 	ID           string `json:"id"`
 	Name         string `json:"name"`
@@ -51,6 +201,19 @@ type openAISuccessObservation struct {
 	ErrorCode    string                  `json:"error_code,omitempty"`
 }
 
+type streamCase struct {
+	Kind           string             `json:"kind"`
+	Request        request            `json:"request"`
+	Response       string             `json:"response,omitempty"`
+	ResponseBytes  int                `json:"response_bytes"`
+	ResponseSHA256 string             `json:"response_sha256"`
+	Deltas         []string           `json:"deltas"`
+	Events         []string           `json:"events"`
+	Finish         string             `json:"finish"`
+	Finished       bool               `json:"finished"`
+	Error          *streamErrorResult `json:"error"`
+}
+
 type observation struct {
 	Providers                []llmkit.Descriptor `json:"providers"`
 	OpenAI                   request             `json:"openai_chat"`
@@ -62,16 +225,24 @@ type observation struct {
 	ZeroTimeoutAllowed       bool                `json:"zero_timeout_allowed"`
 	Anthropic                request             `json:"anthropic_chat"`
 	AnthropicMixedContent    string              `json:"anthropic_mixed_content"`
-	RateLimit                errorResult         `json:"rate_limit"`
-	StructuredAuth           errorResult         `json:"structured_auth"`
-	StructuredAuthCasefold   errorResult         `json:"structured_auth_casefold"`
-	MalformedEnvelope        errorResult         `json:"malformed_error_envelope"`
-	MalformedChoice          errorResult         `json:"malformed_error_choice"`
-	MalformedChoiceAlias     errorResult         `json:"malformed_error_choice_alias_collision"`
-	MalformedNestedAlias     errorResult         `json:"malformed_error_nested_alias_collision"`
-	NullChoiceContent        string              `json:"null_choice_content"`
-	InvalidUTF8ErrorBody     string              `json:"invalid_utf8_error_body"`
-	NativeGenerate           struct {
+	OpenAIStream             streamCase          `json:"openai_stream"`
+	AnthropicStream          streamCase          `json:"anthropic_stream"`
+	OpenAIStreamErrors       struct {
+		NoData         streamCase `json:"no_data"`
+		BadChunk       streamCase `json:"bad_chunk"`
+		OversizedFirst streamCase `json:"oversized_first"`
+		OversizedAfter streamCase `json:"oversized_after"`
+	} `json:"openai_stream_errors"`
+	RateLimit              errorResult `json:"rate_limit"`
+	StructuredAuth         errorResult `json:"structured_auth"`
+	StructuredAuthCasefold errorResult `json:"structured_auth_casefold"`
+	MalformedEnvelope      errorResult `json:"malformed_error_envelope"`
+	MalformedChoice        errorResult `json:"malformed_error_choice"`
+	MalformedChoiceAlias   errorResult `json:"malformed_error_choice_alias_collision"`
+	MalformedNestedAlias   errorResult `json:"malformed_error_nested_alias_collision"`
+	NullChoiceContent      string      `json:"null_choice_content"`
+	InvalidUTF8ErrorBody   string      `json:"invalid_utf8_error_body"`
+	NativeGenerate         struct {
 		Request request                   `json:"request"`
 		Chunks  []llmkit.GenerateResponse `json:"chunks"`
 	} `json:"native_generate"`
@@ -94,6 +265,10 @@ type observation struct {
 		Request    request     `json:"request"`
 		Embeddings [][]float32 `json:"embeddings"`
 	} `json:"native_embed"`
+	OpenAIEmbed struct {
+		Request request     `json:"request"`
+		Vectors [][]float32 `json:"vectors"`
+	} `json:"openai_embed"`
 	CasefoldEmbedding struct {
 		DataThenAlias      []float32 `json:"data_then_alias"`
 		AliasThenData      []float32 `json:"alias_then_data"`
@@ -104,10 +279,76 @@ type observation struct {
 		Request request                  `json:"request"`
 		Models  []llmkit.OllamaModelInfo `json:"models"`
 	} `json:"native_models"`
+	PingOllama struct {
+		Request  request `json:"request"`
+		Response string  `json:"response"`
+	} `json:"ping_ollama"`
 	NativeModelsCasefold        []llmkit.OllamaModelInfo   `json:"native_models_casefold_alias_order"`
 	CasefoldDiscoveryModels     []llmkit.ModelInfo         `json:"casefold_discovery_models"`
 	GenericOllamaCasefoldModels []llmkit.ModelInfo         `json:"generic_ollama_casefold_models"`
+	CancellableCalls            []cancellationResult       `json:"cancellable_calls"`
+	InjectedHTTPClient          injectedHTTPClientResult   `json:"injected_http_client"`
 	OpenAISuccessResponses      []openAISuccessObservation `json:"openai_success_responses"`
+}
+
+func canceledCall(operation string, requests *atomic.Int32, call func(context.Context) error) cancellationResult {
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	before := requests.Load()
+	err := call(ctx)
+	providerErr := llmkit.AsError(err)
+	if providerErr == nil || providerErr.Code != llmkit.ErrCodeTransport {
+		panic(operation + ": expected transport error for canceled context")
+	}
+	return cancellationResult{
+		Operation: operation, ErrorCode: string(providerErr.Code), RequestObserved: requests.Load() != before,
+	}
+}
+
+func recordCanceledCalls(baseURL string, requests *atomic.Int32) []cancellationResult {
+	openAI, _ := llmkit.Lookup("openai")
+	openAIClient, err := llmkit.NewClient(openAI, "", llmkit.WithBaseURL(baseURL+"/v1"), llmkit.WithAPIKey("dummy-key"))
+	if err != nil {
+		panic(err)
+	}
+	openRouter, _ := llmkit.Lookup("openrouter")
+	openRouterClient, err := llmkit.NewClient(openRouter, "", llmkit.WithBaseURL(baseURL+"/api/v1"), llmkit.WithAPIKey("dummy-key"))
+	if err != nil {
+		panic(err)
+	}
+	ollama, _ := llmkit.Lookup("ollama")
+	ollamaClient, err := llmkit.NewClient(ollama, "", llmkit.WithBaseURL(baseURL))
+	if err != nil {
+		panic(err)
+	}
+	message := []llmkit.Message{{Role: "user", Content: "question"}}
+	return []cancellationResult{
+		canceledCall("embed", requests, func(ctx context.Context) error {
+			_, err := openAIClient.Embed(ctx, "", []string{"input"})
+			return err
+		}),
+		canceledCall("list_models", requests, func(ctx context.Context) error {
+			_, err := openRouterClient.ListModels(ctx)
+			return err
+		}),
+		canceledCall("embed_native", requests, func(ctx context.Context) error {
+			_, err := ollamaClient.EmbedNative(ctx, "", []string{"input"}, 2)
+			return err
+		}),
+		canceledCall("list_ollama_models", requests, func(ctx context.Context) error {
+			_, err := ollamaClient.ListOllamaModels(ctx)
+			return err
+		}),
+		canceledCall("generate", requests, func(ctx context.Context) error {
+			return ollamaClient.Generate(ctx, "", "prompt", func(llmkit.GenerateResponse) error { return nil })
+		}),
+		canceledCall("chat_stream", requests, func(ctx context.Context) error {
+			return ollamaClient.ChatStream(ctx, "", message, func(llmkit.ChatStreamResponse) error { return nil })
+		}),
+		canceledCall("ping", requests, func(ctx context.Context) error {
+			return ollamaClient.Ping(ctx)
+		}),
+	}
 }
 
 var openAISuccessResponseBodies = []struct {
@@ -219,6 +460,76 @@ func captureWithSuffix(provider, response string, status int, suffix string) (*r
 	return got, client, server.Close, nil
 }
 
+// runStream records one SSE streaming observation: the wire request, the raw
+// response bytes, every callback delta, the finish reason, and any llmkit
+// error. Response bodies over four KiB are recorded by kind and SHA-256 only
+// so oversized scanner fixtures stay out of the committed JSON.
+func runStream(kind, provider, model, response string, opts *llmkit.ChatOptions) streamCase {
+	sum := sha256.Sum256([]byte(response))
+	result := streamCase{
+		Kind:           kind,
+		Response:       response,
+		ResponseBytes:  len(response),
+		ResponseSHA256: fmt.Sprintf("%x", sum),
+		Deltas:         []string{},
+		Events:         []string{},
+	}
+	if result.ResponseBytes > 4096 {
+		result.Response = ""
+	}
+	got := &request{}
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		got.Path = r.URL.Path
+		got.Query = r.URL.RawQuery
+		if strings.HasPrefix(r.Header.Get("Authorization"), "Bearer ") {
+			got.Auth = "bearer"
+		}
+		if r.Header.Get("x-api-key") != "" {
+			got.Auth = "x-api-key"
+		}
+		got.ProviderVersion = r.Header.Get("anthropic-version")
+		_ = json.NewDecoder(r.Body).Decode(&got.Body)
+		w.Header().Set("Content-Type", "text/event-stream")
+		_, _ = w.Write([]byte(response))
+	}))
+	desc, ok := llmkit.Lookup(provider)
+	if !ok {
+		server.Close()
+		panic(kind + ": provider not found")
+	}
+	baseURL := server.URL
+	if provider == "openai" {
+		baseURL += "/v1"
+	}
+	client, err := llmkit.NewClient(desc, "", llmkit.WithBaseURL(baseURL), llmkit.WithAPIKey("dummy-key"))
+	if err != nil {
+		server.Close()
+		panic(err)
+	}
+	callErr := client.StreamChat(context.Background(), model,
+		[]llmkit.Message{{Role: "user", Content: "question"}}, opts,
+		func(delta string) error {
+			result.Deltas = append(result.Deltas, delta)
+			result.Events = append(result.Events, "delta:"+delta)
+			return nil
+		},
+		llmkit.WithStreamFinished(func(reason string) {
+			result.Finish = reason
+			result.Finished = true
+			result.Events = append(result.Events, "finish:"+reason)
+		}))
+	server.Close()
+	result.Request = *got
+	if callErr != nil {
+		var providerErr *llmkit.Error
+		if !errors.As(callErr, &providerErr) {
+			panic(kind + ": expected llmkit stream error: " + callErr.Error())
+		}
+		result.Error = &streamErrorResult{Code: string(providerErr.Code), Error: callErr.Error()}
+	}
+	return result
+}
+
 func main() {
 	providers, err := llmkit.Providers()
 	if err != nil {
@@ -227,6 +538,17 @@ func main() {
 	var out observation
 	out.Providers = providers
 	out.OpenAISuccessResponses = observeOpenAISuccessResponses()
+	out.InjectedHTTPClient = recordInjectedHTTPClient()
+	var canceledRequests atomic.Int32
+	cancelServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		canceledRequests.Add(1)
+		_, _ = w.Write([]byte(`{}`))
+	}))
+	out.CancellableCalls = recordCanceledCalls(cancelServer.URL, &canceledRequests)
+	cancelServer.Close()
+	if canceledRequests.Load() != 0 {
+		panic("canceled calls unexpectedly reached HTTP server")
+	}
 	openAI, ok := llmkit.Lookup("openai")
 	if !ok {
 		panic("openai provider not found")
@@ -492,6 +814,17 @@ func main() {
 	out.CasefoldEmbedding.AliasThenData = casefoldVectors[1]
 	out.CasefoldEmbedding.EmbeddingThenAlias = casefoldVectors[2]
 	out.CasefoldEmbedding.AliasThenEmbedding = casefoldVectors[3]
+	got, client, closeServer, err = capture("openai", `{"data":[{"embedding":[0.25,0.5]}]}`, http.StatusOK)
+	if err != nil {
+		panic(err)
+	}
+	embeddings, err := client.Embed(context.Background(), "", []string{"input"}, llmkit.WithEmbedDimensions(2))
+	closeServer()
+	if err != nil || len(embeddings) != 1 {
+		panic("expected one OpenAI embedding")
+	}
+	out.OpenAIEmbed.Request = *got
+	out.OpenAIEmbed.Vectors = [][]float32{embeddings[0].Vector}
 	got, client, closeServer, err = capture("ollama", `{"models":[{"name":"llama3.1","modified_at":"today","size":12}]}`, http.StatusOK)
 	if err != nil {
 		panic(err)
@@ -529,6 +862,35 @@ func main() {
 		panic(err)
 	}
 	closeServer()
+	pingResponse := `{"data":[{"id":"pong"}]}`
+	got, client, closeServer, err = capture("ollama", pingResponse, http.StatusOK)
+	if err != nil {
+		panic(err)
+	}
+	if err := client.Ping(context.Background()); err != nil {
+		panic(err)
+	}
+	out.PingOllama.Request = *got
+	out.PingOllama.Response = pingResponse
+	closeServer()
+
+	// SSE streaming parity: record Go StreamChat wire bytes, callback order,
+	// finish reasons, and malformed-stream errors for the Rust replay tests.
+	temp := 0.5
+	chatOpts := &llmkit.ChatOptions{Temperature: &temp, MaxTokens: 64, System: "system prompt"}
+	openAIChunks := "data: {\"choices\":[{\"delta\":{\"content\":\"first\"}}]}\n\n" +
+		"data: {\"choices\":[{\"delta\":{\"content\":\" second\"},\"finish_reason\":\"stop\"}]}\n\n" +
+		"data: [DONE]\n\n"
+	out.OpenAIStream = runStream("openai_stream_ok", "openai", "gpt-5", openAIChunks, chatOpts)
+	out.AnthropicStream = runStream("anthropic_stream_ok", "anthropic", "claude", "data: {\"type\":\"content_block_delta\",\"delta\":{\"type\":\"text_delta\",\"text\":\"first\"}}\n\n"+
+		"data: {\"type\":\"content_block_delta\",\"delta\":{\"type\":\"text_delta\",\"text\":\" second\"}}\n\n"+
+		"data: {\"type\":\"message_delta\",\"delta\":{\"stop_reason\":\"end_turn\"},\"usage\":{\"output_tokens\":2}}\n\n", chatOpts)
+	out.OpenAIStreamErrors.NoData = runStream("openai_stream_no_data", "openai", "gpt-5", ": keep-alive\n\n", nil)
+	out.OpenAIStreamErrors.BadChunk = runStream("openai_stream_bad_chunk", "openai", "gpt-5", "data: {bad}\n\n", nil)
+	oversizedLine := "data: " + strings.Repeat("x", 1024*1024+1) + "\n"
+	out.OpenAIStreamErrors.OversizedFirst = runStream("openai_stream_oversized_first", "openai", "gpt-5", oversizedLine, nil)
+	out.OpenAIStreamErrors.OversizedAfter = runStream("openai_stream_oversized_after", "openai", "gpt-5",
+		"data: {\"choices\":[{\"delta\":{\"content\":\"first\"}}]}\n\n"+oversizedLine, nil)
 	if err := json.NewEncoder(os.Stdout).Encode(out); err != nil {
 		panic(err)
 	}

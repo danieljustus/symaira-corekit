@@ -10,6 +10,7 @@ import os
 from pathlib import Path
 import subprocess
 import sys
+import tomllib
 
 ROOT = Path(__file__).resolve().parents[2]
 FIXTURE = ROOT / "testdata/rust-port/fixtures/llm/go-oracle.json"
@@ -55,10 +56,25 @@ def compare(observed: dict, expected: dict) -> None:
         )
 
 
+def assert_no_rust_ollamakit() -> None:
+    """LLM-012 retention half: the deprecated Go shim must never gain a Rust clone."""
+    workspace = tomllib.loads((ROOT / "Cargo.toml").read_text(encoding="utf-8"))["workspace"]
+    names = []
+    for member in workspace["members"]:
+        package = tomllib.loads((ROOT / member / "Cargo.toml").read_text(encoding="utf-8")).get("package", {})
+        if isinstance(package.get("name"), str):
+            names.append(package["name"])
+    clashes = sorted(name for name in names if "ollamakit" in name)
+    if clashes:
+        raise ValueError(f"Rust ollamakit crate must not exist: {clashes}")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--write", action="store_true", help="replace the fixture from the current Go implementation")
     args = parser.parse_args()
+
+    assert_no_rust_ollamakit()
 
     env = os.environ.copy()
     env["GOTOOLCHAIN"] = "go1.26.6"
@@ -88,7 +104,7 @@ def main() -> int:
     else:
         raise ValueError("negative control was not rejected")
     compare(observed, expected)
-    print("PASS Go/Rust LLM fixture provenance, provider registry, dialect requests, Ollama calls and error taxonomy")
+    print("PASS Go/Rust LLM fixture provenance, provider registry, dialect requests, Ollama calls, error taxonomy and no-Rust-ollamakit retention")
     return 0
 
 

@@ -115,7 +115,8 @@ The immutable review bundle remains at
 `0a9bfee3ad56ee3e49b4ebc88b1d4d57f742c6bf1bda664d172f57dcc81045d0`.
 It verified the then-frozen candidate, but it cannot approve later source bytes.
 
-The current candidate repairs local oracle reproducibility: it resolves the
+At this historical checkpoint the candidate repaired local oracle reproducibility:
+it resolves the
 pinned Go compiler before replacing `HOME`, so the isolated runtime does not
 mistake an installed `go1.26.6` for a missing download. The dependency inventory
 has a bounded 300-second allowance for a cold isolated Go cache. The explicit
@@ -127,6 +128,12 @@ retained in `differential-macos-bound-rust014.json` with SHA-256
 six-group typed differential passed with Go `go1.26.6`, and it measured the
 Rust busy wait at 5.069667334 seconds. This is a real local capture, not a
 synthetic fixture.
+
+**Evidence-pointer correction (cleanup audit):** the digest above describes
+the pre-#271 bytes, not the retained file after its source rebind. The retained
+`differential-macos-bound-rust014.json` hashes to
+`fd5e5acc15e416564f654c3d95b0f5fb5e00049a8d5e7a3ba073b7b80d2558b8`.
+The capture's original provenance is retained rather than rewritten.
 
 The latest review repair validates the complete Rust observation shape before
 comparison: connection policy, migrations/schema/data/timestamps, rollback and
@@ -258,6 +265,15 @@ missing or malformed causes as failed controls rather than raising an
 unvalidated attribute error.
 
 ### Fresh evidence and exact local results
+
+**Historical digest caveat:** the manifest and two differential digests below
+cannot be verified against any committed
+revision of those paths. They are not usable source-binding evidence. The
+retained strict and typed report bytes hash respectively to
+`67d098a0c18add6b80b15027b32d14b8dd44dd0bf09a28c4004239b8ca916968`
+and `63e5d3306292b7133af0fceccb2e187d789b4ca1e91dec49c23c55fb3da31a5c`.
+Use the current source manifest and verifier for current acceptance; do not
+substitute today's manifest digest into this dated capture.
 
 | Step | Command | Result / counts | Absolute logs or artifact |
 |---|---|---|---|

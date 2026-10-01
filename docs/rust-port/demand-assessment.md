@@ -10,22 +10,44 @@ rather than an unexamined default.
 
 Method: read-only searches over the Rust sources of every current Rust consumer
 in the workspace (`symaira-desktop`, `symaira-eraseme`, `symaira-vault`,
-`symaira-brain`, including its `browse/` module), rechecked 2026-09-23. Paths are relative to
+`symaira-brain`, including its `browse/` module), rechecked 2026-09-28 for
+RUST-007 and 2026-09-23 for the other deferred slices. Paths are relative to
 `/Volumes/1TB_NVMe_SN850X/Dev/Symaira_Dev/Repos`.
 
-## RUST-007 — Update, archive, Cosign and atomic apply (`UPD-*`) — deferred
+## RUST-007 — Update, archive, Cosign and atomic apply (`UPD-*`) — in progress
 
 ```sh
 rg -l -i -g '*.rs' "updatecheck|update_check|latest release|self_update|cosign|atomic.apply" \
   symaira-brain/rust symaira-brain/browse/crates symaira-desktop/crates symaira-eraseme/crates symaira-vault/crates
 ```
 
-Brain's `rust/symbrain-managed/src/install.rs` implements release download,
-publisher verification, extraction and atomic installation. Vault's
-`crates/symvault-cli/src/update_commands.rs` explicitly keeps `update check`
-and `update apply` unavailable; its `update info` reports the installation
-method, not the same pipeline. **Verdict: deferred — one Rust consumer needs
-the full pipeline; nothing to de-duplicate yet.**
+Brain's `rust/symbrain-managed/src/install.rs:77-151` implements release
+download, publisher verification, extraction and atomic installation. Vault
+subsequently implemented its own release checker and signed installer:
+`crates/symvault-cli/src/update_commands.rs:1-12,90-95,142-156` and
+`crates/symvault-cli/src/update_apply.rs:1-7,28-165`. These are independent
+product consumers with duplicated release-download, Cosign, archive and
+atomic-install concerns. **Verdict: demand met; RUST-007 can proceed.**
+`rust/symaira-core-update` has executable Go/Rust comparisons for
+UPD-001..011, covering version decisions, response and request behavior,
+cache, extraction, install-method detection, Cosign contracts and apply
+behavior. UPD-005/009/010/011/012 remain `fixture-ready`, not completed parity;
+the full RUST-007 acceptance gate
+and native target-platform evidence are not complete. See
+[`contract-matrix.json`](contract-matrix.json) for each row's current status.
+The local UPD-012 subset now runs six direct `atomicSwap` Go test-oracle cases
+against the Rust filesystem operation (missing staged source, validator rollback,
+failed first install, stale-backup replacement and two rollback/remove fault
+paths). Both filesystem observations and rollback error families reject mutations.
+The Apply oracle records and Rust replays twelve cases, including a blocked parent
+directory with no asset staging, a nested target with recursive filesystem
+observations, ZIP installation and asset selection. Independent mutations of
+install, blocked-parent, nested-target, ZIP and asset-selection observations
+are rejected.
+`make rust-update-contract` executes both comparisons. This does **not** prove
+full update orchestration, every cleanup fault or native Windows
+behavior; UPD-012 is therefore not promoted to `parity`.
+No Vault or Brain cutover is implied by this library slice.
 
 ## RUST-008 — Descriptor-driven LLM provider slice (`LLM-*`) — in progress
 

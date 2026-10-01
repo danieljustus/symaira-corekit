@@ -1,53 +1,268 @@
 # Resume checkpoint — Rust consumer release gates open
 
-## Current local slice — shared LLM adoption (2026-10-01)
+## Current combined CoreKit candidate (2026-10-01)
 
-The older #337/#351 candidate descriptions below are historical. CoreKit main
-at `04d1411adb57aa602b992509121011aa7666ff1a` contains chat/stream cancellation,
-async transport injection, response-edge fixes and the native LLM CI gate.
-EraseMe already has a classification adapter over that crate; Brain's embedding
-transport and Desktop's Anthropic transform are the next bounded adoption paths.
+The isolated candidate starts from the complete #358 branch and integrates the
+current CoreKit LLM work from #361 and #362. Its source changes retain the
+#358 cache/provider repairs and tests, the cancellable embedding API, and the
+Go-compatible synchronous/cancellable OpenAI success decoder with the refreshed
+oracle corpus. The merged changes are being reconciled in
+`/workspace/scratch/corekit-handoff-merge`; no integration commit or publication
+has been made.
 
-The current local change adds `Client::embed_cancellable` with the same request
-builder and decoder as `embed`. Its tests cover injected transport, request and
-response contracts, cancellation before dispatch and during headers/body reads,
-and provider/decode failures. Consumer work pins the already merged revision
-above rather than an unpublished local API: Brain replaces its duplicate
-embedding HTTP transport, Desktop delegates Anthropic transform streaming, and
-EraseMe refreshes its LLM pin. Product prompts, credential resolution, embedding
-dimensions and hash fallback remain consumer-owned.
+The earlier #353 source is included in #358's ancestry. #359 and #360 are
+alternative checkpoint branches; their source/cache snapshots require review
+against the selected #358 fixes before being marked represented.
 
-RUST-008 remains `in_progress`. Model discovery and native Ollama endpoints
-still lack per-request cancellation; OpenAI success-response null/field-alias/
-duplicate-key behavior needs additional Go-oracle coverage before broad parity
-can be claimed. The released-consumer and registry stages remain open. Local
-tests or immutable Git dependency pins are not released-artifact evidence.
+RUST-007 remains `in_progress`. UPD-005/009/010/011/012 remain unpromoted, and
+consumer release, migration and publication gates are separate. The existing
+SQLite capture and source manifest must pass provenance and acceptance checks
+on the composed candidate.
 
-Local Linux/x86_64 verification uses Rust 1.98.0 and the pinned Go toolchain:
-`make rust-llm-contract` passes (33 provider tests and the Go oracle comparison),
-as do the 79 SQLite acceptance tests, its provenance test, the 60 consumer
-verifier tests, `docs/rust-port/validate.py`, and the CGO-free Go build. Brain's
-Go extractor tests, 25 memory unit tests, seven integration tests, strict Clippy
-and Rust CLI check pass. EraseMe's six transport tests and six LLM unit tests,
-strict Clippy and locked metadata check pass with only the three affected Git
-source IDs changed in its lockfile.
+## Historical candidate snapshot — executable update integration; platform gate still open
 
-Desktop's Go AI/secret tests, Rust core/CLI/protocol suites, strict Clippy,
-formatting and locked CLI build pass. The
-protocol upload-permission fixture requires `umask 0022`; this environment's
-default `0077` makes that unchanged fixture report `0600` instead of `0640`.
-Two local standalone CLI smokes use an isolated HOME/XDG environment and a
-chunked fake Anthropic provider: both NDJSON and plain output arrive before the
-provider is allowed to finish, preserve escaping/prompts/model/path and the
-token-limit marker, and exit zero with empty stderr. Secret-runner tests cover
-the deadline even when a descendant retains the stdout pipe. The final review
-found no remaining actionable issue in the new adapters.
+## Current local candidate — executable update integration; platform gate still open
 
-Brain's synchronous adoption still builds CoreKit's async dependencies: its
-lockfile gains 100 packages. Release build/startup/RSS/size comparisons have
-not been measured for these new consumer snapshots; their performance evidence
-remains open. This local verification does not substitute for the native macOS and
-Windows lanes.
+- Mode/status: handoff/blocked on missing native Windows runner, unreleased
+  consumer snapshots and separately prohibited publication. The update
+  implementation is committed locally as
+  `be5e33936e1fb6b84284885fca30995db7a92ac5`; this follow-up checkpoint
+  records its verification and remaining gates. No Go removal or cutover.
+- Branch `migration/corekit-ledger-20260928` remains local-only beyond remote
+  PR #353's older head `a05a12b5cd49f13609a2bce16335426b8b6a60d9`.
+  No push, installed cutover, Go removal or cleanup. The native gate output
+  below binds the earlier byte-identical dirty source snapshot, not native
+  Windows execution or a published consumer release.
+- Cosign now has an executable Rust fetch and `verify-blob` path: HTTPS/TLS 1.3,
+  GitHub-host redirect policy, three-second timeout, one-MiB artifact limit,
+  private byte-exact checksum/signature/certificate files, and a fail-closed
+  subprocess result. The Go oracle supplies 13 process/fetch observations; a
+  native local Go TLS 1.3 server exercises actual Rust signature/certificate
+  fetch, 404, body limit and foreign-redirect rejection. A mutated fixture is
+  rejected. An additional opt-in gate (`make rust-update-signed-contract`)
+  pins the public v0.22.1 manifest, signature and certificate by SHA-256,
+  accepts the real keyless signature in Go and Rust, rejects tampered bytes
+  and wrong identity, then has the production Rust Applier fetch the signed
+  release archive and replace **only a disposable temporary target**.
+- The production Applier also replays all 17 Go-generated Apply filesystem
+  cases through a local HTTP server: asset selection, checksum parsing,
+  extraction, writable-parent checks, swap, errors, and progress. It verifies
+  the checksum before optional Cosign verification, validates the extracted
+  binary with a rollback backup available, and never targets a real install.
+- On the combined dirty source, full Cargo workspace tests, fmt and strict
+  Clippy, `make rust-update-contract`, `make rust-sqlite-contract`,
+  `make rust-llm-contract`, `make test lint build`, generator check, SQLite
+  provenance tests, ledger validator and `git diff --check` exited 0. Raw
+  output: `/Users/daniel/.hermes/cache/scratch/corekit-integrated-production-apply-preflight.log`.
+  Darwin/arm64 signed gate also exited 0. Linux/arm64 update **and signed**
+  gates exited 0 as `nobody` in `rust:1.98.0-bookworm` with SHA-256-verified
+  Go 1.26.6. Its Cosign v3.1.3 Linux/arm64 CLI was verified on the host against
+  the official Sigstore bundle with exact certificate identity and issuer;
+  SHA-256 `c5d324e091826b0d7a78eb16fef316450b4eb9aaec045611c08ba06f5e73220a`
+  was rechecked inside the container before execution. Linux raw output:
+  `/Users/daniel/.hermes/cache/scratch/corekit-linux-update-real-signature.log`.
+  No native Windows evidence is established;
+  UPD-005/009/010/011/012 remain `fixture-ready` in the ledger.
+- The SQLite source manifest and native macOS capture were deliberately
+  re-frozen after the Cargo lock change, and the 79-test SQLite contract passed.
+  The local post-commit rerun again passed 79/79 plus provenance and six typed
+  cases, but warned that the candidate capture revision is not reachable from
+  `origin/main`. Re-freeze from the integrated base after any future squash
+  merge; this local commit is not merge-survival or release evidence.
+- `DEFECT-002` records the corrected HTTPS-to-HTTP redirect policy. The Go
+  client previously allowed a cleartext GitHub redirect; Go and both Rust
+  redirect paths now refuse it, with 13 fresh Go request observations, native
+  TLS/Cosign checks and mutation rejection. Three other update fixtures were
+  refreshed only for the changed Go source hash; their cases did not change.
+  On the combined dirty candidate, the full Darwin/arm64 Cargo workspace,
+  strict Clippy, Go test/lint/build, all Rust contracts (including SQLite and
+  signed disposable Apply), generator and ledger validation exited 0. Raw
+  output: `/Users/daniel/.hermes/cache/scratch/corekit-darwin-integrated-20260929.log`.
+- Linux/arm64 integrated v3 passed Go test/lint/build, Cargo workspace tests,
+  fmt and strict Clippy, then the harness ran the **Darwin-frozen**
+  `make rust-fs-secret-contract` against native Linux. That is not a valid
+  cross-platform fixture check: the Go oracle's SEC-005/006 Keychain results
+  intentionally differ on Linux. The native CI lane instead generates and
+  validates a target-bound temporary `--target linux` corpus, then compares
+  live Go and Rust observations. A native Linux Go probe confirmed exactly
+  those four SEC-005/006 field differences, not production-source drift.
+  The corrected integrated v4 suite runs that CI lane; its source archive
+  SHA-256 is `ea96c93c9f0f0d44fbbcf55ea7719d0c81c1c98d1f9b1efc6c08130b6810d039`.
+  Output: `/Users/daniel/.hermes/cache/scratch/corekit-linux-integrated-20260929-v4.log`.
+  V4 exited 2 at SQLite acceptance case
+  `test_current_capture_revision_survives_a_squash_merge`: the disposable
+  container fetched the candidate Git bundle but did not restore the recorded
+  `origin/main` ref, so `merge_survival` could resolve no base branch. Go
+  test/lint/build, Cargo workspace tests/fmt/strict Clippy and prior contracts
+  had passed on that snapshot; later contracts were not executed.
+  V5 restores exactly the host-verified base ref
+  `994ee3c5ce0415bc850ec51409833eb1ebaa3c08` before acceptance. A
+  native Linux/arm64 preflight confirmed the bundle contains that commit and
+  the reconstructed ref resolves at the pinned candidate HEAD `b0bfd3f3`.
+  The v5 source archive SHA-256 is
+  `c9b48ce027e275f96acdbd2c315f688c5ad47b78da2a2ef01f41ab5aab528d4b`;
+  process `proc_2fbc42531f5b` writes
+  `/Users/daniel/.hermes/cache/scratch/corekit-linux-integrated-20260929-v5.log`.
+  V5 exited 0: Go test/lint/build, Cargo workspace tests/fmt/strict Clippy,
+  SQLite acceptance, native Linux FS/secretref differential, all Update
+  contracts and the signed disposable Apply passed. Raw output:
+  `/Users/daniel/.hermes/cache/scratch/corekit-linux-integrated-20260929-v5.log`.
+  This archive contains all 526 tracked/untracked source paths; its executable
+  sources matched the live tree at archive time.
+  A later Windows/amd64 static check exposed three `-D warnings` failures in
+  the untracked Rust update code: two Unix-only mutable directory builders and
+  a Windows-only readonly-attribute change flagged as Unix permissions.
+  Platform-specific bindings and a narrowly documented Windows lint exception
+  now pass `cargo clippy --target x86_64-pc-windows-gnu -p symaira-core-update
+  --all-targets --all-features --locked -- -D warnings`, Darwin Clippy/tests,
+  and `make rust-update-contract`. Go updatecheck, cosign and updateapply test
+  binaries also compile for Windows/amd64. These checks are **not native Windows
+  execution**. The successful v5 archive predates the Rust fixes, so v6 reran
+  the integrated source after those fixes. The prepared
+  v6 archive SHA-256 is
+  `e33c28a654990a3b68e9058205d394af7fa5069a00f9671443712412385c086d`;
+  at archive time all 526 source paths, including the two corrected Rust files,
+  matched the live candidate byte-for-byte. Subsequent checkpoint-only edits
+  are not executable-source changes. Earlier setup attempts lacked
+  `golangci-lint` or placed `CARGO_HOME` inside the source tree.
+- The complete integrated Linux/arm64 v6 rerun on the corrected Rust source
+  exited 0 at `proc_b87a29e15b0a`. Its output
+  `/Users/daniel/.hermes/cache/scratch/corekit-linux-integrated-20260929-v6.log`
+  records Go test/lint/build, Cargo workspace tests/fmt/strict Clippy, SQLite
+  acceptance, 13 native FS/secretref observations, all Update contracts, and
+  real signed disposable Apply; the final line is `PASS Linux/arm64 integrated
+  candidate full gates and signed release apply`. The archive was SHA-256
+  checked before execution; subsequent source changes were checkpoint prose
+  and the local implementation commit, not executable bytes. This is
+  byte-identical candidate native Linux evidence, not a native Windows claim.
+- RUST-016's read-only verifier passed 60 unit tests at the current source,
+  but its exact Git-pinned consumer acceptance exited 1: `blocked` for four
+  unreleased consumer snapshots, four mismatched checkout revisions and missing
+  source-bound standalone/rollback reports (25 findings). Adoption exited 1,
+  status `pending`. Current reports:
+  `/Users/daniel/.hermes/cache/scratch/corekit-consumer-current-20260929.json`
+  and `/Users/daniel/.hermes/cache/scratch/corekit-adoption-current-20260929.json`.
+  Publishing consumer releases or crates.io packages is not authorized.
+- The earlier `python3 port/release/verify.py --dry-run` exited 1 with `release
+  verification requires a clean source checkout` on the dirty candidate. This
+  was an intentional release gate, not a passing dry-run; repeat it on the
+  clean local checkpoint before making any new claim. The matrix has 91
+  `parity`, nine `fixture-ready` and 25 two-consumer-deferred `todo` rows; no native Windows
+  runner/VM was found (host Darwin/arm64, Docker Linux/arm64, Colima profiles
+  Linux only). Go Windows/amd64 test compilation and Rust Windows GNU strict
+  Clippy are static checks, never replacements for native runtime evidence.
+- Next evidence: obtain the same combined-source native Windows gates before
+  marking platform-sensitive rows complete. RUST-016, RUST-014 and RUST-015
+  remain separately gated; no release, cutover or Go removal is authorized.
+
+## Historical local candidate — UPD-012 partial parity (2026-09-28)
+
+- In the dirty candidate, the release-request client now uses the already
+  workspace-pinned reqwest Rustls transport with an explicit TLS 1.3 minimum;
+  the cache uses this same client with Go's 3-second API timeout. A native
+  Darwin/arm64 differential ran eleven Go request observations and a mutated
+  fixture rejection. An additional opt-in, actually executed Rust test accepted
+  a trusted local TLS 1.3 peer, rejected a trusted TLS 1.2-only peer, and
+  succeeded against that same TLS 1.2 peer with an intentionally weakened
+  minimum, proving the rejection is protocol-specific rather than certificate
+  failure. `make rust-update-contract` and full workspace Cargo tests and
+  strict Clippy passed on this dirty tree. UPD-005 remains `fixture-ready`
+  pending current-candidate native Windows evidence; no clean integrated-head
+  parity is claimed.
+- The added reqwest blocking feature changed the enforced `Cargo.lock` input
+  for SQL-001…SQL-006. The prior capture's 79-test suite initially had 10
+  failures and 2 errors from the manifest mismatch. A deliberate fresh capture
+  in `.worktrees/corekit-sqlite-refreeze-base-20260928` used base HEAD
+  `994ee3c5ce0415bc850ec51409833eb1ebaa3c08`, the same 39 enforced source
+  hashes as the dirty candidate, and the current manifests. New artifacts
+  `candidate-source.json` and
+  `differential-macos-refreeze-20260928T214328Z.json` are on the candidate;
+  the earlier capture remains. `make rust-sqlite-contract` subsequently passed
+  79/79 acceptance tests and six SQL-001…SQL-006 typed cases with no unresolved
+  differences using the candidate's own target directory. This is local
+  source-bound evidence, not independent artifact review or native Windows.
+- Update-request TLS fixture diagnosis found Go's `httptest` default server
+  certificate was a CA used as an end entity: strict Rustls rejected it while
+  the macOS verifier accepted it. The Go oracle now creates a localhost leaf
+  certificate for both TLS protocol fixture servers, and Rust trusts only that
+  explicit leaf for the local test. Both native macOS/arm64 and Linux/arm64
+  gates passed TLS 1.2 rejection, a trusted TLS 1.2 weak control, TLS 1.3
+  acceptance, and mutated-request-fixture rejection. Redirect `Location` is
+  parsed with URL join before checking the host, so protocol-relative foreign
+  hosts cannot be mistaken for same-origin paths. The Python differential now
+  also runs its mutation control on non-fixture platforms.
+- The integrated dirty candidate passed `cargo test --workspace --all-features
+  --locked`, Cargo format and strict workspace Clippy, `make
+  rust-update-contract`, `make rust-sqlite-contract` (79 acceptance tests),
+  `make test lint build`, the generator check, ledger validation, SQLite
+  provenance test, and `git diff --check`. A fresh Linux/arm64 archive snapshot
+  passed `make rust-update-contract` as `nobody` in `rust:1.98.0-bookworm`,
+  with Go 1.26.6 verified by SHA-256. Neither gate supplies native Windows
+  evidence or proves full update orchestration/signature parity.
+- UPD-009 is `fixture-ready`, not `parity`: `cosign_contract.rs` replays
+  process arguments and fixture results, but the Rust crate has no executable
+  signature-fetch or `cosign verify-blob` path yet. Do not count that replay as
+  a signature-security verification; port the real path and exercise both a
+  valid signature and a rejected one before promoting this row.
+- Subsequent uncommitted candidate (base `b0bfd3f3`): added five Go-generated
+  Apply cases for empty/malformed checksums, absent or case-mismatched entries,
+  and duplicate-last-wins parsing. `apply::parse_checksums` now parses the raw
+  manifest; the replay hashes the actual payload with SHA-256 and compares it
+  against the exact asset-name entry. Seventeen Go observations match Rust;
+  a targeted malformed-manifest mutation fails the Rust assertion. On macOS,
+  `make rust-update-contract`, full Cargo workspace tests and strict Clippy,
+  `make test lint build`, source/fixture generation checks and ledger validation
+  exited 0 on this dirty snapshot. A tracked-file archive of that same dirty
+  tree also passed `make rust-update-contract` on native Linux/arm64 in the
+  `rust:1.98.0-bookworm` container with SHA-256-verified Go 1.26.6, running
+  the tests as `nobody`. Colima was stopped afterward. These are diagnostic,
+  not clean-head or native Windows acceptance results. `port/release/verify.py --dry-run`
+  refused the dirty checkout; that refusal is not a passing release gate.
+- Reopened UPD-005, UPD-010 and UPD-011 as `fixture-ready`: the initial ureq
+  request client allowed TLS 1.2 and was replaced as described above. The
+  Rust updater still has no production Apply,
+  signed-checksum verification or archive-dispatch orchestration; replay and
+  process-shape fixtures cannot prove the stated integration contracts.
+  No native Windows result is available for this candidate.
+- Mode: execute; branch `migration/corekit-ledger-20260928` in
+  `.worktrees/corekit-rust-ledger-20260928`, latest tested source
+  `8bb5f1fac0d0a153e3f4e6397ad0c720271919f7`. No new push, release,
+  cutover, Go removal or destructive cleanup was authorized.
+- Six direct Go `atomicSwap` cases replay the Rust filesystem operation,
+  including rollback and remove faults with Go-verified error families. Twelve
+  Apply cases replay, including blocked-parent, nested-target, ZIP install and
+  asset-selection edges; independent mutations of install, blocked-parent,
+  nested, ZIP and asset-selection observations are rejected at their intended
+  assertions. The Rust Apply replay stages a
+  real file and calls the shared `atomic_swap` operation. The four findings
+  from Mimo's read-only review of `b8037153` were addressed locally: isolated
+  negative controls, pinned Go runner, nested path/backup observations and
+  double-failure error prefixes. This is not a new review of the final head.
+- On native macOS/arm64 at `8bb5f1f`, `make rust-update-contract`, full
+  `cargo test --workspace --all-features --locked`, workspace strict Clippy,
+  `make test lint build`, generator source/fixture checks and ledger validation
+  all exited 0. `golangci-lint run ./...` reported 0 issues on the preceding
+  apply change. A separately
+  documented source archive of the same exact head was run on native
+  Linux/arm64 in Colima/Docker as non-root UID 65534, Go 1.26.6 and Rust
+  1.98.0; `make rust-update-contract` exited 0. The downloaded official Go
+  tarball matched SHA-256
+  `d0507e9e9d7fe012aae570108cbd76c15de879e17130ab8cb90d4d7445cb1f2e`.
+  Its live Linux Go observations replayed all twelve Apply and six swap cases,
+  with mutation rejection. An expected-red test showed that the Rust archive
+  observation deleted a preexisting temp root; `extract::observe` now refuses
+  that root and preserves its sentinel, verified on both macOS and Linux.
+  Both Colima profiles were stopped afterward.
+- Residuals: UPD-012 stays `fixture-ready` because the current Rust Apply
+  replay is not the full downloaded, signed update orchestration and not all
+  fault paths are covered. Native Windows remains untested; a local MSVC
+  cross-check previously failed on `ring` without Windows `assert.h`/SDK.
+  Exact local HEAD cannot acquire native Windows CI without the separately
+  prohibited publication. Older CI runs do not certify this candidate.
+- Next: port and compare the remaining executable Apply orchestration on the
+  exact candidate rather than promote a replay model to full parity. Keep the
+  `todo` audit/evidence, DOM and vector contracts deferred unless their
+  two-consumer demand is established.
 
 ## Active slice — CoreKit #288 Rust LLM transport
 
@@ -58,9 +273,10 @@ Windows lanes.
   secretref resolution, and Go-compatible error categories. The local Go oracle
   and Rust integration tests cover request shapes and error taxonomy. See
   `llm-contract.md`.
-- Residual parity is explicit: Rust requests are synchronous and do not have
-  Go `context.Context` per-request cancellation or the custom HTTP-client
-  injection hook. This remains a library slice; no consumer cutover, release,
+- At this historical checkpoint Rust requests lacked per-request cancellation
+  and HTTP-client injection. Later commits `6068b0f` and `13a7a6d` added these
+  contracts; see `llm-contract.md` for current coverage. This remains a library
+  slice; no consumer cutover, release,
   tag, Go removal, or publication is authorized. Acceptance runs and PR status
   Local checks pass: `make rust-llm-contract` (Go packages, differential fixture,
   Rust fmt, strict Clippy, and all seven provider-contract tests). The branch is
@@ -1082,26 +1298,3 @@ requests while retaining the explicit error for a blocking-only injected
 agent. `make rust-llm-contract` passes locally; independent review and exact
 PR CI remain before integration. RUST-008 remains `in_progress` and no consumer
 cutover, release, publication or Go removal is claimed.
-
-## RUST-008 OpenAI success-response decoder continuation (2026-10-01)
-
-Branch `codex/rust-openai-response-parity-20261001` starts independently from
-CoreKit `04d1411adb57aa602b992509121011aa7666ff1a`; it does not depend on the
-embedding-cancellation PR #361. Synchronous and cancellable OpenAI chat now
-share a decoder for Go-compatible null, case-folded and repeated-field
-behavior. The refreshed Go oracle records success bodies, returned choices,
-raw tool-argument strings and provider-error categories; the Rust integration
-test replays the same observations through both transports. See
-`llm-contract.md` for the tool-argument normalization boundary.
-
-Local Linux checks pass: `make rust-llm-contract` (Go package checks, pinned
-oracle comparison, fmt, strict all-target/all-feature Clippy, 29 existing
-provider tests and the 29-case response corpus through both transports),
-Rust doc tests, migration-ledger validation, SQLite acceptance/provenance
-tests and `git diff --check`. No Cargo input or SQLite source changes are
-included.
-
-This is a further RUST-008 library slice. RUST-008 remains `in_progress`;
-consumer release/rollback evidence, native validation of this new branch and
-registry publication gates remain open. No release, Go removal or installed
-product cutover follows from this change.

@@ -74,7 +74,7 @@ value may be:
 
 1. A vault reference: `symvault://secrets/anthropic_key` — resolved via
    `symvault get -- secrets/anthropic_key --print` (the `vault://` alias is
-   accepted but deprecated; see `ECOSYSTEM.md`).
+   accepted but deprecated; see [the wiring guide](llm-providers.md#credential-handling-rules)).
 2. An OS-keychain reference: `keychain://<service>/<account>` (Swift consumers
    via symaira-appkit's Keychain broker).
 3. An environment-variable name reference: `env://ANTHROPIC_API_KEY`.

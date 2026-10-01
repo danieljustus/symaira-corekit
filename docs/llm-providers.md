@@ -14,6 +14,7 @@ instead.
 
 ```go
 import (
+    "context"
     "errors"
 
     "github.com/danieljustus/symaira-corekit/exitcodes"
@@ -48,7 +49,7 @@ func classify(err error) error {
         return exitcodes.Wrap(err, exitcodes.ExitNoAuth, exitcodes.KindAuth,
             "provider credentials rejected")
     case llmkit.ErrCodeRateLimited:
-        return exitcodes.Wrap(err, exitcodes.ExitConflict, exitcodes.KindConflict,
+        return exitcodes.Wrapf(err, exitcodes.ExitConflict, exitcodes.KindConflict,
             "rate limited; retry after %s", le.RetryAfter)
     case llmkit.ErrCodeContextOverflow:
         return exitcodes.Wrap(err, exitcodes.ExitData, exitcodes.KindValidation,
@@ -159,7 +160,7 @@ What may be logged, what must be redacted, where keys live:
    (credential vault vs. document vault in symdesk). Consumers may *accept*
    `vault://` as an alias but must emit and document only `symvault://`;
    `vault://` carries a deprecation notice wherever it is still accepted (see
-   `ECOSYSTEM.md` § conventions).
+   [`llm-provider-contract.md`](llm-provider-contract.md#credential-references)).
 5. **Fail closed.** A missing or failed credential resolution is an
    `auth_failure` (`ExitNoAuth`) — never an empty key sent upstream, and never
    a silent fallback to another provider.

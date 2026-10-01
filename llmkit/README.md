@@ -47,7 +47,7 @@ models, err := c.ListModels(ctx)
 
 | Form | Resolution |
 |---|---|
-| `symvault://secrets/anthropic_key` | `symvault get secrets/anthropic_key --print` |
+| `symvault://secrets/anthropic_key` | `symvault get -- secrets/anthropic_key --print` |
 | `env://ANTHROPIC_API_KEY` | environment variable |
 | `ANTHROPIC_API_KEY` (bare name) | environment variable shorthand |
 | `""` | falls back to the descriptor's `credential_env_default` |
@@ -101,5 +101,5 @@ a new vendor is under contract from the moment it enters the registry.
 ## Relationship to ollamakit
 
 `ollamakit` is deprecated and forwards conceptually to this package's ollama
-descriptor; it will be removed after one minor release. New consumers should
-use `llmkit` directly.
+descriptor. The compatibility shim remains available; no removal release is
+scheduled. New consumers should use `llmkit` directly.

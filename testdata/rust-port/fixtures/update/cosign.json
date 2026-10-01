@@ -1,0 +1,200 @@
+{
+  "cases": [
+    {
+      "id": "fetch-signature",
+      "input": {
+        "artifact": "signature",
+        "base_url": "https://loopback/releases/download",
+        "binary": "tool",
+        "version": "v1.2.3"
+      },
+      "result": {
+        "body": "signature-bytes\n",
+        "request": "GET /releases/download/v1.2.3/tool_1.2.3_checksums.txt.sig"
+      }
+    },
+    {
+      "id": "fetch-certificate",
+      "input": {
+        "artifact": "certificate",
+        "base_url": "https://loopback/releases/download",
+        "binary": "tool",
+        "version": "1.2.3"
+      },
+      "result": {
+        "body": "certificate-bytes\n",
+        "request": "GET /releases/download/v1.2.3/tool_1.2.3_checksums.txt.pem"
+      }
+    },
+    {
+      "id": "fetch-http-404",
+      "input": {
+        "artifact": "signature",
+        "base_url": "https://loopback/releases/download",
+        "binary": "tool",
+        "version": "404"
+      },
+      "result": {
+        "body": "",
+        "error_code": "http_404",
+        "error_message": "fetch cosign signature: HTTP 404",
+        "request": "GET /releases/download/v404/tool_404_checksums.txt.sig"
+      }
+    },
+    {
+      "id": "fetch-too-large",
+      "input": {
+        "artifact": "signature",
+        "base_url": "https://loopback/releases/download",
+        "binary": "tool",
+        "version": "large"
+      },
+      "result": {
+        "body": "",
+        "error_code": "too_large",
+        "error_message": "cosign signature exceeds maximum size of 1048576 bytes",
+        "request": "GET /releases/download/vlarge/tool_large_checksums.txt.sig"
+      }
+    },
+    {
+      "id": "fetch-empty-version",
+      "input": {
+        "artifact": "signature",
+        "base_url": "https://loopback/releases/download",
+        "binary": "tool",
+        "version": ""
+      },
+      "result": {
+        "body": "",
+        "error_code": "empty_version",
+        "error_message": "version must not be empty",
+        "request": ""
+      }
+    },
+    {
+      "id": "fetch-http-url",
+      "input": {
+        "artifact": "signature",
+        "base_url": "http://loopback/release",
+        "binary": "tool",
+        "version": "1.2.3"
+      },
+      "result": {
+        "error_code": "https_required",
+        "error_message": "cosign signature URL must use HTTPS, got \"http\""
+      }
+    },
+    {
+      "id": "identity-release",
+      "input": {
+        "identity": "https://github.com/owner/re.po/.github/workflows/release.yml@refs/tags/v1.2.3",
+        "repo": "owner/re.po"
+      },
+      "result": {
+        "matches": true,
+        "pattern": "^https://github\\.com/owner/re\\.po/\\.github/workflows/release\\.yml@refs/tags/v.*$"
+      }
+    },
+    {
+      "id": "identity-wrong-repo",
+      "input": {
+        "identity": "https://github.com/owner/reXpo/.github/workflows/release.yml@refs/tags/v1.2.3",
+        "repo": "owner/re.po"
+      },
+      "result": {
+        "matches": false,
+        "pattern": "^https://github\\.com/owner/re\\.po/\\.github/workflows/release\\.yml@refs/tags/v.*$"
+      }
+    },
+    {
+      "id": "identity-wrong-workflow",
+      "input": {
+        "identity": "https://github.com/owner/re.po/.github/workflows/ci.yml@refs/tags/v1.2.3",
+        "repo": "owner/re.po"
+      },
+      "result": {
+        "matches": false,
+        "pattern": "^https://github\\.com/owner/re\\.po/\\.github/workflows/release\\.yml@refs/tags/v.*$"
+      }
+    },
+    {
+      "id": "identity-branch-ref",
+      "input": {
+        "identity": "https://github.com/owner/re.po/.github/workflows/release.yml@refs/heads/main",
+        "repo": "owner/re.po"
+      },
+      "result": {
+        "matches": false,
+        "pattern": "^https://github\\.com/owner/re\\.po/\\.github/workflows/release\\.yml@refs/tags/v.*$"
+      }
+    },
+    {
+      "id": "identity-embedded",
+      "input": {
+        "identity": "https://evil.example/?u=https://github.com/owner/re.po/.github/workflows/release.yml@refs/tags/v1.2.3",
+        "repo": "owner/re.po"
+      },
+      "result": {
+        "matches": false,
+        "pattern": "^https://github\\.com/owner/re\\.po/\\.github/workflows/release\\.yml@refs/tags/v.*$"
+      }
+    },
+    {
+      "id": "verify-custom-success",
+      "input": {
+        "identity_regexp": "^custom/release@v.*$",
+        "repo": "owner/repo"
+      },
+      "result": {
+        "argv": [
+          "cosign",
+          "verify-blob",
+          "--certificate",
+          "<temp>/certificate.pem",
+          "--signature",
+          "<temp>/signature.sig",
+          "--certificate-identity-regexp",
+          "^custom/release@v.*$",
+          "--certificate-oidc-issuer",
+          "https://token.actions.githubusercontent.com",
+          "<temp>/content"
+        ],
+        "certificate": "cert bytes\n",
+        "content": "checksums\n",
+        "error_code": "",
+        "error_message": "",
+        "signature": "sig bytes\n"
+      }
+    },
+    {
+      "id": "verify-default-failure",
+      "input": {
+        "identity_regexp": "^https://github\\.com/owner/repo/\\.github/workflows/release\\.yml@refs/tags/v.*$",
+        "repo": "owner/repo"
+      },
+      "result": {
+        "argv": [
+          "cosign",
+          "verify-blob",
+          "--certificate",
+          "<temp>/certificate.pem",
+          "--signature",
+          "<temp>/signature.sig",
+          "--certificate-identity-regexp",
+          "^https://github\\.com/owner/repo/\\.github/workflows/release\\.yml@refs/tags/v.*$",
+          "--certificate-oidc-issuer",
+          "https://token.actions.githubusercontent.com",
+          "<temp>/content"
+        ],
+        "certificate": "cert bytes\n",
+        "content": "checksums\n",
+        "error_code": "verify_failed",
+        "error_message": "cosign verify-blob failed: fixture cosign rejected signature: exit status 1",
+        "signature": "sig bytes\n"
+      }
+    }
+  ],
+  "goos": "darwin",
+  "go_source_sha256": "15f40e106f62908d826338a26ee1b9f18f1954f17765ba0798576653bada3cb7",
+  "oracle_sha256": "04dbe7d1aac5d218dcf91aab0786a803d20ea3f350651a66ef13fa8371930eed"
+}
