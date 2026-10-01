@@ -1,5 +1,54 @@
 # Resume checkpoint — Rust consumer release gates open
 
+## Current local slice — shared LLM adoption (2026-10-01)
+
+The older #337/#351 candidate descriptions below are historical. CoreKit main
+at `04d1411adb57aa602b992509121011aa7666ff1a` contains chat/stream cancellation,
+async transport injection, response-edge fixes and the native LLM CI gate.
+EraseMe already has a classification adapter over that crate; Brain's embedding
+transport and Desktop's Anthropic transform are the next bounded adoption paths.
+
+The current local change adds `Client::embed_cancellable` with the same request
+builder and decoder as `embed`. Its tests cover injected transport, request and
+response contracts, cancellation before dispatch and during headers/body reads,
+and provider/decode failures. Consumer work pins the already merged revision
+above rather than an unpublished local API: Brain replaces its duplicate
+embedding HTTP transport, Desktop delegates Anthropic transform streaming, and
+EraseMe refreshes its LLM pin. Product prompts, credential resolution, embedding
+dimensions and hash fallback remain consumer-owned.
+
+RUST-008 remains `in_progress`. Model discovery and native Ollama endpoints
+still lack per-request cancellation; OpenAI success-response null/field-alias/
+duplicate-key behavior needs additional Go-oracle coverage before broad parity
+can be claimed. The released-consumer and registry stages remain open. Local
+tests or immutable Git dependency pins are not released-artifact evidence.
+
+Local Linux/x86_64 verification uses Rust 1.98.0 and the pinned Go toolchain:
+`make rust-llm-contract` passes (33 provider tests and the Go oracle comparison),
+as do the 79 SQLite acceptance tests, its provenance test, the 60 consumer
+verifier tests, `docs/rust-port/validate.py`, and the CGO-free Go build. Brain's
+Go extractor tests, 25 memory unit tests, seven integration tests, strict Clippy
+and Rust CLI check pass. EraseMe's six transport tests and six LLM unit tests,
+strict Clippy and locked metadata check pass with only the three affected Git
+source IDs changed in its lockfile.
+
+Desktop's Go AI/secret tests, Rust core/CLI/protocol suites, strict Clippy,
+formatting and locked CLI build pass. The
+protocol upload-permission fixture requires `umask 0022`; this environment's
+default `0077` makes that unchanged fixture report `0600` instead of `0640`.
+Two local standalone CLI smokes use an isolated HOME/XDG environment and a
+chunked fake Anthropic provider: both NDJSON and plain output arrive before the
+provider is allowed to finish, preserve escaping/prompts/model/path and the
+token-limit marker, and exit zero with empty stderr. Secret-runner tests cover
+the deadline even when a descendant retains the stdout pipe. The final review
+found no remaining actionable issue in the new adapters.
+
+Brain's synchronous adoption still builds CoreKit's async dependencies: its
+lockfile gains 100 packages. Release build/startup/RSS/size comparisons have
+not been measured for these new consumer snapshots; their performance evidence
+remains open. This local verification does not substitute for the native macOS and
+Windows lanes.
+
 ## Active slice — CoreKit #288 Rust LLM transport
 
 - RUST-008 is `in_progress` on isolated branch
