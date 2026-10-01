@@ -5,15 +5,20 @@
 Continue the code and integration work from the published repository, without needing a local chat, private reports or installed agent skills.
 
 - GitHub repository: `danieljustus/symaira-corekit`.
-- Branch: `handoff/20260930-provider-repair`.
+- Branch: `handoff/20260930-cloud`.
 - Base code commit before this document/checkpoint: `a8512c3e767801647b676b9e26d3044b39eb2eb9`.
 - Working directory for every command below: the checked-out repository root.
 - Publication does not authorize a merge, release, tag, destructive cleanup or paid service.
-- Continuation draft PR: #360. Keep it draft until its code/acceptance gates are independently satisfied.
+- Continuation draft PR: #358. Keep it draft until its code/acceptance gates are independently satisfied.
 
 Preserve the shared Rust-library code candidate plus three independently captured incomplete variants. The cache-only variant and the two provider/cache variants are alternatives, not automatically merged or approved. The original source worktrees remain intact.
 
 ## Requirements, decisions and next task
+
+After the published comparison, the maintainer authorized selection and repair.
+The provider-repair implementation was selected and reconciled onto this branch;
+see [the selection and acceptance record](corekit-selection-20260930.md).
+The original alternative checkpoints and their evidence remain unchanged.
 
 Review the isolated cache/provider variants without silently selecting one; validate Go-byte parity, then reconcile the chosen fix and rerun native Windows checks. PR #353 is a distinct older candidate, not this checkpoint.
 
@@ -23,13 +28,13 @@ Keep products and their optional modules standalone. Preserve exact dependency p
 
 ## Setup and scoped verification
 
-Clone the existing public repository, checkout `handoff/20260930-provider-repair`, verify its current remote HEAD, and read this file before making changes. Never substitute another branch or silently mix the alternatives.
+Clone the existing public repository, checkout `handoff/20260930-cloud`, verify its current remote HEAD, and read this file before making changes. Never substitute another branch or silently mix the alternatives.
 
 ```sh
-git clone --branch handoff/20260930-provider-repair https://github.com/danieljustus/symaira-corekit.git
+git clone --branch handoff/20260930-cloud https://github.com/danieljustus/symaira-corekit.git
 cd symaira-corekit
 git rev-parse HEAD
-git ls-remote --exit-code origin refs/heads/handoff/20260930-provider-repair
+git ls-remote --exit-code origin refs/heads/handoff/20260930-cloud
 git status --porcelain=v1 -uall
 ```
 
@@ -75,7 +80,7 @@ Prepublication secret-pattern/outgoing-history scans succeeded for the selected 
 
 Prepublication scoped CoreKit checks exited 0. Mock/provider tests were run locally; this remains unapproved WIP, not accepted functionality.
 
-Fresh remote-clone verification was executed locally on macOS at published checkpoint `f4225300afb3a0e4c7eda82173f39aeefc4435cf`. The repository was cloned directly from GitHub, without copied worktree files, stashes or source/configuration overrides. The following scoped command chain exited **0**:
+Fresh remote-clone verification was executed locally on macOS at published checkpoint `40147f9380cb96e67699d416ed9ade2340ac69d6`. The repository was cloned directly from GitHub, without copied worktree files, stashes or source/configuration overrides. The following scoped command chain exited **0**:
 
 ```sh
 cargo test --locked -p symaira-core-update --test cache_eligibility
@@ -86,4 +91,4 @@ Rust compilation used two jobs, disabled dev/test debug info and a distinct buil
 
 ## Copyable continuation request
 
-Work in `danieljustus/symaira-corekit` on `handoff/20260930-provider-repair`. Verify the exact remote HEAD given by the final publication record, read `docs/handoffs/end-work-cloud.md`, run the setup and scoped checks, then: Review the isolated cache/provider variants without silently selecting one; validate Go-byte parity, then reconcile the chosen fix and rerun native Windows checks. PR #353 is a distinct older candidate, not this checkpoint. Respect all preservation and integration gates above.
+Work in `danieljustus/symaira-corekit` on `handoff/20260930-cloud`. Verify the exact remote HEAD given by the final publication record, read `docs/handoffs/end-work-cloud.md`, run the setup and scoped checks, then: Review the isolated cache/provider variants without silently selecting one; validate Go-byte parity, then reconcile the chosen fix and rerun native Windows checks. PR #353 is a distinct older candidate, not this checkpoint. Respect all preservation and integration gates above.

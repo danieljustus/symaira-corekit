@@ -1,5 +1,26 @@
 # Resume checkpoint — Rust consumer release gates open
 
+## Current combined CoreKit candidate (2026-10-01)
+
+The isolated candidate starts from the complete #358 branch and integrates the
+current CoreKit LLM work from #361 and #362. Its source changes retain the
+#358 cache/provider repairs and tests, the cancellable embedding API, and the
+Go-compatible synchronous/cancellable OpenAI success decoder with the refreshed
+oracle corpus. The merged changes are being reconciled in
+`/workspace/scratch/corekit-handoff-merge`; no integration commit or publication
+has been made.
+
+The earlier #353 source is included in #358's ancestry. #359 and #360 are
+alternative checkpoint branches; their source/cache snapshots require review
+against the selected #358 fixes before being marked represented.
+
+RUST-007 remains `in_progress`. UPD-005/009/010/011/012 remain unpromoted, and
+consumer release, migration and publication gates are separate. The existing
+SQLite capture and source manifest must pass provenance and acceptance checks
+on the composed candidate.
+
+## Historical candidate snapshot — executable update integration; platform gate still open
+
 ## Current local candidate — executable update integration; platform gate still open
 
 - Mode/status: handoff/blocked on missing native Windows runner, unreleased

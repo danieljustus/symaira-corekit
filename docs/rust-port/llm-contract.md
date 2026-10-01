@@ -14,6 +14,11 @@ provider code, a Rust `ollamakit` clone, or a process/release surface.
 - Chat supports tool definitions, response-format options, and streaming. OpenAI
   and Anthropic server-sent event framing is bounded to 1 MiB per line. Ollama
   streaming consumes newline-delimited JSON records.
+- Synchronous and cancellable non-streaming OpenAI chat share a Go-compatible
+  decoder. The pinned oracle exercises null/missing fields, case-folded names,
+  duplicate keys and nested objects, reused array slots, explicit resets, typed
+  field rejection, and tool calls. The Rust API still normalizes valid tool
+  arguments to JSON values and preserves invalid raw argument text as a string.
 - Secret references use `symaira-core-secretref`; errors preserve the Go
   `llmkit` categories, HTTP status/body/retry-after fields, retry classification,
   and shared exit-code mapping. Credential values are not included in diagnostic
@@ -71,6 +76,10 @@ format/lint, and test the Rust crate. Refresh the observation deliberately with
 `python3 scripts/rust-port/llm-differential.py --write` after a reviewed Go
 contract change.
 The `Rust foundation` CI matrix runs this gate on Linux, macOS, and Windows.
+`tests/openai_success_parity.rs` replays the 29 pinned success-response cases
+through both synchronous and cancellable clients, comparing the returned
+choice or provider-error category. Parser diagnostic wording is not compared
+byte-for-byte.
 
 ## Streaming parity (LLM-006, LLM-007)
 

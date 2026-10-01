@@ -251,7 +251,7 @@
         "make rust-llm-contract",
         "python3 scripts/rust-port/llm-differential.py"
       ],
-      "stop_rule": "Do not create provider-specific consumer code or a Rust ollamakit clone. Keep the item in progress until the cancellation and transport-injection gaps are resolved or explicitly accepted; stop on credential leakage, redirect drift, streaming/tool-wire drift or taxonomy changes."
+      "stop_rule": "Do not duplicate provider wire transports in consumers or create a Rust ollamakit clone. Chat/stream cancellation and async transport injection are implemented; keep the item in progress while remaining per-operation cancellation and parity evidence are open. Consumer adapters retain product policy and exact Git pins. Stop on credential leakage, redirect drift, streaming/tool-wire drift or taxonomy changes."
     },
     {
       "id": "RUST-009",

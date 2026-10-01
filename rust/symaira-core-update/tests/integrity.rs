@@ -251,6 +251,8 @@ fn apply_rejects_corrupt_zip_even_with_a_matching_outer_sha256() {
 fn full_json_decode_and_cache_replay() {
     for body in [
         r#"{"tag_name":"v1.3.0"}"#,
+        // Go Decoder.Decode accepts the first complete network JSON value.
+        r#"{"tag_name":"v1.3.0"} trailing"#,
         "{\n  \"tag_name\" : \"v1.3.0\",\n  \"body\" : \"Grüße 😀\"\n}",
         r#"{"tag_name":"v1.\u0033.0","body":"\ud83d\ude00"}"#,
         r#"{"tag_name":" v1.3.0 ","html_url":" https://example.test/release ","assets":[{"name":"tool.zip","browser_download_url":"https://example.test/tool","size":42}]}"#,
@@ -292,7 +294,6 @@ fn full_json_decode_and_cache_replay() {
         r#"{"tag_name":"v1.3.0","body":false}"#,
         r#"{"tag_name":"v1.3.0","assets":[{"size":"13"}]}"#,
         r#"{"tag_name":"\ud800"}"#,
-        r#"{"tag_name":"v1.3.0"} trailing"#,
     ] {
         let root = root();
         let cache = root.join("cache.json");
