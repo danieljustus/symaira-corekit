@@ -1,8 +1,9 @@
 use crate::client::{Client, read_limited, read_reqwest_limited};
 use crate::error::{Error, ErrorCode, Result};
 use crate::provider::WireDialect;
-use serde::de::{IgnoredAny, MapAccess, Visitor};
+use serde::de::{DeserializeSeed, IgnoredAny, MapAccess, SeqAccess, Visitor};
 use serde::{Deserialize, Deserializer, Serialize};
+use serde_json::value::RawValue;
 use serde_json::{Value, json};
 use std::fmt;
 use tokio_util::sync::CancellationToken;
@@ -179,34 +180,7 @@ impl Client {
             Err(error) => return Err(refine_openai_error(error)),
         };
         let raw = read_reqwest_limited(&mut response, 16 << 20).await?;
-        let parsed: OpenAiResponse = serde_json::from_slice(&raw).map_err(|error| {
-            Error::local(
-                ErrorCode::ProviderError,
-                format!("llmkit: decode chat response: {error}"),
-            )
-        })?;
-        let Some(choice) = parsed.choices.into_iter().next() else {
-            return Err(Error::local(
-                ErrorCode::ProviderError,
-                "llmkit: chat response contained no choices",
-            ));
-        };
-        let tool_calls = choice
-            .message
-            .tool_calls
-            .into_iter()
-            .map(|call| ToolCall {
-                id: call.id,
-                name: call.function.name,
-                arguments: serde_json::from_str(&call.function.arguments)
-                    .unwrap_or(Value::String(call.function.arguments)),
-            })
-            .collect();
-        Ok(Choice {
-            content: choice.message.content.unwrap_or_default(),
-            tool_calls,
-            finish_reason: choice.finish_reason.unwrap_or_default(),
-        })
+        decode_openai_response(&raw)
     }
 
     async fn chat_anthropic_cancellable(
@@ -279,34 +253,7 @@ impl Client {
             Err(error) => return Err(refine_openai_error(error)),
         };
         let raw = read_limited(&mut response, 16 << 20)?;
-        let parsed: OpenAiResponse = serde_json::from_slice(&raw).map_err(|e| {
-            Error::local(
-                ErrorCode::ProviderError,
-                format!("llmkit: decode chat response: {e}"),
-            )
-        })?;
-        let Some(choice) = parsed.choices.into_iter().next() else {
-            return Err(Error::local(
-                ErrorCode::ProviderError,
-                "llmkit: chat response contained no choices",
-            ));
-        };
-        let calls = choice
-            .message
-            .tool_calls
-            .into_iter()
-            .map(|call| ToolCall {
-                id: call.id,
-                name: call.function.name,
-                arguments: serde_json::from_str(&call.function.arguments)
-                    .unwrap_or(Value::String(call.function.arguments)),
-            })
-            .collect();
-        Ok(Choice {
-            content: choice.message.content.unwrap_or_default(),
-            tool_calls: calls,
-            finish_reason: choice.finish_reason.unwrap_or_default(),
-        })
+        decode_openai_response(&raw)
     }
 
     fn chat_anthropic(
@@ -1009,42 +956,441 @@ go_json_struct_validator!(
     }
 );
 
-#[derive(Deserialize)]
-struct OpenAiResponse {
-    #[serde(default, deserialize_with = "deserialize_openai_choices")]
-    choices: Vec<OpenAiChoice>,
-}
-fn deserialize_openai_choices<'de, D>(
-    deserializer: D,
-) -> std::result::Result<Vec<OpenAiChoice>, D::Error>
-where
-    D: Deserializer<'de>,
-{
-    Vec::<Option<OpenAiChoice>>::deserialize(deserializer)
-        .map(|choices| choices.into_iter().map(Option::unwrap_or_default).collect())
+fn decode_openai_response(raw: &[u8]) -> Result<Choice> {
+    let parsed: OpenAiResponse = serde_json::from_slice(raw).map_err(|error| {
+        Error::local(
+            ErrorCode::ProviderError,
+            format!("llmkit: decode chat response: {error}"),
+        )
+    })?;
+    let Some(choice) = parsed.choices.into_active().into_iter().next() else {
+        return Err(Error::local(
+            ErrorCode::ProviderError,
+            "llmkit: chat response contained no choices",
+        ));
+    };
+    let tool_calls = choice
+        .message
+        .tool_calls
+        .into_active()
+        .into_iter()
+        .map(|call| {
+            let arguments = call.function.arguments;
+            ToolCall {
+                id: call.id,
+                name: call.function.name,
+                arguments: serde_json::from_str(&arguments).unwrap_or(Value::String(arguments)),
+            }
+        })
+        .collect();
+    Ok(Choice {
+        content: choice.message.content,
+        tool_calls,
+        finish_reason: choice.finish_reason,
+    })
 }
 
-#[derive(Default, Deserialize)]
+fn go_field_eq(key: &str, field: &str) -> bool {
+    key.chars()
+        .map(|character| match character {
+            'A'..='Z' => character.to_ascii_lowercase(),
+            '\u{017f}' => 's', // Unicode long s is folded to ASCII S by Go.
+            '\u{212a}' => 'k', // Kelvin sign is folded to ASCII K by Go.
+            other => other,
+        })
+        .eq(field.chars())
+}
+
+struct OpenAiSuccessError;
+
+impl<'de> Deserialize<'de> for OpenAiSuccessError {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct SuccessErrorVisitor;
+
+        impl<'de> Visitor<'de> for SuccessErrorVisitor {
+            type Value = OpenAiSuccessError;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+                formatter.write_str("an OpenAI error object")
+            }
+
+            fn visit_map<M>(self, mut map: M) -> std::result::Result<Self::Value, M::Error>
+            where
+                M: MapAccess<'de>,
+            {
+                while let Some(key) = map.next_key::<String>()? {
+                    if go_field_eq(&key, "message") || go_field_eq(&key, "type") {
+                        let _: Option<String> = map.next_value()?;
+                    } else if go_field_eq(&key, "code") {
+                        let code: Option<Box<RawValue>> = map.next_value()?;
+                        if let Some(code) = code {
+                            validate_openai_any_number_ranges(code.get())
+                                .map_err(serde::de::Error::custom)?;
+                        }
+                    } else {
+                        // In the Go response type `code` is `any`; unknown
+                        // object fields are ignored.
+                        let _: IgnoredAny = map.next_value()?;
+                    }
+                }
+                Ok(OpenAiSuccessError)
+            }
+        }
+
+        deserializer.deserialize_any(SuccessErrorVisitor)
+    }
+}
+
+fn validate_openai_any_number_ranges(raw: &str) -> std::result::Result<(), &'static str> {
+    let bytes = raw.as_bytes();
+    let mut index = 0;
+    while index < bytes.len() {
+        match bytes[index] {
+            b'"' => {
+                index += 1;
+                while index < bytes.len() {
+                    match bytes[index] {
+                        b'\\' => index += 2,
+                        b'"' => {
+                            index += 1;
+                            break;
+                        }
+                        _ => index += 1,
+                    }
+                }
+            }
+            b'-' | b'0'..=b'9' => {
+                let start = index;
+                while index < bytes.len()
+                    && matches!(bytes[index], b'0'..=b'9' | b'-' | b'.' | b'e' | b'E' | b'+')
+                {
+                    index += 1;
+                }
+                let number = raw[start..index]
+                    .parse::<f64>()
+                    .map_err(|_| "invalid number in Go interface value")?;
+                if !number.is_finite() {
+                    return Err("number out of range for Go interface value");
+                }
+            }
+            _ => index += 1,
+        }
+    }
+    Ok(())
+}
+
+trait GoObject {
+    fn read_field<'de, A: MapAccess<'de>>(
+        &mut self,
+        key: &str,
+        map: &mut A,
+    ) -> std::result::Result<(), A::Error>;
+}
+
+struct GoObjectSeed<'a, T>(&'a mut T);
+
+impl<'de, T: GoObject> DeserializeSeed<'de> for GoObjectSeed<'_, T> {
+    type Value = ();
+
+    fn deserialize<D>(self, deserializer: D) -> std::result::Result<Self::Value, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct ObjectVisitor<'a, T>(&'a mut T);
+
+        impl<'de, T: GoObject> Visitor<'de> for ObjectVisitor<'_, T> {
+            type Value = ();
+
+            fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+                formatter.write_str("an OpenAI response object or null")
+            }
+
+            fn visit_unit<E>(self) -> std::result::Result<Self::Value, E>
+            where
+                E: serde::de::Error,
+            {
+                // Go leaves non-pointer structs unchanged when a JSON value is null.
+                Ok(())
+            }
+
+            fn visit_map<M>(self, mut map: M) -> std::result::Result<Self::Value, M::Error>
+            where
+                M: MapAccess<'de>,
+            {
+                while let Some(key) = map.next_key::<String>()? {
+                    self.0.read_field(&key, &mut map)?;
+                }
+                Ok(())
+            }
+        }
+
+        deserializer.deserialize_any(ObjectVisitor(self.0))
+    }
+}
+
+struct GoSlice<T> {
+    slots: Vec<T>,
+    len: usize,
+}
+
+impl<T> Default for GoSlice<T> {
+    fn default() -> Self {
+        Self {
+            slots: Vec::new(),
+            len: 0,
+        }
+    }
+}
+
+impl<T> GoSlice<T> {
+    fn into_active(self) -> Vec<T> {
+        self.slots.into_iter().take(self.len).collect()
+    }
+}
+
+struct GoSliceSeed<'a, T>(&'a mut GoSlice<T>);
+
+impl<'de, T: GoObject + Default> DeserializeSeed<'de> for GoSliceSeed<'_, T> {
+    type Value = ();
+
+    fn deserialize<D>(self, deserializer: D) -> std::result::Result<Self::Value, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct SliceVisitor<'a, T>(&'a mut GoSlice<T>);
+
+        impl<'de, T: GoObject + Default> Visitor<'de> for SliceVisitor<'_, T> {
+            type Value = ();
+
+            fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+                formatter.write_str("an array or null")
+            }
+
+            fn visit_unit<E>(self) -> std::result::Result<Self::Value, E>
+            where
+                E: serde::de::Error,
+            {
+                self.0.slots.clear();
+                self.0.len = 0;
+                Ok(())
+            }
+
+            fn visit_seq<A>(self, mut sequence: A) -> std::result::Result<Self::Value, A::Error>
+            where
+                A: SeqAccess<'de>,
+            {
+                let mut len = 0;
+                loop {
+                    if len < self.0.slots.len() {
+                        if sequence
+                            .next_element_seed(GoObjectSeed(&mut self.0.slots[len]))?
+                            .is_none()
+                        {
+                            break;
+                        }
+                    } else {
+                        let mut value = T::default();
+                        if sequence
+                            .next_element_seed(GoObjectSeed(&mut value))?
+                            .is_none()
+                        {
+                            break;
+                        }
+                        self.0.slots.push(value);
+                    }
+                    len += 1;
+                }
+                if len == 0 {
+                    // encoding/json replaces a slice with a fresh empty slice for `[]`.
+                    self.0.slots.clear();
+                }
+                self.0.len = len;
+                Ok(())
+            }
+        }
+
+        deserializer.deserialize_any(SliceVisitor(self.0))
+    }
+}
+
+struct OpenAiResponse {
+    choices: GoSlice<OpenAiChoice>,
+}
+
+impl<'de> Deserialize<'de> for OpenAiResponse {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct ResponseVisitor;
+
+        impl<'de> Visitor<'de> for ResponseVisitor {
+            type Value = OpenAiResponse;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+                formatter.write_str("an OpenAI chat response object")
+            }
+
+            fn visit_unit<E>(self) -> std::result::Result<Self::Value, E>
+            where
+                E: serde::de::Error,
+            {
+                Ok(OpenAiResponse {
+                    choices: GoSlice::default(),
+                })
+            }
+
+            fn visit_map<M>(self, mut map: M) -> std::result::Result<Self::Value, M::Error>
+            where
+                M: MapAccess<'de>,
+            {
+                let mut response = OpenAiResponse {
+                    choices: GoSlice::default(),
+                };
+                while let Some(key) = map.next_key::<String>()? {
+                    response.read_field(&key, &mut map)?;
+                }
+                Ok(response)
+            }
+        }
+
+        deserializer.deserialize_any(ResponseVisitor)
+    }
+}
+
+impl GoObject for OpenAiResponse {
+    fn read_field<'de, A: MapAccess<'de>>(
+        &mut self,
+        key: &str,
+        map: &mut A,
+    ) -> std::result::Result<(), A::Error> {
+        if go_field_eq(key, "choices") {
+            map.next_value_seed(GoSliceSeed(&mut self.choices))
+        } else if go_field_eq(key, "error") {
+            // The Go response type validates this pointer's typed fields even
+            // though a valid value on HTTP 200 is ignored by Chat.
+            let _: Option<OpenAiSuccessError> = map.next_value()?;
+            Ok(())
+        } else {
+            let _: IgnoredAny = map.next_value()?;
+            Ok(())
+        }
+    }
+}
+
+#[derive(Default)]
 struct OpenAiChoice {
-    #[serde(default)]
     message: OpenAiMessage,
-    finish_reason: Option<String>,
+    finish_reason: String,
 }
-#[derive(Default, Deserialize)]
+
+impl GoObject for OpenAiChoice {
+    fn read_field<'de, A: MapAccess<'de>>(
+        &mut self,
+        key: &str,
+        map: &mut A,
+    ) -> std::result::Result<(), A::Error> {
+        if go_field_eq(key, "message") {
+            map.next_value_seed(GoObjectSeed(&mut self.message))
+        } else if go_field_eq(key, "finish_reason") {
+            if let Some(reason) = map.next_value::<Option<String>>()? {
+                self.finish_reason = reason;
+            }
+            Ok(())
+        } else {
+            let _: IgnoredAny = map.next_value()?;
+            Ok(())
+        }
+    }
+}
+
+#[derive(Default)]
 struct OpenAiMessage {
-    content: Option<String>,
-    #[serde(default)]
-    tool_calls: Vec<OpenAiToolCall>,
+    content: String,
+    tool_calls: GoSlice<OpenAiToolCall>,
 }
-#[derive(Deserialize)]
+
+impl GoObject for OpenAiMessage {
+    fn read_field<'de, A: MapAccess<'de>>(
+        &mut self,
+        key: &str,
+        map: &mut A,
+    ) -> std::result::Result<(), A::Error> {
+        if go_field_eq(key, "content") {
+            if let Some(content) = map.next_value::<Option<String>>()? {
+                self.content = content;
+            }
+            Ok(())
+        } else if go_field_eq(key, "tool_calls") {
+            map.next_value_seed(GoSliceSeed(&mut self.tool_calls))
+        } else {
+            let _: IgnoredAny = map.next_value()?;
+            Ok(())
+        }
+    }
+}
+
+#[derive(Default)]
 struct OpenAiToolCall {
     id: String,
     function: OpenAiFunction,
 }
-#[derive(Deserialize)]
+
+impl GoObject for OpenAiToolCall {
+    fn read_field<'de, A: MapAccess<'de>>(
+        &mut self,
+        key: &str,
+        map: &mut A,
+    ) -> std::result::Result<(), A::Error> {
+        if go_field_eq(key, "id") {
+            if let Some(id) = map.next_value::<Option<String>>()? {
+                self.id = id;
+            }
+            Ok(())
+        } else if go_field_eq(key, "type") {
+            // The Go struct declares this string even though its converter
+            // omits it from the returned ToolCall.
+            let _: Option<String> = map.next_value()?;
+            Ok(())
+        } else if go_field_eq(key, "function") {
+            map.next_value_seed(GoObjectSeed(&mut self.function))
+        } else {
+            let _: IgnoredAny = map.next_value()?;
+            Ok(())
+        }
+    }
+}
+
+#[derive(Default)]
 struct OpenAiFunction {
     name: String,
     arguments: String,
+}
+
+impl GoObject for OpenAiFunction {
+    fn read_field<'de, A: MapAccess<'de>>(
+        &mut self,
+        key: &str,
+        map: &mut A,
+    ) -> std::result::Result<(), A::Error> {
+        if go_field_eq(key, "name") {
+            if let Some(name) = map.next_value::<Option<String>>()? {
+                self.name = name;
+            }
+            Ok(())
+        } else if go_field_eq(key, "arguments") {
+            if let Some(arguments) = map.next_value::<Option<String>>()? {
+                self.arguments = arguments;
+            }
+            Ok(())
+        } else {
+            let _: IgnoredAny = map.next_value()?;
+            Ok(())
+        }
+    }
 }
 #[derive(Deserialize)]
 struct OpenAiChunk {
