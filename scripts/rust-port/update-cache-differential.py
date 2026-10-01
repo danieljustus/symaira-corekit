@@ -51,7 +51,10 @@ def observe_go_persistence():
         if previous_umask is not None:
             os.umask(previous_umask)
     observed = json.loads(output)
-    expected = {"normal", "duplicate-tag-casefold", "trailing-json", "atomic-replace"}
+    expected = {
+        "normal", "duplicate-tag-casefold", "trailing-json", "malformed-json", "missing-tag",
+        "wrong-tag-type", "atomic-replace",
+    }
     actual = {case["id"] for case in observed["cases"]}
     if actual != expected or len(observed["cases"]) != len(expected):
         raise ValueError(f"Go persistence oracle cases {actual!r}, expected {expected!r}")
@@ -75,7 +78,7 @@ def run_live_persistence_differential():
         finally:
             if previous_umask is not None:
                 os.umask(previous_umask)
-    print("PASS live Go/Rust update-cache persistence differential: 4 observations")
+    print("PASS live Go/Rust update-cache persistence differential: 7 observations")
 
 
 def run_live_persistence_negative_control():

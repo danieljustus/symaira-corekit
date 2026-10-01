@@ -507,6 +507,257 @@
       "response_sha256": "d8e62f99b4364dcee63e83c88433de911e660bf2f830303675972f0b6f03b45f"
     }
   },
+  "openai_success_responses": [
+    {
+      "body": "{}",
+      "error_code": "provider_error",
+      "id": "missing_fields",
+      "kind": "error"
+    },
+    {
+      "body": "{\"choices\":null}",
+      "error_code": "provider_error",
+      "id": "null_choices",
+      "kind": "error"
+    },
+    {
+      "body": "{\"choices\":[null]}",
+      "id": "null_choice",
+      "kind": "success"
+    },
+    {
+      "body": "{\"choices\":[{\"message\":null,\"finish_reason\":\"stop\"}]}",
+      "finish_reason": "stop",
+      "id": "null_message",
+      "kind": "success"
+    },
+    {
+      "body": "{\"choices\":[{\"message\":{\"content\":\"kept\"},\"MESSAGE\":{\"CONTENT\":null},\"finish_reason\":\"stop\",\"FINISH_REASON\":null}]}",
+      "content": "kept",
+      "finish_reason": "stop",
+      "id": "null_scalars_preserve_previous",
+      "kind": "success"
+    },
+    {
+      "body": "{\"choices\":[{\"message\":{\"tool_calls\":[{\"id\":\"discard\",\"function\":{\"name\":\"discard\",\"arguments\":\"{}\"}}]},\"MESSAGE\":{\"tool_calls\":null}}]}",
+      "id": "null_tool_calls_clears_array",
+      "kind": "success"
+    },
+    {
+      "body": "{\"choices\":[{\"message\":{\"tool_calls\":[{\"id\":\"old\",\"function\":{\"name\":\"old\",\"arguments\":\"old\"}}]},\"MESSAGE\":{\"tool_calls\":null,\"TOOL_CALLS\":[{\"id\":\"new\"}]}}]}",
+      "id": "null_tool_calls_reset_before_same_message_array",
+      "kind": "success",
+      "tool_calls": [
+        {
+          "arguments_raw": "",
+          "id": "new",
+          "name": ""
+        }
+      ]
+    },
+    {
+      "body": "{\"choices\":[{\"message\":{\"tool_calls\":[{\"id\":\"old\",\"function\":{\"name\":\"old\",\"arguments\":\"old\"}}]}}],\"CHOICES\":[{\"message\":{\"tool_calls\":null,\"TOOL_CALLS\":[{\"id\":\"new\"}]}}]}",
+      "id": "null_tool_calls_reset_before_repeated_choice_array",
+      "kind": "success",
+      "tool_calls": [
+        {
+          "arguments_raw": "",
+          "id": "new",
+          "name": ""
+        }
+      ]
+    },
+    {
+      "body": "{\"choices\":[{\"message\":{\"tool_calls\":[{\"id\":\"call-1\",\"function\":{\"name\":\"lookup\",\"arguments\":\"{\\\"q\\\":1}\"}}]},\"MESSAGE\":{\"tool_calls\":[{\"id\":\"call-1\",\"FUNCTION\":null}]}}]}",
+      "id": "null_function_preserves_previous",
+      "kind": "success",
+      "tool_calls": [
+        {
+          "arguments_raw": "{\"q\":1}",
+          "id": "call-1",
+          "name": "lookup"
+        }
+      ]
+    },
+    {
+      "body": "{\"choices\":[{\"message\":{\"tool_calls\":[{\"id\":\"call-null-fn\",\"function\":{\"name\":\"keep\",\"arguments\":\"{}\"},\"FUNCTION\":null}]} }]}",
+      "id": "null_function_value_preserves_previous",
+      "kind": "success",
+      "tool_calls": [
+        {
+          "arguments_raw": "{}",
+          "id": "call-null-fn",
+          "name": "keep"
+        }
+      ]
+    },
+    {
+      "body": "{\"choices\":[{\"message\":{\"tool_calls\":[null]}}]}",
+      "id": "null_tool_call_zero_value",
+      "kind": "success",
+      "tool_calls": [
+        {
+          "arguments_raw": "",
+          "id": "",
+          "name": ""
+        }
+      ]
+    },
+    {
+      "body": "{\"CHOICES\":[{\"MESSAGE\":{\"CONTENT\":\"folded\",\"TOOL_CALLS\":[{\"ID\":\"call-fold\",\"FUNCTION\":{\"NAME\":\"search\",\"ARGUMENTS\":\"{\\\"term\\\":\\\"rust\\\"}\",\"extra\":true}}]},\"FINISH_REASON\":\"tool_calls\",\"unknown\":{\"nested\":[1,2]}}]}",
+      "content": "folded",
+      "finish_reason": "tool_calls",
+      "id": "casefold_fields_and_unknown_ignored",
+      "kind": "success",
+      "tool_calls": [
+        {
+          "arguments_raw": "{\"term\":\"rust\"}",
+          "id": "call-fold",
+          "name": "search"
+        }
+      ]
+    },
+    {
+      "body": "{\"choice\u017f\":[{\"message\":{\"content\":\"unicode folded\",\"finish_rea\u017fon\":\"stop\",\"tool_calls\":[{\"function\":{\"name\":\"lookup\",\"argument\u017f\":\"{}\"}}]}}]}",
+      "content": "unicode folded",
+      "id": "unicode_fold_aliases",
+      "kind": "success",
+      "tool_calls": [
+        {
+          "arguments_raw": "{}",
+          "id": "",
+          "name": "lookup"
+        }
+      ]
+    },
+    {
+      "body": "{\"choices\":[{\"finish_reason\":\"first\",\"FINISH_REASON\":\"last\",\"message\":{\"content\":\"first\",\"CONTENT\":\"last\"}}]}",
+      "content": "last",
+      "finish_reason": "last",
+      "id": "duplicate_scalar_last_wins",
+      "kind": "success"
+    },
+    {
+      "body": "{\"choices\":[{\"message\":{\"content\":\"merged\",\"tool_calls\":[{\"id\":\"call-merge\",\"function\":{\"name\":\"fn-merge\",\"arguments\":\"{\\\"ok\\\":true}\"}}]},\"MESSAGE\":{\"tool_calls\":[{\"FUNCTION\":{\"name\":\"fn-alias\",\"arguments\":\"{\\\"alias\\\":true}\"}}]}}]}",
+      "content": "merged",
+      "id": "repeated_nested_objects_merge",
+      "kind": "success",
+      "tool_calls": [
+        {
+          "arguments_raw": "{\"alias\":true}",
+          "id": "call-merge",
+          "name": "fn-alias"
+        }
+      ]
+    },
+    {
+      "body": "{\"choices\":[{\"message\":{\"tool_calls\":[{\"id\":\"call-fn-merge\",\"function\":{\"name\":\"fn-kept\",\"arguments\":\"{\\\"old\\\":true}\"},\"FUNCTION\":{\"arguments\":\"{\\\"new\\\":true}\"}}]}}]}",
+      "id": "repeated_function_objects_merge",
+      "kind": "success",
+      "tool_calls": [
+        {
+          "arguments_raw": "{\"new\":true}",
+          "id": "call-fn-merge",
+          "name": "fn-kept"
+        }
+      ]
+    },
+    {
+      "body": "{\"choices\":[{\"message\":{\"tool_calls\":[{\"id\":\"old\",\"function\":{\"name\":\"old\",\"arguments\":\"{}\"}}],\"TOOL_CALLS\":[{\"id\":\"new\",\"function\":{\"name\":\"new\",\"arguments\":\"{\\\"new\\\":true}\"}}]}}]}",
+      "id": "duplicate_arrays_replace",
+      "kind": "success",
+      "tool_calls": [
+        {
+          "arguments_raw": "{\"new\":true}",
+          "id": "new",
+          "name": "new"
+        }
+      ]
+    },
+    {
+      "body": "{\"choices\":[{\"message\":{\"tool_calls\":[{\"id\":\"first\",\"function\":{\"name\":\"kept-first\",\"arguments\":\"{\\\"slot\\\":1}\"}},{\"id\":\"second\",\"function\":{\"name\":\"kept-second\",\"arguments\":\"{\\\"slot\\\":2}\"}}]}}],\"CHOICES\":[{\"MESSAGE\":{\"TOOL_CALLS\":[{\"id\":\"middle\",\"function\":{\"name\":\"middle\",\"arguments\":\"{\\\"middle\\\":true}\"}}]}}],\"choices\":[{\"message\":{\"tool_calls\":[{\"id\":\"final-first\",\"function\":null},{\"id\":\"final-second\",\"function\":null}]}}]}",
+      "id": "tool_call_backing_slots_reappear_after_shrink",
+      "kind": "success",
+      "tool_calls": [
+        {
+          "arguments_raw": "{\"middle\":true}",
+          "id": "final-first",
+          "name": "middle"
+        },
+        {
+          "arguments_raw": "{\"slot\":2}",
+          "id": "final-second",
+          "name": "kept-second"
+        }
+      ]
+    },
+    {
+      "body": "{\"choices\":[{\"message\":{\"content\":\"slot-zero\"},\"finish_reason\":\"first\"},{\"message\":{\"content\":\"slot-one\"},\"finish_reason\":\"second\"}],\"CHOICES\":[{\"message\":{\"content\":\"middle\"},\"finish_reason\":\"middle\"}],\"choices\":[{\"message\":null,\"finish_reason\":null},{\"message\":null,\"finish_reason\":null}]}",
+      "content": "middle",
+      "finish_reason": "middle",
+      "id": "choice_backing_slots_reappear_after_shrink",
+      "kind": "success"
+    },
+    {
+      "body": "{\"choices\":[{\"message\":{\"content\":\"lower\"},\"MESSAGE\":{\"CONTENT\":\"upper\"}}]}",
+      "content": "upper",
+      "id": "casefold_alias_order_last_wins",
+      "kind": "success"
+    },
+    {
+      "body": "{\"choices\":[{\"message\":{\"content\":null},\"finish_reason\":null}]}",
+      "id": "null_content_zero_value",
+      "kind": "success"
+    },
+    {
+      "body": "{\"error\":{\"message\":\"ignored\",\"type\":\"server_error\"},\"choices\":[{\"message\":{\"content\":\"choice wins\"}}]}",
+      "content": "choice wins",
+      "id": "top_level_error_ignored_on_success",
+      "kind": "success"
+    },
+    {
+      "body": "{\"error\":{\"message\":5},\"choices\":[{\"message\":{\"content\":\"unreachable\"}}]}",
+      "error_code": "provider_error",
+      "id": "malformed_top_level_error_type",
+      "kind": "error"
+    },
+    {
+      "body": "{\"error\":{\"code\":1e400},\"choices\":[{\"message\":{\"content\":\"unreachable\"}}]}",
+      "error_code": "provider_error",
+      "id": "error_code_numeric_overflow_rejected",
+      "kind": "error"
+    },
+    {
+      "body": "{\"error\":{\"code\":[1e400]},\"choices\":[{\"message\":{\"content\":\"unreachable\"}}]}",
+      "error_code": "provider_error",
+      "id": "error_code_nested_numeric_overflow_rejected",
+      "kind": "error"
+    },
+    {
+      "body": "{\"unknown\":1e400,\"choices\":[{\"message\":{\"content\":\"unknown ignored\"}}]}",
+      "content": "unknown ignored",
+      "id": "unknown_numeric_overflow_ignored",
+      "kind": "success"
+    },
+    {
+      "body": "{\"choices\":[{\"message\":{\"content\":42}}]}",
+      "error_code": "provider_error",
+      "id": "wrong_content_type",
+      "kind": "error"
+    },
+    {
+      "body": "{\"choices\":[{\"message\":{\"tool_calls\":{}}}]}",
+      "error_code": "provider_error",
+      "id": "wrong_tool_calls_type",
+      "kind": "error"
+    },
+    {
+      "body": "{\"choices\":[{\"message\":{\"tool_calls\":[{\"type\":42}]}}]}",
+      "error_code": "provider_error",
+      "id": "wrong_tool_type_type",
+      "kind": "error"
+    }
+  ],
   "ping_ollama": {
     "request": {
       "auth_header": "",
@@ -518,8 +769,8 @@
   "provenance": {
     "go_source_sha256": "9083f34389a8d37c89a54676c069432ec69daa1fd2d40a68081695a9ade6260c",
     "oracle_command": "GOTOOLCHAIN=go1.26.6 go run ./scripts/rust-port/llm-oracle",
-    "oracle_sha256": "ae05d479feac24b168374dfa18e16c4477da3d0b37340c17f9d1b8876723c13c",
-    "runner_sha256": "ec1847fe3488c655d5d34c23c78855bba812ef9f921e425e86555199b3ae8c85"
+    "oracle_sha256": "7a60e772f92b01ccd8f56a71b4035e0417b194b175eafc9964ad3b2c62ba6968",
+    "runner_sha256": "0762bf844dfd7b3f6fd8bb5bb97c2a10fb04f5e51dbbff1107687d32273e598a"
   },
   "providers": [
     {

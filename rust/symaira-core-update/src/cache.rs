@@ -227,21 +227,28 @@ pub fn check(url: &str, cache_path: &Path, ttl: Duration, force: bool, now_ms: u
             };
         }
     };
-    let decoded = decode_wire(&raw, WireShape::ApiRelease);
-    let Some(tag_name) = decoded.as_ref().ok().and_then(release_tag) else {
+    let decoded = match decode_wire(&raw, WireShape::ApiRelease) {
+        Ok(decoded) => decoded,
+        Err(error) => {
+            return Outcome {
+                release: None,
+                error: Some(format!("decode latest release response: {error}")),
+            };
+        }
+    };
+    let Some(tag_name) = release_tag(&decoded) else {
         return Outcome {
             release: None,
-            error: Some("response missing tag_name".to_owned()),
+            error: Some("latest release response did not include a tag name".to_owned()),
         };
     };
-    let document = decoded.as_ref().expect("validated release JSON");
     let eligibility = crate::check_response(
         "v0.0.0",
         crate::Response {
-            draft: wire_field(document, "draft", "draft")
+            draft: wire_field(&decoded, "draft", "draft")
                 .as_bool()
                 .unwrap_or(false),
-            prerelease: wire_field(document, "prerelease", "prerelease")
+            prerelease: wire_field(&decoded, "prerelease", "prerelease")
                 .as_bool()
                 .unwrap_or(false),
             tag_name: tag_name.clone(),

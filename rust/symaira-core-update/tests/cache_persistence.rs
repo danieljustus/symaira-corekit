@@ -43,6 +43,7 @@ struct Case {
 struct ResultValue {
     tag: Option<String>,
     error: bool,
+    error_kind: Option<String>,
 }
 
 struct TempRoot(PathBuf);
@@ -79,6 +80,9 @@ fn live_cache_persistence_matches_public_go_checker() {
         "normal",
         "duplicate-tag-casefold",
         "trailing-json",
+        "malformed-json",
+        "missing-tag",
+        "wrong-tag-type",
         "atomic-replace",
     ];
     assert_eq!(
@@ -97,6 +101,9 @@ fn live_cache_persistence_matches_public_go_checker() {
             "normal" => run_one(NORMAL_BODY, 1_000),
             "duplicate-tag-casefold" => run_one(DUPLICATE_TAG_BODY, 1_000),
             "trailing-json" => run_one(&format!("{NORMAL_BODY} trailing-data"), 1_000),
+            "malformed-json" => run_one("{", 1_000),
+            "missing-tag" => run_one("{}", 1_000),
+            "wrong-tag-type" => run_one(r#"{"tag_name":42}"#, 1_000),
             "atomic-replace" => run_atomic_replace(),
             other => panic!("unexpected Go persistence case {other:?}"),
         };
@@ -114,6 +121,12 @@ fn live_cache_persistence_matches_public_go_checker() {
         assert_eq!(
             actual.error, expected.result.error,
             "{}: error presence",
+            expected.id
+        );
+        assert_eq!(
+            actual.error_kind.as_deref(),
+            expected.result.error_kind.as_deref(),
+            "{}: error category",
             expected.id
         );
         assert_eq!(
@@ -204,6 +217,7 @@ struct Actual {
     requests: usize,
     tag: Option<String>,
     error: bool,
+    error_kind: Option<String>,
     cache_exists: bool,
     cache_bytes: Option<String>,
     timestamp: Option<String>,
@@ -223,6 +237,7 @@ fn run_one(body: &str, now_ms: u128) -> Actual {
         requests: 1,
         tag: outcome.release.map(|release| release.tag_name),
         error: outcome.error.is_some(),
+        error_kind: outcome.error.as_deref().map(cache_error_kind),
         cache_exists: cache_path.exists(),
         cache_bytes: None,
         timestamp: None,
@@ -238,6 +253,16 @@ fn run_one(body: &str, now_ms: u128) -> Actual {
         set_modes(&mut actual, &cache_path);
     }
     actual
+}
+
+fn cache_error_kind(error: &str) -> String {
+    if error.starts_with("decode latest release response:") {
+        "decode_response".to_owned()
+    } else if error == "latest release response did not include a tag name" {
+        "missing_tag".to_owned()
+    } else {
+        "other".to_owned()
+    }
 }
 
 fn run_atomic_replace() -> Actual {
@@ -266,6 +291,7 @@ fn run_atomic_replace() -> Actual {
         requests: 2,
         tag: replacement.release.map(|release| release.tag_name),
         error: replacement.error.is_some(),
+        error_kind: replacement.error.as_deref().map(cache_error_kind),
         cache_exists: cache_path.exists(),
         cache_bytes: Some(normalize_timestamp(&fs::read(&cache_path).unwrap())),
         timestamp: None,

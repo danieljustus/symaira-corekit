@@ -12,6 +12,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"time"
 
 	"github.com/danieljustus/symaira-corekit/updatecheck"
@@ -20,8 +21,9 @@ import (
 const normalBody = `{"tag_name":"v1.3.0","body":"HTML <>& \u2028 \u2029 literal\\u2028","html_url":" https://github.com/o/r/releases/tag/v1.3.0 ","assets":[{"name":"tool.tar.gz","browser_download_url":"https://github.com/o/r/releases/download/v1.3.0/tool.tar.gz","size":42}]}`
 
 type result struct {
-	Tag   string `json:"tag,omitempty"`
-	Error bool   `json:"error"`
+	Tag       string `json:"tag,omitempty"`
+	Error     bool   `json:"error"`
+	ErrorKind string `json:"error_kind,omitempty"`
 }
 
 type observation struct {
@@ -49,11 +51,14 @@ func main() {
 }
 
 func run() error {
-	cases := make([]observation, 0, 4)
+	cases := make([]observation, 0, 7)
 	for _, item := range []struct{ id, body string }{
 		{"normal", normalBody},
 		{"duplicate-tag-casefold", `{"TAG_NAME":"v1.2.0","tag_name":"v1.3.0"}`},
 		{"trailing-json", normalBody + " trailing-data"},
+		{"malformed-json", "{"},
+		{"missing-tag", `{}`},
+		{"wrong-tag-type", `{"tag_name":42}`},
 	} {
 		observed, err := observe(item.id, item.body)
 		if err != nil {
@@ -99,7 +104,7 @@ func observe(id, body string) (observation, error) {
 	item := observation{
 		ID:       id,
 		Requests: requests,
-		Result:   result{Error: checkErr != nil},
+		Result:   result{Error: checkErr != nil, ErrorKind: errorKind(checkErr)},
 	}
 	if release != nil {
 		item.Result.Tag = release.TagName
@@ -115,6 +120,19 @@ func observe(id, body string) (observation, error) {
 		}
 	}
 	return item, nil
+}
+
+func errorKind(err error) string {
+	if err == nil {
+		return ""
+	}
+	if strings.HasPrefix(err.Error(), "decode latest release response:") {
+		return "decode_response"
+	}
+	if err.Error() == "latest release response did not include a tag name" {
+		return "missing_tag"
+	}
+	return "other"
 }
 
 func observeAtomicReplace() (observation, error) {
