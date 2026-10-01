@@ -257,6 +257,14 @@ fn extract_zip(data: &[u8], root: &Path, expected: &str) -> Result<String, Extra
             ));
         }
         let path = Path::new(&name);
+        let mut crc = flate2::Crc::new();
+        crc.update(&body);
+        if body.len() as u64 != u64::from(record.expanded_size) || crc.sum() != record.crc32 {
+            return Err(ExtractError::new(
+                "invalid_zip",
+                format!("write file {name:?}: zip: checksum error"),
+            ));
+        }
         if let Some(parent) = path.parent() {
             root.create_dir_all(parent).map_err(|err| {
                 ExtractError::new("io", format!("create parent dir for {name:?}: {err}"))
@@ -285,6 +293,8 @@ struct ZipRecord {
     name: String,
     method: u16,
     compressed_size: u32,
+    expanded_size: u32,
+    crc32: u32,
     local_offset: u32,
     mode: u32,
     is_dir: bool,
@@ -318,6 +328,8 @@ fn zip_records(data: &[u8]) -> Result<Vec<ZipRecord>, ExtractError> {
             name,
             method: read_u16(data, offset + 10).ok_or_else(invalid_zip)?,
             compressed_size: read_u32(data, offset + 20).ok_or_else(invalid_zip)?,
+            expanded_size: read_u32(data, offset + 24).ok_or_else(invalid_zip)?,
+            crc32: read_u32(data, offset + 16).ok_or_else(invalid_zip)?,
             local_offset: read_u32(data, offset + 42).ok_or_else(invalid_zip)?,
             mode: (attrs >> 16) & 0o7777,
             is_dir: attrs >> 16 & 0o170000 == 0o040000,
@@ -341,6 +353,9 @@ fn validate_name(name: &str) -> Result<(), ExtractError> {
             )
         })
     {
+        // Go's filepath.Clean renders the rejected path with native separators.
+        #[cfg(windows)]
+        let name = name.replace('/', "\\");
         return Err(ExtractError::new(
             "path_traversal",
             format!("archive entry attempts path traversal: {name:?}"),
@@ -351,6 +366,18 @@ fn validate_name(name: &str) -> Result<(), ExtractError> {
 
 #[cfg(all(test, windows))]
 mod windows_path_tests {
+    #[test]
+    fn traversal_diagnostics_use_native_separators() {
+        for (input, native) in [("../escape", r"..\escape"), ("/outside", r"\outside")] {
+            let error = super::validate_name(input).unwrap_err();
+            assert_eq!(error.code, "path_traversal");
+            assert_eq!(
+                error.message,
+                format!("archive entry attempts path traversal: {native:?}")
+            );
+        }
+    }
+
     #[test]
     fn reject_drive_relative_absolute_unc_and_device_paths() {
         for name in [

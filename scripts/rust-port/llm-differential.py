@@ -78,7 +78,9 @@ def main() -> int:
 
     env = os.environ.copy()
     env["GOTOOLCHAIN"] = "go1.26.6"
-    result = subprocess.run(oracle_command(), cwd=ROOT, env=env, check=True, capture_output=True, text=True)
+    result = subprocess.run(
+        oracle_command(), cwd=ROOT, env=env, check=True, capture_output=True, encoding="utf-8"
+    )
     observed = json.loads(result.stdout)
     observed["provenance"] = {
         "go_source_sha256": source_digest(),

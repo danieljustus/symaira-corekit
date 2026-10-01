@@ -26,11 +26,12 @@ impl Client {
         decode_embeddings(&raw, &model, inputs.len())
     }
 
-    /// Embeds inputs using the OpenAI-compatible endpoint with cancellation.
+    /// Performs an embedding request over the cancellable async transport.
     ///
-    /// # Errors
-    /// Returns the same validation and provider errors as [`Self::embed`], or
-    /// a transport error when the token cancels the request or response read.
+    /// Cancelling `token` drops the in-flight request or response read and
+    /// closes its connection. Use [`crate::ClientBuilder::async_client`] to
+    /// configure this transport. A blocking `ureq::Agent` alone cannot be
+    /// interrupted.
     pub async fn embed_cancellable(
         &self,
         token: &CancellationToken,
@@ -38,15 +39,25 @@ impl Client {
         inputs: &[String],
         dimensions: Option<usize>,
     ) -> Result<Vec<Embedding>> {
+        tokio::select! {
+            biased;
+            _ = token.cancelled() => Err(Error::transport("llmkit: context canceled")),
+            result = self.embed_cancellable_inner(model, inputs, dimensions) => result,
+        }
+    }
+
+    async fn embed_cancellable_inner(
+        &self,
+        model: &str,
+        inputs: &[String],
+        dimensions: Option<usize>,
+    ) -> Result<Vec<Embedding>> {
         let (model, body) = embedding_request(self, model, inputs, dimensions)?;
-        cancel_on(token, async {
-            let mut response = self
-                .request_cancellable(reqwest::Method::POST, "/embeddings", Some(&body))
-                .await?;
-            let raw = read_reqwest_limited(&mut response, 64 << 20).await?;
-            decode_embeddings(&raw, &model, inputs.len())
-        })
-        .await
+        let mut response = self
+            .request_cancellable(reqwest::Method::POST, "/embeddings", Some(&body))
+            .await?;
+        let raw = read_reqwest_limited(&mut response, 64 << 20).await?;
+        decode_embeddings(&raw, &model, inputs.len())
     }
 
     pub fn list_models(&self) -> Result<Vec<ModelInfo>> {
@@ -111,13 +122,13 @@ impl Client {
         }
     }
 
-    fn discover_models(&self, path: &str) -> Result<Vec<ModelInfo>> {
+    pub(crate) fn discover_models(&self, path: &str) -> Result<Vec<ModelInfo>> {
         let mut response = self.request("GET", path, Option::<&()>::None)?;
         let raw = read_limited(&mut response, 16 << 20)?;
         parse_discovered_models(&raw, path)
     }
 
-    async fn discover_models_cancellable(
+    pub(crate) async fn discover_models_cancellable(
         &self,
         token: &CancellationToken,
         path: &str,

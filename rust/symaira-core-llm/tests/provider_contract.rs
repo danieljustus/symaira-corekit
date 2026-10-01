@@ -478,6 +478,183 @@ fn cancellable_chat_uses_injected_async_transport_alongside_sync_agent() {
 }
 
 #[test]
+fn cancellable_embeddings_preserve_wire_and_decoder_contract() {
+    let (url, server) = mock_server(
+        200,
+        r#"{"data":[{"embedding":[0.25,0.5]},{"embedding":[0.75,1.0]}]}"#,
+    );
+    let mut headers = reqwest::header::HeaderMap::new();
+    headers.insert(
+        "X-Async-Transport",
+        reqwest::header::HeaderValue::from_static("configured"),
+    );
+    let async_client = reqwest::Client::builder()
+        .default_headers(headers)
+        .redirect(reqwest::redirect::Policy::none())
+        .build()
+        .unwrap();
+    let client = ClientBuilder::new(lookup("openai").unwrap().clone(), "")
+        .base_url(format!("{url}/v1"))
+        .api_key("dummy-key")
+        .async_client(async_client)
+        .build()
+        .unwrap();
+    let runtime = tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+        .unwrap();
+    let embeddings = runtime
+        .block_on(client.embed_cancellable(
+            &CancellationToken::new(),
+            "embed-model",
+            &["first".into(), "second".into()],
+            Some(2),
+        ))
+        .unwrap();
+    let (headers, body, _) = server.join().unwrap();
+    assert!(headers.starts_with("POST /v1/embeddings HTTP/1.1"));
+    assert!(
+        headers
+            .to_ascii_lowercase()
+            .contains("x-async-transport: configured")
+    );
+    assert_eq!(
+        serde_json::from_str::<Value>(&body).unwrap(),
+        json!({"model":"embed-model", "input":["first", "second"], "dimensions":2})
+    );
+    assert_eq!(
+        embeddings,
+        vec![
+            symaira_core_llm::Embedding {
+                vector: vec![0.25, 0.5],
+                model: "embed-model".into(),
+            },
+            symaira_core_llm::Embedding {
+                vector: vec![0.75, 1.0],
+                model: "embed-model".into(),
+            },
+        ]
+    );
+}
+
+#[test]
+fn cancellable_embedding_returns_before_starting_a_pre_cancelled_request() {
+    let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+    let address = listener.local_addr().unwrap();
+    listener.set_nonblocking(true).unwrap();
+    let client = ClientBuilder::new(lookup("openai").unwrap().clone(), "")
+        .base_url(format!("http://{address}/v1"))
+        .api_key("dummy-key")
+        .build()
+        .unwrap();
+    let token = CancellationToken::new();
+    token.cancel();
+    let runtime = tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+        .unwrap();
+    let error = runtime
+        .block_on(client.embed_cancellable(&token, "model", &["input".into()], None))
+        .unwrap_err();
+    assert_eq!(error.code, ErrorCode::TransportError);
+    assert_eq!(error.detail, "llmkit: context canceled");
+    assert!(matches!(
+        listener.accept(),
+        Err(error) if error.kind() == std::io::ErrorKind::WouldBlock
+    ));
+}
+
+#[test]
+fn cancellable_embedding_closes_connection_while_waiting_for_headers_or_body() {
+    for wait_for_body in [false, true] {
+        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        let address = listener.local_addr().unwrap();
+        let (started_tx, started_rx) = std::sync::mpsc::channel();
+        let server = thread::spawn(move || {
+            let (mut stream, _) = listener.accept().unwrap();
+            read_request(&mut stream);
+            if wait_for_body {
+                stream
+                    .write_all(
+                        b"HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: 64\r\nConnection: keep-alive\r\n\r\n{\"data\":[",
+                    )
+                    .unwrap();
+                stream.flush().unwrap();
+            }
+            started_tx.send(()).unwrap();
+            server_observes_close(&mut stream)
+        });
+        let client = ClientBuilder::new(lookup("openai").unwrap().clone(), "")
+            .base_url(format!("http://{address}/v1"))
+            .api_key("dummy-key")
+            .build()
+            .unwrap();
+        let token = CancellationToken::new();
+        let worker_token = token.clone();
+        let runtime = tokio::runtime::Builder::new_multi_thread()
+            .enable_all()
+            .build()
+            .unwrap();
+        let worker = runtime.spawn(async move {
+            client
+                .embed_cancellable(&worker_token, "model", &["input".into()], None)
+                .await
+        });
+        started_rx
+            .recv_timeout(Duration::from_secs(2))
+            .expect("provider did not reach the expected response phase");
+        token.cancel();
+        let error = runtime.block_on(async {
+            tokio::time::timeout(Duration::from_secs(2), worker)
+                .await
+                .expect("cancelled embedding did not return promptly")
+                .unwrap()
+                .unwrap_err()
+        });
+        assert_eq!(error.code, ErrorCode::TransportError);
+        assert!(server.join().unwrap(), "provider connection stayed open");
+    }
+}
+
+#[test]
+fn cancellable_embedding_preserves_provider_and_decode_errors() {
+    let runtime = tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+        .unwrap();
+    let cases = [
+        (
+            429,
+            r#"{"error":"busy"}"#,
+            ErrorCode::RateLimited,
+            429,
+            "17",
+        ),
+        (200, r#"{"data":[]}"#, ErrorCode::ProviderError, 0, ""),
+    ];
+    for (status, body, code, status_code, retry_after) in cases {
+        let (url, server) = mock_server(status, body);
+        let client = ClientBuilder::new(lookup("openai").unwrap().clone(), "")
+            .base_url(format!("{url}/v1"))
+            .api_key("dummy-key")
+            .build()
+            .unwrap();
+        let error = runtime
+            .block_on(client.embed_cancellable(
+                &CancellationToken::new(),
+                "model",
+                &["input".into()],
+                None,
+            ))
+            .unwrap_err();
+        server.join().unwrap();
+        assert_eq!(error.code, code);
+        assert_eq!(error.status_code, status_code);
+        assert_eq!(error.retry_after, retry_after);
+    }
+}
+
+#[test]
 fn cancellable_chat_preserves_go_rate_limit_and_header_classification() {
     let fixture: Value = serde_json::from_str(include_str!(
         "../../../testdata/rust-port/fixtures/llm/go-oracle.json"
@@ -1810,6 +1987,45 @@ fn ollama_ping_uses_go_generic_discovery_response_shapes() {
     let (headers, _, _) = server.join().unwrap();
     assert!(headers.starts_with("GET /api/tags HTTP/1.1"));
     assert_eq!(fixture["ping_ollama"]["request"]["path"], "/api/tags");
+}
+
+#[test]
+fn ollama_ping_ignores_static_and_overridden_discovery_descriptors() {
+    let runtime = tokio::runtime::Runtime::new().unwrap();
+    for mode in ["static", "discovered"] {
+        for cancellable in [false, true] {
+            let mut descriptor = lookup("ollama").unwrap().clone();
+            descriptor.models.mode = mode.to_owned();
+            descriptor.models.discovery_path = "/not-tags".to_owned();
+            let (url, server) = mock_server(503, r#"{"message":"unavailable"}"#);
+            let client = ClientBuilder::new(descriptor, "")
+                .base_url(url)
+                .build()
+                .unwrap();
+            if mode == "static" {
+                assert!(client.list_models().is_ok());
+                assert!(
+                    runtime
+                        .block_on(client.list_models_cancellable(&CancellationToken::new()))
+                        .is_ok()
+                );
+            }
+            let result = if cancellable {
+                runtime.block_on(client.ping_cancellable(&CancellationToken::new()))
+            } else {
+                client.ping()
+            };
+            assert_eq!(result.unwrap_err().status_code, 503);
+            let (headers, _, _) = server.join().unwrap();
+            assert!(headers.starts_with("GET /api/tags HTTP/1.1"));
+            let token = CancellationToken::new();
+            token.cancel();
+            let error = runtime
+                .block_on(client.ping_cancellable(&token))
+                .unwrap_err();
+            assert_eq!(error.code, ErrorCode::TransportError);
+        }
+    }
 }
 
 #[test]

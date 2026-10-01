@@ -185,6 +185,22 @@ func recordInjectedHTTPClient() injectedHTTPClientResult {
 	}
 }
 
+type openAISuccessToolCall struct {
+	ID           string `json:"id"`
+	Name         string `json:"name"`
+	ArgumentsRaw string `json:"arguments_raw"`
+}
+
+type openAISuccessObservation struct {
+	ID           string                  `json:"id"`
+	Body         string                  `json:"body"`
+	Kind         string                  `json:"kind"`
+	Content      string                  `json:"content,omitempty"`
+	FinishReason string                  `json:"finish_reason,omitempty"`
+	ToolCalls    []openAISuccessToolCall `json:"tool_calls,omitempty"`
+	ErrorCode    string                  `json:"error_code,omitempty"`
+}
+
 type streamCase struct {
 	Kind           string             `json:"kind"`
 	Request        request            `json:"request"`
@@ -267,11 +283,12 @@ type observation struct {
 		Request  request `json:"request"`
 		Response string  `json:"response"`
 	} `json:"ping_ollama"`
-	NativeModelsCasefold        []llmkit.OllamaModelInfo `json:"native_models_casefold_alias_order"`
-	CasefoldDiscoveryModels     []llmkit.ModelInfo       `json:"casefold_discovery_models"`
-	GenericOllamaCasefoldModels []llmkit.ModelInfo       `json:"generic_ollama_casefold_models"`
-	CancellableCalls            []cancellationResult     `json:"cancellable_calls"`
-	InjectedHTTPClient          injectedHTTPClientResult `json:"injected_http_client"`
+	NativeModelsCasefold        []llmkit.OllamaModelInfo   `json:"native_models_casefold_alias_order"`
+	CasefoldDiscoveryModels     []llmkit.ModelInfo         `json:"casefold_discovery_models"`
+	GenericOllamaCasefoldModels []llmkit.ModelInfo         `json:"generic_ollama_casefold_models"`
+	CancellableCalls            []cancellationResult       `json:"cancellable_calls"`
+	InjectedHTTPClient          injectedHTTPClientResult   `json:"injected_http_client"`
+	OpenAISuccessResponses      []openAISuccessObservation `json:"openai_success_responses"`
 }
 
 func canceledCall(operation string, requests *atomic.Int32, call func(context.Context) error) cancellationResult {
@@ -332,6 +349,73 @@ func recordCanceledCalls(baseURL string, requests *atomic.Int32) []cancellationR
 			return ollamaClient.Ping(ctx)
 		}),
 	}
+}
+
+var openAISuccessResponseBodies = []struct {
+	id   string
+	body string
+}{
+	{"missing_fields", `{}`},
+	{"null_choices", `{"choices":null}`},
+	{"null_choice", `{"choices":[null]}`},
+	{"null_message", `{"choices":[{"message":null,"finish_reason":"stop"}]}`},
+	{"null_scalars_preserve_previous", `{"choices":[{"message":{"content":"kept"},"MESSAGE":{"CONTENT":null},"finish_reason":"stop","FINISH_REASON":null}]}`},
+	{"null_tool_calls_clears_array", `{"choices":[{"message":{"tool_calls":[{"id":"discard","function":{"name":"discard","arguments":"{}"}}]},"MESSAGE":{"tool_calls":null}}]}`},
+	{"null_tool_calls_reset_before_same_message_array", `{"choices":[{"message":{"tool_calls":[{"id":"old","function":{"name":"old","arguments":"old"}}]},"MESSAGE":{"tool_calls":null,"TOOL_CALLS":[{"id":"new"}]}}]}`},
+	{"null_tool_calls_reset_before_repeated_choice_array", `{"choices":[{"message":{"tool_calls":[{"id":"old","function":{"name":"old","arguments":"old"}}]}}],"CHOICES":[{"message":{"tool_calls":null,"TOOL_CALLS":[{"id":"new"}]}}]}`},
+	{"null_function_preserves_previous", `{"choices":[{"message":{"tool_calls":[{"id":"call-1","function":{"name":"lookup","arguments":"{\"q\":1}"}}]},"MESSAGE":{"tool_calls":[{"id":"call-1","FUNCTION":null}]}}]}`},
+	{"null_function_value_preserves_previous", `{"choices":[{"message":{"tool_calls":[{"id":"call-null-fn","function":{"name":"keep","arguments":"{}"},"FUNCTION":null}]} }]}`},
+	{"null_tool_call_zero_value", `{"choices":[{"message":{"tool_calls":[null]}}]}`},
+	{"casefold_fields_and_unknown_ignored", `{"CHOICES":[{"MESSAGE":{"CONTENT":"folded","TOOL_CALLS":[{"ID":"call-fold","FUNCTION":{"NAME":"search","ARGUMENTS":"{\"term\":\"rust\"}","extra":true}}]},"FINISH_REASON":"tool_calls","unknown":{"nested":[1,2]}}]}`},
+	{"unicode_fold_aliases", `{"choiceſ":[{"message":{"content":"unicode folded","finish_reaſon":"stop","tool_calls":[{"function":{"name":"lookup","argumentſ":"{}"}}]}}]}`},
+	{"duplicate_scalar_last_wins", `{"choices":[{"finish_reason":"first","FINISH_REASON":"last","message":{"content":"first","CONTENT":"last"}}]}`},
+	{"repeated_nested_objects_merge", `{"choices":[{"message":{"content":"merged","tool_calls":[{"id":"call-merge","function":{"name":"fn-merge","arguments":"{\"ok\":true}"}}]},"MESSAGE":{"tool_calls":[{"FUNCTION":{"name":"fn-alias","arguments":"{\"alias\":true}"}}]}}]}`},
+	{"repeated_function_objects_merge", `{"choices":[{"message":{"tool_calls":[{"id":"call-fn-merge","function":{"name":"fn-kept","arguments":"{\"old\":true}"},"FUNCTION":{"arguments":"{\"new\":true}"}}]}}]}`},
+	{"duplicate_arrays_replace", `{"choices":[{"message":{"tool_calls":[{"id":"old","function":{"name":"old","arguments":"{}"}}],"TOOL_CALLS":[{"id":"new","function":{"name":"new","arguments":"{\"new\":true}"}}]}}]}`},
+	{"tool_call_backing_slots_reappear_after_shrink", `{"choices":[{"message":{"tool_calls":[{"id":"first","function":{"name":"kept-first","arguments":"{\"slot\":1}"}},{"id":"second","function":{"name":"kept-second","arguments":"{\"slot\":2}"}}]}}],"CHOICES":[{"MESSAGE":{"TOOL_CALLS":[{"id":"middle","function":{"name":"middle","arguments":"{\"middle\":true}"}}]}}],"choices":[{"message":{"tool_calls":[{"id":"final-first","function":null},{"id":"final-second","function":null}]}}]}`},
+	{"choice_backing_slots_reappear_after_shrink", `{"choices":[{"message":{"content":"slot-zero"},"finish_reason":"first"},{"message":{"content":"slot-one"},"finish_reason":"second"}],"CHOICES":[{"message":{"content":"middle"},"finish_reason":"middle"}],"choices":[{"message":null,"finish_reason":null},{"message":null,"finish_reason":null}]}`},
+	{"casefold_alias_order_last_wins", `{"choices":[{"message":{"content":"lower"},"MESSAGE":{"CONTENT":"upper"}}]}`},
+	{"null_content_zero_value", `{"choices":[{"message":{"content":null},"finish_reason":null}]}`},
+	{"top_level_error_ignored_on_success", `{"error":{"message":"ignored","type":"server_error"},"choices":[{"message":{"content":"choice wins"}}]}`},
+	{"malformed_top_level_error_type", `{"error":{"message":5},"choices":[{"message":{"content":"unreachable"}}]}`},
+	{"error_code_numeric_overflow_rejected", `{"error":{"code":1e400},"choices":[{"message":{"content":"unreachable"}}]}`},
+	{"error_code_nested_numeric_overflow_rejected", `{"error":{"code":[1e400]},"choices":[{"message":{"content":"unreachable"}}]}`},
+	{"unknown_numeric_overflow_ignored", `{"unknown":1e400,"choices":[{"message":{"content":"unknown ignored"}}]}`},
+	{"wrong_content_type", `{"choices":[{"message":{"content":42}}]}`},
+	{"wrong_tool_calls_type", `{"choices":[{"message":{"tool_calls":{}}}]}`},
+	{"wrong_tool_type_type", `{"choices":[{"message":{"tool_calls":[{"type":42}]}}]}`},
+}
+
+func observeOpenAISuccessResponses() []openAISuccessObservation {
+	observations := make([]openAISuccessObservation, 0, len(openAISuccessResponseBodies))
+	for _, test := range openAISuccessResponseBodies {
+		observation := openAISuccessObservation{ID: test.id, Body: test.body}
+		_, client, closeServer, err := capture("openai", test.body, http.StatusOK)
+		if err != nil {
+			panic(err)
+		}
+		choice, err := client.Chat(context.Background(), "gpt-5", []llmkit.Message{{Role: "user", Content: "question"}}, nil)
+		closeServer()
+		if err != nil {
+			var providerErr *llmkit.Error
+			if !errors.As(err, &providerErr) {
+				panic("expected llmkit error for OpenAI success-response corpus")
+			}
+			observation.Kind = "error"
+			observation.ErrorCode = string(providerErr.Code)
+		} else {
+			observation.Kind = "success"
+			observation.Content = choice.Content
+			observation.FinishReason = choice.FinishReason
+			for _, call := range choice.ToolCalls {
+				observation.ToolCalls = append(observation.ToolCalls, openAISuccessToolCall{
+					ID: call.ID, Name: call.Name, ArgumentsRaw: string(call.Arguments),
+				})
+			}
+		}
+		observations = append(observations, observation)
+	}
+	return observations
 }
 
 func capture(provider, response string, status int) (*request, *llmkit.Client, func(), error) {
@@ -453,6 +537,7 @@ func main() {
 	}
 	var out observation
 	out.Providers = providers
+	out.OpenAISuccessResponses = observeOpenAISuccessResponses()
 	out.InjectedHTTPClient = recordInjectedHTTPClient()
 	var canceledRequests atomic.Int32
 	cancelServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
