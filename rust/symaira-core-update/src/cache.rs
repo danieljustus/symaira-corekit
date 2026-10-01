@@ -1,7 +1,15 @@
 //! Persistent update response cache used by the UPD-003 parity slice.
 use serde::de::{DeserializeSeed, IgnoredAny, MapAccess, SeqAccess, Visitor};
 use serde_json::Value;
-use std::{fs, path::Path, time::Duration};
+use std::{
+    fs,
+    io::{self, Write},
+    path::{Component, Path},
+    sync::atomic::{AtomicU64, Ordering},
+    time::Duration,
+};
+
+static CACHE_TEMP_COUNTER: AtomicU64 = AtomicU64::new(0);
 
 #[derive(Clone, Copy)]
 enum WireShape {
@@ -26,7 +34,11 @@ fn decode_wire(raw: &str, shape: WireShape) -> Result<Value, serde_json::Error> 
         value: Value::Null,
     }
     .deserialize(&mut decoder)?;
-    decoder.end()?;
+    // Go's network Decoder.Decode consumes one JSON value; disk Unmarshal
+    // requires EOF. Keep these contracts separate, including trailing data.
+    if matches!(shape, WireShape::Cache) {
+        decoder.end()?;
+    }
     Ok(finish_wire(value))
 }
 
@@ -215,21 +227,28 @@ pub fn check(url: &str, cache_path: &Path, ttl: Duration, force: bool, now_ms: u
             };
         }
     };
-    let decoded = decode_wire(&raw, WireShape::ApiRelease);
-    let Some(tag_name) = decoded.as_ref().ok().and_then(release_tag) else {
+    let decoded = match decode_wire(&raw, WireShape::ApiRelease) {
+        Ok(decoded) => decoded,
+        Err(error) => {
+            return Outcome {
+                release: None,
+                error: Some(format!("decode latest release response: {error}")),
+            };
+        }
+    };
+    let Some(tag_name) = release_tag(&decoded) else {
         return Outcome {
             release: None,
-            error: Some("response missing tag_name".to_owned()),
+            error: Some("latest release response did not include a tag name".to_owned()),
         };
     };
-    let document = decoded.as_ref().expect("validated release JSON");
     let eligibility = crate::check_response(
         "v0.0.0",
         crate::Response {
-            draft: wire_field(document, "draft", "draft")
+            draft: wire_field(&decoded, "draft", "draft")
                 .as_bool()
                 .unwrap_or(false),
-            prerelease: wire_field(document, "prerelease", "prerelease")
+            prerelease: wire_field(&decoded, "prerelease", "prerelease")
                 .as_bool()
                 .unwrap_or(false),
             tag_name: tag_name.clone(),
@@ -266,31 +285,197 @@ fn read_cache(path: &Path) -> Option<(u128, CachedRelease)> {
 }
 
 fn write_cache(path: &Path, now_ms: u128, release: &CachedRelease) -> std::io::Result<()> {
-    if let Some(parent) = path.parent() {
-        fs::create_dir_all(parent)?;
-    }
     let response =
         decode_wire(&release.response, WireShape::ApiRelease).map_err(std::io::Error::other)?;
-    let assets: Vec<_> = wire_field(&response, "assets", "Assets")
-        .as_array().into_iter().flatten().map(|asset| serde_json::json!({
-            "Name": wire_field(asset, "name", "Name").as_str().unwrap_or_default(),
-            "BrowserDownloadURL": wire_field(asset, "browser_download_url", "BrowserDownloadURL").as_str().unwrap_or_default(),
-            "Size": wire_field(asset, "size", "Size").as_i64().unwrap_or_default(),
-        })).collect();
-    // Go persists Release fields, not the GitHub response's snake_case keys.
-    let disk = serde_json::json!({
-        "timestamp": format_rfc3339_ms(now_ms),
-        "release": {
-            "TagName": release.tag_name,
-            "Body": wire_field(&response, "body", "Body").as_str().unwrap_or_default(),
-            "HTMLURL": wire_field(&response, "html_url", "HTMLURL").as_str().unwrap_or_default().trim(),
-            "Assets": assets,
+    // Serialize Go structs in declaration order, rather than sorted Value maps.
+    #[derive(serde::Serialize)]
+    struct DiskAsset<'a> {
+        #[serde(rename = "Name")]
+        name: &'a str,
+        #[serde(rename = "BrowserDownloadURL")]
+        browser_download_url: &'a str,
+        #[serde(rename = "Size")]
+        size: i64,
+    }
+    #[derive(serde::Serialize)]
+    struct DiskRelease<'a> {
+        #[serde(rename = "TagName")]
+        tag_name: &'a str,
+        #[serde(rename = "Body")]
+        body: &'a str,
+        #[serde(rename = "HTMLURL")]
+        html_url: &'a str,
+        #[serde(rename = "Assets")]
+        assets: Vec<DiskAsset<'a>>,
+    }
+    #[derive(serde::Serialize)]
+    struct DiskCache<'a> {
+        timestamp: String,
+        release: DiskRelease<'a>,
+    }
+    let assets = wire_field(&response, "assets", "Assets")
+        .as_array()
+        .into_iter()
+        .flatten()
+        .map(|asset| DiskAsset {
+            name: wire_field(asset, "name", "Name")
+                .as_str()
+                .unwrap_or_default(),
+            browser_download_url: wire_field(asset, "browser_download_url", "BrowserDownloadURL")
+                .as_str()
+                .unwrap_or_default(),
+            size: wire_field(asset, "size", "Size")
+                .as_i64()
+                .unwrap_or_default(),
+        })
+        .collect();
+    let disk = DiskCache {
+        timestamp: format_rfc3339_ms(now_ms),
+        release: DiskRelease {
+            tag_name: &release.tag_name,
+            body: wire_field(&response, "body", "Body")
+                .as_str()
+                .unwrap_or_default(),
+            html_url: wire_field(&response, "html_url", "HTMLURL")
+                .as_str()
+                .unwrap_or_default()
+                .trim(),
+            assets,
         },
-    });
-    fs::write(
-        path,
-        serde_json::to_vec(&disk).map_err(std::io::Error::other)?,
-    )
+    };
+    // encoding/json.Marshal escapes HTML and JavaScript line separators.
+    let raw = serde_json::to_string(&disk)
+        .map_err(std::io::Error::other)?
+        .replace('&', "\\u0026")
+        .replace('<', "\\u003c")
+        .replace('>', "\\u003e")
+        .replace('\u{2028}', "\\u2028")
+        .replace('\u{2029}', "\\u2029");
+    let parent = path
+        .parent()
+        .filter(|p| !p.as_os_str().is_empty())
+        .unwrap_or(Path::new("."));
+    let parent = cache_directory(parent)?;
+    let name = path
+        .file_name()
+        .ok_or_else(|| io::Error::other("missing cache filename"))?;
+    atomic_cache_write(&parent, Path::new(name), raw.as_bytes())
+}
+
+// Match Go SafeMkdirAll: reject untrusted symlinks and create private parents.
+// Existing root-owned system aliases (notably /var on macOS) stay usable.
+fn cache_directory(path: &Path) -> io::Result<cap_std::fs::Dir> {
+    let absolute = if path.is_absolute() {
+        path.to_owned()
+    } else {
+        std::env::current_dir()?.join(path)
+    };
+    // filepath.Abs/Clean in Go removes dot components before touching disk.
+    let mut cleaned = std::path::PathBuf::new();
+    for component in absolute.components() {
+        match component {
+            Component::ParentDir => {
+                cleaned.pop();
+            }
+            Component::CurDir => {}
+            _ => cleaned.push(component),
+        }
+    }
+    let mut current = std::path::PathBuf::new();
+    for component in cleaned.components() {
+        current.push(component);
+        if !matches!(component, Component::Normal(_)) {
+            continue;
+        }
+        match fs::symlink_metadata(&current) {
+            Ok(metadata) if metadata.file_type().is_symlink() => {
+                #[cfg(unix)]
+                {
+                    use std::os::unix::fs::MetadataExt;
+                    if metadata.uid() == 0 {
+                        current = fs::canonicalize(&current)?;
+                        continue;
+                    }
+                }
+                return Err(io::Error::other("cache parent is an untrusted symlink"));
+            }
+            Ok(metadata) if metadata.is_dir() => {}
+            Ok(_) => return Err(io::Error::other("cache parent is not a directory")),
+            Err(error) if error.kind() == io::ErrorKind::NotFound => {
+                let mut builder = fs::DirBuilder::new();
+                builder.recursive(false);
+                #[cfg(unix)]
+                {
+                    use std::os::unix::fs::DirBuilderExt;
+                    builder.mode(0o700);
+                }
+                if let Err(error) = builder.create(&current) {
+                    if error.kind() != io::ErrorKind::AlreadyExists {
+                        return Err(error);
+                    }
+                    // A racing creator must still have installed a directory.
+                    if !fs::symlink_metadata(&current)?.is_dir() {
+                        return Err(error);
+                    }
+                }
+            }
+            Err(error) => return Err(error),
+        }
+    }
+    cap_std::fs::Dir::open_ambient_dir(current, cap_std::ambient_authority())
+}
+
+fn atomic_cache_write(parent: &cap_std::fs::Dir, name: &Path, bytes: &[u8]) -> io::Result<()> {
+    let mut collisions = 0;
+    let (temporary, mut file) = loop {
+        let sequence = CACHE_TEMP_COUNTER.fetch_add(1, Ordering::Relaxed);
+        let temporary = format!(".update-cache-{}-{sequence}.tmp", std::process::id());
+        let mut options = cap_std::fs::OpenOptions::new();
+        options.write(true).create_new(true);
+        #[cfg(unix)]
+        {
+            use cap_std::fs::OpenOptionsExt;
+            options.mode(0o600);
+        }
+        match parent.open_with(&temporary, &options) {
+            Ok(file) => break (temporary, file),
+            Err(error) if error.kind() == io::ErrorKind::AlreadyExists => {
+                collisions += 1;
+                if collisions == 100 {
+                    return Err(error);
+                }
+            }
+            Err(error) => return Err(error),
+        }
+    };
+    let result = (|| {
+        #[cfg(unix)]
+        {
+            use cap_std::fs::PermissionsExt;
+            file.set_permissions(cap_std::fs::Permissions::from_mode(0o600))?;
+        }
+        file.write_all(bytes)?;
+        file.sync_all()?;
+        drop(file);
+        #[cfg(not(windows))]
+        return parent.rename(&temporary, parent, name);
+        #[cfg(windows)]
+        {
+            // Match Go's bounded retry for antivirus/indexer sharing conflicts.
+            for attempt in 0..10 {
+                match parent.rename(&temporary, parent, name) {
+                    Ok(()) => return Ok(()),
+                    Err(error) if attempt == 9 => return Err(error),
+                    Err(_) => std::thread::sleep(Duration::from_millis(10)),
+                }
+            }
+            unreachable!()
+        }
+    })();
+    if result.is_err() {
+        let _ = parent.remove_file(&temporary);
+    }
+    result
 }
 
 fn wire_field<'a>(value: &'a serde_json::Value, api: &str, disk: &str) -> &'a serde_json::Value {
@@ -415,12 +600,18 @@ fn format_rfc3339_ms(ms: u128) -> String {
     let day = doy - (153 * mp + 2) / 5 + 1;
     let month = mp + if mp < 10 { 3 } else { -9 };
     year += i64::from(month <= 2);
+    let fraction = if ms.is_multiple_of(1000) {
+        String::new()
+    } else {
+        format!(".{:03}", ms % 1000)
+            .trim_end_matches('0')
+            .to_owned()
+    };
     format!(
-        "{year:04}-{month:02}-{day:02}T{:02}:{:02}:{:02}.{:03}Z",
+        "{year:04}-{month:02}-{day:02}T{:02}:{:02}:{:02}{fraction}Z",
         daytime / 3600,
         daytime % 3600 / 60,
-        daytime % 60,
-        ms % 1000
+        daytime % 60
     )
 }
 

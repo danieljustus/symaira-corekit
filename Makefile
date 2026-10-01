@@ -113,7 +113,8 @@ rust-update-version-contract:
 	$(CARGO_RUN) test --manifest-path "$(CURDIR)/Cargo.toml" -p symaira-core-update --all-targets --all-features --locked
 
 # Update replay and production Apply against fresh Go observations, with
-# mutations rejected. The public signed-release gate below remains opt-in.
+# mutations rejected. The separate signed-release acceptance gate runs in CI
+# and can be invoked locally when the verifier and its trust endpoints exist.
 rust-update-contract: rust-update-version-contract
 	python3 -m unittest discover -s scripts/rust-port -p 'test_update_harness.py'
 	GOTOOLCHAIN=go1.26.6 CGO_ENABLED=0 $(GO_RUN) test -count=1 ./updatecheck/...
@@ -130,7 +131,7 @@ rust-update-contract: rust-update-version-contract
 	GOTOOLCHAIN=go1.26.6 CGO_ENABLED=0 python3 scripts/rust-port/update-apply-differential.py
 	GOTOOLCHAIN=go1.26.6 CGO_ENABLED=0 python3 scripts/rust-port/update-swap-differential.py
 
-# Opt-in real Cosign and end-to-end Apply. Requires curl, Cosign and network;
+# Real Cosign and end-to-end Apply. Requires curl, Cosign and network;
 # replaces only an isolated disposable target, never an installed binary.
 rust-update-signed-contract:
 	GOTOOLCHAIN=go1.26.6 CGO_ENABLED=0 python3 scripts/rust-port/cosign-valid-differential.py
