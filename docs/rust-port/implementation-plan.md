@@ -163,6 +163,11 @@ All RUST-006+ work depends transitively on this graph barrier.
 4. Freeze SSE/NDJSON streaming, callback ordering, malformed input and finish reasons.
 5. Port embeddings, model discovery and native Ollama compatibility where demanded.
 6. Preserve stable error codes, retryability, retry-after, exit mapping and redacted body truncation.
+7. Adopt the shared transport through bounded consumer adapters, retaining each
+   product's prompts, fallback and credential policy. Extend per-request
+   cancellation to embeddings without duplicating the synchronous wire builder
+   or response decoder. Keep RUST-008 in progress while model discovery and
+   native Ollama cancellation and the remaining parity evidence are open.
 
 ## RUST-009: Audit and grounded-evidence algorithm slices
 

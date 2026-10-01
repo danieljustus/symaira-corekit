@@ -1,10 +1,11 @@
-use crate::client::{Client, read_limited};
+use crate::client::{Client, read_limited, read_reqwest_limited};
 use crate::error::{Error, ErrorCode, Result};
 use crate::provider::ModelInfo;
 use serde::de::{Error as _, IgnoredAny, MapAccess, Visitor};
 use serde::{Deserialize, Deserializer};
 use serde_json::json;
 use std::fmt;
+use tokio_util::sync::CancellationToken;
 
 #[derive(Clone, Debug, Deserialize, PartialEq)]
 pub struct Embedding {
@@ -19,6 +20,52 @@ impl Client {
         inputs: &[String],
         dimensions: Option<usize>,
     ) -> Result<Vec<Embedding>> {
+        let (model, body) = self.embedding_request(model, inputs, dimensions)?;
+        let mut response = self.request("POST", "/embeddings", Some(&body))?;
+        let raw = read_limited(&mut response, 64 << 20)?;
+        decode_embeddings(&raw, inputs.len(), &model)
+    }
+
+    /// Performs an embedding request over the cancellable async transport.
+    ///
+    /// Cancelling `token` drops the in-flight request or response read and
+    /// closes its connection. Use [`crate::ClientBuilder::async_client`] to
+    /// configure this transport. A blocking `ureq::Agent` alone cannot be
+    /// interrupted.
+    pub async fn embed_cancellable(
+        &self,
+        token: &CancellationToken,
+        model: &str,
+        inputs: &[String],
+        dimensions: Option<usize>,
+    ) -> Result<Vec<Embedding>> {
+        tokio::select! {
+            biased;
+            _ = token.cancelled() => Err(Error::transport("llmkit: context canceled")),
+            result = self.embed_cancellable_inner(model, inputs, dimensions) => result,
+        }
+    }
+
+    async fn embed_cancellable_inner(
+        &self,
+        model: &str,
+        inputs: &[String],
+        dimensions: Option<usize>,
+    ) -> Result<Vec<Embedding>> {
+        let (model, body) = self.embedding_request(model, inputs, dimensions)?;
+        let mut response = self
+            .request_cancellable(reqwest::Method::POST, "/embeddings", Some(&body))
+            .await?;
+        let raw = read_reqwest_limited(&mut response, 64 << 20).await?;
+        decode_embeddings(&raw, inputs.len(), &model)
+    }
+
+    fn embedding_request(
+        &self,
+        model: &str,
+        inputs: &[String],
+        dimensions: Option<usize>,
+    ) -> Result<(String, serde_json::Value)> {
         if !self.descriptor().capabilities.embeddings {
             return Err(Error::local(
                 ErrorCode::ProviderError,
@@ -52,32 +99,7 @@ impl Client {
         if let Some(n) = dimensions.filter(|n| *n > 0) {
             body["dimensions"] = json!(n);
         }
-        let mut response = self.request("POST", "/embeddings", Some(&body))?;
-        let raw = read_limited(&mut response, 64 << 20)?;
-        let parsed: EmbeddingResponse = serde_json::from_slice(&raw).map_err(|e| {
-            Error::local(
-                ErrorCode::ProviderError,
-                format!("llmkit: decode embeddings response: {e}"),
-            )
-        })?;
-        if parsed.data.len() != inputs.len() {
-            return Err(Error::local(
-                ErrorCode::ProviderError,
-                format!(
-                    "llmkit: expected {} embeddings, got {}",
-                    inputs.len(),
-                    parsed.data.len()
-                ),
-            ));
-        }
-        Ok(parsed
-            .data
-            .into_iter()
-            .map(|item| Embedding {
-                vector: item.embedding,
-                model: model.to_owned(),
-            })
-            .collect())
+        Ok((model.to_owned(), body))
     }
 
     pub fn list_models(&self) -> Result<Vec<ModelInfo>> {
@@ -138,6 +160,32 @@ impl Client {
             format!("llmkit: unrecognized discovery response shape at {path}"),
         ))
     }
+}
+
+fn decode_embeddings(raw: &[u8], input_count: usize, model: &str) -> Result<Vec<Embedding>> {
+    let parsed: EmbeddingResponse = serde_json::from_slice(raw).map_err(|e| {
+        Error::local(
+            ErrorCode::ProviderError,
+            format!("llmkit: decode embeddings response: {e}"),
+        )
+    })?;
+    if parsed.data.len() != input_count {
+        return Err(Error::local(
+            ErrorCode::ProviderError,
+            format!(
+                "llmkit: expected {input_count} embeddings, got {}",
+                parsed.data.len()
+            ),
+        ));
+    }
+    Ok(parsed
+        .data
+        .into_iter()
+        .map(|item| Embedding {
+            vector: item.embedding,
+            model: model.to_owned(),
+        })
+        .collect())
 }
 
 struct EmbeddingResponse {

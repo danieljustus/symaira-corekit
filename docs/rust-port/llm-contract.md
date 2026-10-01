@@ -32,6 +32,10 @@ provider code, a Rust `ollamakit` clone, or a process/release surface.
   transport settings. An injected blocking `ureq::Agent` without an async client
   remains an explicit error for cancellable calls. Synchronous calls continue
   to use the configured `ureq::Agent`.
+- `embed_cancellable` uses the same request validation, request body, bounded
+  response read, and decoder as synchronous `embed`. Cancellation drops the
+  active request or response read, including while waiting for response headers
+  or body bytes; an injected async client is honored.
 
 ## Differential evidence
 
@@ -47,8 +51,9 @@ The `Rust foundation` CI matrix runs this gate on Linux, macOS, and Windows.
 
 ## Residual boundary
 
-The existing `chat` and `stream_chat` methods remain synchronous and are not
-cancellable. The async cancellation methods require an executor and a separate
-async client when custom transport settings are needed; `ureq::Agent` settings
-cannot be transferred automatically. This slice does not authorize a consumer
-cutover, release, tag, Go removal, or publication.
+The existing `chat`, `stream_chat`, and `embed` methods remain synchronous and
+are not cancellable. Model discovery and native Ollama endpoints also remain
+synchronous. The async cancellation methods require an executor; a separate
+async client is needed when custom transport settings are required, because
+`ureq::Agent` settings cannot be transferred automatically. This slice does
+not authorize a consumer cutover, release, tag, Go removal, or publication.

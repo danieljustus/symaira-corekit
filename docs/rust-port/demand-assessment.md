@@ -34,25 +34,28 @@ rg -l -i -g '*.rs' "openai|anthropic|ollama|provider|llm" \
   symaira-brain/rust symaira-brain/browse/crates symaira-desktop/crates symaira-eraseme/crates
 ```
 
-Two consumers carry the *surface*: `symaira-desktop/crates/symdesk-core/src/config.rs`
-has `llm_provider`/`llm_model`/`ollama_url` with the accepted provider set
-(`ollama`, `anthropic`, `openai`, `hermes`, lines 36-103 and 244-251), and
-`symaira-eraseme/crates/symeraseme-core/src/triage_prompts.rs` builds the triage
-LLM prompts while `triage_contract.rs` states that LLM transport is explicitly
-out of scope for that slice; the CLI exposes `--provider`/`--model` overrides
-(`symeraseme-cli/src/command_surface.rs:186-192, 334-340`).
+Rechecked 2026-10-01: EraseMe already uses the shared transport in
+`crates/symeraseme-core/src/llm/transport.rs` for classification and cancellation;
+its error/retry/provider resolution stays in `llm/mod.rs`. The earlier account
+of an unported EraseMe transport is superseded by that implementation.
 
-EraseMe now has a Rust LLM error/retry/provider-resolution surface in
-`crates/symeraseme-core/src/llm/mod.rs`, but it explicitly leaves provider
-transport unported. Brain's `rust/symbrain-usage/src/provider_requests.rs`
-builds account/quota usage requests, not generation requests. Brain memory's
-`rust/symbrain-memory/src/embedding.rs` does make Ollama embedding requests;
-no second Rust consumer duplicates that embedding transport. **Verdict:
-demand met for implementation.** CoreKit issue #288 records the EraseMe Rust
-consumer's blocked provider transport and the shared LLM contract needed by
-that consumer surface. CoreKit now owns the transport port; this does not
-itself authorize changing either consumer or removing the Go path. Implementation
-and residual boundaries are tracked in [`llm-contract.md`](llm-contract.md).
+Brain memory's `rust/symbrain-memory/src/embedding.rs` independently implements
+the same OpenAI-compatible Ollama embedding request that Go already delegates
+to `llmkit` in `internal/memory/extractor/embeddings.go`. Desktop's Go
+`internal/ai/anthropic.go` likewise uses `llmkit.StreamChat`; its Rust
+`crates/symdesk-cli/src/ai_cli.rs` has the `transform` command surface awaiting
+that transport. These are concrete adoption paths for the existing shared
+crate. Brain's hash fallback and dimension policy, Desktop's prompts and secret
+resolution, and EraseMe's classification/retry policy remain consumer-owned.
+Brain usage/quota requests are a separate contract.
+
+**Verdict: demand met for implementation and bounded consumer adoption.**
+The current consumer work pins the already merged CoreKit revision
+`04d1411adb57aa602b992509121011aa7666ff1a` with `Cargo.lock`; CoreKit's new
+cancellable embedding API is a separate library change. Local adoption does
+not satisfy the performance or released-consumer gates and does not remove
+the supported Go paths. Implementation and residual boundaries are tracked in
+[`llm-contract.md`](llm-contract.md).
 
 ## RUST-009 — Audit and grounded-evidence algorithm slices (`AUD-*`, `EVID-*`) — deferred
 
