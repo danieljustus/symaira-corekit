@@ -1033,3 +1033,26 @@ requests while retaining the explicit error for a blocking-only injected
 agent. `make rust-llm-contract` passes locally; independent review and exact
 PR CI remain before integration. RUST-008 remains `in_progress` and no consumer
 cutover, release, publication or Go removal is claimed.
+
+## RUST-008 OpenAI success-response decoder continuation (2026-10-01)
+
+Branch `codex/rust-openai-response-parity-20261001` starts independently from
+CoreKit `04d1411adb57aa602b992509121011aa7666ff1a`; it does not depend on the
+embedding-cancellation PR #361. Synchronous and cancellable OpenAI chat now
+share a decoder for Go-compatible null, case-folded and repeated-field
+behavior. The refreshed Go oracle records success bodies, returned choices,
+raw tool-argument strings and provider-error categories; the Rust integration
+test replays the same observations through both transports. See
+`llm-contract.md` for the tool-argument normalization boundary.
+
+Local Linux checks pass: `make rust-llm-contract` (Go package checks, pinned
+oracle comparison, fmt, strict all-target/all-feature Clippy, 29 existing
+provider tests and the 29-case response corpus through both transports),
+Rust doc tests, migration-ledger validation, SQLite acceptance/provenance
+tests and `git diff --check`. No Cargo input or SQLite source changes are
+included.
+
+This is a further RUST-008 library slice. RUST-008 remains `in_progress`;
+consumer release/rollback evidence, native validation of this new branch and
+registry publication gates remain open. No release, Go removal or installed
+product cutover follows from this change.
