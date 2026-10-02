@@ -271,15 +271,14 @@
         "EVID-004",
         "EVID-005"
       ],
-      "status": "deferred",
+      "status": "not_shared_consumer_local",
       "demand_class": "demand_driven",
       "demand_evidence": "demand-assessment.md",
       "acceptance_commands": [
-        "make rust-audit-evidence-contract",
-        "cargo +nightly miri test -p symaira-core-audit -p symaira-core-evidence",
-        "cargo nextest run -p symaira-core-audit -p symaira-core-evidence"
+        "python3 docs/rust-port/validate.py",
+        "python3 -m unittest discover -s scripts/rust-port -p test_retirement_routing.py"
       ],
-      "stop_rule": "Keep blocked unless a second adopter or two-language SSOT need is recorded; stop on hash/JSONL/offset/tie-breaking drift."
+      "stop_rule": "Terminal shared-library decision: implement and verify in the linked consumer, not a shared CoreKit crate. Retain the Go package until its last released importer is removed; reassess only when two independent consumers need matching semantics. Stop on hash/JSONL/offset/tie-breaking drift."
     },
     {
       "id": "RUST-010",
@@ -319,15 +318,14 @@
         "DOM-006",
         "DOM-007"
       ],
-      "status": "deferred",
+      "status": "not_shared_consumer_local",
       "demand_class": "demand_driven",
       "demand_evidence": "demand-assessment.md",
       "acceptance_commands": [
-        "make rust-dom-contract",
-        "python3 scripts/rust-port/diff.py --suite dom --comparison bytes",
-        "cargo +nightly fuzz run dom_input -- -runs=10000"
+        "python3 docs/rust-port/validate.py",
+        "python3 -m unittest discover -s scripts/rust-port -p test_retirement_routing.py"
       ],
-      "stop_rule": "Keep blocked until demand is proven; select no parser/renderer until the full corpus passes and do not normalize unexplained Markdown bytes."
+      "stop_rule": "Terminal shared-library decision: implement and verify in the linked consumer, not a shared CoreKit crate. Retain the Go package until its last released importer is removed; reassess only when two independent consumers need matching semantics. Select no parser/renderer until the full corpus passes; do not normalize unexplained Markdown bytes."
     },
     {
       "id": "RUST-012",
@@ -345,15 +343,14 @@
         "VEC-007",
         "PERF-003"
       ],
-      "status": "deferred",
+      "status": "not_shared_consumer_local",
       "demand_class": "demand_driven",
       "demand_evidence": "demand-assessment.md",
       "acceptance_commands": [
-        "make rust-vector-contract",
-        "cargo bench -p symaira-core-vector",
-        "python3 scripts/rust-port/bench.py --suite vector --runs 10"
+        "python3 docs/rust-port/validate.py",
+        "python3 -m unittest discover -s scripts/rust-port -p test_retirement_routing.py"
       ],
-      "stop_rule": "Keep blocked until demand is proven; persisted sidecar/bit bytes are immutable and p95/throughput may not regress by more than 10%."
+      "stop_rule": "Terminal shared-library decision: implement and verify in the linked consumer, not a shared CoreKit crate. Retain the Go package until its last released importer is removed; reassess only when two independent consumers need matching semantics. Persisted sidecar/bit bytes stay immutable; p95/throughput may not regress by more than 10%."
     },
     {
       "id": "RUST-013",
