@@ -377,14 +377,28 @@ fn verify_with_executable(
     ))
 }
 
-struct OwnedVerifier(std::process::Child);
+struct OwnedVerifier {
+    child: std::process::Child,
+    reaped: bool,
+}
+impl OwnedVerifier {
+    fn try_wait(&mut self) -> std::io::Result<Option<std::process::ExitStatus>> {
+        let status = self.child.try_wait()?;
+        self.reaped = status.is_some();
+        Ok(status)
+    }
+}
 impl Drop for OwnedVerifier {
     fn drop(&mut self) {
+        // A reaped numeric PID is no longer ours and may have been recycled.
+        if self.reaped {
+            return;
+        }
         // Output is a private file, never a pipe that descendants can keep open.
         #[cfg(unix)]
         {
             let _ = Command::new("/bin/kill")
-                .args(["-KILL", "--", &format!("-{}", self.0.id())])
+                .args(["-KILL", "--", &format!("-{}", self.child.id())])
                 .stdout(Stdio::null())
                 .stderr(Stdio::null())
                 .status();
@@ -392,13 +406,13 @@ impl Drop for OwnedVerifier {
         #[cfg(windows)]
         {
             let _ = Command::new("taskkill")
-                .args(["/F", "/T", "/PID", &self.0.id().to_string()])
+                .args(["/F", "/T", "/PID", &self.child.id().to_string()])
                 .stdout(Stdio::null())
                 .stderr(Stdio::null())
                 .status();
         }
-        let _ = self.0.kill();
-        let _ = self.0.wait();
+        let _ = self.child.kill();
+        let _ = self.child.wait();
     }
 }
 
@@ -448,11 +462,12 @@ async fn verify_cancellable_with_executable(
         command.process_group(0);
     }
     crate::check_cancelled(token)?;
-    let mut child = OwnedVerifier(
-        command
+    let mut child = OwnedVerifier {
+        child: command
             .spawn()
             .map_err(|error| format!("cosign verify-blob failed: {error}"))?,
-    );
+        reaped: false,
+    };
     loop {
         crate::check_cancelled(token)?;
         if fs::metadata(&stderr_path)
@@ -463,7 +478,6 @@ async fn verify_cancellable_with_executable(
             return Err("cosign verify-blob stderr exceeds maximum size".into());
         }
         if let Some(status) = child
-            .0
             .try_wait()
             .map_err(|error| format!("cosign verify-blob failed: {error}"))?
         {
@@ -484,6 +498,30 @@ async fn verify_cancellable_with_executable(
             () = token.cancelled() => return Err("context canceled".into()),
             () = tokio::time::sleep(Duration::from_millis(10)) => {},
         }
+    }
+}
+
+#[cfg(test)]
+mod owned_verifier_tests {
+    use super::OwnedVerifier;
+
+    #[test]
+    fn completed_child_disarms_numeric_pid_cleanup() {
+        let child = std::process::Command::new(std::env::current_exe().unwrap())
+            .arg("--list")
+            .stdout(std::process::Stdio::null())
+            .spawn()
+            .unwrap();
+        let mut owned = OwnedVerifier {
+            child,
+            reaped: false,
+        };
+        let deadline = std::time::Instant::now() + std::time::Duration::from_secs(5);
+        while owned.try_wait().unwrap().is_none() {
+            assert!(std::time::Instant::now() < deadline, "child did not exit");
+            std::thread::sleep(std::time::Duration::from_millis(5));
+        }
+        assert!(owned.reaped, "completed PID must be disarmed before Drop");
     }
 }
 

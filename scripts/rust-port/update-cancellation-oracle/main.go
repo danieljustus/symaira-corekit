@@ -57,6 +57,19 @@ type observation struct {
 	Residue   bool   `json:"residue"`
 }
 
+func writeReady(path string, data []byte) error {
+	relative, err := filepath.Rel(os.TempDir(), path)
+	if err != nil || !filepath.IsLocal(relative) {
+		return errors.New("readiness path escapes disposable TMPDIR")
+	}
+	root, err := os.OpenRoot(os.TempDir())
+	if err != nil {
+		return err
+	}
+	defer func() { _ = root.Close() }()
+	return root.WriteFile(relative, data, 0600)
+}
+
 func serve() {
 	server := httptest.NewUnstartedServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/asset-body/checksums" || r.URL.Path == "/apply/checksums" {
@@ -79,7 +92,7 @@ func serve() {
 		if ready == "" {
 			panic("missing readiness path")
 		}
-		if err := os.WriteFile(ready, []byte("ready"), 0600); err != nil {
+		if err := writeReady(ready, []byte("ready")); err != nil {
 			panic(err)
 		}
 		<-r.Context().Done()
@@ -119,7 +132,7 @@ func main() {
 	// Disposable Cosign stand-in for native process-tree cleanup, never a
 	// signature-verification oracle or a replacement for real signing evidence.
 	if len(os.Args) > 1 && os.Args[1] == "cosign-child" {
-		if err := os.WriteFile(os.Getenv("UPDATE_CANCEL_VERIFIER_READY"), []byte(fmt.Sprint(os.Getpid())), 0600); err != nil {
+		if err := writeReady(os.Getenv("UPDATE_CANCEL_VERIFIER_READY"), []byte(fmt.Sprint(os.Getpid()))); err != nil {
 			panic(err)
 		}
 		for {
@@ -131,7 +144,7 @@ func main() {
 		if err != nil {
 			panic(err)
 		}
-		child := exec.Command(self, "cosign-child")
+		child := exec.Command(self, "cosign-child") //nolint:gosec // os.Executable identifies this disposable fixture helper
 		if err := child.Start(); err != nil {
 			panic(err)
 		}
@@ -176,7 +189,7 @@ func main() {
 			})}
 			cache := filepath.Join(root, op+phase+".json")
 			target := filepath.Join(root, op+phase+"-tool")
-			if err := os.WriteFile(target, []byte("old"), 0700); err != nil {
+			if err := os.WriteFile(target, []byte("old"), 0700); err != nil { //nolint:gosec // disposable executable fixture, never operator data
 				panic(err)
 			}
 			done := make(chan error, 1)
@@ -213,7 +226,7 @@ func main() {
 			err := <-done
 			cancel()
 			_, cacheErr := os.Stat(cache)
-			data, readErr := os.ReadFile(target)
+			data, readErr := os.ReadFile(target) //nolint:gosec // generated literal fixture name within the owned MkdirTemp directory
 			if readErr != nil {
 				panic(readErr)
 			}

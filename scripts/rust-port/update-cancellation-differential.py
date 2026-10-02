@@ -58,10 +58,11 @@ def main():
         env.update(HOME=str(directory/'home'),USERPROFILE=str(directory/'home'),XDG_CACHE_HOME=str(directory/'cache'),TMPDIR=str(directory/'tmp'),TMP=str(directory/'tmp'),TEMP=str(directory/'tmp'))
         recorded=json.loads(run([str(binary)],env))
         if len(recorded)!=16: raise RuntimeError('expected 16 real public-API observations')
+        (TARGET/'cancellation-native.json').write_text(json.dumps(recorded,indent=2)+'\n')
         if args.write:
             FIXTURE.write_text(json.dumps(recorded,indent=2)+'\n')
         elif recorded!=json.loads(FIXTURE.read_text()):
-            raise RuntimeError('fresh Go observations disagree with fixture')
+            raise RuntimeError('fresh Go observations disagree with fixture: '+json.dumps(recorded,sort_keys=True))
         env['UPDATE_CANCELLATION_FIXTURE']=str(FIXTURE)
         static_command=['cargo','test','--offline','--locked','--manifest-path',str(MANIFEST),'--test','cancellation']
         output=run(static_command,env)
@@ -76,7 +77,7 @@ def main():
         helper=directory/'helper'
         helper.mkdir()
         shutil.copy2(binary,helper/('cosign.exe' if os.name=='nt' else 'cosign'))
-        env.update(PATH=str(helper)+os.pathsep+env.get('PATH',''),UPDATE_CANCEL_VERIFIER_READY=str(directory/'verifier-ready'))
+        env.update(PATH=str(helper)+os.pathsep+env.get('PATH',''),UPDATE_CANCEL_VERIFIER_READY=str(directory/'tmp/verifier-ready'))
         verifier_command=['cargo','test','--offline','--locked','--manifest-path',str(MANIFEST),'--test','cancellation','cancellable_verifier_reaps_native_owned_process_tree','--','--exact','--ignored','--nocapture']
         verifier_output=run(verifier_command,env)
         if 'test result: ok. 1 passed; 0 failed; 0 ignored;' not in verifier_output:
