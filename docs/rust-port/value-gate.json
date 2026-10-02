@@ -86,7 +86,7 @@
       },
       {
         "path": "docs/rust-port/validate.py",
-        "sha256": "c38af49bffff07e690a0496f42299f8ff2daa0ec147cf38baad4abed842c2c78"
+        "sha256": "ba6fc543ca6c90a9ce6d763e1444b4b17822b7eec17ca62e5ce40e256fcd7a28"
       }
     ]
   },

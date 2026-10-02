@@ -51,6 +51,65 @@
     "response_bytes": 263,
     "response_sha256": "8a9ddbb7f97cabbe5ff72a4ff2859c6e3d7382d86325a8eb7a09bac00b4ec4d0"
   },
+  "body_limits": [
+    {
+      "body_prefix": "{\"choices\":[{\"message\":{\"content\":\"ok\"},\"finish_reason\":\"stop\"}]}",
+      "content": "ok",
+      "error": null,
+      "id": "success-body-over-cap",
+      "padding_bytes": 16777216,
+      "status": 200,
+      "truncated": false
+    },
+    {
+      "body_prefix": "{\"error\":{\"message\":\"context length exceeded\",\"type\":\"context_length_exceeded\"}}",
+      "content": "",
+      "error": {
+        "body": "{\"error\":{\"message\":\"context length exceeded\",\"type\":\"context_length_exceeded\"}}",
+        "code": "context_overflow",
+        "exit_code": 8,
+        "retry_after": "17",
+        "retryable": false,
+        "status": 400
+      },
+      "id": "error-body-over-cap",
+      "padding_bytes": 8192,
+      "status": 400,
+      "truncated": false
+    },
+    {
+      "body_prefix": "{\"error\":{\"message\":\"authentication failed\",\"type\":\"authentication_error\"}}",
+      "content": "",
+      "error": {
+        "body": "authentication failed",
+        "code": "auth_failure",
+        "exit_code": 3,
+        "retry_after": "",
+        "retryable": false,
+        "status": 400
+      },
+      "id": "error-body-truncated",
+      "padding_bytes": 0,
+      "status": 401,
+      "truncated": true
+    },
+    {
+      "body_prefix": "{\"choices\":[{\"message\":{\"content\":\"ok\"},\"finish_reason\":\"stop\"}]}",
+      "content": "",
+      "error": {
+        "body": "",
+        "code": "transport_error",
+        "exit_code": 1,
+        "retry_after": "",
+        "retryable": true,
+        "status": 0
+      },
+      "id": "success-body-truncated",
+      "padding_bytes": 0,
+      "status": 200,
+      "truncated": true
+    }
+  ],
   "cancellable_calls": [
     {
       "error_code": "transport_error",
@@ -769,7 +828,7 @@
   "provenance": {
     "go_source_sha256": "9083f34389a8d37c89a54676c069432ec69daa1fd2d40a68081695a9ade6260c",
     "oracle_command": "GOTOOLCHAIN=go1.26.6 go run ./scripts/rust-port/llm-oracle",
-    "oracle_sha256": "7a60e772f92b01ccd8f56a71b4035e0417b194b175eafc9964ad3b2c62ba6968",
+    "oracle_sha256": "1b9208db846c5b96467b67001dadc562c06f4094b5cbf0169fc4619369369579",
     "runner_sha256": "0762bf844dfd7b3f6fd8bb5bb97c2a10fb04f5e51dbbff1107687d32273e598a"
   },
   "providers": [

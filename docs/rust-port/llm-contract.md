@@ -50,15 +50,23 @@ provider code, a Rust `ollamakit` clone, or a process/release surface.
   remains an explicit error for cancellable calls. Synchronous calls without a
   shared client continue to use the configured `ureq::Agent`.
 
-## Known response-limit difference
+## Response limits
 
-Go reads response bodies through `io.LimitReader`, which returns the bytes up
-to the configured cap and then EOF. The shared `http_client` path follows that
-behavior with bounded reads. The legacy `ureq::Agent` path uses
-`BodyWithConfig::limit`, which returns a body-limit error if the reader is
-asked for more bytes after reaching the cap. That pre-existing transport
-difference remains; callers can observe it when switching between the legacy
-agent and the shared client.
+Go reads response bodies through `io.LimitReader`, returning bytes up to the
+existing cap and then EOF. Both synchronous Rust transports now use
+`Read::take` with the same caps; cancellable reads already truncate at that
+boundary. This fixes the legacy agent's over-cap transport error and preserves
+the error-response prefix instead of silently discarding it. Bounds are not
+raised or removed.
+
+The Go oracle records an over-cap valid chat response and an over-cap typed
+HTTP error without storing multi-megabyte padding in JSON. Two interrupted-body
+cases additionally prove that a known HTTP failure keeps its classified prefix,
+while an interrupted successful response still returns `transport_error`.
+`response_limit_observations_match_go_across_transports` compares complete
+content/error observations for the default agent, default cancellable client,
+and a shared injected client in blocking and cancellable modes. The new test
+failed before the repair and passed afterward.
 
 ## Differential evidence
 
@@ -115,9 +123,49 @@ Every row below executes inside `make rust-llm-contract`, which CI runs on
 | LLM-007 | `go_recorded_stream_wire_and_callback_order_match`, `go_recorded_malformed_stream_errors_match`, `anthropic_stream_and_openrouter_model_discovery_are_normalized` |
 | LLM-008 | `streaming_and_embedding_calls_preserve_openai_wire_options`, `embedding_response_fields_match_go_case_insensitive_json`, `openrouter_model_discovery_uses_go_casefold_alias_order`, `generic_ollama_discovery_uses_go_casefold_alias_order`, `native_ollama_calls_match_go_recordings`, `cancellable_embedding_discovery_and_ollama_calls_match_go_recordings` |
 | LLM-009 | `native_ollama_calls_match_go_recordings`, `cancellable_ollama_streams_match_go_recordings`, `native_ollama_generate_accepts_go_scanner_large_chunks`, `native_ollama_generate_scanner_errors_match_go_before_and_after_data`, `native_ollama_generate_json_errors_match_go` |
-| LLM-010 | `taxonomy_maps_status_retry_and_exit_codes`, `malformed_openai_error_envelopes_keep_go_http_classification`, `structured_error_fields_follow_go_json_casefolding`, `cancellable_chat_preserves_go_rate_limit_and_header_classification`, `cancellable_context_methods_match_go_and_do_not_send_requests`, `cancellable_guards_keep_local_errors_ahead_of_cancellation`, `cancellation_drops_embedding_discovery_and_ollama_stream_reads`, `provider_error_truncates_raw_bytes_before_utf8_decode` |
+| LLM-010 | `taxonomy_maps_status_retry_and_exit_codes`, `malformed_openai_error_envelopes_keep_go_http_classification`, `structured_error_fields_follow_go_json_casefolding`, `cancellable_chat_preserves_go_rate_limit_and_header_classification`, `cancellable_context_methods_match_go_and_do_not_send_requests`, `cancellable_guards_keep_local_errors_ahead_of_cancellation`, `cancellation_drops_embedding_discovery_and_ollama_stream_reads`, `provider_error_truncates_raw_bytes_before_utf8_decode`, `response_limit_observations_match_go_across_transports` |
 | LLM-011 | `registry_and_go_generated_snapshot_are_available` plus `go test ./llmkit/gen` in the gate |
 | LLM-012 | `go test ./ollamakit` in the gate plus `assert_no_rust_ollamakit()` in `scripts/rust-port/llm-differential.py` (workspace member scan, negative control: injected `symaira-core-ollamakit` member is rejected) |
+
+## Current consumer operation inventory
+
+The following direct Go callers were checked at immutable remote-main snapshots
+on 2026-10-02. Constructor/type/option imports were audited alongside the request
+methods, not counted as separate transports.
+
+| Consumer | Snapshot | Representative production paths |
+| --- | --- | --- |
+| Brain | `5294aece81d3c76aa7f96bb5479369c53707443c` | `internal/memory/llm/client.go`, `internal/memory/extractor/embeddings.go` |
+| Desktop | `e817394e3b4df5e3320e85495dad0dea0e9938b4` | `internal/ai/{ai,anthropic}.go`, `internal/ingest/internal/ocr/vlm.go`, `internal/retrieval/internal/engine/embeddings.go`, `cmd/symdesk/ai_config.go` |
+| EraseMe | `28e32a1c7c8732921007e9124d14f5bbabd60397` | `internal/llm/llmkit.go` |
+
+| Go request operation | Current consumers | Rust shared operation / cancellable partner | Rows |
+| --- | --- | --- | --- |
+| `Chat` | Brain, EraseMe | `chat` / `chat_cancellable` | LLM-004, LLM-005 |
+| `StreamChat`, finish callback | Desktop | `stream_chat` / `stream_chat_cancellable` | LLM-006, LLM-007 |
+| `Embed`, optional dimensions | Brain, Desktop | `embed` / `embed_cancellable`, dimensions argument | LLM-008 |
+| `Generate`, system/format/images/temperature | Brain, Desktop | `generate` / `generate_cancellable`, `GenerateOption` | LLM-009 |
+| `ListModels` | Desktop | `list_models` / `list_models_cancellable` | LLM-008 |
+| `Ping` | Desktop | `ping` / `ping_cancellable` | LLM-009 |
+
+The public native `EmbedNative`, `ListOllamaModels` and `ChatStream` paths are
+also implemented and recorded/replayed, even though the direct importer scan
+above does not identify another current caller. They are not separate local
+provider transports.
+
+Legacy `New`/`NewConfig`, provider constants and registry-driven `NewClient`
+resolve to `lookup` plus `ClientBuilder`; consumer configuration policy stays
+with the consumer. `WithBaseURL`, `WithAPIKey`, `WithTimeout` and
+`WithHTTPClient` map to the corresponding builder methods. Shared `Message`,
+`ChatOptions`, `Embedding`, model and generate response types are exported.
+Generate system/format/image/temperature options map to `GenerateOption`,
+embedding dimensions to the embed argument, and stream-finished behavior to the
+finish callback. Existing wire/callback tests exercise these settings.
+
+All consumers should invoke this shared client for provider HTTP behavior;
+consumer rollout is separately gated by their own migration issues and CoreKit
+#370. A source inventory or local transport pass does not claim their release
+cutover, live paid-provider acceptance, or rollback completion.
 
 ## Residual boundary
 

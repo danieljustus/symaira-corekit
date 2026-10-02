@@ -458,7 +458,15 @@ def validate_consumer_local_routing(work: list[dict], contracts: list[dict]) -> 
         if item.get("demand_class") != "demand_driven":
             fail(f"{item['id']}: required work cannot be routed consumer-local")
         evidence = item.get("demand_evidence")
-        if not isinstance(evidence, str) or not (ROOT / evidence).is_file():
+        if not isinstance(evidence, str):
+            fail(f"{item['id']}: consumer-local decision needs demand evidence")
+        evidence_path = Path(evidence)
+        if (
+            evidence_path.is_absolute()
+            or ".." in evidence_path.parts
+            or not (ROOT / evidence_path).resolve().is_relative_to(ROOT.resolve())
+            or not (ROOT / evidence_path).is_file()
+        ):
             fail(f"{item['id']}: consumer-local decision needs demand evidence")
         for contract_id in item["contracts"]:
             row = by_id[contract_id]
