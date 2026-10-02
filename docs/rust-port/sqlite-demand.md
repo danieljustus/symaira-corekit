@@ -522,3 +522,32 @@ exist), `RUST-015` stays `blocked` on released-consumer evidence,
 `RUST-007`/`RUST-008`/`RUST-009`/`RUST-011`/`RUST-012` stay demand-driven
 `deferred` with the searches recorded in `demand-assessment.md`, and no release,
 registry publication, Go removal or product cutover follows from this promotion.
+
+## SQLite evidence after the tar lockfile update (2026-10-02)
+
+The CoreKit `tar` 0.4.46 update changed an enforced build input, `Cargo.lock`.
+The prior macOS acceptance reports remain unchanged historical evidence; the
+previous candidate manifest remains available in Git history. The pinned Go
+SQLite oracle did not change. A new candidate manifest and
+typed differential were captured from the stable main revision
+`36383bd1ad126c6bdee4133b22087cc6a7aabff4` with the intended lockfile and
+acceptance-pointer edits in the working tree, preserving squash-merge
+verification.
+
+- `testdata/rust-port/sqlite/candidate-source.json`: SHA-256
+  `022393a13cf0fc68db24249c7328016fa4cb64773b598042d4be9ba48c05d3f3`;
+  118 recorded source files, including the updated lockfile and both current
+  capture pointers.
+- `testdata/rust-port/sqlite/differential-linux-tar-refreeze-20261001.json`:
+  SHA-256 `4fb3422be0fbacc0f31e4c8f636444d8bc97a703650282bd82a68618aa098460`;
+  native Linux/amd64, Go 1.26.6, Go oracle commit
+  `f3d3eb79b9b1f31b4f973d2ed518a8292cedf588`, six cases, 42 checked fields,
+  nine explicitly accepted differences and zero unresolved.
+- SQLite Python acceptance suite: 79 tests passed; SQLite provenance suite:
+  one test passed. The capture’s typed contract and Go/Rust native-identity
+  checks passed.
+
+The prior macOS captures are retained without edits. The three-platform
+`rust-sqlite-native` CI run (Linux, macOS and Windows) remains required for fresh
+native evidence on this source revision; this Linux capture does not claim a
+new macOS or Windows run or change any migration status.
