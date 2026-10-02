@@ -273,7 +273,7 @@ pub fn check(url: &str, cache_path: &Path, ttl: Duration, force: bool, now_ms: u
     }
 }
 
-fn read_cache(path: &Path) -> Option<(u128, CachedRelease)> {
+pub(crate) fn read_cache(path: &Path) -> Option<(u128, CachedRelease)> {
     let raw = fs::read_to_string(path).ok()?;
     let document = decode_wire(&raw, WireShape::Cache).ok()?;
     let timestamp = wire_field(&document, "timestamp", "timestamp").as_str()?;
@@ -284,7 +284,11 @@ fn read_cache(path: &Path) -> Option<(u128, CachedRelease)> {
     Some((created, CachedRelease { tag_name, response }))
 }
 
-fn write_cache(path: &Path, now_ms: u128, release: &CachedRelease) -> std::io::Result<()> {
+pub(crate) fn write_cache(
+    path: &Path,
+    now_ms: u128,
+    release: &CachedRelease,
+) -> std::io::Result<()> {
     let response =
         decode_wire(&release.response, WireShape::ApiRelease).map_err(std::io::Error::other)?;
     // Serialize Go structs in declaration order, rather than sorted Value maps.
@@ -613,6 +617,59 @@ fn format_rfc3339_ms(ms: u128) -> String {
         daytime % 3600 / 60,
         daytime % 60
     )
+}
+
+// Shared Go wire decoder and metadata mapping for the public Checker.
+pub(crate) fn decode_release(raw: &str, disk: bool) -> Result<crate::Response, String> {
+    let value = decode_wire(
+        raw,
+        if disk {
+            WireShape::DiskRelease
+        } else {
+            WireShape::ApiRelease
+        },
+    )
+    .map_err(|error| format!("decode latest release response: {error}"))?;
+    let string = |name: &str| {
+        value
+            .get(name)
+            .and_then(Value::as_str)
+            .unwrap_or_default()
+            .to_owned()
+    };
+    Ok(crate::Response {
+        draft: value.get("draft").and_then(Value::as_bool).unwrap_or(false),
+        prerelease: value
+            .get("prerelease")
+            .and_then(Value::as_bool)
+            .unwrap_or(false),
+        tag_name: string("TagName"),
+        body: string("Body"),
+        html_url: string("HTMLURL"),
+        assets: value
+            .get("Assets")
+            .and_then(Value::as_array)
+            .into_iter()
+            .flatten()
+            .map(|asset| crate::Asset {
+                name: wire_field(asset, "name", "Name")
+                    .as_str()
+                    .unwrap_or_default()
+                    .to_owned(),
+                browser_download_url: wire_field(
+                    asset,
+                    "browser_download_url",
+                    "BrowserDownloadURL",
+                )
+                .as_str()
+                .unwrap_or_default()
+                .to_owned(),
+                size: wire_field(asset, "size", "Size")
+                    .as_i64()
+                    .unwrap_or_default(),
+            })
+            .collect(),
+    })
 }
 
 #[cfg(test)]

@@ -39,7 +39,9 @@ pub fn fetch(url: &str, current_version: &str, timeout: Duration) -> Result<Resp
     result
 }
 
-pub(crate) fn secure_client_builder(timeout: Duration) -> ClientBuilder {
+/// Builds the TLS 1.3 client used by metadata requests. Redirects are disabled
+/// here so `fetch_with_client` can enforce the GitHub-only redirect policy.
+pub fn secure_client_builder(timeout: Duration) -> ClientBuilder {
     let mut builder = Client::builder()
         .redirect(Policy::none())
         .tls_version_min(Version::TLS_1_3);
@@ -71,7 +73,16 @@ pub(crate) fn secure_download_client_builder(timeout: Duration) -> ClientBuilder
     }))
 }
 
-fn fetch_with_client(client: &Client, url: &str, current_version: &str) -> Result<Response, Error> {
+/// Fetches metadata using a consumer-provided client and the shared request policy.
+/// Build it with `secure_client_builder` to preserve TLS and timeout defaults;
+/// the supplied client must not automatically follow redirects.
+/// # Errors
+/// Returns classified request, HTTP-status or response-read errors.
+pub fn fetch_with_client(
+    client: &Client,
+    url: &str,
+    current_version: &str,
+) -> Result<Response, Error> {
     let mut target = url.trim().to_owned();
     for redirects in 0..=10 {
         let result = client
@@ -127,6 +138,17 @@ fn fetch_with_client(client: &Client, url: &str, current_version: &str) -> Resul
             }
             target = target_next.to_string();
             continue;
+        }
+        if status == 403
+            && response
+                .headers()
+                .get("X-RateLimit-Remaining")
+                .is_some_and(|value| value == "0")
+        {
+            return Err(Error {
+                code: "rate_limit",
+                message: "GitHub API rate limit exceeded".into(),
+            });
         }
         if status != 200 {
             return Err(Error {
