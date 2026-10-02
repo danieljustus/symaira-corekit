@@ -1,6 +1,32 @@
 # Resume checkpoint — Rust consumer release gates open
 
-## Current combined CoreKit candidate (2026-10-01)
+## Current integrated update slice (2026-10-02)
+
+RUST-007 is `complete`; UPD-001..012 and DEFECT-002 are `parity` after native
+Linux/amd64, Darwin/arm64 and Windows/amd64 acceptance at the same integrated
+source `08df3b14ef0a2fd18c1e805ea8d49567e0115cfc`. Source-bound reports and
+the three real 17-case Go Apply captures are retained under
+[`evidence/update-native-20261002/index.json`](evidence/update-native-20261002/index.json),
+with job links, artifact identities and exact byte digests from
+[CI run 37006690155](https://github.com/danieljustus/symaira-corekit/actions/runs/37006690155).
+
+Every RUST-007 command ran in disposable HOME/XDG roots. The live gates accepted
+the real public `symaira-vault v0.22.1` signature and native archive, rejected
+tampering and wrong identity, and replaced only disposable targets. All five
+opt-in tests were explicitly executed; the five ignored entries in the regular
+30-test nextest run are not passing evidence. Eight atomic-swap observations
+include stale backups, validator rollback, failed invalid-target removal with
+the previous bytes retained in the backup, and failed backup cleanup. Failed
+restoration is a classified error, not a claim that the old executable was
+successfully restored. Filesystem, error-family and cleanup mutations fail.
+
+The final documentation/ledger head still needs exact-head CI and regular PR
+integration. This completes the shared update slice only: API coverage (#367),
+Go-free oracle freezing (#368), released-consumer adoption, distribution and
+Go retirement retain their own gates. No operator binary, credential store,
+consumer release or registry publication is changed.
+
+## Historical combined CoreKit candidate (2026-10-01)
 
 The isolated candidate starts from the complete #358 branch and integrates the
 current CoreKit LLM work from #361 and #362. Its source changes retain the

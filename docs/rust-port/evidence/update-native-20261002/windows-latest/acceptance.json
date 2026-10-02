@@ -1,0 +1,58 @@
+{
+  "status": "passed",
+  "native_os": "Windows",
+  "native_arch": "AMD64",
+  "head_sha": "08df3b14ef0a2fd18c1e805ea8d49567e0115cfc",
+  "commands": [
+    {
+      "argv": [
+        "C:\\hostedtoolcache\\windows\\Python\\3.12.10\\x64\\python.exe",
+        "scripts/rust-port/update-apply-differential.py",
+        "--write",
+        "--fixture",
+        "D:\\a\\_temp\\corekit-native-update\\native-apply.json"
+      ],
+      "exit_code": 0
+    },
+    {
+      "argv": [
+        "make",
+        "rust-update-version-contract",
+        "rust-update-contract",
+        "rust-update-signed-contract"
+      ],
+      "exit_code": 0
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "--manifest-path",
+        "D:\\a\\symaira-corekit\\symaira-corekit\\Cargo.toml",
+        "-p",
+        "symaira-core-update",
+        "--lib",
+        "--locked",
+        "cosign::tests::real_cosign_rejects_invalid_signature_and_certificate",
+        "--",
+        "--ignored",
+        "--exact"
+      ],
+      "exit_code": 0
+    },
+    {
+      "argv": [
+        "cargo",
+        "nextest",
+        "run",
+        "--manifest-path",
+        "D:\\a\\symaira-corekit\\symaira-corekit\\Cargo.toml",
+        "--locked",
+        "-p",
+        "symaira-core-update"
+      ],
+      "exit_code": 0
+    }
+  ],
+  "native_apply_cases": 17
+}

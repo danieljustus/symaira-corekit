@@ -23,3 +23,5 @@
 /scripts/rust-port/llm-oracle/main.go text eol=lf
 /scripts/rust-port/llm-differential.py text eol=lf
 /.gitattributes text eol=lf
+# Retain exact native CI artifact bytes, including producer CRLF.
+/docs/rust-port/evidence/update-native-20261002/** -text whitespace=cr-at-eol
