@@ -81,8 +81,15 @@ fn tempfile_dir() -> PathBuf {
 fn cfg_001_default_path_uses_xdg_shape_or_home_fallback() {
     let expected = fixture("CFG-001");
     let path = default_path("symx");
-    assert!(path.ends_with(PathBuf::from(".config/symx/config.toml")));
-    assert!(path.is_absolute() || path.starts_with(".config"));
+    if let Some(xdg) = std::env::var_os("XDG_CONFIG_HOME")
+        .map(PathBuf::from)
+        .filter(|path| path.is_absolute())
+    {
+        assert_eq!(path, xdg.join("symx/config.toml"));
+    } else {
+        assert!(path.ends_with(PathBuf::from(".config/symx/config.toml")));
+        assert!(path.is_absolute() || path.starts_with(".config"));
+    }
     assert!(
         expected["xdg"]
             .as_str()
