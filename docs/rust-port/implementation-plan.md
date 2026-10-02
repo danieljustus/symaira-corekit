@@ -169,13 +169,18 @@ All RUST-006+ work depends transitively on this graph barrier.
    or response decoder. Keep RUST-008 in progress while model discovery and
    native Ollama cancellation and the remaining parity evidence are open.
 
-## RUST-009: Audit and grounded-evidence algorithm slices
+## RUST-009: Audit and grounded-evidence algorithm slices — CONSUMER-LOCAL
 
-**Demand gate:** start only after a second adopter or explicit two-language SSOT need is recorded.
+**Final shared-library decision:** `not_shared_consumer_local`, based on
+[demand-assessment.md](demand-assessment.md). Do not create a shared crate.
 
-**Create:** `rust/symaira-core-audit`, `rust/symaira-core-evidence`.
+**Consumer owner:** Brain [audit #770](https://github.com/danieljustus/symaira-brain/issues/770) and
+[evidence #758](https://github.com/danieljustus/symaira-brain/issues/758).
 
-**Steps:** Freeze and port audit hash input/JSONL/checkpoint/rotation/tamper behavior; then exact/normalized/fuzzy evidence alignment, Unicode byte offsets, tie-breaking, validation sentinels and JSONL. Run properties, Miri and mutation tests on scoring/validation decisions.
+**Consumer-owned verification:** Freeze and port audit hash input/JSONL/checkpoint/rotation/tamper behavior; then exact/normalized/fuzzy evidence alignment, Unicode byte offsets, tie-breaking, validation sentinels and JSONL. Run properties, Miri and mutation tests on scoring/validation decisions.
+
+Retire the Go package only with its last released importer. Reopen the shared
+slice only after two independent consumers require matching semantics.
 
 ## RUST-010: MCP configuration discovery slice
 
@@ -185,21 +190,29 @@ All RUST-006+ work depends transitively on this graph barrier.
 
 **Steps:** Freeze default source tables per platform, JSONC string/comment edge cases, YAML/JSON normalization, glob expansion, transport/env merging and stable findings for missing/invalid/approximate entries. Keep platform and client-specific policy data-driven.
 
-## RUST-011: DOM selection and rendering feasibility slice
+## RUST-011: DOM selection and rendering feasibility slice — CONSUMER-LOCAL
 
-**Demand gate:** start only after a second adopter or a confirmed extraction from two consumers.
+**Final shared-library decision:** `not_shared_consumer_local`, based on
+[demand-assessment.md](demand-assessment.md). Do not create a shared crate.
 
-**Create:** `rust/symaira-core-dom` only after the parser spike.
+**Consumer owner:** Brain/Browse [#774](https://github.com/danieljustus/symaira-brain/issues/774).
 
-**Steps:** Export the full Go HTML corpus; compare html5ever/scraper/htmd candidates; port selector grammar, filter/subtree behavior, JSON-LD, images, frontmatter and Unicode truncation. Select no renderer until required Markdown/document bytes pass.
+**Consumer-owned verification:** Export the full Go HTML corpus; compare html5ever/scraper/htmd candidates; port selector grammar, filter/subtree behavior, JSON-LD, images, frontmatter and Unicode truncation. Select no renderer until required Markdown/document bytes pass.
 
-## RUST-012: TurboQuant codec and performance slice
+Retire the Go package only with its last released importer. Reopen the shared
+slice only after two independent consumers require matching semantics.
 
-**Demand gate:** start only after adoption need is recorded.
+## RUST-012: TurboQuant codec and performance slice — CONSUMER-LOCAL
 
-**Create:** `rust/symaira-core-vector`.
+**Final shared-library decision:** `not_shared_consumer_local`, based on
+[demand-assessment.md](demand-assessment.md). Do not create a shared crate.
 
-**Steps:** Generate deterministic rotation/2–4-bit/metadata/sidecar/ranking fixtures through Go; implement safe scalar Rust first; require exact packed/persisted bytes; then benchmark ten paired runs. Add SIMD only as a separate reviewed optimization after parity.
+**Consumer owner:** Desktop [#1137](https://github.com/danieljustus/symaira-desktop/issues/1137).
+
+**Consumer-owned verification:** Generate deterministic rotation/2–4-bit/metadata/sidecar/ranking fixtures through Go; implement safe scalar Rust first; require exact packed/persisted bytes; then benchmark ten paired runs. Add SIMD only as a separate reviewed optimization after parity.
+
+Retire the Go package only with its last released importer. Reopen the shared
+slice only after two independent consumers require matching semantics.
 
 ## RUST-013: Full dual-language hardening and native CI — COMPLETE (revalidated 2026-09-08)
 

@@ -40,6 +40,55 @@ type streamErrorResult struct {
 	Error string `json:"error"`
 }
 
+type bodyLimitObservation struct {
+	ID           string       `json:"id"`
+	BodyPrefix   string       `json:"body_prefix"`
+	PaddingBytes int          `json:"padding_bytes"`
+	Status       int          `json:"status"`
+	Truncated    bool         `json:"truncated"`
+	Content      string       `json:"content"`
+	Error        *errorResult `json:"error"`
+}
+
+func observeBodyLimits() []bodyLimitObservation {
+	cases := []bodyLimitObservation{
+		{ID: "success-body-over-cap", Status: http.StatusOK, PaddingBytes: 16 << 20,
+			BodyPrefix: `{"choices":[{"message":{"content":"ok"},"finish_reason":"stop"}]}`},
+		{ID: "error-body-over-cap", Status: http.StatusBadRequest, PaddingBytes: 8 << 10,
+			BodyPrefix: `{"error":{"message":"context length exceeded","type":"context_length_exceeded"}}`},
+		{ID: "error-body-truncated", Status: http.StatusUnauthorized, Truncated: true,
+			BodyPrefix: `{"error":{"message":"authentication failed","type":"authentication_error"}}`},
+		{ID: "success-body-truncated", Status: http.StatusOK, Truncated: true,
+			BodyPrefix: `{"choices":[{"message":{"content":"ok"},"finish_reason":"stop"}]}`},
+	}
+	for i := range cases {
+		c := &cases[i]
+		body := c.BodyPrefix + strings.Repeat(" ", c.PaddingBytes)
+		var lengths []int
+		if c.Truncated {
+			lengths = []int{len(body) + 16}
+		}
+		_, client, closeServer, err := captureWithSuffix("openai", body, c.Status, "", lengths...)
+		if err != nil {
+			panic(err)
+		}
+		choice, err := client.Chat(context.Background(), "gpt-5", []llmkit.Message{{Role: "user", Content: "question"}}, nil)
+		closeServer()
+		if err == nil {
+			c.Content = choice.Content
+		} else {
+			var classified *llmkit.Error
+			if !errors.As(err, &classified) {
+				panic(err)
+			}
+			c.Error = &errorResult{Code: string(classified.Code), Status: classified.StatusCode,
+				Body: classified.Body, RetryAfter: classified.RetryAfter,
+				Retryable: classified.Retryable(), ExitCode: int(classified.ExitCode())}
+		}
+	}
+	return cases
+}
+
 type cancellationResult struct {
 	Operation       string `json:"operation"`
 	ErrorCode       string `json:"error_code"`
@@ -289,6 +338,7 @@ type observation struct {
 	CancellableCalls            []cancellationResult       `json:"cancellable_calls"`
 	InjectedHTTPClient          injectedHTTPClientResult   `json:"injected_http_client"`
 	OpenAISuccessResponses      []openAISuccessObservation `json:"openai_success_responses"`
+	BodyLimits                  []bodyLimitObservation     `json:"body_limits"`
 }
 
 func canceledCall(operation string, requests *atomic.Int32, call func(context.Context) error) cancellationResult {
@@ -422,7 +472,7 @@ func capture(provider, response string, status int) (*request, *llmkit.Client, f
 	return captureWithSuffix(provider, response, status, "")
 }
 
-func captureWithSuffix(provider, response string, status int, suffix string) (*request, *llmkit.Client, func(), error) {
+func captureWithSuffix(provider, response string, status int, suffix string, contentLength ...int) (*request, *llmkit.Client, func(), error) {
 	got := &request{}
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		got.Path = r.URL.Path
@@ -436,6 +486,9 @@ func captureWithSuffix(provider, response string, status int, suffix string) (*r
 		got.ProviderVersion = r.Header.Get("anthropic-version")
 		_ = json.NewDecoder(r.Body).Decode(&got.Body)
 		w.Header().Set("Content-Type", "application/json")
+		if len(contentLength) != 0 {
+			w.Header().Set("Content-Length", fmt.Sprint(contentLength[0]))
+		}
 		if status != 0 {
 			w.Header().Set("Retry-After", "17")
 		}
@@ -538,6 +591,7 @@ func main() {
 	var out observation
 	out.Providers = providers
 	out.OpenAISuccessResponses = observeOpenAISuccessResponses()
+	out.BodyLimits = observeBodyLimits()
 	out.InjectedHTTPClient = recordInjectedHTTPClient()
 	var canceledRequests atomic.Int32
 	cancelServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

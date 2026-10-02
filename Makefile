@@ -39,6 +39,7 @@ port-oracle-selftest:
 	python3 scripts/rust-port/diff.py --self-test
 
 port-contract: rust-port-validate port-fixture-source-check port-oracle-selftest
+	python3 -m unittest discover -s scripts/rust-port -p test_retirement_routing.py
 	cd scripts/rust-port/go-oracle && GOTOOLCHAIN=go1.26.6 go test ./...
 
 rust-lint:

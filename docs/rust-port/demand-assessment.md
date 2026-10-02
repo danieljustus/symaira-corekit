@@ -1,12 +1,12 @@
 # Demand assessment for the demand-driven slices
 
 `RUST-007` through `RUST-012` are classified `demand_driven` in
-[`work-items.json`](work-items.json), which means they stay `deferred` until two
-real Rust consumers need the same shared module (the standing rule in
+[`work-items.json`](work-items.json), which requires two
+real Rust consumers needing the same shared module (the standing rule in
 `AGENTS.md`/PB-2026-09-09) **and** a duplication exists that the shared module
 would remove (the value bar recorded by `RUST-005`). This document records the
-actual search evidence behind each verdict so `deferred` is an assessed state
-rather than an unexamined default.
+actual search evidence behind each verdict. Single-consumer slices now have the
+terminal `not_shared_consumer_local` decision, not an indefinite shared-port wait.
 
 Method: read-only searches over the Rust sources of every current Rust consumer
 in the workspace (`symaira-desktop`, `symaira-eraseme`, `symaira-vault`,
@@ -79,7 +79,7 @@ not satisfy the performance or released-consumer gates and does not remove
 the supported Go paths. Implementation and residual boundaries are tracked in
 [`llm-contract.md`](llm-contract.md).
 
-## RUST-009 — Audit and grounded-evidence algorithm slices (`AUD-*`, `EVID-*`) — deferred
+## RUST-009 — Audit and grounded-evidence algorithm slices (`AUD-*`, `EVID-*`) — consumer-local
 
 ```sh
 rg -l -i -g '*.rs' "auditkit|evidencekit|evidence_bundle|grounded.evidence|audit_log|hash.chained" \
@@ -92,7 +92,10 @@ SHA-256 hash-chained JSONL sink. Vault's
 Vault key lifecycle; its format and trust boundary differ. Brain's other audit
 crates are part of the same product, not a second consumer. No second Rust
 consumer needs the same generic audit algorithm, and no second grounded-evidence
-algorithm was found. **Verdict: deferred — no shared semantics to extract.**
+algorithm was found. **Final decision: `not_shared_consumer_local`.**
+Brain owns the audit contract in [brain#770](https://github.com/danieljustus/symaira-brain/issues/770)
+and grounded evidence in [brain#758](https://github.com/danieljustus/symaira-brain/issues/758).
+Vault's keyed chain is deliberately not extracted into this library.
 
 ## RUST-010 — MCP configuration discovery slice (`MCFG-*`) — **implemented**
 
@@ -129,7 +132,7 @@ is implemented.** Its acceptance commands are `make rust-mcpcfg-contract` and
 must execute the Go/Rust differential on Linux, macOS, and Windows before its
 cross-platform evidence is complete.
 
-## RUST-011 — DOM selection and rendering feasibility (`DOM-*`) — deferred
+## RUST-011 — DOM selection and rendering feasibility (`DOM-*`) — consumer-local
 
 ```sh
 rg -l -i -g '*.rs' "domkit|dom_selector|dom_query|readability|html5ever" \
@@ -139,9 +142,11 @@ rg -l -i -g '*.rs' "domkit|dom_selector|dom_query|readability|html5ever" \
 Brain's `browse/crates/symbrowse-fetch/src/dom.rs` implements HTML5 parsing,
 cleanup, selection and serialization in Rust. Browse is a module of Brain, so
 this is one Rust product consumer, not a second independent one. **Verdict:
-deferred — one Rust consumer.**
+`not_shared_consumer_local` — one Rust consumer.**
+The complete local DOM/rendering parity belongs to
+[brain#774](https://github.com/danieljustus/symaira-brain/issues/774).
 
-## RUST-012 — TurboQuant codec and performance slice (`VEC-*`, `PERF-003`) — deferred
+## RUST-012 — TurboQuant codec and performance slice (`VEC-*`, `PERF-003`) — consumer-local
 
 ```sh
 rg -l -i -g '*.rs' "turboquant|vector_quant|quantiz" \
@@ -149,13 +154,52 @@ rg -l -i -g '*.rs' "turboquant|vector_quant|quantiz" \
 ```
 
 `symaira-brain/rust/symbrain-memory` carries vector storage and quantization
-metadata, but no TurboQuant codec. `symaira-desktop` matches only on unrelated
-text simhash. **Verdict: deferred — no demonstrated shared codec; re-assess
-when two Rust consumers need it.**
+metadata, but no TurboQuant codec. Desktop now has quantization configuration
+and sidecar migrations in `crates/symdesk-index/src/retrieval_config.rs` and
+`retrieval.rs`; these are not a second matching codec implementation. Its Go
+retrieval still imports `vectorkit/turboquant`. **Final decision:
+`not_shared_consumer_local`.** The local codec, persisted-byte parity and
+performance gate belong to
+[desktop#1137](https://github.com/danieljustus/symaira-desktop/issues/1137).
+
+## Retirement routing and fresh demand evidence
+
+Rechecked against immutable remote `main` snapshots on 2026-10-02, not dirty
+local worktrees. Every tracked Rust source and Cargo manifest was searched;
+all tracked Go imports were counted separately.
+
+| Product | Immutable snapshot |
+| --- | --- |
+| Brain, including Browse | `5294aece81d3c76aa7f96bb5479369c53707443c` |
+| Desktop | `e817394e3b4df5e3320e85495dad0dea0e9938b4` |
+| EraseMe | `28e32a1c7c8732921007e9124d14f5bbabd60397` |
+| Vault | `893a76a2bf6ba03cc7d494491e9983495721a578` |
+
+Reproduce the searches above with `git grep -n -i -E <pattern> <snapshot> --
+'*.rs' '*Cargo.toml'`; inspect matching semantics rather than treating a
+configuration field or two crates inside Brain as independent adoption. Brain
+is the only generic audit/evidence/DOM consumer; Desktop is the only current
+Go TurboQuant importer. Vault audit uses HMAC and its own key lifecycle.
+
+| Go package | Final Rust owner / retirement condition |
+| --- | --- |
+| `auditkit` | Brain [#770](https://github.com/danieljustus/symaira-brain/issues/770), including the existing `symbrain-audit` crate |
+| `evidencekit` | Brain [#758](https://github.com/danieljustus/symaira-brain/issues/758) |
+| `domkit` | Brain/Browse [#774](https://github.com/danieljustus/symaira-brain/issues/774) |
+| `vectorkit/turboquant` | Desktop [#1137](https://github.com/danieljustus/symaira-desktop/issues/1137) |
+| `ollamakit` | Deprecated Go shim; `symaira-core-llm` owns descriptor transport, no Rust clone |
+| `contracts` | Retire the Go package with Go; preserve language-neutral fixtures and crate-local embedded copies |
+
+Every package in this table **retires with its last released Go importer**.
+A consumer-local decision does not assert completed consumer parity, authorize
+deleting Go now, or satisfy release/rollback gates. RUST-009/011/012 are terminal
+for CoreKit only. Their 25 matrix rows are `consumer-local`, never shared
+`parity`; each links to the owning issue.
 
 ## Re-assessment rule
 
 Re-run the searches above (or their equivalents) before starting any of these
-slices. A slice leaves `deferred` only when the search finds two Rust consumers
-that need it and a duplication the shared module removes; record the hits here
-and update `demand_evidence`/`status` in the same change.
+slices. A consumer-local slice is reopened for sharing only when the search finds two
+independent Rust consumers needing matching semantics and a duplication the
+shared module removes. Record the hits here and update `demand_evidence`/`status`
+in the same reviewed change; never silently relabel consumer-local work as parity.

@@ -448,6 +448,41 @@ def validate_rust001_artifacts(baseline: dict) -> None:
             fail("RUST-001: incomplete paired-consumer canary")
 
 
+def validate_consumer_local_routing(work: list[dict], contracts: list[dict]) -> None:
+    """Consumer-local closure is ownership evidence, never shared-crate parity."""
+    by_id = {row["id"]: row for row in contracts}
+    routed: set[str] = set()
+    for item in work:
+        if item.get("status") != "not_shared_consumer_local":
+            continue
+        if item.get("demand_class") != "demand_driven":
+            fail(f"{item['id']}: required work cannot be routed consumer-local")
+        evidence = item.get("demand_evidence")
+        if not isinstance(evidence, str):
+            fail(f"{item['id']}: consumer-local decision needs demand evidence")
+        evidence_path = Path(evidence)
+        if (
+            evidence_path.is_absolute()
+            or ".." in evidence_path.parts
+            or not (ROOT / evidence_path).resolve().is_relative_to(ROOT.resolve())
+            or not (ROOT / evidence_path).is_file()
+        ):
+            fail(f"{item['id']}: consumer-local decision needs demand evidence")
+        for contract_id in item["contracts"]:
+            row = by_id[contract_id]
+            if row.get("status") != "consumer-local":
+                fail(f"{contract_id}: consumer-local work cannot claim shared parity")
+            issue = row.get("consumer_issue")
+            if not isinstance(issue, str) or not re.fullmatch(
+                r"https://github\.com/danieljustus/symaira-(?:brain|desktop|vault|eraseme)/issues/[1-9][0-9]*",
+                issue,
+            ):
+                fail(f"{contract_id}: consumer-local row needs a concrete consumer issue")
+            routed.add(contract_id)
+    if routed != {row["id"] for row in contracts if row.get("status") == "consumer-local"}:
+        fail("contract-matrix: consumer-local row lacks a terminal ownership decision")
+
+
 def main() -> int:
     baseline = load("baseline.json")
     matrix = load("contract-matrix.json")
@@ -490,7 +525,7 @@ def main() -> int:
         "api-shape", "benchmark", "bytes", "filesystem", "json-semantic",
         "manual-gate", "network", "process", "source-digest", "sqlite",
     }
-    allowed_contract_status = {"todo", "fixture-ready", "parity", "accepted-difference"}
+    allowed_contract_status = {"todo", "fixture-ready", "parity", "accepted-difference", "consumer-local"}
     required_contract = {
         "id", "seam", "fixture", "go_oracle", "expected", "comparison",
         "platforms", "rust_test", "status",
@@ -526,7 +561,7 @@ def main() -> int:
         if dangling_refs:
             fail(f"{item['id']}: dangling contracts {sorted(dangling_refs)}")
         status = item.get("status")
-        if status not in {"blocked", "deferred", "ready", "in_progress", "complete"}:
+        if status not in {"blocked", "deferred", "ready", "in_progress", "complete", "not_shared_consumer_local"}:
             fail(f"{item['id']}: invalid status {status!r}")
         if item.get("demand_class") not in {"required", "demand_driven"}:
             fail(f"{item['id']}: invalid demand_class")
@@ -534,6 +569,8 @@ def main() -> int:
             fail(f"{item['id']}: acceptance_commands and stop_rule are required")
         deps[item["id"]] = item_deps
         statuses[item["id"]] = status
+
+    validate_consumer_local_routing(work, contracts)
 
     done: set[str] = set()
     for item_id in work_ids:

@@ -230,16 +230,7 @@ impl Client {
                 .and_then(|value| value.to_str().ok())
                 .unwrap_or_default()
                 .to_owned();
-            let mut raw = Vec::new();
-            while raw.len() < MAX_ERROR_BODY {
-                let chunk = response
-                    .chunk()
-                    .await
-                    .map_err(|error| Error::transport(error.without_url().to_string()))?;
-                let Some(chunk) = chunk else { break };
-                let remaining = MAX_ERROR_BODY - raw.len();
-                raw.extend_from_slice(&chunk[..chunk.len().min(remaining)]);
-            }
+            let raw = read_error_body(&mut response).await;
             return Err(Error::http(status, &raw, &retry_after));
         }
         Ok(response)
@@ -389,12 +380,12 @@ impl Client {
                 .and_then(|v| v.to_str().ok())
                 .unwrap_or_default()
                 .to_owned();
-            let raw = response
+            let mut raw = Vec::new();
+            let _ = response
                 .body_mut()
-                .with_config()
-                .limit(MAX_ERROR_BODY as u64)
-                .read_to_vec()
-                .unwrap_or_default();
+                .as_reader()
+                .take(MAX_ERROR_BODY as u64)
+                .read_to_end(&mut raw);
             return Err(Error::http(status, &raw, &retry_after));
         }
         Ok(SyncResponse::Ureq(response))
@@ -546,13 +537,7 @@ fn run_shared_request(
                 .and_then(|value| value.to_str().ok())
                 .unwrap_or_default()
                 .to_owned();
-            let raw = match read_reqwest_limited(&mut response, MAX_ERROR_BODY).await {
-                Ok(raw) => raw,
-                Err(error) => {
-                    let _ = started.send(Err(error));
-                    return;
-                }
-            };
+            let raw = read_error_body(&mut response).await;
             let _ = started.send(Err(Error::http(status, &raw, &retry_after)));
             return;
         }
@@ -722,22 +707,26 @@ fn is_loopback(host: &str) -> bool {
 }
 
 pub(crate) fn read_limited(response: &mut SyncResponse, limit: u64) -> Result<Vec<u8>> {
-    match response {
-        SyncResponse::Ureq(response) => response
-            .body_mut()
-            .with_config()
-            .limit(limit)
-            .read_to_vec()
-            .map_err(|error| Error::transport(error.to_string())),
-        SyncResponse::Shared(response) => {
-            let mut output = Vec::new();
-            response
-                .take(limit)
-                .read_to_end(&mut output)
-                .map_err(|error| Error::transport(error.to_string()))?;
-            Ok(output)
-        }
+    let mut output = Vec::new();
+    response
+        .take(limit)
+        .read_to_end(&mut output)
+        .map_err(|error| Error::transport(error.to_string()))?;
+    Ok(output)
+}
+
+// Go classifies a known HTTP failure from the bytes already read, even when
+// the error body is interrupted. Successful-response read errors still fail.
+async fn read_error_body(response: &mut reqwest::Response) -> Vec<u8> {
+    let mut output = Vec::new();
+    while output.len() < MAX_ERROR_BODY {
+        let Ok(Some(chunk)) = response.chunk().await else {
+            break;
+        };
+        let remaining = MAX_ERROR_BODY - output.len();
+        output.extend_from_slice(&chunk[..chunk.len().min(remaining)]);
     }
+    output
 }
 
 pub(crate) async fn read_reqwest_limited(
