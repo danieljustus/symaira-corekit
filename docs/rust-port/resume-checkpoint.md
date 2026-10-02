@@ -1,6 +1,12 @@
 # Resume checkpoint — Rust consumer release gates open
 
-## Current integrated update slice (2026-10-02)
+## Current consumer API completion candidate (2026-10-02)
+
+RUST-017 is `in_progress`. The checker/cancellation differential, typed install-method adaptation, HTTP injection and explicit consumer API/receiver inventory are implemented. UPD-013/014 remain `fixture-ready`, and FS-001 records `FS-001-RUST-STRICT-v1` as an accepted safety-preserving difference with native acceptance still pending. See [api-coverage.md](api-coverage.md), [api-coverage.json](api-coverage.json) and [fs-path-contract.md](fs-path-contract.md).
+
+Local compiled reruns are blocked by the existing external-cache gate, not treated as passing. Native Linux/macOS/Windows CI is the completion path. RUST-016 and publication remain blocked until the shared API gate completes; the prior unanswered distribution decision remains separate. No Go removal, consumer cutover, credential creation, paid provider or publication is authorized by this candidate.
+
+## Historical integrated update slice (2026-10-02)
 
 RUST-007 is `complete`; UPD-001..012 and DEFECT-002 are `parity` after native
 Linux/amd64, Darwin/arm64 and Windows/amd64 acceptance at the same integrated

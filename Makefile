@@ -84,6 +84,7 @@ rust-fs-secret-contract:
 	python3 scripts/rust-port/generate_fs_secret.py --check
 	python3 scripts/rust-port/validate_fs_secret.py
 	python3 scripts/rust-port/diff_fs_secret.py
+	python3 scripts/rust-port/fs-path-control-differential.py
 	cargo audit
 	cargo deny check
 	@command -v cargo-miri >/dev/null 2>&1 && MIRIFLAGS=-Zmiri-disable-isolation cargo +nightly miri test -p symaira-core-fs -p symaira-core-secretref --all-features || { echo "cargo-miri is required for rust-fs-secret-contract"; exit 1; }
@@ -132,6 +133,8 @@ rust-update-contract: rust-update-version-contract
 	GOTOOLCHAIN=go1.26.6 CGO_ENABLED=0 python3 scripts/rust-port/cosign-contract-differential.py
 	GOTOOLCHAIN=go1.26.6 CGO_ENABLED=0 python3 scripts/rust-port/update-apply-differential.py
 	GOTOOLCHAIN=go1.26.6 CGO_ENABLED=0 python3 scripts/rust-port/update-swap-differential.py
+	GOTOOLCHAIN=go1.26.6 CGO_ENABLED=0 python3 scripts/rust-port/update-checker-differential.py --check
+	GOTOOLCHAIN=go1.26.6 CGO_ENABLED=0 python3 scripts/rust-port/update-cancellation-differential.py --check
 
 # Real Cosign and end-to-end Apply. Requires curl, Cosign and network;
 # replaces only an isolated disposable target, never an installed binary.

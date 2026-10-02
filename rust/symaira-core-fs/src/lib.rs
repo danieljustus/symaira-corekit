@@ -49,6 +49,8 @@ pub enum FsError {
     Io(#[from] io::Error),
 }
 
+/// FS-001-RUST-STRICT-v1: reject Unicode controls, including DEL and C1.
+/// This preserves the existing Rust safety policy; Go rejects only U+0000..001F.
 pub fn validate_path(path: &str) -> Result<(), FsError> {
     if path.is_empty() {
         return Err(FsError::InvalidPath("path is empty".into()));

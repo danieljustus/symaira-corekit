@@ -55,6 +55,17 @@ type result struct {
 }
 
 func main() {
+	if len(os.Args) == 2 && os.Args[1] == "--path-controls" {
+		// ASCII keys survive log transports that remove literal C1 controls.
+		controls := map[string]bool{}
+		for _, codepoint := range []rune{0x0000, 0x001f, 0x0020, 0x007e, 0x007f, 0x0080, 0x0085, 0x009f, 0x00a0} {
+			controls[fmt.Sprintf("%04x", codepoint)] = fsutil.ValidatePath("a"+string(codepoint)+"b") == nil
+		}
+		if err := json.NewEncoder(os.Stdout).Encode(controls); err != nil {
+			panic(err)
+		}
+		return
+	}
 	if (len(os.Args) > 1 && os.Args[1] == "--helper") || os.Getenv("RUST003_HELPER_MODE") != "" {
 		helper()
 		return

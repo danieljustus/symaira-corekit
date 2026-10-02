@@ -473,7 +473,7 @@
       "seam": "filesystem safety",
       "fixture": "valid/empty/absolute/traversal/control/NUL/double-slash paths",
       "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./fsutil -run \"TestValidatePath\"",
-      "expected": "accept/reject classification and wrappable sentinel exact",
+      "expected": "Go acceptance/rejection preserved except FS-001-RUST-STRICT-v1 DEL/C1 rejection; FsError::InvalidPath is the typed Rust sentinel adaptation",
       "comparison": "json-semantic",
       "platforms": [
         "darwin",
@@ -481,7 +481,9 @@
         "windows"
       ],
       "rust_test": "symaira-core-fs/tests/parity.rs",
-      "status": "parity"
+      "status": "accepted-difference",
+      "deviation": "fs-path-contract.md",
+      "native_acceptance": "pending exact-head nine-case public Go differential"
     },
     {
       "id": "FS-002",
@@ -1929,6 +1931,36 @@
       ],
       "rust_test": "testdata/rust-port/adoption/report.json",
       "status": "parity"
+    },
+    {
+      "id": "UPD-013",
+      "seam": "composed consumer update checker",
+      "fixture": "testdata/rust-port/fixtures/update/checker.json; 21 real public Go observations",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 CGO_ENABLED=0 python3 scripts/rust-port/update-checker-differential.py --check",
+      "expected": "current-version eligibility, response handling, injected transport, memory/disk cache and platform cache-root behavior; actual mutation rejected",
+      "comparison": "json-semantic",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-update/tests/checker.rs",
+      "status": "fixture-ready"
+    },
+    {
+      "id": "UPD-014",
+      "seam": "consumer update cancellation and ownership",
+      "fixture": "testdata/rust-port/fixtures/update/cancellation.json; 16 public Go observations plus native owned-process and rollback regressions",
+      "go_oracle": "GOTOOLCHAIN=go1.26.6 CGO_ENABLED=0 python3 scripts/rust-port/update-cancellation-differential.py --check",
+      "expected": "pre-cancelled/header/body cancellation for checker, signature, certificate and Applier; bounded native descendant cleanup; old bytes before commit and rollback after commit",
+      "comparison": "process",
+      "platforms": [
+        "darwin",
+        "linux",
+        "windows"
+      ],
+      "rust_test": "symaira-core-update/tests/cancellation.rs",
+      "status": "fixture-ready"
     }
   ]
 }

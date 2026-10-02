@@ -13,7 +13,8 @@
     "RUST-013",
     "RUST-016",
     "RUST-014",
-    "RUST-015"
+    "RUST-015",
+    "RUST-017"
   ],
   "items": [
     {
@@ -385,14 +386,15 @@
       "id": "RUST-016",
       "title": "Released Git-pinned consumers and standalone/rollback evidence",
       "depends_on": [
-        "RUST-013"
+        "RUST-013",
+        "RUST-017"
       ],
       "contracts": [
         "REL-001",
         "REL-006",
         "PERF-004"
       ],
-      "status": "ready",
+      "status": "blocked",
       "demand_class": "required",
       "acceptance_commands": [
         "python3 -m unittest discover -s port/consumer -p 'test_*.py'",
@@ -413,7 +415,7 @@
         "REL-003",
         "REL-005"
       ],
-      "status": "in_progress",
+      "status": "blocked",
       "demand_class": "required",
       "acceptance_commands": [
         "cargo semver-checks check-release",
@@ -442,6 +444,32 @@
         "python3 scripts/rust-port/adoption.py --check"
       ],
       "stop_rule": "Do not pass this gate without new releases pinned to exact registry versions and verified lockfiles/artifacts. No Go package removal while a released consumer imports it; retirement is a separate major-version decision with a tested rollback."
+    },
+    {
+      "id": "RUST-017",
+      "title": "Consumer-used API closure and versioned adapters",
+      "depends_on": [
+        "RUST-005",
+        "RUST-007"
+      ],
+      "contracts": [
+        "UPD-013",
+        "UPD-014",
+        "FS-001",
+        "CON-004"
+      ],
+      "status": "in_progress",
+      "demand_class": "required",
+      "demand_evidence": "api-coverage.md",
+      "acceptance_commands": [
+        "make rust-update-contract",
+        "python3 scripts/rust-port/fs-path-control-differential.py",
+        "python3 scripts/rust-port/diff_fs_secret.py",
+        "cargo nextest run --workspace --all-features --locked",
+        "cargo clippy --workspace --all-targets --all-features --locked -- -D warnings",
+        "cargo fmt --all --check"
+      ],
+      "stop_rule": "Stop on unmapped consumer API, unversioned drift, skipped/zero-case/native-missing evidence, weakened filesystem/TLS policy, unbounded cancellation or missing rollback. Mapping alone does not authorize consumer cutover."
     }
   ]
 }

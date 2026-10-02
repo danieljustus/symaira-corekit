@@ -226,13 +226,13 @@ slice only after two independent consumers require matching semantics.
 
 **Acceptance evidence:** The historical hardening gate was merged through PR #246 at exact head `b3f189f6ac4c78986c48be510805663906cce876`; GitHub reports the `Rust RUST-013 hardening` job successful in run `34193678917` (job `101956734067`). Its log contains successful `cargo audit` and `cargo deny check` commands, which is the bound evidence for `REL-004` parity. Revalidation on 2026-09-08 at `d382b8615ce879bac6f23c7250e13667934e8f93`: the local gate set (`cargo fmt --all --check`, `cargo check/clippy/nextest/doctest --locked`, `cargo hack --each-feature`, `cargo audit`, `cargo deny check`, `miri_gate.py --self-test`) passed on macOS, and native CI run `34231886903` (push to main) for that commit is green on ubuntu-latest, macos-latest and windows-latest including the RUST-013 native, Miri gate and hardening jobs. RUST-013 is complete; no crate publication, Go cutover or Go-oracle removal occurred.
 
-## RUST-016: Released Git-pinned consumer snapshots — READY
+## RUST-016: Released Git-pinned consumer snapshots — BLOCKED on RUST-017
 
 **Objective:** Break the release dependency cycle without weakening publication checks. Each consumer in `docs/consumers.json` first ships a real release of its exact CoreKit Git-pinned Rust snapshot, alongside the supported Go fallback.
 
 **Gate:** Run `python3 port/consumer/verify.py --git-pinned-consumers` against clean, immutable release checkouts; verify each consumer tag, published release and downloaded artifact independently. The local verifier checks exact Cargo pins and lock resolution, Go imports, committed standalone/rollback reports and independently reviewed artifact/report digests. Its local tag check does **not** prove GitHub publication or actual Rust execution: obtain source-bound runtime and rollback-transition evidence from each consumer, and preserve the public read-back record. Do not call a version-only smoke a product cutover. Four consumer releases and their evidence remain outstanding; no registry publication follows from this planning change alone.
 
-## RUST-014: SemVer, publishing manifest and release verification — IN PROGRESS (non-publishing local gate)
+## RUST-014: SemVer, publishing manifest and release verification — BLOCKED (non-publishing verifier retained)
 
 **Objective:** Keep the release contract executable without publishing. No crates.io publication is permitted until RUST-016 is complete, all required migration/native/security gates are green, and a separately approved release can read back real registry ownership, index and public bytes. RUST-015's later registry-pin releases cannot precede that publication.
 
@@ -273,6 +273,18 @@ Git-revision consumer support remain unchanged.
 **Executable gate:** `python3 port/consumer/verify.py --released-consumers` checks every `docs/consumers.json` record. It distinguishes released Git revisions from registry pins, exact Cargo.toml versions, Cargo.lock source/checksum, release-tag ancestry, Go imports, and explicit standalone/rollback evidence, and it reads a consumer's nested Cargo workspace through the record's `cargo_root` field. The current run is expected to exit 1 with blockers; `make consumer-drift` runs the same verifier from the canonical checkout even when invoked from a registered worktree.
 
 **Steps:** After RUST-014's verified registry publication, migrate each consumer from the Git revision to an exact crates.io version and `Cargo.lock` checksum, run its own full suite, publish a **new** consumer release and read back its artifacts and rollback evidence. Track every remaining Go import and retain Go releases while any released consumer imports a package. Any Go removal is a later, separate major-version proposal with rollback evidence.
+
+## RUST-017: Consumer-used API closure and versioned adapters — IN PROGRESS
+
+**Objective:** Finish the shared API surface without equating one helper probe, an API mapping or a worker commit with full consumer cutover. Preserve historical RUST-007 evidence for UPD-001..012; track the newly composed checker/cancellation surface here.
+
+**Inventory:** [api-coverage.md](api-coverage.md) and [api-coverage.json](api-coverage.json) map 104 distinct direct Go symbols and 1,088 references from four immutable consumer revisions. Returned types, methods, fields, functional options and SQL/logger integrations have explicit adapter contracts. Consumer-local slices remain outside shared CoreKit.
+
+**Implementation:** Compose current-version checks, eligible persisted/in-memory caching and caller-owned HTTP injection in the Rust checker. Expose cancellable checker, signature/certificate and Applier operations with owned transport/process cleanup and rollback before returning cancellation. Keep typed install-method classification and the existing string API. Preserve `FS-001-RUST-STRICT-v1` DEL/C1 rejection; do not weaken filesystem safety for a parity label. The existing real FS/SEC adapter remains the executable proof for all thirteen rows.
+
+**Acceptance:** Run `make rust-update-contract`, the fresh public Go path-control differential and native FS/SEC differential on Linux/macOS/Windows; run workspace nextest, strict Clippy and fmt at the exact candidate head. New UPD-013/014 rows stay `fixture-ready` until those runs are read back. Retain actual Go recordings, source identities, Rust results and mutation rejection. The ad-hoc C1 capture that lost control characters is not evidence.
+
+**Stop rule:** Stop on an unmapped symbol, unversioned drift, skipped/zero-case tests, missing native OS evidence, weakened TLS/path policy, unbounded cancellation or missing rollback. RUST-016 is blocked until this shared gate completes. Publication, consumer-specific SQL/logger/cancellation adapters and Go removal retain their separate release and rollback gates.
 
 ## Final handoff verification
 
