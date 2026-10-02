@@ -4,7 +4,7 @@
     "commit": "f3d3eb79b9b1f31b4f973d2ed518a8292cedf588",
     "source_sha256": "b374a9f870dcd632a43a95737748a6cf8bf89a145907db59195a7da62981377f",
     "generator": "scripts/rust-port/generate_fs_secret.py",
-    "generator_sha256": "66bf7be7e565cf1cd8d8b889a81b78fb7df49a4e4eefd6afa3c2b7246309a982"
+    "generator_sha256": "fd589292ab023807d3eaceb73dce6756233a18be61329074d1310bd0a8c29a5f"
   },
   "native_targets": [
     "darwin-amd64",
