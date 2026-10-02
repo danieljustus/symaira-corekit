@@ -7,6 +7,7 @@ import candidate
 import diff
 import generate
 import typed_contract
+from test_acceptance import AcceptanceControls
 
 
 EXPECTED_IDS = ['SQL-001', 'SQL-002', 'SQL-003', 'SQL-004', 'SQL-005', 'SQL-006']
@@ -15,7 +16,7 @@ ID_ERROR = r'case IDs/order mismatch|Rust executed case IDs differ from declared
 
 class CaseIdControls(unittest.TestCase):
     def setUp(self):
-        self.record = json.loads((diff.ROOT / 'testdata/rust-port/sqlite/differential-linux-tar-refreeze-20261001.json').read_text())
+        self.record = json.loads((diff.ROOT / AcceptanceControls.CURRENT_CAPTURE).read_text())
         self.manifest, self.manifest_sha = candidate.load()
 
     def compare(self, entrypoint, go, rust):

@@ -45,7 +45,7 @@ func TestCancelledDownloadClosesBeforeRemovingStagingFile(t *testing.T) {
 	if len(entries) != 1 || entries[0].Name() != "old-binary" {
 		t.Fatalf("failed download left staging residue: %v", entries)
 	}
-	data, err := os.ReadFile(target)
+	data, err := os.ReadFile(target) //nolint:gosec // literal fixture in the test-owned temporary directory
 	if err != nil || string(data) != "old" {
 		t.Fatalf("previous binary changed: %q, %v", data, err)
 	}
