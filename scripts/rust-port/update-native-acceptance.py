@@ -47,6 +47,9 @@ def main():
         commands = [
             [sys.executable, "scripts/rust-port/update-apply-differential.py", "--write", "--fixture", str(fixture)],
             ["make", "rust-update-version-contract", "rust-update-contract", "rust-update-signed-contract"],
+            ["cargo", "test", "--manifest-path", str(ROOT / "Cargo.toml"), "-p", "symaira-core-update",
+             "--lib", "--locked", "cosign::tests::real_cosign_rejects_invalid_signature_and_certificate",
+             "--", "--ignored", "--exact"],
             ["cargo", "nextest", "run", "--manifest-path", str(ROOT / "Cargo.toml"),
              "--locked", "-p", "symaira-core-update"],
         ]
