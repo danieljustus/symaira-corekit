@@ -11,7 +11,7 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::Duration;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-const ISSUER: &str = "https://token.actions.githubusercontent.com";
+pub const OIDC_ISSUER: &str = "https://token.actions.githubusercontent.com";
 const MAX_ARTIFACT_BODY: u64 = 1 << 20;
 static TEMP_ID: AtomicU64 = AtomicU64::new(0);
 
@@ -38,6 +38,98 @@ impl Config<'_> {
     /// Rejects non-HTTPS URLs, failed requests and bodies above one MiB.
     pub fn fetch_certificate(&self, version: &str) -> Result<Vec<u8>, String> {
         self.fetch_artifact(version, "pem", "certificate")
+    }
+
+    /// Fetch with a caller-supplied hardened blocking client.
+    /// The client must enforce TLS 1.3, certificate validation, a finite timeout
+    /// and the GitHub-only HTTPS redirect policy of the default download builder.
+    pub fn fetch_signature_with_client(
+        &self,
+        version: &str,
+        client: &Client,
+    ) -> Result<Vec<u8>, String> {
+        self.fetch_artifact_with_client(
+            client,
+            self.artifact_url(version, "sig", "signature")?,
+            "signature",
+        )
+    }
+
+    /// Same transport requirements as `fetch_signature_with_client`.
+    pub fn fetch_certificate_with_client(
+        &self,
+        version: &str,
+        client: &Client,
+    ) -> Result<Vec<u8>, String> {
+        self.fetch_artifact_with_client(
+            client,
+            self.artifact_url(version, "pem", "certificate")?,
+            "certificate",
+        )
+    }
+
+    /// Cancellable signature fetch. Build the supplied client with
+    /// `request::secure_async_download_client_builder`; custom clients must preserve
+    /// its TLS, certificate, redirect and timeout policies.
+    pub async fn fetch_signature_cancellable(
+        &self,
+        version: &str,
+        client: &reqwest::Client,
+        token: &crate::CancellationToken,
+    ) -> Result<Vec<u8>, String> {
+        self.fetch_artifact_cancellable(version, "sig", "signature", client, token)
+            .await
+    }
+
+    /// Cancellable certificate fetch with the same client policy requirements.
+    pub async fn fetch_certificate_cancellable(
+        &self,
+        version: &str,
+        client: &reqwest::Client,
+        token: &crate::CancellationToken,
+    ) -> Result<Vec<u8>, String> {
+        self.fetch_artifact_cancellable(version, "pem", "certificate", client, token)
+            .await
+    }
+
+    async fn fetch_artifact_cancellable(
+        &self,
+        version: &str,
+        extension: &str,
+        label: &str,
+        client: &reqwest::Client,
+        token: &crate::CancellationToken,
+    ) -> Result<Vec<u8>, String> {
+        crate::check_cancelled(token)?;
+        let url = self.artifact_url(version, extension, label)?;
+        let mut response = tokio::select! {
+            biased;
+            () = token.cancelled() => return Err("context canceled".into()),
+            result = client.get(url).send() => result.map_err(|error| format!("fetch cosign {label}: {error}"))?,
+        };
+        if response.status() != reqwest::StatusCode::OK {
+            return Err(format!(
+                "fetch cosign {label}: HTTP {}",
+                response.status().as_u16()
+            ));
+        }
+        let mut body = Vec::new();
+        loop {
+            let chunk = tokio::select! {
+                biased;
+                () = token.cancelled() => return Err("context canceled".into()),
+                result = response.chunk() => result.map_err(|error| format!("read cosign {label} response: {error}"))?,
+            };
+            let Some(chunk) = chunk else { break };
+            if body.len() as u64 + chunk.len() as u64 > MAX_ARTIFACT_BODY {
+                return Err(format!(
+                    "cosign {label} exceeds maximum size of {MAX_ARTIFACT_BODY} bytes"
+                ));
+            }
+            body.extend_from_slice(&chunk);
+        }
+        crate::check_cancelled(token)?;
+        Ok(body)
     }
 
     fn fetch_artifact(
@@ -117,6 +209,27 @@ impl Config<'_> {
             ));
         }
         Ok(body)
+    }
+
+    /// Cancellable Cosign verification. Cancellation kills and reaps the owned
+    /// process before returning; no background verifier survives the call.
+    pub async fn verify_signature_cancellable(
+        &self,
+        content: &[u8],
+        signature: &[u8],
+        certificate: &[u8],
+        token: &crate::CancellationToken,
+    ) -> Result<(), String> {
+        verify_cancellable_with_executable(
+            Path::new("cosign"),
+            self.repo,
+            self.identity_regexp,
+            content,
+            signature,
+            certificate,
+            token,
+        )
+        .await
     }
 
     /// Verify the unmodified downloaded manifest with its signature and certificate.
@@ -242,7 +355,7 @@ fn verify_with_executable(
         .arg("--certificate-identity-regexp")
         .arg(pattern)
         .arg("--certificate-oidc-issuer")
-        .arg(ISSUER)
+        .arg(OIDC_ISSUER)
         .arg(&content_path)
         .stdout(Stdio::null())
         .output()
@@ -261,6 +374,116 @@ fn verify_with_executable(
         String::from_utf8_lossy(&output.stderr).trim(),
         output.status
     ))
+}
+
+struct OwnedVerifier(std::process::Child);
+impl Drop for OwnedVerifier {
+    fn drop(&mut self) {
+        // Output is a private file, never a pipe that descendants can keep open.
+        #[cfg(unix)]
+        {
+            let _ = Command::new("/bin/kill")
+                .args(["-KILL", "--", &format!("-{}", self.0.id())])
+                .stdout(Stdio::null())
+                .stderr(Stdio::null())
+                .status();
+        }
+        #[cfg(windows)]
+        {
+            let _ = Command::new("taskkill")
+                .args(["/F", "/T", "/PID", &self.0.id().to_string()])
+                .stdout(Stdio::null())
+                .stderr(Stdio::null())
+                .status();
+        }
+        let _ = self.0.kill();
+        let _ = self.0.wait();
+    }
+}
+
+async fn verify_cancellable_with_executable(
+    executable: &Path,
+    repo: &str,
+    identity_override: Option<&str>,
+    content: &[u8],
+    signature: &[u8],
+    certificate: &[u8],
+    token: &crate::CancellationToken,
+) -> Result<(), String> {
+    crate::check_cancelled(token)?;
+    let temporary = private_dir()?;
+    let content_path = temporary.0.join("content");
+    let signature_path = temporary.0.join("signature.sig");
+    let certificate_path = temporary.0.join("certificate.pem");
+    write_private(&content_path, content, "content")?;
+    write_private(&signature_path, signature, "signature")?;
+    write_private(&certificate_path, certificate, "certificate")?;
+    let stderr_path = temporary.0.join("stderr");
+    write_private(&stderr_path, b"", "stderr")?;
+    let stderr = OpenOptions::new()
+        .write(true)
+        .open(&stderr_path)
+        .map_err(|error| error.to_string())?;
+    let pattern = identity_override
+        .filter(|pattern| !pattern.is_empty())
+        .map_or_else(|| identity_regexp(repo), str::to_owned);
+    let mut command = Command::new(executable);
+    command
+        .arg("verify-blob")
+        .arg("--certificate")
+        .arg(certificate_path)
+        .arg("--signature")
+        .arg(signature_path)
+        .arg("--certificate-identity-regexp")
+        .arg(pattern)
+        .arg("--certificate-oidc-issuer")
+        .arg(OIDC_ISSUER)
+        .arg(content_path)
+        .stdout(Stdio::null())
+        .stderr(stderr);
+    #[cfg(unix)]
+    {
+        use std::os::unix::process::CommandExt;
+        command.process_group(0);
+    }
+    crate::check_cancelled(token)?;
+    let mut child = OwnedVerifier(
+        command
+            .spawn()
+            .map_err(|error| format!("cosign verify-blob failed: {error}"))?,
+    );
+    loop {
+        crate::check_cancelled(token)?;
+        if fs::metadata(&stderr_path)
+            .map_err(|error| error.to_string())?
+            .len()
+            > MAX_ARTIFACT_BODY
+        {
+            return Err("cosign verify-blob stderr exceeds maximum size".into());
+        }
+        if let Some(status) = child
+            .0
+            .try_wait()
+            .map_err(|error| format!("cosign verify-blob failed: {error}"))?
+        {
+            if status.success() {
+                return Ok(());
+            }
+            let mut stderr = Vec::new();
+            std::fs::File::open(&stderr_path)
+                .and_then(|file| file.take(MAX_ARTIFACT_BODY).read_to_end(&mut stderr))
+                .map_err(|error| error.to_string())?;
+            return Err(format!(
+                "cosign verify-blob failed: {}: {status}",
+                String::from_utf8_lossy(&stderr).trim()
+            ));
+        }
+        tokio::select! {
+            biased;
+            () = token.cancelled() => return Err("context canceled".into()),
+            () = tokio::time::sleep(Duration::from_millis(10)) => {},
+        }
+    }
 }
 
 #[cfg(all(test, unix))]
@@ -476,5 +699,70 @@ mod network_tests {
                 .verify_signature(&content, &signature, &certificate)
                 .is_err()
         );
+    }
+}
+
+#[cfg(all(test, unix))]
+mod cancellation_tests {
+    use super::*;
+    use std::os::unix::fs::PermissionsExt;
+
+    #[tokio::test]
+    async fn cancellation_reaps_sigterm_resistant_owned_descendant() {
+        let temporary = private_dir().unwrap();
+        let executable = temporary.0.join("fixture-cosign");
+        let ready = temporary.0.join("ready");
+        let script = format!(
+            "#!/bin/sh\ntrap '' TERM\nsh -c 'trap \"\" TERM; echo $$ > \"{}\"; while :; do sleep 1; done' &\nwait\n",
+            ready.display()
+        );
+        fs::write(&executable, script).unwrap();
+        fs::set_permissions(&executable, fs::Permissions::from_mode(0o700)).unwrap();
+        let token = crate::CancellationToken::new();
+        let verification = verify_cancellable_with_executable(
+            &executable,
+            "owner/repo",
+            None,
+            b"content",
+            b"signature",
+            b"certificate",
+            &token,
+        );
+        let cancellation = async {
+            tokio::time::timeout(Duration::from_secs(3), async {
+                while !ready.exists() {
+                    tokio::time::sleep(Duration::from_millis(5)).await;
+                }
+            })
+            .await
+            .expect("owned descendant must signal readiness");
+            token.cancel();
+        };
+        let started = std::time::Instant::now();
+        let (result, ()) = tokio::time::timeout(Duration::from_secs(5), async {
+            tokio::join!(verification, cancellation)
+        })
+        .await
+        .expect("verification must reap within the bound");
+        assert_eq!(result.unwrap_err(), "context canceled");
+        assert!(started.elapsed() < Duration::from_secs(5));
+        let pid = fs::read_to_string(&ready).unwrap();
+        let dead = tokio::time::timeout(Duration::from_secs(2), async {
+            loop {
+                let alive = Command::new("/bin/kill")
+                    .args(["-0", pid.trim()])
+                    .stdout(Stdio::null())
+                    .stderr(Stdio::null())
+                    .status()
+                    .unwrap()
+                    .success();
+                if !alive {
+                    break;
+                }
+                tokio::time::sleep(Duration::from_millis(10)).await;
+            }
+        })
+        .await;
+        assert!(dead.is_ok(), "owned descendant survived cancellation");
     }
 }

@@ -159,6 +159,110 @@ impl Checker {
         selected
     }
 
+    /// Cancellable partner to `check`, with the transport requirements documented
+    /// on `check_with_force_cancellable`.
+    pub async fn check_cancellable(
+        &mut self,
+        current: &str,
+        client: &reqwest::Client,
+        token: &crate::CancellationToken,
+    ) -> Result<Option<Release>, String> {
+        self.check_with_force_cancellable(current, false, client, token)
+            .await
+    }
+
+    /// Cancellable metadata check with a supplied async client.
+    /// The client must disable automatic redirects, enforce TLS 1.3 and a timeout;
+    /// use `request::secure_async_client_builder`. The synchronous transport is unused.
+    pub async fn check_with_force_cancellable(
+        &mut self,
+        current: &str,
+        force: bool,
+        client: &reqwest::Client,
+        token: &crate::CancellationToken,
+    ) -> Result<Option<Release>, String> {
+        crate::check_cancelled(token)?;
+        if !checkable(current) {
+            return Ok(None);
+        }
+        let now = SystemTime::now();
+        if !force {
+            if self.cached.is_none()
+                && self.should_persist()
+                && let Some((created, cached)) = cache::read_cache(&self.cache_path)
+                && let Ok(response) = cache::decode_release(&cached.response, true)
+                && crate::checkable(&response.tag_name)
+            {
+                self.cached = Some((
+                    UNIX_EPOCH + Duration::from_millis(u64::try_from(created).unwrap_or(u64::MAX)),
+                    Release {
+                        tag_name: response.tag_name,
+                        body: response.body,
+                        html_url: response.html_url,
+                        assets: response.assets,
+                    },
+                ));
+            }
+            if let Some((created, release)) = &self.cached
+                && now
+                    .duration_since(*created)
+                    .map_or(true, |elapsed| elapsed < self.cache_ttl)
+                && crate::checkable(&release.tag_name)
+            {
+                crate::check_cancelled(token)?;
+                return select(current, release);
+            }
+        }
+        let response = request::fetch_with_client_cancellable(
+            client,
+            &self.latest_release_url,
+            current,
+            token,
+        )
+        .await
+        .map_err(|error| error.message)?;
+        if response.status != 200 {
+            return Err(format!("GitHub API returned HTTP {}", response.status));
+        }
+        let raw = String::from_utf8(response.body.into_iter().take(1 << 20).collect())
+            .map_err(|error| format!("decode latest release response: {error}"))?;
+        let decoded = cache::decode_release(&raw, false)?;
+        // Validate before caching, independently of current-version selection.
+        check_response(
+            current,
+            crate::Response {
+                draft: decoded.draft,
+                prerelease: decoded.prerelease,
+                tag_name: decoded.tag_name.clone(),
+                ..crate::Response::default()
+            },
+        )?;
+        let release = Release {
+            tag_name: decoded.tag_name.trim().to_owned(),
+            body: decoded.body,
+            html_url: decoded.html_url.trim().to_owned(),
+            assets: decoded.assets,
+        };
+        let now = SystemTime::now();
+        crate::check_cancelled(token)?;
+        // Cache publication is synchronous; cancellation is observed before this commit point.
+        if self.should_persist() {
+            let _ = cache::write_cache(
+                &self.cache_path,
+                now.duration_since(UNIX_EPOCH)
+                    .unwrap_or_default()
+                    .as_millis(),
+                &cache::CachedRelease {
+                    tag_name: release.tag_name.clone(),
+                    response: raw,
+                },
+            );
+        }
+        let selected = select(current, &release);
+        self.cached = Some((now, release));
+        selected
+    }
+
     fn should_persist(&self) -> bool {
         !self.cache_path.as_os_str().is_empty()
             && (self.latest_release_url == self.default_url

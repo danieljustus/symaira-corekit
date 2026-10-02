@@ -16,6 +16,15 @@ pub mod extract;
 pub mod install_method;
 
 pub mod request;
+pub use tokio_util::sync::CancellationToken;
+
+pub(crate) fn check_cancelled(token: &CancellationToken) -> Result<(), String> {
+    if token.is_cancelled() {
+        Err("context canceled".into())
+    } else {
+        Ok(())
+    }
+}
 
 /// Whether the running version is a stable release eligible for an update check.
 /// Invalid versions return before the Go checker performs HTTP or cache access.
