@@ -13,6 +13,8 @@ from pathlib import Path
 import queue
 import sys
 import tempfile
+import subprocess
+import time
 import unittest
 from unittest.mock import patch
 
@@ -32,6 +34,55 @@ def runner(name):
 
 
 class FrozenProcessOracleTests(unittest.TestCase):
+    def test_native_architecture_mismatch_rejects_acceptance_entrypoint(self):
+        for name in ("mcp", "mcpcfg"):
+            module = runner(name)
+            with self.subTest(suite=name), patch.dict(os.environ, {"GO_ORACLE": "0"}), \
+                    patch.object(frozen.platform, "machine", return_value="SYNTHETIC_OTHER_ARCH"), \
+                    patch.object(sys, "argv", [module.__file__, "--check"]):
+                with self.assertRaisesRegex(ValueError, "native architecture mismatch"):
+                    module.main()
+
+    def test_streaming_caps_and_deadlines_reap_owned_processes(self):
+        from bounded_fixture_process import exchange
+        real_popen = frozen.subprocess.Popen
+        for serial in (False, True):
+            for stream in ("stdout", "stderr"):
+                for terminated in (False, True):
+                    owned = []
+                    def launch(*args, **kwargs):
+                        process = real_popen(*args, **kwargs)
+                        owned.append(process)
+                        return process
+                    code = ("import sys,time; sys.stdin.buffer.readline(); "
+                            f"sys.{stream}.buffer.write(b'x'*65537 + "
+                            + ("b'\\n'" if terminated else "b''") + "); "
+                            f"sys.{stream}.buffer.flush(); time.sleep(20)")
+                    with self.subTest(serial=serial, stream=stream, terminated=terminated), \
+                            patch.object(frozen.subprocess, "Popen", side_effect=launch):
+                        start = time.monotonic()
+                        with self.assertRaisesRegex(ValueError, f"{stream} exceeds its capture bound"):
+                            exchange([sys.executable, "-c", code], b"probe\n", dict(os.environ),
+                                     timeout=3, serial=serial, limit=65536)
+                        self.assertLess(time.monotonic() - start, 3)
+                        self.assertEqual(len(owned), 1)
+                        self.assertIsNotNone(owned[0].poll())
+            with self.subTest(serial=serial, timeout=True):
+                owned = []
+                with patch.object(frozen.subprocess, "Popen", side_effect=launch):
+                    with self.assertRaises(queue.Empty if serial else subprocess.TimeoutExpired):
+                        exchange([sys.executable, "-c", "import time; time.sleep(20)"],
+                                 b"probe\n", dict(os.environ), timeout=0.2, serial=serial)
+                self.assertEqual(len(owned), 1)
+                self.assertIsNotNone(owned[0].poll())
+
+    def test_stream_capture_preserves_exact_boundary_and_binary_bytes(self):
+        from bounded_fixture_process import exchange
+        expected = b"\x00\xff\r\n" * 16
+        code = "import sys; data=sys.stdin.buffer.read(); sys.stdout.buffer.write(data); sys.stderr.buffer.write(data)"
+        self.assertEqual(exchange([sys.executable, "-c", code], expected, dict(os.environ),
+                                  timeout=3, limit=len(expected)), (0, expected, expected))
+
     def captures(self):
         for name in ("mcp", "mcpcfg"):
             module = runner(name)
