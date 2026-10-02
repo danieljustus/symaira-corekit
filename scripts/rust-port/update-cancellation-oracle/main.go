@@ -3,18 +3,25 @@ package main
 
 import (
 	"context"
+	"crypto/ed25519"
+	"crypto/rand"
 	"crypto/sha256"
 	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
+	"math/big"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/danieljustus/symaira-corekit/updatecheck"
 	"github.com/danieljustus/symaira-corekit/updatecheck/cosign"
@@ -77,7 +84,26 @@ func serve() {
 		}
 		<-r.Context().Done()
 	}))
-	server.TLS = &tls.Config{MinVersion: tls.VersionTLS13}
+	// Match the existing request oracle: httptest's legacy certificate can be
+	// rejected by Rust's verifier. Generate an ephemeral Ed25519 test identity;
+	// production certificate verification stays fully enabled.
+	public, private, err := ed25519.GenerateKey(rand.Reader)
+	if err != nil {
+		panic(err)
+	}
+	template := x509.Certificate{
+		SerialNumber: big.NewInt(1),
+		NotBefore:    time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC),
+		NotAfter:     time.Date(2040, 1, 1, 0, 0, 0, 0, time.UTC),
+		KeyUsage:     x509.KeyUsageDigitalSignature,
+		ExtKeyUsage:  []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
+		IPAddresses:  []net.IP{net.IPv4(127, 0, 0, 1)},
+	}
+	der, err := x509.CreateCertificate(rand.Reader, &template, &template, public, private)
+	if err != nil {
+		panic(err)
+	}
+	server.TLS = &tls.Config{MinVersion: tls.VersionTLS13, MaxVersion: tls.VersionTLS13, Certificates: []tls.Certificate{{Certificate: [][]byte{der}, PrivateKey: private}}}
 	server.StartTLS()
 	defer server.Close()
 	cert := filepath.Join(os.TempDir(), "oracle-cert.der")
@@ -90,6 +116,28 @@ func serve() {
 	_, _ = io.Copy(io.Discard, os.Stdin)
 }
 func main() {
+	// Disposable Cosign stand-in for native process-tree cleanup, never a
+	// signature-verification oracle or a replacement for real signing evidence.
+	if len(os.Args) > 1 && os.Args[1] == "cosign-child" {
+		if err := os.WriteFile(os.Getenv("UPDATE_CANCEL_VERIFIER_READY"), []byte(fmt.Sprint(os.Getpid())), 0600); err != nil {
+			panic(err)
+		}
+		for {
+			time.Sleep(time.Second)
+		}
+	}
+	if len(os.Args) > 1 && os.Args[1] == "verify-blob" && os.Getenv("UPDATE_CANCEL_VERIFIER_READY") != "" {
+		self, err := os.Executable()
+		if err != nil {
+			panic(err)
+		}
+		child := exec.Command(self, "cosign-child")
+		if err := child.Start(); err != nil {
+			panic(err)
+		}
+		_ = child.Wait()
+		return
+	}
 	if len(os.Args) > 1 && os.Args[1] == "serve" {
 		serve()
 		return

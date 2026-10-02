@@ -170,43 +170,6 @@ pub(crate) fn atomic_swap_cancellable(
     atomic_swap(staged, target, Some(&mut validation))
 }
 
-#[cfg(test)]
-mod cancellation_tests {
-    use super::*;
-    #[test]
-    fn cancellation_after_install_rolls_back_existing_and_new_targets() {
-        let root =
-            std::env::temp_dir().join(format!("update-cancellation-swap-{}", std::process::id()));
-        fs::create_dir(&root).unwrap();
-        for existing in [true, false] {
-            let target = root.join("tool");
-            let stage = root.join("stage");
-            if existing {
-                fs::write(&target, "old").unwrap();
-            }
-            fs::write(&stage, "new").unwrap();
-            let token = crate::CancellationToken::new();
-            let mut validator = |path: &Path| {
-                assert_eq!(fs::read_to_string(path).unwrap(), "new");
-                assert_eq!(backup_path(path).exists(), existing);
-                token.cancel();
-                Ok(())
-            };
-            let error =
-                atomic_swap_cancellable(&stage, &target, Some(&mut validator), &token).unwrap_err();
-            assert_eq!(error, "validate installed binary: context canceled");
-            assert!(!backup_path(&target).exists());
-            if existing {
-                assert_eq!(fs::read_to_string(&target).unwrap(), "old");
-                fs::remove_file(&target).unwrap();
-            } else {
-                assert!(!target.exists());
-            }
-        }
-        fs::remove_dir_all(root).unwrap();
-    }
-}
-
 /// Replays the filesystem effects of the Go Applier from an oracle case.
 pub fn replay(input: &Input) -> Observation {
     let id = TEMP_ID.fetch_add(1, Ordering::Relaxed);
@@ -500,4 +463,41 @@ fn mode(path: &Path) -> std::io::Result<u32> {
 #[cfg(not(unix))]
 fn mode(_path: &Path) -> std::io::Result<u32> {
     Ok(0)
+}
+
+#[cfg(test)]
+mod cancellation_tests {
+    use super::*;
+    #[test]
+    fn cancellation_after_install_rolls_back_existing_and_new_targets() {
+        let root =
+            std::env::temp_dir().join(format!("update-cancellation-swap-{}", std::process::id()));
+        fs::create_dir(&root).unwrap();
+        for existing in [true, false] {
+            let target = root.join("tool");
+            let stage = root.join("stage");
+            if existing {
+                fs::write(&target, "old").unwrap();
+            }
+            fs::write(&stage, "new").unwrap();
+            let token = crate::CancellationToken::new();
+            let mut validator = |path: &Path| {
+                assert_eq!(fs::read_to_string(path).unwrap(), "new");
+                assert_eq!(backup_path(path).exists(), existing);
+                token.cancel();
+                Ok(())
+            };
+            let error =
+                atomic_swap_cancellable(&stage, &target, Some(&mut validator), &token).unwrap_err();
+            assert_eq!(error, "validate installed binary: context canceled");
+            assert!(!backup_path(&target).exists());
+            if existing {
+                assert_eq!(fs::read_to_string(&target).unwrap(), "old");
+                fs::remove_file(&target).unwrap();
+            } else {
+                assert!(!target.exists());
+            }
+        }
+        fs::remove_dir_all(root).unwrap();
+    }
 }

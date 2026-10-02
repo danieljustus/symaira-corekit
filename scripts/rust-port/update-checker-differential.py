@@ -35,7 +35,7 @@ def digest(path):
 
 def replay(path, directory, injected=False):
     env = dict(os.environ, CARGO_TARGET_DIR=str(TARGET), UPDATE_CHECKER_FIXTURE=str(path),
-               HOME=str(directory / "home"), USERPROFILE=str(directory / "home"), XDG_CACHE_HOME=str(directory / "cache"), TMPDIR=str(directory / "tmp"))
+               HOME=str(directory / "home"), USERPROFILE=str(directory / "home"), XDG_CACHE_HOME=str(directory / "cache"), TMPDIR=str(directory / "tmp"), TMP=str(directory / "tmp"), TEMP=str(directory / "tmp"))
     for name in ("home", "cache", "tmp"):
         (directory / name).mkdir(parents=True, exist_ok=True)
     # rustup resolves toolchains before HOME isolation; preserve its existing roots.
@@ -78,11 +78,11 @@ def main():
         temp = Path(temp)
         env = dict(os.environ, GOTOOLCHAIN="local", CGO_ENABLED="0", GOCACHE=str(TARGET / "checker-go-cache"),
                    GOMODCACHE=modules, GOPROXY="off", GOSUMDB="off")
-        binary = temp / "oracle"
+        binary = temp / ("oracle.exe" if os.name == "nt" else "oracle")
         run([compiler, "build", "-o", str(binary), "./scripts/rust-port/update-checker-oracle"], env)
         for name in ("home", "cache", "tmp"):
             (temp / name).mkdir()
-        env.update(HOME=str(temp / "home"), USERPROFILE=str(temp / "home"), XDG_CACHE_HOME=str(temp / "cache"), TMPDIR=str(temp / "tmp"))
+        env.update(HOME=str(temp / "home"), USERPROFILE=str(temp / "home"), XDG_CACHE_HOME=str(temp / "cache"), TMPDIR=str(temp / "tmp"), TMP=str(temp / "tmp"), TEMP=str(temp / "tmp"))
         observations = json.loads(run([str(binary)], env, True))
         if len(observations["cases"]) != 21 or any(not c["results"] for c in observations["cases"]):
             raise RuntimeError("incomplete Go corpus")

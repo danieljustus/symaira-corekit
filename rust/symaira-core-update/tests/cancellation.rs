@@ -213,7 +213,7 @@ async fn public_cancellation_replays_go() {
                 ..Applier::default()
             };
             let operation = async {
-                match op {
+                let result = match op {
                     "checker" => checker
                         .check_with_force_cancellable("1.0.0", false, &metadata_client, &token)
                         .await
@@ -232,7 +232,11 @@ async fn public_cancellation_replays_go() {
                             .await
                     }
                     _ => unreachable!(),
+                };
+                if let Err(error) = &result {
+                    eprintln!("{op}/{phase}: {error}");
                 }
+                result
             };
             let cancellation = async {
                 if phase == "pre" {
@@ -320,4 +324,71 @@ async fn public_cancellation_replays_go() {
     assert_eq!(std::fs::read_to_string(&target).unwrap(), "old");
     assert!(!target.with_file_name("rollback-tool.bak").exists());
     std::fs::remove_dir_all(root).unwrap();
+}
+
+#[tokio::test]
+#[ignore = "requires disposable Go helper installed as Cosign by the differential harness"]
+async fn cancellable_verifier_reaps_native_owned_process_tree() {
+    use std::process::{Command, Stdio};
+    let ready = std::path::PathBuf::from(std::env::var_os("UPDATE_CANCEL_VERIFIER_READY").unwrap());
+    let config = cosign::Config {
+        repo: "owner/repo",
+        binary_name: "tool",
+        download_base_url: None,
+        identity_regexp: None,
+    };
+    let token = CancellationToken::new();
+    let verification =
+        config.verify_signature_cancellable(b"content", b"signature", b"certificate", &token);
+    let cancellation = async {
+        tokio::time::timeout(Duration::from_secs(3), async {
+            while !ready.is_file() {
+                tokio::time::sleep(Duration::from_millis(5)).await;
+            }
+        })
+        .await
+        .expect("owned native descendant must signal readiness");
+        token.cancel();
+    };
+    let (result, ()) = tokio::time::timeout(Duration::from_secs(5), async {
+        tokio::join!(verification, cancellation)
+    })
+    .await
+    .expect("native verifier cancellation must be bounded");
+    assert_eq!(result.unwrap_err(), "context canceled");
+    let pid = std::fs::read_to_string(ready).unwrap();
+    let pid = pid.trim();
+    assert!(pid.bytes().all(|b| b.is_ascii_digit()));
+    tokio::time::timeout(Duration::from_secs(3), async {
+        loop {
+            #[cfg(unix)]
+            let alive = Command::new("/bin/kill")
+                .args(["-0", pid])
+                .stdout(Stdio::null())
+                .stderr(Stdio::null())
+                .status()
+                .unwrap()
+                .success();
+            #[cfg(windows)]
+            let alive = {
+                let output = Command::new("tasklist")
+                    .args(["/FI", &format!("PID eq {pid}"), "/FO", "CSV", "/NH"])
+                    .stderr(Stdio::null())
+                    .output()
+                    .unwrap();
+                assert!(output.status.success());
+                String::from_utf8_lossy(&output.stdout).lines().any(|line| {
+                    line.split(',')
+                        .nth(1)
+                        .is_some_and(|field| field.trim_matches('"') == pid)
+                })
+            };
+            if !alive {
+                break;
+            }
+            tokio::time::sleep(Duration::from_millis(10)).await;
+        }
+    })
+    .await
+    .expect("native owned descendant survived cancellation");
 }

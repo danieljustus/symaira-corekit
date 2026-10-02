@@ -11,6 +11,7 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::Duration;
 use std::time::{SystemTime, UNIX_EPOCH};
 
+/// Expected issuer of GitHub Actions keyless release signatures.
 pub const OIDC_ISSUER: &str = "https://token.actions.githubusercontent.com";
 const MAX_ARTIFACT_BODY: u64 = 1 << 20;
 static TEMP_ID: AtomicU64 = AtomicU64::new(0);
