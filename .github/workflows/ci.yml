@@ -6,6 +6,11 @@ on:
   pull_request:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      go_oracle:
+        description: Capture additive native Go process-oracle observations for review
+        type: boolean
+        default: false
   schedule:
     - cron: '0 4 * * 1'
 
@@ -16,6 +21,44 @@ permissions:
   contents: read
 
 jobs:
+  process-oracle-capture:
+    name: Native process-oracle capture (${{ matrix.os }})
+    if: github.event_name == 'workflow_dispatch' && inputs.go_oracle
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-26, windows-latest]
+    env:
+      GO_ORACLE: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.sha }}
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: "1.26.6"
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+      - name: Capture actual native Go outputs without replacing accepted observations
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/process-oracles"
+          python scripts/rust-port/mcp-differential.py --capture "$RUNNER_TEMP/process-oracles/mcp.json"
+          python scripts/rust-port/mcpcfg-differential.py --capture "$RUNNER_TEMP/process-oracles/mcpcfg.json"
+          git rev-parse HEAD > "$RUNNER_TEMP/process-oracles/source-head.txt"
+      - name: Retain diagnostic captures for explicit source and output review
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: process-oracles-${{ matrix.os }}-${{ github.sha }}
+          path: ${{ runner.temp }}/process-oracles
+          if-no-files-found: error
+          retention-days: 30
+
   changes:
     name: select CI scope
     runs-on: ubuntu-latest
@@ -360,18 +403,11 @@ jobs:
         run: |
           cargo install cargo-fuzz --version 0.13.2 --locked
           make mcp-fuzz-smoke
-      - name: Go and Rust MCP differential (Linux)
-        if: runner.os == 'Linux'
-        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
-        with:
-          go-version: "1.26.6"
-      - name: Python for MCP differential (Linux)
-        if: runner.os == 'Linux'
+      - name: Python for frozen MCP differential
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.12"
-      - name: Run MCP differential corpus (Linux)
-        if: runner.os == 'Linux'
+      - name: Run frozen MCP corpus and intended-assertion negative control
         run: make mcp-differential
 
   rust-mcpcfg:
@@ -392,16 +428,14 @@ jobs:
         run: rustup toolchain install 1.98.0 --profile minimal --component rustfmt,clippy
       - name: Rust MCP config contract
         run: make rust-mcpcfg-contract
-      - name: Go and Rust MCP config differential
-        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
-        with:
-          go-version: "1.26.6"
-      - name: Python for MCP config differential
+      - name: Python for frozen MCP config differential
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.12"
       - name: Run MCP config differential corpus
         run: python scripts/rust-port/mcpcfg-differential.py --check
+      - name: Verify process-capture integrity, identity and Go-free replay
+        run: python -m unittest discover -s scripts/rust-port -p test_frozen_process_oracle.py
 
   rust-sqlite-native:
     name: Rust SQLite native (${{ matrix.os }})
