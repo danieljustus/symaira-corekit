@@ -51,7 +51,7 @@ def build_oracle(root: Path) -> dict:
     if archive.wait() != 0:
         raise RuntimeError("git archive failed")
     modfile = root / "oracle.mod"
-    modfile.write_text((HELPER / "go.mod").read_text().replace("../../..", oracle.as_posix()), encoding="utf-8")
+    modfile.write_text((HELPER / "go.mod").read_text().replace("../../..", json.dumps(oracle.as_posix())), encoding="utf-8")
     shutil.copy2(HELPER / "go.sum", root / "oracle.sum")
     binary = root / ("fssecret.exe" if os.name == "nt" else "fssecret")
     env = os.environ.copy()
@@ -77,7 +77,7 @@ def generate(target: str | None = None) -> dict:
         actual = {"darwin": "darwin", "linux": "linux", "windows": "win32"}[target]
         if sys.platform != actual:
             raise SystemExit(f"refusing to label {sys.platform} as native {target}")
-    with tempfile.TemporaryDirectory(prefix="rust003-oracle-") as raw:
+    with tempfile.TemporaryDirectory(prefix="rust003 oracle ") as raw:
         probe = normalize_probe(build_oracle(Path(raw)), target)
     result = {
         "schema_version": 2,
