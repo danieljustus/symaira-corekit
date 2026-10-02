@@ -141,7 +141,7 @@ def oracle_modfile(path: Path, oracle: Path) -> Path:
     marker = "replace github.com/danieljustus/symaira-corekit => ../../.."
     if source.count(marker) != 1:
         raise RuntimeError("go-oracle go.mod replacement marker drifted")
-    content = source.replace(marker, f"replace github.com/danieljustus/symaira-corekit => {oracle.as_posix()}")
+    content = source.replace(marker, f"replace github.com/danieljustus/symaira-corekit => {json.dumps(oracle.as_posix())}")
     path.write_text(content)
     return path
 
@@ -160,7 +160,8 @@ def build_helper(command: str, output: Path, oracle: Path) -> None:
 def generate_tree(target: Path) -> dict[str, Any]:
     source_count = assert_source()
     target.mkdir(parents=True, exist_ok=True)
-    with tempfile.TemporaryDirectory(prefix="corekit-oracle-") as temp_raw:
+    # Exercise a space-containing module path on every real oracle build.
+    with tempfile.TemporaryDirectory(prefix="corekit-oracle path-") as temp_raw:
         temp = Path(temp_raw)
         oracle = temp / "oracle"
         oracle.mkdir()
