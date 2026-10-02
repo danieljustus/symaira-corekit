@@ -284,13 +284,20 @@ jobs:
           cargo deny check
 
   rust-update-signed:
-    name: Rust update signed-release acceptance
+    name: Rust update signed-release acceptance (${{ matrix.os }})
     needs: changes
     if: needs.changes.outputs.full == 'true'
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-26, windows-latest]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - name: Set up Go oracle toolchain
         uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
@@ -300,19 +307,26 @@ jobs:
         with:
           python-version: "3.12"
       - name: Install pinned Rust toolchain
-        run: rustup toolchain install 1.98.0 --profile minimal
-      - name: Install pinned Cosign verifier
+        shell: bash
+        run: rustup toolchain install 1.98.0 --profile minimal --component rustfmt,clippy
+      - name: Install pinned native acceptance tools
         shell: bash
         run: |
           set -euo pipefail
-          curl --fail --show-error --location --max-time 120 \
-            https://github.com/sigstore/cosign/releases/download/v3.0.5/cosign-linux-amd64 \
-            --output "$RUNNER_TEMP/cosign"
-          echo "db15cc99e6e4837daabab023742aaddc3841ce57f193d11b7c3e06c8003642b2  $RUNNER_TEMP/cosign" | sha256sum --check
-          chmod +x "$RUNNER_TEMP/cosign"
-          echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
-      - name: Verify real signed release and disposable Apply
-        run: make rust-update-signed-contract
+          cargo install cargo-nextest --version 0.9.143 --locked
+          python -m unittest discover -s scripts/rust-port -p test_cosign_installer.py
+          python scripts/rust-port/install-cosign.py --directory "$RUNNER_TEMP/corekit-cosign"
+      - name: Verify complete native update acceptance and real signed disposable Apply
+        shell: bash
+        run: python scripts/rust-port/update-native-acceptance.py --report-dir "$RUNNER_TEMP/corekit-native-update"
+      - name: Retain source-bound native update evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: update-native-${{ matrix.os }}-${{ github.event.pull_request.head.sha || github.sha }}
+          path: ${{ runner.temp }}/corekit-native-update
+          if-no-files-found: error
+          retention-days: 30
 
   rust-mcp:
     name: Rust MCP (${{ matrix.os }})

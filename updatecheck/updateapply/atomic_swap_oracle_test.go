@@ -25,6 +25,7 @@ func TestAtomicSwapOracle(t *testing.T) {
 		Reject         bool   `json:"reject"`
 		SabotageBackup bool   `json:"sabotage_backup,omitempty"`
 		BlockRemoval   bool   `json:"block_removal,omitempty"`
+		CleanupBackup  bool   `json:"cleanup_backup,omitempty"`
 	}
 	type observation struct {
 		Error               bool     `json:"error"`
@@ -45,6 +46,8 @@ func TestAtomicSwapOracle(t *testing.T) {
 		{ID: "preexisting-backup", Initial: "old-binary", Source: "new-binary", Backup: "stale-backup"},
 		{ID: "validation-rollback-failed", Initial: "old-binary", Source: "invalid-binary", Reject: true, SabotageBackup: true},
 		{ID: "validation-remove-failed", Source: "invalid-binary", Reject: true, BlockRemoval: true},
+		{ID: "validation-remove-failed-existing", Initial: "old-binary", Source: "invalid-binary", Reject: true, BlockRemoval: true},
+		{ID: "backup-cleanup-failed", Initial: "old-binary", Source: "new-binary", CleanupBackup: true},
 	}
 	results := make([]struct {
 		Input       input       `json:"input"`
@@ -70,7 +73,7 @@ func TestAtomicSwapOracle(t *testing.T) {
 		}
 		entry := observation{RemainingFileNames: []string{}}
 		var validator BinaryValidator
-		if test.Reject {
+		if test.Reject || test.CleanupBackup {
 			validator = func(path string) error {
 				entry.ValidatorSawTarget = path == target
 				entry.ValidatorSawBackup = fileExists(target + ".bak")
@@ -95,6 +98,22 @@ func TestAtomicSwapOracle(t *testing.T) {
 						t.Fatal(err)
 					}
 				}
+				if test.CleanupBackup {
+					previous, err := os.ReadFile(target + ".bak") //nolint:gosec // private oracle backup
+					if err != nil || string(previous) != test.Initial {
+						t.Fatalf("cleanup control did not retain the old binary: %v", err)
+					}
+					if err := os.Remove(target + ".bak"); err != nil {
+						t.Fatal(err)
+					}
+					if err := os.Mkdir(target+".bak", 0o700); err != nil {
+						t.Fatal(err)
+					}
+					if err := os.WriteFile(filepath.Join(target+".bak", "preserved"), previous, 0o600); err != nil {
+						t.Fatal(err)
+					}
+					return nil
+				}
 				return errors.New("reject installed binary")
 			}
 		}
@@ -105,6 +124,8 @@ func TestAtomicSwapOracle(t *testing.T) {
 		}
 		if test.SabotageBackup {
 			entry.ErrorPrefix = "validate installed binary failed (reject installed binary) and rollback failed: restore previous binary:"
+		} else if test.BlockRemoval && test.Initial != "" {
+			entry.ErrorPrefix = "validate installed binary failed (reject installed binary) and rollback failed: remove failed installed binary:"
 		} else if test.BlockRemoval {
 			entry.ErrorPrefix = "validate installed binary failed (reject installed binary) and remove failed:"
 		}

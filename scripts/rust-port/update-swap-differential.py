@@ -31,7 +31,7 @@ def capture(output):
     )
     cases = json.loads(output.read_text(encoding="utf-8"))
     ids = [case["input"]["id"] for case in cases]
-    expected = {"missing-source", "validation-rollback", "validation-first-install", "preexisting-backup", "validation-rollback-failed", "validation-remove-failed"}
+    expected = {"missing-source", "validation-rollback", "validation-first-install", "preexisting-backup", "validation-rollback-failed", "validation-remove-failed", "validation-remove-failed-existing", "backup-cleanup-failed"}
     if len(ids) != len(expected) or set(ids) != expected:
         raise ValueError(f"Go swap oracle case mismatch: {ids}")
     return {
@@ -89,6 +89,13 @@ def main():
         negative = replay(replay_path)
         if negative.returncode == 0 or "validation-rollback-failed error family" not in negative.stdout:
             raise RuntimeError("Rust swap replay accepted mutated rollback error family")
+        mutated = json.loads(json.dumps(current))
+        cleanup = next(case for case in mutated["cases"] if case["input"]["id"] == "backup-cleanup-failed")
+        cleanup["observation"]["backup_exists"] = False
+        replay_path.write_text(json.dumps(mutated), encoding="utf-8")
+        negative = replay(replay_path)
+        if negative.returncode == 0 or "backup-cleanup-failed observation" not in negative.stdout:
+            raise RuntimeError("Rust swap replay accepted mutated cleanup failure")
     print(f"PASS Go/Rust atomic swap: {len(current['cases'])} cases, {current['goos']}; filesystem and error mutations rejected")
     return 0
 
