@@ -1,0 +1,265 @@
+{
+  "go_source_sha256": "4aa34358dd24ab9f03c1507e910d162e5c7cc20a5c95042e01786f1ab6f928ed",
+  "oracle_sha256": "ae06f1ae9360b8a0a22847f753917ff43cfbc607e655a4cfb95fea7e36736749",
+  "cases": [
+    {
+      "id": "empty",
+      "path": "",
+      "method": "unknown",
+      "error": "binary path must not be empty",
+      "self_update": false,
+      "guidance": "Unable to determine installation method. Reinstall from the GitHub releases page"
+    },
+    {
+      "id": "homebrew-env",
+      "path": "${TMP}/brew/bin/tool",
+      "env": {
+        "HOMEBREW_PREFIX": "${TMP}/brew"
+      },
+      "method": "homebrew",
+      "error": "",
+      "self_update": false,
+      "guidance": "Update via Homebrew: brew update && brew upgrade symvault"
+    },
+    {
+      "id": "gopath-env",
+      "path": "${TMP}/gopath/bin/tool",
+      "env": {
+        "GOPATH": "${TMP}/gopath"
+      },
+      "method": "go-install",
+      "error": "",
+      "self_update": false,
+      "guidance": "Update via Go: go install github.com/danieljustus/symvault@latest"
+    },
+    {
+      "id": "gomodcache-env",
+      "path": "${TMP}/modcache/example/tool",
+      "env": {
+        "GOMODCACHE": "${TMP}/modcache"
+      },
+      "method": "go-install",
+      "error": "",
+      "self_update": false,
+      "guidance": "Update via Go: go install github.com/danieljustus/symvault@latest"
+    },
+    {
+      "id": "homebrew-path",
+      "path": "/opt/homebrew/bin/tool",
+      "method": "homebrew",
+      "error": "",
+      "self_update": false,
+      "guidance": "Update via Homebrew: brew update && brew upgrade symvault"
+    },
+    {
+      "id": "cellar-path",
+      "path": "/usr/local/Cellar/tool/1.0.0/bin/tool",
+      "method": "homebrew",
+      "error": "",
+      "self_update": false,
+      "guidance": "Update via Homebrew: brew update && brew upgrade symvault"
+    },
+    {
+      "id": "linuxbrew-path",
+      "path": "/home/linuxbrew/.linuxbrew/bin/tool",
+      "method": "homebrew",
+      "error": "",
+      "self_update": false,
+      "guidance": "Update via Homebrew: brew update && brew upgrade symvault"
+    },
+    {
+      "id": "package-path",
+      "path": "/usr/bin/tool",
+      "method": "package-manager",
+      "error": "",
+      "self_update": false,
+      "guidance": "Update via your system package manager (e.g., apt upgrade, yum update, pacman -Syu)"
+    },
+    {
+      "id": "direct-path",
+      "path": "/usr/local/bin/tool",
+      "method": "direct-download",
+      "error": "",
+      "self_update": true,
+      "guidance": "Re-run the quick install script or download the latest release from GitHub"
+    },
+    {
+      "id": "go-cache",
+      "path": "/go/pkg/mod/example/tool@v1/bin/tool",
+      "method": "go-install",
+      "error": "",
+      "self_update": false,
+      "guidance": "Update via Go: go install github.com/danieljustus/symvault@latest"
+    },
+    {
+      "id": "home-local-bin",
+      "path": "${TMP}/home/.local/bin/tool",
+      "env": {
+        "HOME": "${TMP}/home"
+      },
+      "method": "direct-download",
+      "error": "",
+      "self_update": true,
+      "guidance": "Re-run the quick install script or download the latest release from GitHub"
+    },
+    {
+      "id": "layered-env-priority",
+      "path": "/opt/homebrew/bin/tool",
+      "env": {
+        "HOMEBREW_PREFIX": "/opt/homebrew"
+      },
+      "method": "homebrew",
+      "error": "",
+      "self_update": false,
+      "guidance": "Update via Homebrew: brew update && brew upgrade symvault"
+    },
+    {
+      "id": "resolved-symlink",
+      "path": "${TMP}/link/tool",
+      "method": "homebrew",
+      "error": "",
+      "self_update": false,
+      "guidance": "Update via Homebrew: brew update && brew upgrade symvault"
+    },
+    {
+      "id": "source-readonly",
+      "path": "${TMP}/readonly/tool",
+      "method": "build-from-source",
+      "error": "",
+      "self_update": false,
+      "guidance": "Rebuild from source: git pull && go build"
+    },
+    {
+      "id": "missing-parent",
+      "path": "${TMP}/missing/tool",
+      "method": "unknown",
+      "error": "",
+      "self_update": false,
+      "guidance": "Unable to determine installation method. Reinstall from the GitHub releases page"
+    }
+  ],
+  "goos": "darwin",
+  "capture": {
+    "schema_version": 1,
+    "lane": "install-method",
+    "source_commit": "635562a4251a12a63d3b5f7a685a896d77eccb06",
+    "working_tree_clean": false,
+    "dirty_paths": [
+      "rust/symaira-core-update/tests/parity.rs",
+      "scripts/rust-port/update-version-differential.py",
+      "rust/symaira-core-update/tests/common/static_update.rs",
+      "scripts/rust-port/static_update_oracle.py",
+      "testdata/rust-port/fixtures/update/static-v1/darwin-arm64/version.json",
+      "testdata/rust-port/fixtures/update/static-v1/index.json"
+    ],
+    "go": {
+      "version": "go version go1.26.6 darwin/arm64",
+      "goversion": "go1.26.6",
+      "goroot": "go1.26.6",
+      "goos": "darwin",
+      "goarch": "arm64",
+      "binary_sha256": "a1c83801d1756c3eca78366c6b585f2c21c20694fb1c7eb92c446a0580420412",
+      "gomodcache": "existing-cache-read-only"
+    },
+    "capturer_sha256": "b7c349fb87271300f34ec82477d1c9b3294708b1c00824aa183353e25a8fd1e8",
+    "oracle_files": [
+      {
+        "path": "scripts/rust-port/install-method-oracle/main.go",
+        "sha256": "ae06f1ae9360b8a0a22847f753917ff43cfbc607e655a4cfb95fea7e36736749"
+      }
+    ],
+    "source_files": [
+      {
+        "path": "updatecheck/installmethod/detect.go",
+        "sha256": "4aa34358dd24ab9f03c1507e910d162e5c7cc20a5c95042e01786f1ab6f928ed"
+      },
+      {
+        "path": "scripts/rust-port/install-method-oracle/main.go",
+        "sha256": "ae06f1ae9360b8a0a22847f753917ff43cfbc607e655a4cfb95fea7e36736749"
+      },
+      {
+        "path": "updatecheck/installmethod/detect_test.go",
+        "sha256": "d1c4de8590a1ed5937b7ac39902c65cf2549863ca94e6ec006be98bd1ec4cdfd"
+      },
+      {
+        "path": "go.mod",
+        "sha256": "5e2b0ad309b6db5db7abbaf958ef87bc12c0e81605245b897f1b9305a113e57d"
+      },
+      {
+        "path": "go.sum",
+        "sha256": "701d7161d71d4817a59f98bfc6f8ac71d5ee6b7f70cbb8ec96b07a140298929c"
+      }
+    ],
+    "go_module_inputs": [
+      {
+        "path": "go.mod",
+        "sha256": "5e2b0ad309b6db5db7abbaf958ef87bc12c0e81605245b897f1b9305a113e57d"
+      },
+      {
+        "path": "go.sum",
+        "sha256": "701d7161d71d4817a59f98bfc6f8ac71d5ee6b7f70cbb8ec96b07a140298929c"
+      }
+    ],
+    "historical_fixture": {
+      "path": "testdata/rust-port/fixtures/update/install-methods.json",
+      "sha256": "574448478ff5b638c08abef6b979967fb66f93e542b72f1414e08f22d6932ca6"
+    },
+    "case_count": 15,
+    "case_ids": [
+      "empty",
+      "homebrew-env",
+      "gopath-env",
+      "gomodcache-env",
+      "homebrew-path",
+      "cellar-path",
+      "linuxbrew-path",
+      "package-path",
+      "direct-path",
+      "go-cache",
+      "home-local-bin",
+      "layered-env-priority",
+      "resolved-symlink",
+      "source-readonly",
+      "missing-parent"
+    ],
+    "case_fingerprints_sha256": [
+      "9905fe2af64a5a602ceb2187a3c3ecfce7f239dc5e214402c1eef80cae07dda3",
+      "fca002679d62fda516a8180ade8e80ec4d3fb0ae5b961141d64ec6e937efda8c",
+      "e91e5d007af0dc7bbe2ac1c0a2b6c189211e9bbc2578f7aa2d44006f4c83cdca",
+      "9d86475d2050d38b6895f02fd4839ebe8d8714fe898451d9da90454c7f1ff989",
+      "4a5bcd67470aac33451af72712c6cc6a17b03c540f4ae07cb784bb7b888d622e",
+      "615a49817de72aea4f49475da32e4f9b77f149c1d66f20ed7f1cdac294f05cc9",
+      "00f170613cbdb4ebd64f974edc4d492e14a55d6affb1c0ff03e39fb34258d4ae",
+      "dbc07ea8ed00a994d66922a3358ce4886e3731a846d070aad1b008e0e4d16321",
+      "bf524fe8d09c7909b76a55a27055f074044880b32b6b602806c9646f89ba7840",
+      "076eb45ed621d0a3fcf7bd0ad011c15941ea1d1b4fe02404ff43f3810aa1b340",
+      "850c18daef9e13c3b49a974f753369a65fdd79b458ce96e6887792aa94e6fe93",
+      "7074278eb562eedc0f5e0ab0167c23276bc20501d0c080f51826e0ac83f57763",
+      "3ea67607c5d3c3f0a1d9902600b42ed5d3b84020c4b1ad44ec429cd5651492d1",
+      "4aac8de338d8108864f499bc83e2a4fee1296831610be1bc5aa500aa64146993",
+      "cd8c61eb73422bdaa26b11d8d7dfc7fd8f0268e543a719b654b4fa833181ec21"
+    ],
+    "generated_inputs": [],
+    "raw": {
+      "exit_code": 0,
+      "stdout_sha256": "399cdc6da9828178e1b37c491473a037050a9a26703e200f0e70497d877b3462",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "commands": [
+        {
+          "stage": "run-go-install-method-oracle",
+          "command": [
+            "go",
+            "run",
+            "./scripts/rust-port/install-method-oracle"
+          ],
+          "cwd": "repository",
+          "exit_code": 0
+        }
+      ],
+      "observation_sha256": "399cdc6da9828178e1b37c491473a037050a9a26703e200f0e70497d877b3462",
+      "observation_bytes": 3264,
+      "evidence_id": "install-method-strhqi2b"
+    },
+    "capture_mode": "fresh-pinned-go-execution-additive-v1"
+  }
+}

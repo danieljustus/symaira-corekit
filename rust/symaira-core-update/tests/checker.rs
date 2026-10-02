@@ -1,3 +1,6 @@
+#[path = "common/static_update.rs"]
+mod static_update;
+
 use symaira_core_update::Checker;
 
 #[test]
@@ -192,10 +195,7 @@ fn public_checker_injected_corpus_matches_go() {
 fn replay_corpus(real_http: bool) {
     let path = std::env::var_os("UPDATE_CHECKER_FIXTURE")
         .map(PathBuf::from)
-        .unwrap_or_else(|| {
-            PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-                .join("../../testdata/rust-port/fixtures/update/checker.json")
-        });
+        .unwrap_or_else(|| static_update::fixture_path("checker"));
     let fixture: Fixture = serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap();
     let observations = fixture.observations;
     assert_eq!(observations.cases.len(), 21, "nonzero complete corpus");
@@ -350,9 +350,9 @@ fn default_path_matches_go_home_fallback() {
     if isolated("default_path_matches_go_home_fallback") {
         return;
     }
-    let fixture: Fixture = serde_json::from_str(include_str!(
-        "../../../testdata/rust-port/fixtures/update/checker.json"
-    ))
+    let fixture: Fixture = serde_json::from_str(
+        &std::fs::read_to_string(static_update::fixture_path("checker")).unwrap(),
+    )
     .unwrap();
     let cache = PathBuf::from(std::env::var_os("XDG_CACHE_HOME").unwrap());
     let expected = if cache.is_absolute() {

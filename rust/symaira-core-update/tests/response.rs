@@ -1,3 +1,6 @@
+#[path = "common/static_update.rs"]
+mod static_update;
+
 use serde::Deserialize;
 use symaira_core_update::{Asset, Response, check_response};
 
@@ -16,8 +19,7 @@ struct Case {
 
 #[test]
 fn release_response_outcomes_match_go_checker() {
-    let default_fixture = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("../../testdata/rust-port/fixtures/update/responses.json");
+    let default_fixture = static_update::fixture_path("response");
     let fixture_path = std::env::var_os("RESPONSE_FIXTURE")
         .map(std::path::PathBuf::from)
         .unwrap_or(default_fixture);

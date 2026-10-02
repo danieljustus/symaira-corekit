@@ -1,11 +1,12 @@
+#[path = "common/static_update.rs"]
+mod static_update;
+
 use serde::Deserialize;
 use std::path::PathBuf;
 use symaira_core_update::extract::{extract_binary_to_dir, observe};
 
 #[derive(Deserialize)]
 struct Fixture {
-    #[serde(default)]
-    goos: Option<String>,
     cases: Vec<ExpectedCase>,
 }
 
@@ -35,31 +36,9 @@ struct ExpectedError {
     message: String,
 }
 
-/// The committed fixture records one platform's Go observations. On another
-/// platform the fresh Go oracle plus the Rust replay in `make rust-update-contract`
-/// assert parity instead of replaying foreign expectations.
-fn platform_mismatch(recorded: Option<&str>) -> Option<String> {
-    let current = if cfg!(target_os = "windows") {
-        "windows"
-    } else if cfg!(target_os = "macos") {
-        "darwin"
-    } else if cfg!(target_os = "linux") {
-        "linux"
-    } else {
-        ""
-    };
-    match recorded {
-        Some(recorded) if recorded != current => Some(format!(
-            "fixture recorded on {recorded}, running on {current}; cross-platform parity is asserted by make rust-update-contract"
-        )),
-        _ => None,
-    }
-}
-
 #[test]
 fn extraction_matches_go_archives_and_filesystem_observations() {
-    let default_fixture = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("../../testdata/rust-port/fixtures/update/extract.json");
+    let default_fixture = static_update::fixture_path("extract");
     let fixture_path = std::env::var_os("EXTRACT_FIXTURE")
         .map(PathBuf::from)
         .unwrap_or(default_fixture);
@@ -67,10 +46,6 @@ fn extraction_matches_go_archives_and_filesystem_observations() {
         &std::fs::read_to_string(&fixture_path).expect("read generated extraction fixture"),
     )
     .expect("valid generated extraction fixture");
-    if let Some(reason) = platform_mismatch(fixture.goos.as_deref()) {
-        eprintln!("SKIP {reason}");
-        return;
-    }
     assert_eq!(fixture.cases.len(), 12);
     let root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
     for expected in fixture.cases {
@@ -120,11 +95,7 @@ fn extraction_matches_go_archives_and_filesystem_observations() {
 #[test]
 fn production_extraction_keeps_binary_in_staging_and_rejects_traversal() {
     let fixture: Fixture = serde_json::from_str(
-        &std::fs::read_to_string(
-            PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-                .join("../../testdata/rust-port/fixtures/update/extract.json"),
-        )
-        .unwrap(),
+        &std::fs::read_to_string(static_update::fixture_path("extract")).unwrap(),
     )
     .unwrap();
     let archive_root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");

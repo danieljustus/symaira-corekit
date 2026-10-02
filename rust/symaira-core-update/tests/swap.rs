@@ -1,3 +1,6 @@
+#[path = "common/static_update.rs"]
+mod static_update;
+
 use serde::Deserialize;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -48,10 +51,7 @@ struct Observation {
 fn atomic_swap_failure_and_rollback_match_go() {
     let path = std::env::var_os("UPDATE_SWAP_FIXTURE")
         .map(PathBuf::from)
-        .unwrap_or_else(|| {
-            PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-                .join("../../testdata/rust-port/fixtures/update/swap.json")
-        });
+        .unwrap_or_else(|| static_update::fixture_path("swap"));
     let fixture: Fixture = serde_json::from_slice(&fs::read(path).expect("read Go swap fixture"))
         .expect("parse Go swap fixture");
     assert_eq!(fixture.cases.len(), 8);
