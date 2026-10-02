@@ -44,7 +44,7 @@ def build_go_oracle(destination: Path) -> Path:
     (helper / "go.mod").write_text(
         "module symaira-mcpcfg-oracle\n\ngo 1.26.6\n\n"
         "require github.com/danieljustus/symaira-corekit v0.17.0\n\n"
-        f"replace github.com/danieljustus/symaira-corekit => {oracle.as_posix()}\n",
+        f"replace github.com/danieljustus/symaira-corekit => {json.dumps(oracle.as_posix())}\n",
         encoding="utf-8",
     )
     if (oracle / "go.sum").exists():
@@ -106,7 +106,7 @@ def main() -> int:
         cwd=REPO,
         check=True,
     )
-    with tempfile.TemporaryDirectory(prefix="corekit-mcpcfg-oracle-") as raw:
+    with tempfile.TemporaryDirectory(prefix="corekit-mcpcfg-oracle path-") as raw:
         go = build_go_oracle(Path(raw))
         for case in cases:
             payload = json.dumps(case, separators=(",", ":"), ensure_ascii=False).encode()
