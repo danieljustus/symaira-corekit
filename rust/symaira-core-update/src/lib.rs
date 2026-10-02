@@ -8,12 +8,23 @@
 pub mod applier;
 pub mod apply;
 pub mod cache;
+pub mod checker;
+pub use checker::{Checker, default_cache_path};
 pub mod cosign;
 pub mod cosign_contract;
 pub mod extract;
 pub mod install_method;
 
 pub mod request;
+pub use tokio_util::sync::CancellationToken;
+
+pub(crate) fn check_cancelled(token: &CancellationToken) -> Result<(), String> {
+    if token.is_cancelled() {
+        Err("context canceled".into())
+    } else {
+        Ok(())
+    }
+}
 
 /// Whether the running version is a stable release eligible for an update check.
 /// Invalid versions return before the Go checker performs HTTP or cache access.
@@ -38,7 +49,7 @@ pub fn update_available(current: &str, latest: &str) -> Result<bool, &'static st
 }
 
 /// Release asset returned by the Go update checker.
-#[derive(Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Asset {
     pub name: String,
     pub browser_download_url: String,
@@ -46,7 +57,7 @@ pub struct Asset {
 }
 
 /// Release metadata returned when an update is available.
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Release {
     pub tag_name: String,
     pub body: String,

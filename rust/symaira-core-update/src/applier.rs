@@ -198,6 +198,183 @@ impl Applier<'_> {
         apply::atomic_swap(&install, &target, validate)
     }
 
+    /// Cancellable install using a supplied async HTTP client. It must preserve
+    /// TLS 1.3, certificate validation, finite timeouts and GitHub-only HTTPS
+    /// redirects; use `request::secure_async_download_client_builder`.
+    /// Local extraction and validation are synchronous: cancellation is checked
+    /// before the swap and after validation, with rollback on rejection.
+    /// The synchronous `client` field is unused by this partner.
+    pub async fn apply_cancellable(
+        &self,
+        release: &Release,
+        target: &Path,
+        mut progress: Option<&mut dyn FnMut(u64, u64)>,
+        validate: Option<BinaryValidator<'_>>,
+        client: &reqwest::Client,
+        token: &crate::CancellationToken,
+    ) -> Result<(), String> {
+        crate::check_cancelled(token)?;
+        if target.to_string_lossy().trim().is_empty() {
+            return Err("updateapply: targetPath is empty".into());
+        }
+        let binary_name = self.binary_name.unwrap_or_else(|| {
+            target
+                .file_name()
+                .and_then(|name| name.to_str())
+                .unwrap_or("")
+        });
+        if self.check_install_method {
+            let method = install_method::detect(target)
+                .map_err(|error| format!("updateapply: detect install method: {error}"))?;
+            if !method.self_update_supported() {
+                return Err(format!(
+                    "updateapply: self-update is not supported for {} installation — {}",
+                    method.as_str(),
+                    method.guidance(binary_name)
+                ));
+            }
+        }
+        let asset =
+            apply::select_asset(&release.assets, self.goos, self.goarch).ok_or_else(|| {
+                format!(
+                    "updateapply: no release asset matches {}/{}",
+                    self.goos, self.goarch
+                )
+            })?;
+        let checksum_asset = release
+            .assets
+            .iter()
+            .find(|asset| asset.name.to_ascii_lowercase().contains("checksums"))
+            .ok_or("updateapply: fetch checksums: release has no checksums.txt asset")?;
+        let mut checksums_body = self
+            .download_cancellable(checksum_asset, client, token)
+            .await
+            .map_err(|error| format!("updateapply: fetch checksums: {error}"))?;
+        let mut checksums_bytes = Vec::new();
+        loop {
+            let chunk = tokio::select! {
+                biased;
+                () = token.cancelled() => return Err("context canceled".into()),
+                result = checksums_body.chunk() => result.map_err(|error| format!("updateapply: fetch checksums: read checksums.txt: {error}"))?,
+            };
+            let Some(chunk) = chunk else { break };
+            if checksums_bytes.len() as u64 + chunk.len() as u64 > MAX_ASSET_BODY {
+                return Err("updateapply: fetch checksums: checksums.txt exceeds 1 GiB".into());
+            }
+            checksums_bytes.extend_from_slice(&chunk);
+        }
+        let checksums = apply::parse_checksums(&checksums_bytes)
+            .map_err(|error| format!("updateapply: fetch checksums: {error}"))?;
+        if let Some(config) = self.cosign {
+            let sig = config
+                .fetch_signature_cancellable(&release.tag_name, client, token)
+                .await
+                .map_err(|error| format!("updateapply: fetch cosign signature: {error}"))?;
+            let cert = config
+                .fetch_certificate_cancellable(&release.tag_name, client, token)
+                .await
+                .map_err(|error| format!("updateapply: fetch cosign certificate: {error}"))?;
+            config
+                .verify_signature_cancellable(&checksums_bytes, &sig, &cert, token)
+                .await
+                .map_err(|error| format!("updateapply: cosign verification failed: {error}"))?;
+        }
+        let wanted = checksums
+            .get(&asset.name)
+            .ok_or_else(|| format!("updateapply: no checksum entry for asset {:?}", asset.name))?;
+        let target = std::path::absolute(target)
+            .map_err(|error| format!("updateapply: resolve target path: {error}"))?;
+        apply::check_writable(&target).map_err(|error| format!("updateapply: {error}"))?;
+        let parent = target.parent().ok_or("updateapply: target has no parent")?;
+        crate::check_cancelled(token)?;
+        let mut stage = Staging::file(parent)?;
+        let mut response = self
+            .download_cancellable(asset, client, token)
+            .await
+            .map_err(|error| format!("updateapply: download asset: {error}"))?;
+        let total = response.content_length().unwrap_or(0);
+        let mut written = 0u64;
+        let mut digest = Sha256::new();
+        loop {
+            let chunk = tokio::select! {
+                biased;
+                () = token.cancelled() => return Err("context canceled".into()),
+                result = response.chunk() => result.map_err(|error| format!("updateapply: download asset: read asset body: {error}"))?,
+            };
+            let Some(chunk) = chunk else { break };
+            let count = chunk.len();
+            if written + count as u64 > MAX_ASSET_BODY {
+                return Err("updateapply: download asset: asset exceeds 1 GiB".into());
+            }
+            stage
+                .file
+                .as_mut()
+                .expect("staging file remains open until download completes")
+                .write_all(&chunk[..count])
+                .map_err(|error| {
+                    format!("updateapply: download asset: write temp file: {error}")
+                })?;
+            digest.update(&chunk[..count]);
+            written += count as u64;
+            if let Some(callback) = progress.as_mut() {
+                callback(written, total);
+            }
+        }
+        stage.file.take();
+        if total > 0 && written != total {
+            return Err(format!(
+                "updateapply: download asset: incomplete download: got {written} bytes, want {total}"
+            ));
+        }
+        let mut got = String::with_capacity(64);
+        for byte in digest.finalize() {
+            write!(got, "{byte:02x}").expect("formatting into String cannot fail");
+        }
+        if !got.eq_ignore_ascii_case(wanted) {
+            return Err(format!(
+                "updateapply: checksum mismatch for {:?}: got {got}, want {wanted}",
+                asset.name
+            ));
+        }
+        let extracted;
+        let install = if let Some(binary) = self.extract_binary.filter(|name| !name.is_empty()) {
+            extracted = Staging::directory(parent)?;
+            let data = fs::read(&stage.path)
+                .map_err(|error| format!("updateapply: read downloaded archive: {error}"))?;
+            extract::extract_binary_to_dir(&data, &asset.name, &extracted.path, binary).map_err(
+                |error| format!("updateapply: extract binary {binary:?} from archive: {error}"),
+            )?
+        } else {
+            stage.path.clone()
+        };
+        make_executable(&install)
+            .map_err(|error| format!("updateapply: make downloaded asset executable: {error}"))?;
+        crate::check_cancelled(token)?;
+        apply::atomic_swap_cancellable(&install, &target, validate, token)
+    }
+
+    async fn download_cancellable(
+        &self,
+        asset: &Asset,
+        client: &reqwest::Client,
+        token: &crate::CancellationToken,
+    ) -> Result<reqwest::Response, String> {
+        crate::check_cancelled(token)?;
+        let response = tokio::select! {
+            biased;
+            () = token.cancelled() => return Err("context canceled".into()),
+            result = client.get(&asset.browser_download_url).send() => result.map_err(|error| format!("request asset: {error}"))?,
+        };
+        if response.status() != reqwest::StatusCode::OK {
+            return Err(format!(
+                "download {:?}: HTTP {}",
+                asset.name,
+                response.status().as_u16()
+            ));
+        }
+        Ok(response)
+    }
+
     fn download(&self, asset: &Asset) -> Result<Response, String> {
         let default_client;
         let client = if let Some(client) = self.client.as_ref() {

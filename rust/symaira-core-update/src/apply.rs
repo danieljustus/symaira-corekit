@@ -150,6 +150,26 @@ pub fn atomic_swap(
     Ok(())
 }
 
+/// The final successful cancellation check after validation is the commit
+/// point. Until then, cancellation uses the same rollback as failed validation.
+/// Synchronous filesystem work cannot be interrupted by dropping an async call.
+pub(crate) fn atomic_swap_cancellable(
+    staged: &Path,
+    target: &Path,
+    mut validate: Option<BinaryValidator<'_>>,
+    token: &crate::CancellationToken,
+) -> Result<(), String> {
+    crate::check_cancelled(token)?;
+    let mut validation = |path: &Path| {
+        crate::check_cancelled(token)?;
+        if let Some(check) = validate.as_mut() {
+            check(path)?;
+        }
+        crate::check_cancelled(token)
+    };
+    atomic_swap(staged, target, Some(&mut validation))
+}
+
 /// Replays the filesystem effects of the Go Applier from an oracle case.
 pub fn replay(input: &Input) -> Observation {
     let id = TEMP_ID.fetch_add(1, Ordering::Relaxed);
@@ -443,4 +463,41 @@ fn mode(path: &Path) -> std::io::Result<u32> {
 #[cfg(not(unix))]
 fn mode(_path: &Path) -> std::io::Result<u32> {
     Ok(0)
+}
+
+#[cfg(test)]
+mod cancellation_tests {
+    use super::*;
+    #[test]
+    fn cancellation_after_install_rolls_back_existing_and_new_targets() {
+        let root =
+            std::env::temp_dir().join(format!("update-cancellation-swap-{}", std::process::id()));
+        fs::create_dir(&root).unwrap();
+        for existing in [true, false] {
+            let target = root.join("tool");
+            let stage = root.join("stage");
+            if existing {
+                fs::write(&target, "old").unwrap();
+            }
+            fs::write(&stage, "new").unwrap();
+            let token = crate::CancellationToken::new();
+            let mut validator = |path: &Path| {
+                assert_eq!(fs::read_to_string(path).unwrap(), "new");
+                assert_eq!(backup_path(path).exists(), existing);
+                token.cancel();
+                Ok(())
+            };
+            let error =
+                atomic_swap_cancellable(&stage, &target, Some(&mut validator), &token).unwrap_err();
+            assert_eq!(error, "validate installed binary: context canceled");
+            assert!(!backup_path(&target).exists());
+            if existing {
+                assert_eq!(fs::read_to_string(&target).unwrap(), "old");
+                fs::remove_file(&target).unwrap();
+            } else {
+                assert!(!target.exists());
+            }
+        }
+        fs::remove_dir_all(root).unwrap();
+    }
 }

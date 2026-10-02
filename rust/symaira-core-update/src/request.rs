@@ -39,7 +39,9 @@ pub fn fetch(url: &str, current_version: &str, timeout: Duration) -> Result<Resp
     result
 }
 
-pub(crate) fn secure_client_builder(timeout: Duration) -> ClientBuilder {
+/// Builds the TLS 1.3 client used by metadata requests. Redirects are disabled
+/// here so `fetch_with_client` can enforce the GitHub-only redirect policy.
+pub fn secure_client_builder(timeout: Duration) -> ClientBuilder {
     let mut builder = Client::builder()
         .redirect(Policy::none())
         .tls_version_min(Version::TLS_1_3);
@@ -49,7 +51,8 @@ pub(crate) fn secure_client_builder(timeout: Duration) -> ClientBuilder {
     builder
 }
 
-pub(crate) fn secure_download_client_builder(timeout: Duration) -> ClientBuilder {
+/// Hardened blocking download client: TLS 1.3, finite timeout, GitHub-only HTTPS redirects.
+pub fn secure_download_client_builder(timeout: Duration) -> ClientBuilder {
     secure_client_builder(timeout).redirect(Policy::custom(|attempt| {
         let host = attempt.url().host_str().unwrap_or_default().to_owned();
         let scheme = attempt.url().scheme().to_owned();
@@ -71,7 +74,165 @@ pub(crate) fn secure_download_client_builder(timeout: Duration) -> ClientBuilder
     }))
 }
 
-fn fetch_with_client(client: &Client, url: &str, current_version: &str) -> Result<Response, Error> {
+/// Fetches metadata using a consumer-provided client and the shared request policy.
+/// Build it with `secure_client_builder` to preserve TLS and timeout defaults;
+/// the supplied client must not automatically follow redirects.
+/// # Errors
+/// Returns classified request, HTTP-status or response-read errors.
+pub fn secure_async_client_builder(timeout: Duration) -> reqwest::ClientBuilder {
+    let mut builder = reqwest::Client::builder()
+        .redirect(Policy::none())
+        .tls_version_min(Version::TLS_1_3);
+    if !timeout.is_zero() {
+        builder = builder.timeout(timeout);
+    }
+    builder
+}
+
+pub fn secure_async_download_client_builder(timeout: Duration) -> reqwest::ClientBuilder {
+    secure_async_client_builder(timeout).redirect(Policy::custom(|attempt| {
+        let host = attempt.url().host_str().unwrap_or_default().to_owned();
+        let scheme = attempt.url().scheme().to_owned();
+        if scheme != "https" {
+            attempt.error(io::Error::new(
+                io::ErrorKind::PermissionDenied,
+                format!("refusing redirect to non-HTTPS scheme {scheme:?}"),
+            ))
+        } else if !is_github_host(&host) {
+            attempt.error(io::Error::new(
+                io::ErrorKind::PermissionDenied,
+                format!("refusing redirect to non-GitHub host {host:?}"),
+            ))
+        } else if attempt.previous().len() >= 10 {
+            attempt.error(io::Error::other("stopped after 10 redirects"))
+        } else {
+            attempt.follow()
+        }
+    }))
+}
+
+pub async fn fetch_with_client_cancellable(
+    client: &reqwest::Client,
+    url: &str,
+    current_version: &str,
+    token: &crate::CancellationToken,
+) -> Result<Response, Error> {
+    let cancelled = || Error {
+        code: "cancelled",
+        message: "context canceled".into(),
+    };
+    if token.is_cancelled() {
+        return Err(cancelled());
+    }
+    let mut target = url.trim().to_owned();
+    for redirects in 0..=10 {
+        let result = tokio::select! {
+            biased;
+            () = token.cancelled() => return Err(cancelled()),
+            result = client
+            .get(&target)
+            .header("Accept", "application/vnd.github+json")
+            .header("Accept-Encoding", "gzip")
+            .header(
+                "User-Agent",
+                &format!("symaira-updatecheck/{}", current_version.trim()),
+            )
+            .send() => result,
+        };
+        let mut response = match result {
+            Ok(response) => response,
+            Err(error) => return Err(classify_network(error)),
+        };
+        let status = response.status().as_u16();
+        if (300..400).contains(&status) {
+            let next = response
+                .headers()
+                .get(reqwest::header::LOCATION)
+                .and_then(|value| value.to_str().ok())
+                .ok_or_else(|| Error {
+                    code: "redirect",
+                    message: format!("GitHub API returned HTTP {status}"),
+                })?;
+            if redirects == 10 {
+                return Err(Error {
+                    code: "redirect_cap",
+                    message: "stopped after 10 redirects".into(),
+                });
+            }
+            let target_next = resolve_redirect(&target, next).ok_or_else(|| Error {
+                code: "redirect",
+                message: format!("invalid redirect URL {next:?}"),
+            })?;
+            if target_next.scheme() != "https" {
+                return Err(Error {
+                    code: "network",
+                    message: format!(
+                        "request latest release: refusing redirect to non-HTTPS scheme {:?}",
+                        target_next.scheme()
+                    ),
+                });
+            }
+            let host = target_next.host_str().unwrap_or_default();
+            if !is_github_host(host) {
+                return Err(Error {
+                    code: "network",
+                    message: format!(
+                        "request latest release: refusing redirect to non-GitHub host {host:?}"
+                    ),
+                });
+            }
+            target = target_next.to_string();
+            continue;
+        }
+        if status == 403
+            && response
+                .headers()
+                .get("X-RateLimit-Remaining")
+                .is_some_and(|value| value == "0")
+        {
+            return Err(Error {
+                code: "rate_limit",
+                message: "GitHub API rate limit exceeded".into(),
+            });
+        }
+        if status != 200 {
+            return Err(Error {
+                code: if status == 404 {
+                    "http_404"
+                } else if status == 429 {
+                    "http_429"
+                } else {
+                    "http_status"
+                },
+                message: format!("GitHub API returned HTTP {status}"),
+            });
+        }
+        let mut body = Vec::new();
+        while (body.len() as u64) < MAX_RESPONSE {
+            let chunk = tokio::select! {
+                biased;
+                () = token.cancelled() => return Err(cancelled()),
+                result = response.chunk() => result.map_err(|error| Error {
+                    code: "decode", message: format!("decode latest release response: {error}"),
+                })?,
+            };
+            let Some(chunk) = chunk else { break };
+            let remaining = MAX_RESPONSE as usize - body.len();
+            body.extend_from_slice(&chunk[..chunk.len().min(remaining)]);
+        }
+        if token.is_cancelled() {
+            return Err(cancelled());
+        }
+        return Ok(Response { status, body });
+    }
+    unreachable!("redirect loop always returns")
+}
+
+pub fn fetch_with_client(
+    client: &Client,
+    url: &str,
+    current_version: &str,
+) -> Result<Response, Error> {
     let mut target = url.trim().to_owned();
     for redirects in 0..=10 {
         let result = client
@@ -127,6 +288,17 @@ fn fetch_with_client(client: &Client, url: &str, current_version: &str) -> Resul
             }
             target = target_next.to_string();
             continue;
+        }
+        if status == 403
+            && response
+                .headers()
+                .get("X-RateLimit-Remaining")
+                .is_some_and(|value| value == "0")
+        {
+            return Err(Error {
+                code: "rate_limit",
+                message: "GitHub API rate limit exceeded".into(),
+            });
         }
         if status != 200 {
             return Err(Error {

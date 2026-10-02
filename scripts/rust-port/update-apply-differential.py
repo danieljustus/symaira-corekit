@@ -90,6 +90,9 @@ def main():
     parser.add_argument("--fixture", type=Path, default=FIXTURE)
     args = parser.parse_args()
     current = observed()
+    native = ROOT / "target/update-apply-native.json"
+    native.parent.mkdir(parents=True, exist_ok=True)
+    native.write_text(json.dumps(current, indent=2) + "\n", encoding="utf-8")
     if args.write:
         args.fixture.parent.mkdir(parents=True, exist_ok=True)
         args.fixture.write_text(json.dumps(current, indent=2) + "\n", encoding="utf-8")

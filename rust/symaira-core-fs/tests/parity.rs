@@ -9,6 +9,39 @@ use symaira_core_fs::{
 use tempfile::tempdir;
 
 #[test]
+#[ignore = "requires fresh pinned public Go observations from the path-control differential"]
+fn fs001_strict_v1_replays_go_controls() {
+    let recording = std::env::var("RUST_FS_GO_PATH_CONTROLS").expect("fresh Go recording required");
+    let mut seen = std::collections::BTreeSet::new();
+    for line in recording.lines() {
+        let (hex, accepted) = line.split_once('\t').expect("hex and acceptance");
+        let codepoint = u32::from_str_radix(hex, 16).expect("valid recorded code point");
+        assert!(seen.insert(codepoint), "duplicate Go case");
+        let character = char::from_u32(codepoint).expect("Unicode scalar");
+        let go_accepted = match accepted {
+            "true" => true,
+            "false" => false,
+            _ => panic!("malformed Go acceptance"),
+        };
+        let path = format!("a{character}b");
+        let rust_accepted = validate_path(&path).is_ok();
+        if matches!(codepoint, 0x007f..=0x009f) {
+            assert!(
+                go_accepted,
+                "Go must actually accept the versioned control case"
+            );
+            assert!(
+                !rust_accepted,
+                "Rust must retain its stricter control rejection"
+            );
+        } else {
+            assert_eq!(rust_accepted, go_accepted, "unversioned drift at {hex}");
+        }
+    }
+    assert_eq!(seen, [0, 31, 32, 126, 127, 128, 133, 159, 160].into());
+}
+
+#[test]
 fn production_corpus_provenance_and_slice_coverage() {
     let corpus = include_str!("../../../testdata/rust-port/fixtures/fs-secret/corpus.json");
     assert!(corpus.contains("f3d3eb79b9b1f31b4f973d2ed518a8292cedf588"));

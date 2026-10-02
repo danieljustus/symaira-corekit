@@ -433,7 +433,13 @@ func (a *Applier) downloadToTemp(ctx context.Context, dir string, asset updatech
 		return "", "", fmt.Errorf("create temp file: %w", err)
 	}
 	tmpPath := tmp.Name()
-	defer func() { _ = tmp.Close() }()
+	keep := false
+	defer func() {
+		_ = tmp.Close()
+		if !keep {
+			_ = os.Remove(tmpPath)
+		}
+	}()
 
 	hasher := sha256.New()
 	limited := io.LimitReader(body, maxAssetBody)
@@ -444,7 +450,6 @@ func (a *Applier) downloadToTemp(ctx context.Context, dir string, asset updatech
 		n, readErr := limited.Read(buf)
 		if n > 0 {
 			if _, werr := tmp.Write(buf[:n]); werr != nil {
-				_ = os.Remove(tmpPath)
 				return "", "", fmt.Errorf("write temp file: %w", werr)
 			}
 			hasher.Write(buf[:n])
@@ -457,16 +462,15 @@ func (a *Applier) downloadToTemp(ctx context.Context, dir string, asset updatech
 			break
 		}
 		if readErr != nil {
-			_ = os.Remove(tmpPath)
 			return "", "", fmt.Errorf("read asset body: %w", readErr)
 		}
 	}
 
 	if total > 0 && written != total {
-		_ = os.Remove(tmpPath)
 		return "", "", fmt.Errorf("incomplete download: got %d bytes, want %d", written, total)
 	}
 
+	keep = true
 	return tmpPath, hex.EncodeToString(hasher.Sum(nil)), nil
 }
 

@@ -227,3 +227,20 @@ fn permissions_mode(metadata: &fs::Metadata) -> u32 {
         0o200
     }
 }
+
+/// Sentinel identity equivalent to Go's `ErrEmptyBinaryPath`.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct EmptyBinaryPath;
+pub const ERR_EMPTY_BINARY_PATH: EmptyBinaryPath = EmptyBinaryPath;
+impl std::fmt::Display for EmptyBinaryPath {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str("binary path must not be empty")
+    }
+}
+impl std::error::Error for EmptyBinaryPath {}
+
+/// Typed partner to `detect`; callers can compare the sentinel or downcast
+/// through an error source chain without relying on the display message.
+pub fn detect_typed(binary_path: &Path) -> Result<InstallMethod, EmptyBinaryPath> {
+    detect(binary_path).map_err(|_| ERR_EMPTY_BINARY_PATH)
+}
