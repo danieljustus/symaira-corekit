@@ -132,6 +132,8 @@ def extract_oracle(target: Path) -> None:
     finally:
         process.stdout.close()
     stderr = process.stderr.read() if process.stderr else b""
+    if process.stderr:
+        process.stderr.close()
     if process.wait() != 0:
         raise RuntimeError(f"git archive failed: {stderr.decode('utf-8', 'replace')}")
 
@@ -373,15 +375,8 @@ def main() -> int:
         with tempfile.TemporaryDirectory(prefix="corekit-fixtures-") as raw:
             generated = Path(raw) / "fixtures"
             index = generate_tree(generated)
-            preserved = Path(raw) / "preserved"
-            independent = FIXTURES / "fs-secret"
-            if independent.exists():
-                shutil.copytree(independent, preserved / "fs-secret")
-            if FIXTURES.exists():
-                shutil.rmtree(FIXTURES)
-            shutil.copytree(generated, FIXTURES)
-            if preserved.exists():
-                shutil.copytree(preserved, FIXTURES, dirs_exist_ok=True)
+            # Update emitted artifacts only; never prune another slice's corpus.
+            shutil.copytree(generated, FIXTURES, dirs_exist_ok=True)
             LOCAL_FOUNDATION.parent.mkdir(parents=True, exist_ok=True)
             shutil.copytree(generated / "foundation", LOCAL_FOUNDATION, dirs_exist_ok=True)
         target = index["public_api"]["targets"]

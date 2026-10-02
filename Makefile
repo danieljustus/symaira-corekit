@@ -34,6 +34,7 @@ port-consumer-smoke:
 port-fixture-source-check:
 	python3 scripts/rust-port/generate.py --check-source
 	python3 scripts/rust-port/generate.py --check
+	python3 -m unittest discover -s scripts/rust-port -p test_fixture_preservation.py
 
 port-oracle-selftest:
 	python3 scripts/rust-port/diff.py --self-test

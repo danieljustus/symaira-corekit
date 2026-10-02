@@ -1,5 +1,14 @@
 # Rust-port harness isolation
 
+Generic fixture regeneration updates only files emitted by its pinned Go
+generator. It merges into the existing fixture tree and does not delete
+independently owned corpora such as `fs-secret`, `llm` or `update`. Removed or
+obsolete artifacts need an explicit owner-reviewed cleanup, never a blanket
+tree replacement. Read-only checks still reject missing or changed emitted
+artifacts. `make port-fixture-source-check` exercises the real default writer
+in a disposable tree, verifies sibling corpus bytes, and rejects an owned-file
+mutation; tracked fixture trees are not regeneration-test destinations.
+
 The differential runner executes each implementation in a fresh tree containing isolated `HOME`, `USERPROFILE`, XDG config/data/cache/state/runtime roots, temp roots and working directory. It inherits only executable-discovery variables and accepts case variables from an explicit `PORT_*` / `SYMCOREKIT_*` / proxy allowlist. Reserved roots, locale, timezone, terminal and deterministic clock/seed variables cannot be overridden by a case.
 
 The runner captures exit status and signal identity separately, raw stdout/stderr, a recursive path/type/mode/hash manifest, configured SQLite query snapshots, HTTP transcript sidecars and process-argv sidecars. Timeouts kill the process group/tree and wait for bounded cleanup. The self-test proves Go↔Go equality, deliberate-output-mutation rejection, reserved-variable rejection, side-effect capture and parent-plus-descendant cleanup on the native host.
