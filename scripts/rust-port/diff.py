@@ -283,7 +283,7 @@ def build_probe(target: Path, oracle: Path) -> None:
     source = (HELPER / "go.mod").read_text()
     marker = "replace github.com/danieljustus/symaira-corekit => ../../.."
     modfile = target.with_suffix(".mod")
-    modfile.write_text(source.replace(marker, f"replace github.com/danieljustus/symaira-corekit => {oracle.as_posix()}"))
+    modfile.write_text(source.replace(marker, f"replace github.com/danieljustus/symaira-corekit => {json.dumps(oracle.as_posix())}"))
     shutil.copy2(HELPER / "go.sum", target.with_suffix(".sum"))
     env = os.environ.copy()
     env.update({"CGO_ENABLED": "0", "GOTOOLCHAIN": "go1.26.6"})
@@ -326,7 +326,7 @@ def process_exists(pid: int) -> bool:
 def self_test() -> None:
     suite = json.loads(CASE_FILE.read_text())
     case = suite["cases"][0]
-    with tempfile.TemporaryDirectory(prefix="corekit-oracle-selftest-") as raw:
+    with tempfile.TemporaryDirectory(prefix="corekit-oracle selftest-") as raw:
         temp = Path(raw)
         oracle = temp / "oracle"
         oracle.mkdir()

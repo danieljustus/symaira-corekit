@@ -56,7 +56,7 @@ def build_go_oracle(destination: Path) -> Path:
     (helper / "go.mod").write_text(
         "module symaira-mcp-oracle\n\ngo 1.26.6\n\n"
         "require github.com/danieljustus/symaira-corekit v0.17.0\n\n"
-        f"replace github.com/danieljustus/symaira-corekit => {oracle.as_posix()}\n",
+        f"replace github.com/danieljustus/symaira-corekit => {json.dumps(oracle.as_posix())}\n",
         encoding="utf-8",
     )
     if (oracle / "go.sum").exists():
@@ -93,7 +93,7 @@ def main() -> int:
         raise SystemExit(f"MCP corpus coverage mismatch: missing={missing} extra={extra}")
     rust = REPO / "target" / "debug" / (RUST_BIN + (".exe" if os.name == "nt" else ""))
     subprocess.run(["cargo", "build", "-p", RUST_PACKAGE, "--bin", RUST_BIN, "--locked"], cwd=REPO, check=True)
-    with tempfile.TemporaryDirectory(prefix="corekit-mcp-oracle-") as raw:
+    with tempfile.TemporaryDirectory(prefix="corekit-mcp-oracle path-") as raw:
         go = build_go_oracle(Path(raw))
         for case in cases:
             payload = case_stdin(case)
