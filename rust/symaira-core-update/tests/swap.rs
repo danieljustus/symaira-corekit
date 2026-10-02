@@ -25,6 +25,8 @@ struct Input {
     sabotage_backup: bool,
     #[serde(default)]
     block_removal: bool,
+    #[serde(default)]
+    cleanup_backup: bool,
 }
 
 #[derive(Debug, Deserialize, PartialEq, Eq)]
@@ -52,7 +54,7 @@ fn atomic_swap_failure_and_rollback_match_go() {
         });
     let fixture: Fixture = serde_json::from_slice(&fs::read(path).expect("read Go swap fixture"))
         .expect("parse Go swap fixture");
-    assert_eq!(fixture.cases.len(), 6);
+    assert_eq!(fixture.cases.len(), 8);
     let mut ids = Vec::new();
     for (index, case) in fixture.cases.into_iter().enumerate() {
         ids.push(case.input.id.clone());
@@ -92,9 +94,17 @@ fn atomic_swap_failure_and_rollback_match_go() {
                 fs::create_dir(path).expect("block removal with directory");
                 fs::write(path.join("blocker"), "block").expect("make directory nonempty");
             }
+            if case.input.cleanup_backup {
+                let previous = fs::read_to_string(&backup).expect("read old backup");
+                assert_eq!(previous, case.input.initial);
+                fs::remove_file(&backup).expect("replace backup with nonempty directory");
+                fs::create_dir(&backup).expect("block backup cleanup");
+                fs::write(backup.join("preserved"), previous).expect("preserve old binary bytes");
+                return Ok(());
+            }
             Err("reject installed binary".to_owned())
         };
-        let check: Option<BinaryValidator<'_>> = if case.input.reject {
+        let check: Option<BinaryValidator<'_>> = if case.input.reject || case.input.cleanup_backup {
             Some(&mut validator)
         } else {
             None
@@ -134,16 +144,27 @@ fn atomic_swap_failure_and_rollback_match_go() {
             remaining_file_names: names,
         };
         assert_eq!(actual, case.observation, "{} observation", case.input.id);
+        if case.input.cleanup_backup {
+            assert_eq!(
+                fs::read_to_string(backup.join("preserved")).unwrap(),
+                case.input.initial
+            );
+        }
+        if case.input.block_removal && !case.input.initial.is_empty() {
+            assert_eq!(fs::read_to_string(&backup).unwrap(), case.input.initial);
+        }
         fs::remove_dir_all(root).expect("remove owned swap root");
     }
     ids.sort();
     assert_eq!(
         ids,
         [
+            "backup-cleanup-failed",
             "missing-source",
             "preexisting-backup",
             "validation-first-install",
             "validation-remove-failed",
+            "validation-remove-failed-existing",
             "validation-rollback",
             "validation-rollback-failed"
         ]

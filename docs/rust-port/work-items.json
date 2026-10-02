@@ -207,7 +207,8 @@
         "UPD-012",
         "DEFECT-002"
       ],
-      "status": "in_progress",
+      "status": "complete",
+      "native_evidence": "evidence/update-native-20261002/index.json",
       "demand_class": "demand_driven",
       "demand_evidence": "demand-assessment.md",
       "acceptance_commands": [
