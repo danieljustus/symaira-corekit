@@ -158,7 +158,7 @@
     {
       "exit_code": 0,
       "id": "MCP-011",
-      "stderr_base64": "MjAyNi8xMC8wMiAyMToyOToxMiBFUlJPUiBtY3BzZXJ2ZXI6IGhhbmRsZXIgcGFuaWNrZWQgbWV0aG9kPXRvb2xzL2NhbGwgcGFuaWM9ImZpeHR1cmUgcGFuaWMiCg==",
+      "stderr_base64": "MjAyNi8xMC8wMiAyMzozNTozMyBFUlJPUiBtY3BzZXJ2ZXI6IGhhbmRsZXIgcGFuaWNrZWQgbWV0aG9kPXRvb2xzL2NhbGwgcGFuaWM9ImZpeHR1cmUgcGFuaWMiCg==",
       "stdin_sha256": "dd5cbbd679801bdad90b1390e4d212ab4fdeaef697a6222d30850c8ab9082f13",
       "stdout_base64": "eyJqc29ucnBjIjoiMi4wIiwiaWQiOjksInJlc3VsdCI6e319CnsianNvbnJwYyI6IjIuMCIsImlkIjoxMCwiZXJyb3IiOnsiY29kZSI6LTMyNjAzLCJtZXNzYWdlIjoiSW50ZXJuYWwgZXJyb3I6IGhhbmRsZXIgcGFuaWNrZWQifX0KeyJqc29ucnBjIjoiMi4wIiwiaWQiOjExLCJyZXN1bHQiOnt9fQo="
     },
@@ -214,7 +214,7 @@
     {
       "exit_code": 0,
       "id": "MCP-012-logging-enabled",
-      "stderr_base64": "MjAyNi8xMC8wMiAyMToyOToxMiBFUlJPUiBtY3BzZXJ2ZXI6IGhhbmRsZXIgcGFuaWNrZWQgbWV0aG9kPXRvb2xzL2NhbGwgcGFuaWM9ImZpeHR1cmUgcGFuaWMiCg==",
+      "stderr_base64": "MjAyNi8xMC8wMiAyMzozNTozMyBFUlJPUiBtY3BzZXJ2ZXI6IGhhbmRsZXIgcGFuaWNrZWQgbWV0aG9kPXRvb2xzL2NhbGwgcGFuaWM9ImZpeHR1cmUgcGFuaWMiCg==",
       "stdin_sha256": "8dea47550af2dddeceb338683118f4bfa9954e731d84c58a4564eedc12f74c82",
       "stdout_base64": "eyJqc29ucnBjIjoiMi4wIiwiaWQiOjI0LCJlcnJvciI6eyJjb2RlIjotMzI2MDMsIm1lc3NhZ2UiOiJJbnRlcm5hbCBlcnJvcjogaGFuZGxlciBwYW5pY2tlZCJ9fQo="
     },
@@ -326,10 +326,11 @@
   ],
   "provenance": {
     "architecture": "x86_64",
-    "capture_helper_sha256": "241aef1665580a4870635434f4dab563eae79bdac6e93e6b12778b0c19780149",
+    "capture_helper_sha256": "c99f0e7938cb2fbdee362826af8d1c369f0d918b237b9b69d9207e8fa64608c2",
     "cases_sha256": "5be2fd67766b6ebbdec97e5bf1db00d5496399d2c13c79be96f2f965dff05d93",
-    "generator_sha256": "cb4168d022f622c36d46ba916e191b5a16b881075a361244e504c691be197c03",
-    "go_binary_sha256": "e00535abeff5fc8c844367fd35b67b463cc9536a1865c65e466b3071fde81c36",
+    "execution_helper_sha256": "e3e89f9d7670964f9d242dc167248e957df8254b652815ad7cc23238902ff381",
+    "generator_sha256": "bb51e76c9eaed9522b5c80f94ba20b27ec36fcedfd03185695c1692bd48e251c",
+    "go_binary_sha256": "c61ca77b05fe9eaca03567ec4838fb52c29ca93be1b8a6c4bf03e5db4bf134d2",
     "go_version": "go version go1.26.6 linux/amd64",
     "goos": "linux",
     "oracle_commit": "ff0e10ede1071f0a3137fd2774bd89d53f60cc9d",
