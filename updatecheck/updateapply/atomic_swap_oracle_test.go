@@ -109,7 +109,7 @@ func TestAtomicSwapOracle(t *testing.T) {
 					if err := os.Mkdir(target+".bak", 0o700); err != nil {
 						t.Fatal(err)
 					}
-					if err := os.WriteFile(filepath.Join(target+".bak", "preserved"), previous, 0o600); err != nil {
+					if err := os.WriteFile(filepath.Join(target+".bak", "preserved"), previous, 0o600); err != nil { //nolint:gosec // G703: fixed filename below this case's t.TempDir, never an input path
 						t.Fatal(err)
 					}
 					return nil
