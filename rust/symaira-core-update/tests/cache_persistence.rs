@@ -4,6 +4,7 @@ use std::{
     io::{Read, Write},
     net::TcpListener,
     path::PathBuf,
+    sync::atomic::{AtomicU64, Ordering},
     thread,
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
@@ -48,17 +49,25 @@ struct ResultValue {
 
 struct TempRoot(PathBuf);
 
+static TEMP_ROOT_ID: AtomicU64 = AtomicU64::new(0);
+
 impl TempRoot {
     fn new() -> Self {
         let nonce = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .unwrap_or(Duration::ZERO)
             .as_nanos();
+        Self::with_nonce(nonce)
+    }
+
+    fn with_nonce(nonce: u128) -> Self {
+        // Clock resolution can repeat across parallel tests on macOS.
+        let id = TEMP_ROOT_ID.fetch_add(1, Ordering::Relaxed);
         let root = std::env::temp_dir().join(format!(
-            "upd003-live-cache-rust-{}-{nonce}",
+            "upd003-live-cache-rust-{}-{nonce}-{id}",
             std::process::id()
         ));
-        fs::create_dir_all(&root).unwrap();
+        fs::create_dir(&root).unwrap();
         Self(root)
     }
 }
@@ -67,6 +76,16 @@ impl Drop for TempRoot {
     fn drop(&mut self) {
         let _ = fs::remove_dir_all(&self.0);
     }
+}
+
+#[test]
+fn cache_fixture_roots_are_distinct_when_clock_values_repeat() {
+    let first = TempRoot::with_nonce(0);
+    fs::write(first.0.join("keep"), b"first fixture").unwrap();
+    let second = TempRoot::with_nonce(0);
+    assert_ne!(first.0, second.0);
+    drop(second);
+    assert_eq!(fs::read(first.0.join("keep")).unwrap(), b"first fixture");
 }
 
 #[test]
