@@ -180,7 +180,8 @@
         "windows"
       ],
       "rust_test": "scripts/rust-port/update-request-differential.py plus symaira-core-update/tests/request.rs and src/request.rs and src/cosign.rs native TLS tests",
-      "status": "fixture-ready"
+      "status": "parity",
+      "native_evidence": "evidence/update-native-20261002/index.json"
     },
     {
       "id": "VER-001",
@@ -1090,7 +1091,8 @@
         "windows"
       ],
       "rust_test": "symaira-core-update/tests/request.rs",
-      "status": "fixture-ready"
+      "status": "parity",
+      "native_evidence": "evidence/update-native-20261002/index.json"
     },
     {
       "id": "UPD-006",
@@ -1150,7 +1152,8 @@
         "windows"
       ],
       "rust_test": "symaira-core-update/tests/cosign_contract.rs",
-      "status": "fixture-ready"
+      "status": "parity",
+      "native_evidence": "evidence/update-native-20261002/index.json"
     },
     {
       "id": "UPD-010",
@@ -1164,8 +1167,9 @@
         "linux",
         "windows"
       ],
-      "rust_test": "symaira-core-update/tests/apply.rs",
-      "status": "fixture-ready"
+      "rust_test": "symaira-core-update/tests/applier.rs",
+      "status": "parity",
+      "native_evidence": "evidence/update-native-20261002/index.json"
     },
     {
       "id": "UPD-011",
@@ -1179,23 +1183,25 @@
         "linux",
         "windows"
       ],
-      "rust_test": "symaira-core-update/tests/apply.rs",
-      "status": "fixture-ready"
+      "rust_test": "symaira-core-update/tests/applier.rs",
+      "status": "parity",
+      "native_evidence": "evidence/update-native-20261002/index.json"
     },
     {
       "id": "UPD-012",
       "seam": "update and self-update",
       "fixture": "unwritable/failure cleanup/atomic rollback/staging",
       "go_oracle": "GOTOOLCHAIN=go1.26.6 go test -count=1 ./updatecheck/updateapply -run \"TestApplyFails|TestApplyCleans|TestApplyRolls|TestApplyRemoves|TestApplyStages|TestAtomicSwap|TestStagingDir\"",
-      "expected": "no partial binary; prior binary restored; staging cleaned",
+      "expected": "no partial binary; successful rollback restores the prior binary; injected restoration failures expose classified errors and Go-matching backup state; staging cleaned",
       "comparison": "filesystem",
       "platforms": [
         "darwin",
         "linux",
         "windows"
       ],
-      "rust_test": "symaira-core-update/tests/apply.rs",
-      "status": "fixture-ready"
+      "rust_test": "symaira-core-update/tests/applier.rs plus symaira-core-update/tests/swap.rs",
+      "status": "parity",
+      "native_evidence": "evidence/update-native-20261002/index.json"
     },
     {
       "id": "LLM-001",

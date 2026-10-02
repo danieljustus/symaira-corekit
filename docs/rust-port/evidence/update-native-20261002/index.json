@@ -1,0 +1,69 @@
+{
+  "schema_version": 1,
+  "acceptance_head_sha": "08df3b14ef0a2fd18c1e805ea8d49567e0115cfc",
+  "workflow_run_id": 37006690155,
+  "workflow_run_url": "https://github.com/danieljustus/symaira-corekit/actions/runs/37006690155",
+  "work_item": "RUST-007",
+  "contracts": [
+    "UPD-001",
+    "UPD-002",
+    "UPD-003",
+    "UPD-004",
+    "UPD-005",
+    "UPD-006",
+    "UPD-007",
+    "UPD-008",
+    "UPD-009",
+    "UPD-010",
+    "UPD-011",
+    "UPD-012",
+    "DEFECT-002"
+  ],
+  "native_reports": [
+    {
+      "runner": "ubuntu-latest",
+      "native_os": "Linux",
+      "native_arch": "x86_64",
+      "job_id": 110837171257,
+      "job_url": "https://github.com/danieljustus/symaira-corekit/actions/runs/37006690155/job/110837171257",
+      "artifact_id": 11226760648,
+      "acceptance_path": "ubuntu-latest/acceptance.json",
+      "acceptance_sha256": "a46d1e76383fac9884659309d0b88f22425b77e76188c8ebb98c558512c01347",
+      "go_apply_path": "ubuntu-latest/native-apply.json",
+      "go_apply_sha256": "0c0ff7806d2425e1021e24cb8cc5282cd516787792e39c64d1c7dbd755becae0",
+      "go_apply_cases": 17
+    },
+    {
+      "runner": "macos-26",
+      "native_os": "Darwin",
+      "native_arch": "arm64",
+      "job_id": 110837171362,
+      "job_url": "https://github.com/danieljustus/symaira-corekit/actions/runs/37006690155/job/110837171362",
+      "artifact_id": 11227376711,
+      "acceptance_path": "macos-26/acceptance.json",
+      "acceptance_sha256": "6691db0460990717bf1acb870bd50f92531f9d80dcb7a3d426d0856c83eb8852",
+      "go_apply_path": "macos-26/native-apply.json",
+      "go_apply_sha256": "33cdda895221b9441ac1ebd95444001815b56f86596675a6ce88a8c770089715",
+      "go_apply_cases": 17
+    },
+    {
+      "runner": "windows-latest",
+      "native_os": "Windows",
+      "native_arch": "AMD64",
+      "job_id": 110837171207,
+      "job_url": "https://github.com/danieljustus/symaira-corekit/actions/runs/37006690155/job/110837171207",
+      "artifact_id": 11226880893,
+      "acceptance_path": "windows-latest/acceptance.json",
+      "acceptance_sha256": "89aa05153b37b9ec226290101bf5e4348b45dee9181834717e40f93f15428586",
+      "go_apply_path": "windows-latest/native-apply.json",
+      "go_apply_sha256": "7db1fa33dca67af5b4a2f2ccb264a520db4f8849b183c716bc5e3e771833aeed",
+      "go_apply_cases": 17
+    }
+  ],
+  "controls": "Every acceptance command passed natively in private HOME/XDG roots. The five opt-in tests run explicitly through live acceptance commands; ignored nextest entries are not positive evidence. Signed public symaira-vault v0.22.1 Apply replaces only disposable targets. All eight swap observations and mutation controls run natively.",
+  "limits": [
+    "No consumer release, API-cutover or package-publication evidence.",
+    "No installed operator program or credential store is changed.",
+    "Repository-only ledger changes require their own exact final-head CI before merge."
+  ]
+}
