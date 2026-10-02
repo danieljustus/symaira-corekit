@@ -17,10 +17,68 @@ use std::{
     io::{Read, Write},
     net::TcpListener,
     path::PathBuf,
+    process::Command,
+    sync::atomic::{AtomicU64, Ordering},
     sync::{Arc, Mutex},
     time::Duration,
 };
 use symaira_core_update::{Release, request};
+
+// A separate process isolates HOME/XDG without unsafe process-global env writes.
+// Every corpus replay owns its cache, including parallel cargo/nextest executions.
+fn isolated(name: &str) -> bool {
+    if std::env::var("SYMAIRA_CHECKER_CHILD").as_deref() == Ok(name) {
+        return false;
+    }
+    static NONCE: AtomicU64 = AtomicU64::new(0);
+    let root = loop {
+        let path = std::env::temp_dir().join(format!(
+            "checker-{}-{}-{}",
+            std::process::id(),
+            name,
+            NONCE.fetch_add(1, Ordering::Relaxed)
+        ));
+        match std::fs::create_dir(&path) {
+            Ok(()) => break path,
+            Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => continue,
+            Err(error) => panic!("create private checker root: {error}"),
+        }
+    };
+    struct OwnedRoot(PathBuf);
+    impl Drop for OwnedRoot {
+        fn drop(&mut self) {
+            let _ = std::fs::remove_dir_all(&self.0);
+        }
+    }
+    let owned = OwnedRoot(root);
+    for directory in ["home", "cache", "tmp"] {
+        std::fs::create_dir(owned.0.join(directory)).unwrap();
+    }
+    let xdg = std::env::var_os("XDG_CACHE_HOME").filter(|path| {
+        name == "default_path_matches_go_home_fallback" && !PathBuf::from(path).is_absolute()
+    });
+    let output = Command::new(std::env::current_exe().unwrap())
+        .args([name, "--exact", "--nocapture"])
+        .env("SYMAIRA_CHECKER_CHILD", name)
+        .env("HOME", owned.0.join("home"))
+        .env("USERPROFILE", owned.0.join("home"))
+        .env(
+            "XDG_CACHE_HOME",
+            xdg.unwrap_or_else(|| owned.0.join("cache").into_os_string()),
+        )
+        .env("TMPDIR", owned.0.join("tmp"))
+        .env("TMP", owned.0.join("tmp"))
+        .env("TEMP", owned.0.join("tmp"))
+        .output()
+        .unwrap();
+    assert!(
+        output.status.success(),
+        "isolated {name} failed:\n{}\n{}",
+        String::from_utf8_lossy(&output.stdout),
+        String::from_utf8_lossy(&output.stderr)
+    );
+    true
+}
 
 #[derive(Deserialize)]
 struct Fixture {
@@ -117,11 +175,17 @@ fn loopback(reply: Reply, current: &str) -> (Result<request::Response, request::
 
 #[test]
 fn public_checker_corpus_matches_go() {
+    if isolated("public_checker_corpus_matches_go") {
+        return;
+    }
     replay_corpus(true);
 }
 
 #[test]
 fn public_checker_injected_corpus_matches_go() {
+    if isolated("public_checker_injected_corpus_matches_go") {
+        return;
+    }
     replay_corpus(false);
 }
 
@@ -283,16 +347,20 @@ fn default_transport_composes_request_and_checker() {
 
 #[test]
 fn default_path_matches_go_home_fallback() {
-    let expected = std::env::var_os("UPDATE_CHECKER_FALLBACK_PATH")
-        .map(PathBuf::from)
-        .unwrap_or_else(|| {
-            let fixture: Fixture = serde_json::from_str(include_str!(
-                "../../../testdata/rust-port/fixtures/update/checker.json"
-            ))
-            .unwrap();
-            PathBuf::from(std::env::var_os("XDG_CACHE_HOME").expect("disposable XDG required"))
-                .join(fixture.observations.default_path)
-        });
+    if isolated("default_path_matches_go_home_fallback") {
+        return;
+    }
+    let fixture: Fixture = serde_json::from_str(include_str!(
+        "../../../testdata/rust-port/fixtures/update/checker.json"
+    ))
+    .unwrap();
+    let cache = PathBuf::from(std::env::var_os("XDG_CACHE_HOME").unwrap());
+    let expected = if cache.is_absolute() {
+        cache.join(fixture.observations.default_path)
+    } else {
+        PathBuf::from(std::env::var_os("HOME").unwrap())
+            .join(fixture.observations.relative_xdg_path)
+    };
     assert_eq!(
         symaira_core_update::default_cache_path("../owner", "repo/../../x"),
         expected

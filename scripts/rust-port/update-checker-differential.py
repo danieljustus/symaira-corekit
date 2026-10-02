@@ -74,7 +74,7 @@ def main():
     version = run([compiler, "version"], dict(os.environ, GOTOOLCHAIN="local"), True).strip()
     if not version.startswith("go version go1.26.6 "):
         raise RuntimeError("oracle requires go1.26.6: " + version)
-    with tempfile.TemporaryDirectory(prefix="checker-gate-", dir=ROOT) as temp:
+    with tempfile.TemporaryDirectory(prefix="checker-gate-") as temp:
         temp = Path(temp)
         env = dict(os.environ, GOTOOLCHAIN="local", CGO_ENABLED="0", GOCACHE=str(TARGET / "checker-go-cache"),
                    GOMODCACHE=modules, GOPROXY="off", GOSUMDB="off")
@@ -107,8 +107,7 @@ def main():
             raise RuntimeError("fixture mutation was not rejected by intended assertion:\n" + negative.stdout)
         print("PASS actual fixture mutation rejection")
         for xdg, key in (("relative-cache", "relative_xdg_path"), ("", "empty_xdg_path")):
-            fallback_env = dict(rust_env, XDG_CACHE_HOME=xdg,
-                                UPDATE_CHECKER_FALLBACK_PATH=str(Path(rust_env["HOME"]) / observations[key]))
+            fallback_env = dict(rust_env, XDG_CACHE_HOME=xdg)
             output = run(["cargo", "test", "--offline", "--locked", "--manifest-path", str(MANIFEST), "--test", "checker", "default_path_matches_go_home_fallback", "--", "--exact"], fallback_env, True)
             if "test result: ok. 1 passed; 0 failed; 0 ignored;" not in output:
                 raise RuntimeError("HOME fallback test did not execute")
