@@ -483,7 +483,7 @@
       "rust_test": "symaira-core-fs/tests/parity.rs",
       "status": "accepted-difference",
       "deviation": "fs-path-contract.md",
-      "native_acceptance": "pending exact-head nine-case public Go differential"
+      "native_acceptance": "Historical native live differential retained; frozen-v1 thirteen FS/SEC rows plus nine strict controls require independently reviewed clean captures and native anchored Rust replay. Preparation only; RUST-017 remains in progress."
     },
     {
       "id": "FS-002",

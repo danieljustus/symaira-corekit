@@ -465,6 +465,8 @@
         "make rust-update-contract",
         "python3 scripts/rust-port/fs-path-control-differential.py",
         "python3 scripts/rust-port/diff_fs_secret.py",
+        "python3 -m unittest discover -s scripts/rust-port -p 'test_fs_secret_oracle.py'",
+        "python3 scripts/rust-port/fs_secret_oracle.py",
         "cargo nextest run --workspace --all-features --locked",
         "cargo clippy --workspace --all-targets --all-features --locked -- -D warnings",
         "cargo fmt --all --check"

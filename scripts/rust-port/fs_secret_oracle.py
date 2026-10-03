@@ -1147,7 +1147,7 @@ def replay_native(fixture: Path | None = None) -> dict[str, Any]:
     """Default acceptance route: anchored bytes, isolated Cargo/Rust only."""
     target = _native_goos_arch()
     path = fixture_path(*target) if fixture is None else _validate_fixture_location(fixture)
-    _, payload = read_capture_once(path, target)
+    raw_fixture, payload = read_capture_once(path, target)
     _verify_candidate_files(payload["capture"], ROOT)
     observations = payload["observations"]
     go_controls = _recorded_path_controls(observations)
@@ -1239,13 +1239,20 @@ def replay_native(fixture: Path | None = None) -> dict[str, Any]:
             "rust_named_test": "fs001_strict_v1_replays_go_controls",
             "rust_named_test_passes": 1,
             "mutations": ["FS-001 observable mismatch", "007f Go acceptance assertion"],
+            "fixture_sha256": sha256(raw_fixture),
+            "captured_source_commit": payload["capture"]["candidate"]["head_before"],
+            "candidate_inputs_sha256": _inventory_digest(payload["capture"]["candidate"]["files"]),
+            "rust_binary_sha256": sha256(rust_binary.read_bytes()),
+            "artifacts_dir": str(logs),
         }
     except BaseException as error:
         recorder.finish("replay-failed", error_type=type(error).__name__)
         raise
     finally:
         if successful:
-            shutil.rmtree(replay_root)
+            # Keep successful raw evidence, not only failures. Only the owned
+            # disposable compiler output is expendable after its digest is saved.
+            shutil.rmtree(replay_root / "cargo-target")
 
 
 def _capture_cli(args) -> int:

@@ -11,6 +11,10 @@ on:
         description: Capture additive native process/static-update Go observations for review
         type: boolean
         default: false
+      fs_secret_capture:
+        description: Capture additive native FS/SEC observations for independent review
+        type: boolean
+        default: false
   schedule:
     - cron: '0 4 * * 1'
 
@@ -21,6 +25,58 @@ permissions:
   contents: read
 
 jobs:
+  fs-secret-evidence:
+    name: FS/SEC capture (${{ matrix.target }})
+    if: github.event_name == 'workflow_dispatch' && inputs.fs_secret_capture
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: linux-amd64
+          - os: macos-26
+            target: darwin-arm64
+          - os: windows-latest
+            target: windows-amd64
+    env:
+      FS_NATIVE_TARGET: ${{ matrix.target }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.sha }}
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: '1.26.6'
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.14'
+      - name: Verify structural controls
+        run: python -B -W error -m unittest discover -s scripts/rust-port -p test_fs_secret_oracle.py -v
+      - name: Populate existing pinned dependencies before offline capture
+        run: python -c "import os,pathlib,sys; sys.path.insert(0,'scripts/rust-port'); from bounded_oracle_process import run_checked; run_checked(['go','mod','download'],cwd=pathlib.Path('scripts/rust-port/go-oracle'),env=dict(os.environ),timeout=300,artifact_dir=pathlib.Path(os.environ['RUNNER_TEMP'])/'fs-native-evidence'/'bootstrap',check=True)"
+      - name: Capture clean native observations without accepting them
+        shell: bash
+        env:
+          GO_ORACLE: '1'
+        run: |
+          set -euo pipefail
+          python scripts/rust-port/fs_secret_oracle.py --capture \
+            --output "testdata/rust-port/fixtures/fs-secret/frozen-v1/$FS_NATIVE_TARGET.json" \
+            --artifacts-dir "$RUNNER_TEMP/fs-native-evidence/raw"
+      - name: Retain original native bytes and failure evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: fs-secret-evidence-${{ matrix.target }}-${{ github.sha }}
+          path: |
+            testdata/rust-port/fixtures/fs-secret/frozen-v1/${{ matrix.target }}.json
+            ${{ runner.temp }}/fs-native-evidence
+          if-no-files-found: error
+          retention-days: 30
+
   process-oracle-capture:
     name: Native process-oracle capture (${{ matrix.os }})
     if: github.event_name == 'workflow_dispatch' && inputs.go_oracle
