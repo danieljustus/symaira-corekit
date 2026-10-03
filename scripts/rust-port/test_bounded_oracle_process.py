@@ -196,7 +196,8 @@ a.start(); b.start(); a.join(); b.join()
                     waited.append(handle)
                     return terminated
 
-                api = SimpleNamespace(retain_job_members=lambda job: [2],
+                api = SimpleNamespace(retain_job_members=lambda job, handles: handles.extend([2]),
+                                      total_processes=lambda job: 1,
                                       wait_job_empty=lambda job, timeout: True,
                                       wait_process=wait, close_handle=closed.append)
                 verified, errors = bop._windows_cleanup(None, 1, True, None, api)
@@ -204,6 +205,38 @@ a.start(); b.start(); a.join(); b.join()
                 self.assertEqual(waited, [2])
                 self.assertEqual(closed, [2, 1])
                 self.assertEqual(bool(errors), not terminated)
+
+    def test_membership_drift_and_partial_inventory_failure_keep_cleanup_unverified(self):
+        """Structural flow control; native birth/close regressions remain required."""
+        from types import SimpleNamespace
+        for failure in ("late-birth", "partial-inventory"):
+            with self.subTest(failure=failure):
+                totals = iter([1, 2] if failure == "late-birth" else [1, 1])
+                closed, attempts = [], []
+
+                def retain(job, handles):
+                    handles.extend([2, 3])
+                    if failure == "partial-inventory":
+                        raise OSError("primary inventory failure")
+
+                def close(handle):
+                    attempts.append(handle)
+                    if failure == "partial-inventory" and handle == 2 and attempts.count(2) == 1:
+                        raise OSError("first identity close failure")
+                    closed.append(handle)
+
+                api = SimpleNamespace(retain_job_members=retain, total_processes=lambda job: next(totals),
+                                      wait_job_empty=lambda job, timeout: True,
+                                      wait_process=lambda handle, timeout: True, close_handle=close)
+                verified, errors = bop._windows_cleanup(None, 1, True, None, api)
+                self.assertFalse(verified)
+                self.assertEqual(closed, [2, 3, 1])
+                if failure == "partial-inventory":
+                    self.assertEqual(attempts, [2, 2, 3, 1])
+                    self.assertTrue(any("primary inventory failure" in error for error in errors))
+                    self.assertTrue(any("first identity close failure" in error for error in errors))
+                else:
+                    self.assertTrue(any("membership changed" in error for error in errors))
 
     def test_invalid_invocation_fails_explicitly(self):
         with self.assertRaises(TypeError):
@@ -544,16 +577,13 @@ pathlib.Path({str(ready)!r}).write_text(pid)
 time.sleep(30)
 '''
 
-            def snapshot_then_spawn(job):
-                handles = retain(job)
+            def snapshot_then_spawn(job, handles):
+                retain(job, handles)
                 observations["total_before_birth"] = api.total_processes(job)
                 trigger.write_bytes(b"spawn after snapshot")
                 deadline = time.monotonic() + 3.0
                 while not ready.exists() or not ready.read_bytes():
                     if time.monotonic() >= deadline:
-                        # These are caller-owned inventory handles even on a probe failure.
-                        for handle in handles:
-                            api.close_handle(handle)
                         raise OSError("late descendant did not become ready")
                     time.sleep(0.005)
                 handle = kernel.OpenProcess(0x00100000 | 0x1000 | 0x0001, False, int(ready.read_text()))
@@ -564,7 +594,7 @@ time.sleep(30)
                 self.assertTrue(member.value)
                 self.assertEqual(kernel.WaitForSingleObject(handle, 0), 258)
                 observations.update(total_after_birth=api.total_processes(job), member_after_inventory=True)
-                return handles
+                return None
 
             try:
                 failure = None

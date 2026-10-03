@@ -511,8 +511,8 @@ if os.name == "nt":
         def total_processes(self, job) -> int:
             return int(self._accounting(job).TotalProcesses)
 
-        def retain_job_members(self, job) -> list:
-            """Hold verified member identities before initiating termination."""
+        def retain_job_members(self, job, handles: list) -> None:
+            """Register each acquired identity with the cleanup owner immediately."""
             capacity = 64
             while capacity <= 4096:
                 class ProcessIds(ctypes.Structure):
@@ -528,27 +528,25 @@ if os.name == "nt":
                 if info.listed > capacity or info.assigned > capacity:
                     capacity *= 2
                     continue
-                handles = []
-                try:
-                    for pid in info.ids[:info.listed]:
-                        handle = self.kernel32.OpenProcess(0x00100000 | 0x1000, False, pid)
-                        if not handle:
-                            if ctypes.get_last_error() == 87:
-                                continue  # The member exited before its identity could be held.
-                            raise self._winerror("OpenProcess Job member failed")
-                        handles.append(handle)
-                        member = wintypes.BOOL()
-                        if not self.kernel32.IsProcessInJob(handle, job, ctypes.byref(member)):
-                            raise self._winerror("IsProcessInJob identity check failed")
-                        if not member.value:
-                            # A recycled PID outside this private Job is never targeted.
-                            self.close_handle(handle)
+                for pid in info.ids[:info.listed]:
+                    handle = self.kernel32.OpenProcess(0x00100000 | 0x1000, False, pid)
+                    if not handle:
+                        if ctypes.get_last_error() == 87:
+                            continue  # The member exited before its identity could be held.
+                        raise self._winerror("OpenProcess Job member failed")
+                    handles.append(handle)
+                    member = wintypes.BOOL()
+                    if not self.kernel32.IsProcessInJob(handle, job, ctypes.byref(member)):
+                        # Caller ownership survives partial inventory failures.
+                        raise self._winerror("IsProcessInJob identity check failed")
+                    if not member.value:
+                        # A recycled PID outside this private Job is never targeted.
+                        errors = []
+                        if _close_owned_handle(self, handle, "non-member identity", errors):
                             handles.pop()
-                    return handles
-                except BaseException:
-                    for handle in handles:
-                        self.close_handle(handle)
-                    raise
+                        if errors:
+                            raise OSError("; ".join(errors))
+                return
             raise OSError("private Job identity inventory exceeds 4096-process bound")
 
         def wait_process(self, handle, timeout: float) -> bool:
@@ -669,9 +667,11 @@ def _windows_cleanup(proc, job, assigned, capture, api) -> tuple[bool, list[str]
     termination_errors: list[str] = []
     members = []
     members_verified = True
+    inventory_total = None
     if job is not None and assigned:
         try:
-            members = api.retain_job_members(job)
+            inventory_total = api.total_processes(job)
+            api.retain_job_members(job, members)
         except BaseException as exc:
             errors.append(f"Job member identities could not be retained: {exc}")
             members_verified = False
@@ -772,6 +772,16 @@ def _windows_cleanup(proc, job, assigned, capture, api) -> tuple[bool, list[str]
             errors.append("capture reader did not terminate after Job cleanup")
     pipes_closed = _close_streams(proc, errors) if proc is not None else True
     if job is not None:
+        if assigned:
+            try:
+                # TotalProcesses includes exited members, so even a short-lived
+                # birth after inventory cannot disappear behind ActiveProcesses=0.
+                if inventory_total is None or api.total_processes(job) != inventory_total:
+                    errors.append("private Job membership changed after identity inventory; cleanup unverified")
+                    members_verified = False
+            except BaseException as exc:
+                errors.append(f"final Job membership accounting failed: {exc}")
+                members_verified = False
         job_closed = _close_owned_handle(api, job, "Job", errors)
     if proc is not None and proc.returncode is None:
         process_handle_closed = False
