@@ -12,7 +12,7 @@ class FrozenCoreReplayTests(unittest.TestCase):
         family = replay.FAMILIES["foundation"]
         relative = next(iter(family["files"]))
         original = (replay.ROOT / relative).read_bytes()
-        base = str(Path(relative).parent)
+        base = Path(relative).parent.as_posix()
         specification = dict(family, files={relative: family["files"][relative]}, directories={base: 1})
         with tempfile.TemporaryDirectory(prefix="frozen-core-corpus-") as directory:
             root = Path(directory).resolve()
