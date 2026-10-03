@@ -1,11 +1,13 @@
+#[path = "common/static_update.rs"]
+mod static_update;
+
 use serde::Deserialize;
+use sha2::{Digest, Sha256};
 use std::path::PathBuf;
 use symaira_core_update::extract::{extract_binary_to_dir, observe};
 
 #[derive(Deserialize)]
 struct Fixture {
-    #[serde(default)]
-    goos: Option<String>,
     cases: Vec<ExpectedCase>,
 }
 
@@ -17,6 +19,10 @@ struct ExpectedCase {
     expected_binary: String,
     #[serde(default)]
     selected_binary: String,
+    #[serde(default)]
+    input_archive_path: String,
+    #[serde(default)]
+    input_archive_sha256: String,
     files: Vec<ExpectedFile>,
     error: Option<ExpectedError>,
 }
@@ -35,31 +41,9 @@ struct ExpectedError {
     message: String,
 }
 
-/// The committed fixture records one platform's Go observations. On another
-/// platform the fresh Go oracle plus the Rust replay in `make rust-update-contract`
-/// assert parity instead of replaying foreign expectations.
-fn platform_mismatch(recorded: Option<&str>) -> Option<String> {
-    let current = if cfg!(target_os = "windows") {
-        "windows"
-    } else if cfg!(target_os = "macos") {
-        "darwin"
-    } else if cfg!(target_os = "linux") {
-        "linux"
-    } else {
-        ""
-    };
-    match recorded {
-        Some(recorded) if recorded != current => Some(format!(
-            "fixture recorded on {recorded}, running on {current}; cross-platform parity is asserted by make rust-update-contract"
-        )),
-        _ => None,
-    }
-}
-
 #[test]
 fn extraction_matches_go_archives_and_filesystem_observations() {
-    let default_fixture = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("../../testdata/rust-port/fixtures/update/extract.json");
+    let default_fixture = static_update::fixture_path("extract");
     let fixture_path = std::env::var_os("EXTRACT_FIXTURE")
         .map(PathBuf::from)
         .unwrap_or(default_fixture);
@@ -67,15 +51,27 @@ fn extraction_matches_go_archives_and_filesystem_observations() {
         &std::fs::read_to_string(&fixture_path).expect("read generated extraction fixture"),
     )
     .expect("valid generated extraction fixture");
-    if let Some(reason) = platform_mismatch(fixture.goos.as_deref()) {
-        eprintln!("SKIP {reason}");
-        return;
-    }
     assert_eq!(fixture.cases.len(), 12);
     let root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
     for expected in fixture.cases {
-        let archive = std::fs::read(root.join(&expected.archive))
+        let archive_path = if expected.input_archive_path.is_empty() {
+            root.join(&expected.archive)
+        } else {
+            root.join(&expected.input_archive_path)
+        };
+        let archive = std::fs::read(archive_path)
             .unwrap_or_else(|err| panic!("{} archive: {err}", expected.id));
+        if !expected.input_archive_sha256.is_empty() {
+            let actual_sha256 = Sha256::digest(&archive)
+                .iter()
+                .map(|byte| format!("{byte:02x}"))
+                .collect::<String>();
+            assert_eq!(
+                actual_sha256, expected.input_archive_sha256,
+                "{} input archive SHA-256",
+                expected.id
+            );
+        }
         let actual = observe(&expected.kind, &archive, &expected.expected_binary);
         assert_eq!(
             actual

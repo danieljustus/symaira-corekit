@@ -1,0 +1,400 @@
+{
+  "lane": "version",
+  "schema_version": 1,
+  "target": {
+    "goos": "darwin",
+    "goarch": "arm64"
+  },
+  "capture": {
+    "capture_id": "issue368-static-update-version-9c044f429262",
+    "capture_mode": "fresh-pinned-go-execution-additive-v1",
+    "captured_at_utc": "2026-10-02T22:30:35+00:00",
+    "source_commit": "d559ca34f0d533143896ba37f943b62bda32c24b",
+    "working_tree_clean": false,
+    "dirty_paths": [
+      "rust/symaira-core-update/tests/common/static_update.rs",
+      "rust/symaira-core-update/tests/extract.rs",
+      "rust/symaira-core-update/tests/install_method.rs",
+      "rust/symaira-core-update/tests/parity.rs",
+      "rust/symaira-core-update/tests/response.rs",
+      "scripts/rust-port/install-method-differential.py",
+      "scripts/rust-port/static_update_oracle.py",
+      "scripts/rust-port/update-extract-differential.py",
+      "scripts/rust-port/update-response-differential.py",
+      "scripts/rust-port/update-swap-differential.py",
+      "scripts/rust-port/update-version-differential.py",
+      "scripts/rust-port/update_static_runner.py",
+      "testdata/rust-port/fixtures/update/static-v1/darwin-arm64/extract.json",
+      "testdata/rust-port/fixtures/update/static-v1/darwin-arm64/inputs/tar-absolute.gz",
+      "testdata/rust-port/fixtures/update/static-v1/darwin-arm64/inputs/tar-empty.gz",
+      "testdata/rust-port/fixtures/update/static-v1/darwin-arm64/inputs/tar-invalid-gzip.gz",
+      "testdata/rust-port/fixtures/update/static-v1/darwin-arm64/inputs/tar-large-mode.gz",
+      "testdata/rust-port/fixtures/update/static-v1/darwin-arm64/inputs/tar-success.gz",
+      "testdata/rust-port/fixtures/update/static-v1/darwin-arm64/inputs/tar-symlink-escape-skipped.gz",
+      "testdata/rust-port/fixtures/update/static-v1/darwin-arm64/inputs/tar-traversal.gz",
+      "testdata/rust-port/fixtures/update/static-v1/darwin-arm64/inputs/zip-empty.zip",
+      "testdata/rust-port/fixtures/update/static-v1/darwin-arm64/inputs/zip-invalid.zip",
+      "testdata/rust-port/fixtures/update/static-v1/darwin-arm64/inputs/zip-large.zip",
+      "testdata/rust-port/fixtures/update/static-v1/darwin-arm64/inputs/zip-success.zip",
+      "testdata/rust-port/fixtures/update/static-v1/darwin-arm64/inputs/zip-traversal.zip",
+      "testdata/rust-port/fixtures/update/static-v1/darwin-arm64/install-method.json",
+      "testdata/rust-port/fixtures/update/static-v1/darwin-arm64/response.json",
+      "testdata/rust-port/fixtures/update/static-v1/darwin-arm64/version.json",
+      "testdata/rust-port/fixtures/update/static-v1/index.json"
+    ],
+    "go": {
+      "version": "go version go1.26.6 darwin/arm64",
+      "goos": "darwin",
+      "goarch": "arm64"
+    },
+    "source_sha256": {
+      "fsutil/atomicwrite.go": "ea34d7c2ea41119b5f38557f8beec6d27c221938e9d6cd0e4a8f358193938221",
+      "fsutil/pathutil.go": "e8baadddca065b48f13fea532a791a018a4843314bac7e9f9760d6bd45a53932",
+      "fsutil/safewrite.go": "4c180680c793312ce253baefde208b9780691fa3e58b44b1a788db7877e3065d",
+      "fsutil/safewrite_windows.go": "518df3baee81a65fd23fb61783efe3007c9f6185e4fa5dc2dcf8680eb224b0c5",
+      "go.mod": "5e2b0ad309b6db5db7abbaf958ef87bc12c0e81605245b897f1b9305a113e57d",
+      "go.sum": "701d7161d71d4817a59f98bfc6f8ac71d5ee6b7f70cbb8ec96b07a140298929c",
+      "scripts/rust-port/update-oracle/main.go": "e24768b040fe090ece6918b3cb6a68c072f5d90236a160b2ee214d32ca4a647d",
+      "scripts/rust-port/update-version-differential.py": "03420d8b4b7d0ae4ea178ee613900c69ecd1ae4ae0888339110c45c900b40708",
+      "updatecheck/cosign/cosign.go": "15f40e106f62908d826338a26ee1b9f18f1954f17765ba0798576653bada3cb7",
+      "updatecheck/extract/extract.go": "49a0c1ca9f6cd867314bc4b4755917b4c22c51275c63529b1178c7b6b852f0fa",
+      "updatecheck/installmethod/detect.go": "4aa34358dd24ab9f03c1507e910d162e5c7cc20a5c95042e01786f1ab6f928ed",
+      "updatecheck/updateapply/updateapply.go": "c4fbbd243076103a1f909bf1f1f54a3478dfef8f96ac2c125942fd35ca395cbf",
+      "updatecheck/updatecheck.go": "638c263835c1d72982f6fc3391092edc44318f3f5993e83c7c190fae25329cc9"
+    },
+    "source_manifest_sha256": "c1d529797b79527b99ff746db3b551737218b25eea58be6b48a5e21108ca6388",
+    "harness_sha256": {
+      "scripts/rust-port/static_update_oracle.py": "601facd120849d654981f4efae0a9dd7be69ecadfc4908b47dcab2225728b0bf",
+      "scripts/rust-port/update_static_runner.py": "d437cd83658b5f0cd47493bb53a2b60b3e76f3255612186c982eb2cbde8da7d6",
+      "scripts/rust-port/update-version-differential.py": "03420d8b4b7d0ae4ea178ee613900c69ecd1ae4ae0888339110c45c900b40708",
+      "rust/symaira-core-update/tests/parity.rs": "cbb97fdedae18b97bd19f7b8dd397864892f988e2c0be2fd9810596091ed2bd5",
+      "rust/symaira-core-update/tests/common/static_update.rs": "856d2dd5a74b12ca8c96ca5b2dcde1270ad8c996f151d58d002aa82244385f5d"
+    },
+    "historical_fixture": {
+      "path": "testdata/rust-port/fixtures/update/stable-versions.json",
+      "sha256": "145a9d5ede271db110cf28a0c86870aeb53c745e787e95dd4422c85a961a1fbf"
+    },
+    "case_count": 30,
+    "case_ids": [
+      "stable-version-001",
+      "stable-version-002",
+      "stable-version-003",
+      "stable-version-004",
+      "stable-version-005",
+      "stable-version-006",
+      "stable-version-007",
+      "stable-version-008",
+      "stable-version-009",
+      "stable-version-010",
+      "stable-version-011",
+      "stable-version-012",
+      "stable-version-013",
+      "stable-version-014",
+      "stable-version-015",
+      "stable-version-016",
+      "stable-version-017",
+      "stable-version-018",
+      "stable-version-019",
+      "stable-version-020",
+      "stable-version-021",
+      "stable-version-022",
+      "stable-version-023",
+      "stable-version-024",
+      "stable-version-025",
+      "stable-version-026",
+      "stable-version-027",
+      "stable-version-028",
+      "stable-version-029",
+      "stable-version-030"
+    ],
+    "case_fingerprints_sha256": [
+      "be0a67a5c2c0390c2b40c8e97c55a9358e2053c7edf891eba201cbc17f4d9f06",
+      "eadb400500d60ece875b381c068c8f3fb3247edaee8813b3f3c167b2488c502c",
+      "494c4c58070d225db0ed5b6409500e25c10f77eec245a1bb91302a7ac05da0e9",
+      "d927a0fb40a1e197c045e60b33b8321a21be0d10527d6186c8c58424772c8da7",
+      "3edb5fbcdfb1f4f3729be6c898958833c075317157521d888c2768132f4fa790",
+      "73198bc5bcdc7d89fa9be78d72e827e2f34d678dd3961308bc37937a55c3c0ef",
+      "dfc998ad04d11f17041d71989074233992724c74803d060860be6efc2eaf372b",
+      "6ce1983045cd1a802af96bd34918c883ddf31f6ad739d0d53a95c6c047cb6c20",
+      "b1b4da0723188a017c353e907cdbfe947fad4bfa5298868b64dc0385cabb7f27",
+      "07900910617dd2bc4a6e4e57090f9cf609451f325c0a0f8a530bc1b0e2f42c10",
+      "425eecd829bfa89635c6056e51da164355a1e3e7bb48f8be5ff54d553b2f65d4",
+      "bafcd0e81efd9ec9019bfb6f8a90f27bbf4baecfed33926cee9e3e338b67c4f1",
+      "928f8a9c30bd29c4f2036fefde48ed200a4963607e358b018f414436919f9c4e",
+      "224f5b330323937553766f22cc9e9dd5d85dbe78a1cae90ec6315fef38ec68df",
+      "82d06b84e6cef22edc3d2d6055d9a111436bf5daac9486a30f1b61a0fb757c4d",
+      "064b7499cab965f8ff7b09504d2dc4c9b4ad19c6e61bd9a09a5b28f0612d5264",
+      "3fd179af98074d5cb37f6eb1d1312c05d76e5c5601d5345276b84b094e9a79d2",
+      "5b07233e4da3c99633aca824ed79b7deb18fe4e0bb44294d4ec684aa69b67de8",
+      "a67e52806f15faab914d6e69b30f337ed67e6b9fb3dce5c2678657587ddea160",
+      "ad7cbe11f91d80dd3f4fafc1315eea17f88ce310b9f1783370271ddc2bbec003",
+      "6c3788140bb1fc514fb41c8054c66672b1368acd231f2324ebd004a303bd0a79",
+      "f65e64db3699c199966007387e675d5e5b2f552b5da277dc871740aef226a32d",
+      "d0291beaf2ec548e2f8a453deda45526ab7cb8cebfa85452a56f96ca183e9b91",
+      "d441ed411c494a7c63eadbd97abee50d97cb321915bf83ce2203df5345bebf62",
+      "5de1586ca04a6ecc6ea1c9fb9265a35423201e6af49e4f9a63a8102664702eaf",
+      "7ec9dfbb71cede1cdeef6e936333470d32ed51f09b66a03cfb5c0b46aea7453e",
+      "15b17ad9d2e1a146dd7ca7f5362f654c1efe7a8aa740c1a2ac73de86669881ad",
+      "6e999406b98d13f91e14efa7547c8a7eb5d8612e23a8ba5a4bf4f29947af7547",
+      "e9591f07073e890452a167e1f6da33662cd63b7c2c03ab6c97b594b624e067e7",
+      "628d1e5a6aabe9850063d5cd87dffb9320c2085b42b58af41505e5de5ee25ae9"
+    ],
+    "input_archives": [],
+    "raw": {
+      "evidence_id": "target/static-update-evidence/version-9c044f429262",
+      "stdout_sha256": "177418d1d15ba1df884a96b582a155d42eb30b59d96d9238a41047cd6664c554",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "observation_sha256": "177418d1d15ba1df884a96b582a155d42eb30b59d96d9238a41047cd6664c554",
+      "observation_bytes": 2802,
+      "exit_code": 0,
+      "timed_out": false
+    },
+    "command": [
+      "go",
+      "run",
+      "./scripts/rust-port/update-oracle"
+    ]
+  },
+  "cases": [
+    {
+      "current": "dev",
+      "latest": "v1.2.3",
+      "available": false,
+      "invalid_latest": false,
+      "requests": 0,
+      "id": "stable-version-001"
+    },
+    {
+      "current": "v1.2.3-rc1",
+      "latest": "v1.2.4",
+      "available": false,
+      "invalid_latest": false,
+      "requests": 0,
+      "id": "stable-version-002"
+    },
+    {
+      "current": "v1.2.3+build",
+      "latest": "v1.2.4",
+      "available": false,
+      "invalid_latest": false,
+      "requests": 0,
+      "id": "stable-version-003"
+    },
+    {
+      "current": "",
+      "latest": "v1.2.4",
+      "available": false,
+      "invalid_latest": false,
+      "requests": 0,
+      "id": "stable-version-004"
+    },
+    {
+      "current": "v0.9.0",
+      "latest": "v1.0.0",
+      "available": false,
+      "invalid_latest": false,
+      "requests": 1,
+      "id": "stable-version-005"
+    },
+    {
+      "current": "v0.9.0",
+      "latest": "v0.10.0",
+      "available": true,
+      "invalid_latest": false,
+      "requests": 1,
+      "id": "stable-version-006"
+    },
+    {
+      "current": "v1.2.3",
+      "latest": "v1.2.3",
+      "available": false,
+      "invalid_latest": false,
+      "requests": 1,
+      "id": "stable-version-007"
+    },
+    {
+      "current": "v1.2.3",
+      "latest": "v1.2.2",
+      "available": false,
+      "invalid_latest": false,
+      "requests": 1,
+      "id": "stable-version-008"
+    },
+    {
+      "current": "  v1.2.3  ",
+      "latest": "v1.2.4",
+      "available": true,
+      "invalid_latest": false,
+      "requests": 1,
+      "id": "stable-version-009"
+    },
+    {
+      "current": "+1.2.3",
+      "latest": "v1.2.4",
+      "available": false,
+      "invalid_latest": false,
+      "requests": 0,
+      "id": "stable-version-010"
+    },
+    {
+      "current": "v1.2.3",
+      "latest": "v1.2.4-rc1",
+      "available": false,
+      "invalid_latest": true,
+      "requests": 1,
+      "id": "stable-version-011"
+    },
+    {
+      "current": "v1.2.3",
+      "latest": "latest",
+      "available": false,
+      "invalid_latest": true,
+      "requests": 1,
+      "id": "stable-version-012"
+    },
+    {
+      "current": "1.2.3",
+      "latest": "1.2.4",
+      "available": true,
+      "invalid_latest": false,
+      "requests": 1,
+      "id": "stable-version-013"
+    },
+    {
+      "current": "v1.2",
+      "latest": "v1.2.4",
+      "available": false,
+      "invalid_latest": false,
+      "requests": 0,
+      "id": "stable-version-014"
+    },
+    {
+      "current": "v1.2.3.4",
+      "latest": "v1.2.4",
+      "available": false,
+      "invalid_latest": false,
+      "requests": 0,
+      "id": "stable-version-015"
+    },
+    {
+      "current": "v1..3",
+      "latest": "v1.2.4",
+      "available": false,
+      "invalid_latest": false,
+      "requests": 0,
+      "id": "stable-version-016"
+    },
+    {
+      "current": "v1.a.3",
+      "latest": "v1.2.4",
+      "available": false,
+      "invalid_latest": false,
+      "requests": 0,
+      "id": "stable-version-017"
+    },
+    {
+      "current": "v-1.2.3",
+      "latest": "v1.2.4",
+      "available": false,
+      "invalid_latest": false,
+      "requests": 0,
+      "id": "stable-version-018"
+    },
+    {
+      "current": "v+1.2.3",
+      "latest": "v1.2.4",
+      "available": false,
+      "invalid_latest": false,
+      "requests": 0,
+      "id": "stable-version-019"
+    },
+    {
+      "current": "v1.2.+3",
+      "latest": "v1.2.4",
+      "available": false,
+      "invalid_latest": false,
+      "requests": 0,
+      "id": "stable-version-020"
+    },
+    {
+      "current": "v01.02.003",
+      "latest": "v1.2.4",
+      "available": true,
+      "invalid_latest": false,
+      "requests": 1,
+      "id": "stable-version-021"
+    },
+    {
+      "current": "V1.2.3",
+      "latest": "v1.2.4",
+      "available": false,
+      "invalid_latest": false,
+      "requests": 0,
+      "id": "stable-version-022"
+    },
+    {
+      "current": "v1.2.3",
+      "latest": " v1.2.4 ",
+      "available": true,
+      "invalid_latest": false,
+      "requests": 1,
+      "id": "stable-version-023"
+    },
+    {
+      "current": "v1.2.3",
+      "latest": "v1.2.3+build",
+      "available": false,
+      "invalid_latest": true,
+      "requests": 1,
+      "id": "stable-version-024"
+    },
+    {
+      "current": "v1.2.3",
+      "latest": "v1.2",
+      "available": false,
+      "invalid_latest": true,
+      "requests": 1,
+      "id": "stable-version-025"
+    },
+    {
+      "current": "v1.2.3",
+      "latest": "v1.2.4.5",
+      "available": false,
+      "invalid_latest": true,
+      "requests": 1,
+      "id": "stable-version-026"
+    },
+    {
+      "current": "v1.2.3",
+      "latest": "v1.a.4",
+      "available": false,
+      "invalid_latest": true,
+      "requests": 1,
+      "id": "stable-version-027"
+    },
+    {
+      "current": "v1.2.3",
+      "latest": "v-1.2.4",
+      "available": false,
+      "invalid_latest": true,
+      "requests": 1,
+      "id": "stable-version-028"
+    },
+    {
+      "current": "v1.2.3",
+      "latest": "v1.2.+4",
+      "available": false,
+      "invalid_latest": true,
+      "requests": 1,
+      "id": "stable-version-029"
+    },
+    {
+      "current": "v0.9.0",
+      "latest": "v0.9.1",
+      "available": true,
+      "invalid_latest": false,
+      "requests": 1,
+      "id": "stable-version-030"
+    }
+  ]
+}

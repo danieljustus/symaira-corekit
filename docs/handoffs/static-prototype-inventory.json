@@ -1,0 +1,156 @@
+{
+  "base": "d559ca34f0d533143896ba37f943b62bda32c24b",
+  "classification": "unapproved historical prototype, exact bytes preserved, no tests claimed",
+  "files": [
+    {
+      "path": "rust/symaira-core-update/tests/common/static_update.rs",
+      "sha256": "856d2dd5a74b12ca8c96ca5b2dcde1270ad8c996f151d58d002aa82244385f5d",
+      "bytes": 1031
+    },
+    {
+      "path": "rust/symaira-core-update/tests/extract.rs",
+      "sha256": "3689cd86b574a85f5dac6acdd7c46c4756e711b28dc7e573f2fdf5cc3cdc5c37",
+      "bytes": 5682
+    },
+    {
+      "path": "rust/symaira-core-update/tests/install_method.rs",
+      "sha256": "d36e02b64284759a67f7851ea651c162a4aef82d9fbdc6309ee01890445179f9",
+      "bytes": 3108
+    },
+    {
+      "path": "rust/symaira-core-update/tests/parity.rs",
+      "sha256": "cbb97fdedae18b97bd19f7b8dd397864892f988e2c0be2fd9810596091ed2bd5",
+      "bytes": 1535
+    },
+    {
+      "path": "rust/symaira-core-update/tests/response.rs",
+      "sha256": "bd0ed77e37b80e4b6ad92dcf684c46504db0378fbd044e9ccf43962301bb9d8e",
+      "bytes": 3416
+    },
+    {
+      "path": "scripts/rust-port/install-method-differential.py",
+      "sha256": "c31667bd85121d7dcd94dd8f9c5a3762a78f80f741a0a242763a983ae6e4a4af",
+      "bytes": 326
+    },
+    {
+      "path": "scripts/rust-port/static_update_oracle.py",
+      "sha256": "601facd120849d654981f4efae0a9dd7be69ecadfc4908b47dcab2225728b0bf",
+      "bytes": 31368
+    },
+    {
+      "path": "scripts/rust-port/test_static_update_oracle.py",
+      "sha256": "4625b219b4900cec318021f1aef5a4d8bba2bc23042b2d24a5c2a1e3f0597244",
+      "bytes": 4439
+    },
+    {
+      "path": "scripts/rust-port/update-extract-differential.py",
+      "sha256": "05d8e26433caecf52002af65d36c801710880a093348631b0c72a8facd96a71b",
+      "bytes": 323
+    },
+    {
+      "path": "scripts/rust-port/update-response-differential.py",
+      "sha256": "2f119be7fc7207ceccc940cbb0ddac6c27634d957929efb10e6d2284a6d25251",
+      "bytes": 324
+    },
+    {
+      "path": "scripts/rust-port/update-swap-differential.py",
+      "sha256": "ba1863f69c407706d01f9f12d0131504d230e6f809f063dd6ddab95897e2dbe0",
+      "bytes": 313
+    },
+    {
+      "path": "scripts/rust-port/update-version-differential.py",
+      "sha256": "03420d8b4b7d0ae4ea178ee613900c69ecd1ae4ae0888339110c45c900b40708",
+      "bytes": 331
+    },
+    {
+      "path": "scripts/rust-port/update_static_runner.py",
+      "sha256": "d437cd83658b5f0cd47493bb53a2b60b3e76f3255612186c982eb2cbde8da7d6",
+      "bytes": 8618
+    },
+    {
+      "path": "testdata/rust-port/fixtures/update/static-v1/darwin-arm64/extract.json",
+      "sha256": "b1c552d2a0fd15bc814ff48b38bc3aba5a6e4066bccf91047f6527cff4ebec87",
+      "bytes": 40559
+    },
+    {
+      "path": "testdata/rust-port/fixtures/update/static-v1/darwin-arm64/inputs/tar-absolute.gz",
+      "sha256": "1ed2a308e0a112268114445a1fec32e2f64dedd45e6fec362bfc2636eb036348",
+      "bytes": 100
+    },
+    {
+      "path": "testdata/rust-port/fixtures/update/static-v1/darwin-arm64/inputs/tar-empty.gz",
+      "sha256": "4f4fb700ef54461cfa02571ae0db9a0dc1e0cdb5577484a6d75e68dc38e8acc1",
+      "bytes": 32
+    },
+    {
+      "path": "testdata/rust-port/fixtures/update/static-v1/darwin-arm64/inputs/tar-invalid-gzip.gz",
+      "sha256": "34be28e5006f6006f0d4edf591b1c5e6c444707221875237f27cac0d4e7324a0",
+      "bytes": 13
+    },
+    {
+      "path": "testdata/rust-port/fixtures/update/static-v1/darwin-arm64/inputs/tar-large-mode.gz",
+      "sha256": "4994dabd08968776481adfce82a801dc498414a7e17e1d44d3bf6dead0604951",
+      "bytes": 126
+    },
+    {
+      "path": "testdata/rust-port/fixtures/update/static-v1/darwin-arm64/inputs/tar-success.gz",
+      "sha256": "eabb8b6653a4a8996341efa5a2f6a85f004be009f34b644d93b99c85c96a56d8",
+      "bytes": 171
+    },
+    {
+      "path": "testdata/rust-port/fixtures/update/static-v1/darwin-arm64/inputs/tar-symlink-escape-skipped.gz",
+      "sha256": "96cd2b6bf1942660cb2a9c95300a19ec4b76a046178bd71625a9967a2a071185",
+      "bytes": 171
+    },
+    {
+      "path": "testdata/rust-port/fixtures/update/static-v1/darwin-arm64/inputs/tar-traversal.gz",
+      "sha256": "3a9820bcf8667bb28fb8636081737b5c438601619a9102cca9a067d1f262cc09",
+      "bytes": 101
+    },
+    {
+      "path": "testdata/rust-port/fixtures/update/static-v1/darwin-arm64/inputs/zip-empty.zip",
+      "sha256": "8739c76e681f900923b900c9df0ef75cf421d39cabb54650c4b9ad19b6a76d85",
+      "bytes": 22
+    },
+    {
+      "path": "testdata/rust-port/fixtures/update/static-v1/darwin-arm64/inputs/zip-invalid.zip",
+      "sha256": "5c6e60b96cc445370834a3cc5a4d3f2ec90fb89a80c83aaf67b07fc8f0824273",
+      "bytes": 12
+    },
+    {
+      "path": "testdata/rust-port/fixtures/update/static-v1/darwin-arm64/inputs/zip-large.zip",
+      "sha256": "19a1c576cf846b88f0fcccda1973a10db34787c12eb5edf2b3385656c8c7cc61",
+      "bytes": 175
+    },
+    {
+      "path": "testdata/rust-port/fixtures/update/static-v1/darwin-arm64/inputs/zip-success.zip",
+      "sha256": "91eb071e4a3cf91473876321e7402694f5728b3db518bbc04e25285a16c57196",
+      "bytes": 297
+    },
+    {
+      "path": "testdata/rust-port/fixtures/update/static-v1/darwin-arm64/inputs/zip-traversal.zip",
+      "sha256": "c376b4ef6bf7c25f1652b3ad7ade308fbc7878f88bbabb5d198238857d18576f",
+      "bytes": 141
+    },
+    {
+      "path": "testdata/rust-port/fixtures/update/static-v1/darwin-arm64/install-method.json",
+      "sha256": "fd70897c7a968e79b919c241ae528c3d317ce0c7f0c3884f11516640f286519c",
+      "bytes": 11197
+    },
+    {
+      "path": "testdata/rust-port/fixtures/update/static-v1/darwin-arm64/response.json",
+      "sha256": "36b0973d4aecd085c45c28124d00b5738f2c05c70a2de81dd1bda12542aa4a9f",
+      "bytes": 11626
+    },
+    {
+      "path": "testdata/rust-port/fixtures/update/static-v1/darwin-arm64/version.json",
+      "sha256": "5bc8b277174de49b6b3eb97037ad315be6361c6f626f27f45080a5dec201e67a",
+      "bytes": 14075
+    },
+    {
+      "path": "testdata/rust-port/fixtures/update/static-v1/index.json",
+      "sha256": "d142cbed8ac10e2f19d194ff643e123723f246d85548d6c71c87a8054a96e991",
+      "bytes": 3887
+    }
+  ]
+}

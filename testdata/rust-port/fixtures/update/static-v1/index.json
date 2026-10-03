@@ -1,0 +1,127 @@
+{
+  "schema_version": 1,
+  "captures": {
+    "version": {
+      "path": "testdata/rust-port/fixtures/update/static-v1/darwin-arm64/version.json",
+      "sha256": "5bc8b277174de49b6b3eb97037ad315be6361c6f626f27f45080a5dec201e67a",
+      "target": {
+        "goos": "darwin",
+        "goarch": "arm64"
+      },
+      "case_count": 30,
+      "case_ids": [
+        "stable-version-001",
+        "stable-version-002",
+        "stable-version-003",
+        "stable-version-004",
+        "stable-version-005",
+        "stable-version-006",
+        "stable-version-007",
+        "stable-version-008",
+        "stable-version-009",
+        "stable-version-010",
+        "stable-version-011",
+        "stable-version-012",
+        "stable-version-013",
+        "stable-version-014",
+        "stable-version-015",
+        "stable-version-016",
+        "stable-version-017",
+        "stable-version-018",
+        "stable-version-019",
+        "stable-version-020",
+        "stable-version-021",
+        "stable-version-022",
+        "stable-version-023",
+        "stable-version-024",
+        "stable-version-025",
+        "stable-version-026",
+        "stable-version-027",
+        "stable-version-028",
+        "stable-version-029",
+        "stable-version-030"
+      ],
+      "source_commit": "d559ca34f0d533143896ba37f943b62bda32c24b",
+      "working_tree_clean": false,
+      "raw_evidence_id": "target/static-update-evidence/version-9c044f429262"
+    },
+    "response": {
+      "path": "testdata/rust-port/fixtures/update/static-v1/darwin-arm64/response.json",
+      "sha256": "36b0973d4aecd085c45c28124d00b5738f2c05c70a2de81dd1bda12542aa4a9f",
+      "target": {
+        "goos": "darwin",
+        "goarch": "arm64"
+      },
+      "case_count": 9,
+      "case_ids": [
+        "available-assets",
+        "up-to-date",
+        "older-release",
+        "draft",
+        "prerelease",
+        "empty-tag",
+        "malformed-prerelease-tag",
+        "malformed-tag",
+        "invalid-current"
+      ],
+      "source_commit": "d559ca34f0d533143896ba37f943b62bda32c24b",
+      "working_tree_clean": false,
+      "raw_evidence_id": "target/static-update-evidence/response-37e0ca07836d"
+    },
+    "install-method": {
+      "path": "testdata/rust-port/fixtures/update/static-v1/darwin-arm64/install-method.json",
+      "sha256": "fd70897c7a968e79b919c241ae528c3d317ce0c7f0c3884f11516640f286519c",
+      "target": {
+        "goos": "darwin",
+        "goarch": "arm64"
+      },
+      "case_count": 15,
+      "case_ids": [
+        "empty",
+        "homebrew-env",
+        "gopath-env",
+        "gomodcache-env",
+        "homebrew-path",
+        "cellar-path",
+        "linuxbrew-path",
+        "package-path",
+        "direct-path",
+        "go-cache",
+        "home-local-bin",
+        "layered-env-priority",
+        "resolved-symlink",
+        "source-readonly",
+        "missing-parent"
+      ],
+      "source_commit": "d559ca34f0d533143896ba37f943b62bda32c24b",
+      "working_tree_clean": false,
+      "raw_evidence_id": "target/static-update-evidence/install-method-40b2f5bfd3d7"
+    },
+    "extract": {
+      "path": "testdata/rust-port/fixtures/update/static-v1/darwin-arm64/extract.json",
+      "sha256": "b1c552d2a0fd15bc814ff48b38bc3aba5a6e4066bccf91047f6527cff4ebec87",
+      "target": {
+        "goos": "darwin",
+        "goarch": "arm64"
+      },
+      "case_count": 12,
+      "case_ids": [
+        "tar-success",
+        "tar-large-mode",
+        "tar-symlink-escape-skipped",
+        "tar-traversal",
+        "tar-absolute",
+        "tar-invalid-gzip",
+        "tar-empty",
+        "zip-success",
+        "zip-large",
+        "zip-traversal",
+        "zip-invalid",
+        "zip-empty"
+      ],
+      "source_commit": "d559ca34f0d533143896ba37f943b62bda32c24b",
+      "working_tree_clean": false,
+      "raw_evidence_id": "target/static-update-evidence/extract-e875fc800c89"
+    }
+  }
+}
