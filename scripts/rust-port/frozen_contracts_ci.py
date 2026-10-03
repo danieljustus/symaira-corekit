@@ -58,11 +58,16 @@ def main():
     if control.returncode != 97 or marker.read_bytes() != b"invoked":
         raise ValueError("compiled native Go-denial control failed")
     marker.unlink()
-    filtered = artifacts / "filtered-path"
-    filtered.mkdir()
-    absent_path = path_without_go(os.environ["PATH"], filtered)
-    if shutil.which("go", path=absent_path) is not None:
-        raise ValueError("Go remains discoverable in aggregate PATH")
+    # PATH views link installed system tools. Keep them outside the evidence
+    # upload, which would otherwise dereference and archive entire system bins.
+    with tempfile.TemporaryDirectory(prefix="corekit-go-filtered-path-") as directory:
+        absent_path = path_without_go(os.environ["PATH"], Path(directory))
+        if shutil.which("go", path=absent_path) is not None:
+            raise ValueError("Go remains discoverable in aggregate PATH")
+        execute_phases(head, artifacts, denied, marker, absent_path)
+
+
+def execute_phases(head, artifacts, denied, marker, absent_path):
     original_home = Path.home()
     phases = []
     for phase in ("absent", "denied"):

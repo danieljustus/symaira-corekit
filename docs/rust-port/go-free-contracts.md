@@ -55,6 +55,24 @@ shared library and preserves the captured Cargo inputs. The small native Rust
 process stand-in preserves executable process-tree behavior on all three OSes;
 an interpreted script would not provide the Windows ownership regression.
 
+The untrusted certificate fixture uses RSA, matching Go's original `httptest`
+certificate; the explicitly trusted protocol fixtures retain Ed25519. Native
+Windows run `37144921600` accepted the trusted protocol controls but classified
+the new untrusted Ed25519 identity as a generic network error. Matching the
+original certificate algorithm preserves the required certificate-error
+assertion; the corrected native run must confirm it. Real signed acceptance
+also creates its own private HOME/XDG/TMP roots when invoked outside the aggregate,
+so standalone execution cannot write verifier state into the operator's home.
+The local run with the pinned real Cosign 3.0.5 passed valid, tampered,
+wrong-identity and disposable installation checks.
+
+Linux run `37144921600` at `0c25794a9a11f4b2d4b784dc91b3086dbb86d685`
+passed both complete Go-absent and Go-denied phases. The filtered PATH views
+now live outside the evidence directory: uploading those system-tool symlinks
+would archive installed programs rather than contract evidence. Raw contract
+logs and the source-bound reports remain in the upload. This Linux result does
+not replace the corrected three-platform integration-head gate.
+
 Each native update replay binds current Rust/Cargo/helper inputs before and after
 execution and retains bounded raw Cargo output. Changed fixture or raw-stream
 bytes fail before Cargo starts. The combined native workflow must pass at the

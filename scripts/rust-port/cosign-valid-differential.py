@@ -2,6 +2,7 @@
 """Exercise Go and Rust Cosign against one pinned public signed release."""
 
 import hashlib
+import json
 import os
 from pathlib import Path
 import shutil
@@ -35,6 +36,10 @@ def main():
         raise RuntimeError("real Cosign verification requires a local cosign CLI")
     if shutil.which("curl") is None:
         raise RuntimeError("pinned artifact download requires curl")
+    original_home = Path.home()
+    toolchain = {}
+    if os.environ.get("GO_ORACLE") == "1":
+        toolchain = json.loads(run(["go", "env", "-json", "GOMODCACHE", "GOROOT"], dict(os.environ, GOTOOLCHAIN="go1.26.6")))
     with tempfile.TemporaryDirectory(prefix="corekit-cosign-valid-") as directory:
         for name, expected in ASSETS.items():
             result = subprocess.run(
@@ -51,6 +56,13 @@ def main():
             (Path(directory) / name).write_bytes(result.stdout)
         env = dict(os.environ, GOTOOLCHAIN="go1.26.6", CGO_ENABLED="0",
                    COSIGN_VALID_FIXTURE_DIR=directory)
+        env.update(toolchain)
+        for variable, suffix in (("CARGO_HOME", ".cargo"), ("RUSTUP_HOME", ".rustup")):
+            env[variable] = os.environ.get(variable, str(original_home / suffix))
+        for variable, suffix in (("HOME", "home"), ("USERPROFILE", "home"), ("XDG_CACHE_HOME", "cache"), ("XDG_CONFIG_HOME", "config"), ("APPDATA", "config"), ("XDG_DATA_HOME", "data"), ("LOCALAPPDATA", "data"), ("XDG_STATE_HOME", "state"), ("TMPDIR", "tmp"), ("TMP", "tmp"), ("TEMP", "tmp")):
+            private = Path(directory) / suffix
+            private.mkdir(mode=0o700, exist_ok=True)
+            env[variable] = str(private)
         rust = run(
             ["cargo", "test", "-p", "symaira-core-update", "--lib", "--locked",
              RUST_TEST, "--", "--ignored", "--exact"], env,

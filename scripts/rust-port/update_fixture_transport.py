@@ -59,13 +59,18 @@ def tls_fixture(mode, private_tmp):
         directory = Path(directory)
         key = directory / "key.pem"
         certificate = directory / "cert.pem"
+        # The original untrusted httptest certificate uses RSA. Its explicitly
+        # trusted TLS-version fixtures use Ed25519. Match that distinction so
+        # Windows' system verifier reports the original trust-chain failure,
+        # rather than an unsupported untrusted signing algorithm.
+        untrusted = mode == "tls"
         creation = subprocess.run(
-            [openssl, "req", "-new", "-x509", "-newkey", "ed25519", "-nodes",
+            [openssl, "req", "-new", "-x509", "-newkey", "rsa:2048" if untrusted else "ed25519", "-nodes",
              "-keyout", str(key), "-out", str(certificate), "-days", "1",
              "-subj", "/CN=corekit-disposable-loopback",
              "-addext", "subjectAltName=IP:127.0.0.1",
-             "-addext", "basicConstraints=critical,CA:FALSE",
-             "-addext", "keyUsage=critical,digitalSignature",
+             "-addext", "basicConstraints=critical,CA:TRUE" if untrusted else "basicConstraints=critical,CA:FALSE",
+             "-addext", "keyUsage=critical,digitalSignature,keyCertSign" if untrusted else "keyUsage=critical,digitalSignature",
              "-addext", "extendedKeyUsage=serverAuth"],
             capture_output=True, timeout=15, check=False,
         )
