@@ -14,7 +14,7 @@ import sys
 import tarfile
 import tempfile
 
-from frozen_process_oracle import check
+from frozen_process_oracle import check, stream_exchange
 
 REPO = Path(__file__).resolve().parents[2]
 ORACLE_COMMIT = "f3d3eb79b9b1f31b4f973d2ed518a8292cedf588"
@@ -76,16 +76,7 @@ def run(binary: Path, stdin: bytes, case: dict) -> tuple[int, bytes, bytes]:
     }
     env.update(case.get("env", {}))
     env.update({key: os.environ[key] for key in ("TMPDIR", "TMP", "TEMP", "SystemRoot") if key in os.environ})
-    completed = subprocess.run(
-        [str(binary)],
-        input=stdin,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        env=env,
-        timeout=30,
-        check=False,
-    )
-    return completed.returncode, completed.stdout, completed.stderr
+    return stream_exchange(binary, stdin, env, timeout=30)
 
 
 def main() -> int:

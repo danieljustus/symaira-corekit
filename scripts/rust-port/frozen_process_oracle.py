@@ -12,12 +12,11 @@ import json
 import os
 from pathlib import Path
 import platform
-import queue
 import subprocess
 import sys
 import tempfile
-import threading
-import time
+
+from bounded_fixture_process import exchange
 
 
 def sha256(data: bytes) -> str:
@@ -28,62 +27,18 @@ def native_os() -> str:
     return {"darwin": "darwin", "linux": "linux", "win32": "windows"}[sys.platform]
 
 
-def serial_line_exchange(binary: Path, stdin: bytes, env: dict, timeout: int):
-    """Same-process panic recovery, with bounded request/response readiness.
+def native_arch(value=None) -> str:
+    machine = (platform.machine() if value is None else value).lower()
+    return {"x86_64": "amd64", "amd64": "amd64", "aarch64": "arm64", "arm64": "arm64"}.get(machine, machine)
 
-    ponytail: only the owned MCP line fixture uses this exchange. Add a framed
-    decoder and descendant cleanup before widening it to arbitrary processes.
-    """
-    deadline = time.monotonic() + timeout
-    replies = queue.Queue()
-    output = bytearray()
-    reader_errors = []
-    limit = 2 * 1024 * 1024
-    with tempfile.TemporaryFile() as errors, subprocess.Popen(
-        [str(binary)], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-        stderr=errors, env=env,
-    ) as process:
-        source, sink = process.stdout, process.stdin
-        assert source is not None and sink is not None
-        def read_replies():
-            try:
-                while line := source.readline(limit + 1):
-                    if len(output) + len(line) > limit:
-                        raise ValueError("MCP exchange stdout exceeds its capture bound")
-                    output.extend(line)
-                    replies.put(line)
-                replies.put(None)
-            except Exception as error:
-                reader_errors.append(error)
-                replies.put(error)
-        reader = threading.Thread(target=read_replies, daemon=True)
-        reader.start()
-        try:
-            for line in stdin.splitlines(keepends=True):
-                sink.write(line)
-                sink.flush()
-                reply = replies.get(timeout=max(0.001, deadline - time.monotonic()))
-                if isinstance(reply, Exception):
-                    raise reply
-                if reply is None:
-                    raise ValueError("MCP process ended before its next response")
-            sink.close()
-            code = process.wait(timeout=max(0.001, deadline - time.monotonic()))
-            reader.join(timeout=1)
-            if reader.is_alive():
-                raise ValueError("MCP exchange stdout did not reach EOF")
-            if reader_errors:
-                raise reader_errors[0]
-            errors.seek(0)
-            stderr = errors.read(limit + 1)
-            if len(stderr) > limit:
-                raise ValueError("MCP exchange stderr exceeds its capture bound")
-            return code, bytes(output), stderr
-        finally:
-            if process.poll() is None:
-                process.kill()
-                process.wait(timeout=5)
-            reader.join(timeout=1)
+
+def serial_line_exchange(binary: Path, stdin: bytes, env: dict, timeout: int):
+    """Same-process line readiness, bounded streams and owned-child cleanup."""
+    return exchange([str(binary)], stdin, env, timeout, serial=True)
+
+
+def stream_exchange(binary: Path, stdin: bytes, env: dict, timeout: int):
+    return exchange([str(binary)], stdin, env, timeout)
 
 
 def provenance(runner: Path, helper: Path, cases_path: Path, oracle_commit: str) -> dict:
@@ -92,6 +47,7 @@ def provenance(runner: Path, helper: Path, cases_path: Path, oracle_commit: str)
         "cases_sha256": sha256(cases_path.read_bytes()),
         "generator_sha256": sha256(runner.read_bytes()),
         "capture_helper_sha256": sha256(Path(__file__).read_bytes()),
+        "execution_helper_sha256": sha256(Path(__file__).with_name("bounded_fixture_process.py").read_bytes()),
     }
 
 
@@ -143,6 +99,8 @@ def load_capture(path, expected_sha, runner, helper, cases_path, oracle_commit, 
             raise ValueError(f"frozen capture provenance mismatch: {key}")
     if observed["goos"] != native_os() or not observed["go_version"].startswith("go version go1.26.6 "):
         raise ValueError("frozen capture native platform/toolchain mismatch")
+    if native_arch(observed.get("architecture", "")) != native_arch():
+        raise ValueError("frozen capture native architecture mismatch")
     rows = document["cases"]
     ids = [case["id"] for case in cases]
     if not ids or len(ids) != len(payloads) or len(ids) != len(set(ids)) or [row["id"] for row in rows] != ids:
@@ -215,5 +173,5 @@ def check(runner, helper, cases_path, oracle_commit, cases, payloads, build_go, 
     if mismatch(mutated, actual[0], cases[0]) != "exit/stdout differs":
         raise ValueError("frozen expected stdout mutation was not rejected by Rust comparison")
     print(f"PASS negative control {cases[0]['id']}: exit/stdout differs")
-    print(f"PASS {runner.stem} ({len(cases)} executed Rust cases; {'live Go+frozen' if live else 'frozen Go'} expected)")
+    print(f"PASS {runner.stem} ({len(cases)} executed Rust cases; {'live Go+frozen' if live else 'frozen Go'} expected; Rust replay {native_os()}/{native_arch()})")
     return 0

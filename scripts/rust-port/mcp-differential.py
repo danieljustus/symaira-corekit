@@ -13,7 +13,7 @@ import sys
 import tarfile
 import tempfile
 
-from frozen_process_oracle import check, serial_line_exchange
+from frozen_process_oracle import check, serial_line_exchange, stream_exchange
 
 REPO = Path(__file__).resolve().parents[2]
 ORACLE_COMMIT = "ff0e10ede1071f0a3137fd2774bd89d53f60cc9d"
@@ -78,8 +78,7 @@ def run(binary: Path, stdin: bytes, case: dict) -> tuple[int, bytes, bytes]:
         if case["id"] != "MCP-011" or case["mode"] != "line":
             raise ValueError("request-response exchange is only defined for MCP-011 line mode")
         return serial_line_exchange(binary, stdin, env, timeout=10)
-    completed = subprocess.run([str(binary)], input=stdin, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env, timeout=10, check=False)
-    return completed.returncode, completed.stdout, completed.stderr
+    return stream_exchange(binary, stdin, env, timeout=10)
 
 
 def main() -> int:

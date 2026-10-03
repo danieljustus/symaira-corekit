@@ -176,7 +176,7 @@
     "cases_sha256": "e1f34aca9efae00d0ea796b065c4529d9f57d5fdf909b480f57ce0620932e1f8",
     "execution_helper_sha256": "e3e89f9d7670964f9d242dc167248e957df8254b652815ad7cc23238902ff381",
     "generator_sha256": "6ad7cbc319adfbf18eea534b10c36bfdda84089ac333e3bb54389592b6f276ed",
-    "go_binary_sha256": "0aa38912e940ea58649b308bd43514ad54ff4cb13281f1e2a453b6cb68041158",
+    "go_binary_sha256": "f8bf491e99e0518adc2dbe384039a92e7e765386d2bef88fa29ef7410d6fbadb",
     "go_version": "go version go1.26.6 darwin/arm64",
     "goos": "darwin",
     "oracle_commit": "f3d3eb79b9b1f31b4f973d2ed518a8292cedf588",
