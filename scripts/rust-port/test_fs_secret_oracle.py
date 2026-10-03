@@ -186,10 +186,9 @@ class FrozenOracleGuardTests(unittest.TestCase):
             self.assertEqual(report["commands"][0]["stderr_sha256"], hashlib.sha256(failed.stderr).hexdigest())
 
     def test_default_replay_fails_before_any_subprocess_without_reviewed_anchor(self):
-        native = oracle._native_goos_arch()
-        if oracle._target_key(*native) in TRUSTED_CAPTURE_SHA256:
-            self.skipTest("this native target now has a separately reviewed anchor")
-        with mock.patch.object(oracle, "run_checked", side_effect=AssertionError("replay tried Go/Git/Cargo without an anchor")) as runner:
+        with mock.patch.object(oracle, "TRUSTED_CAPTURE_SHA256", {}), mock.patch.object(
+            oracle, "run_checked", side_effect=AssertionError("replay tried Go/Git/Cargo without an anchor")
+        ) as runner:
             with self.assertRaisesRegex(oracle.OracleError, "no independently reviewed.*anchor"):
                 oracle.replay_native()
         runner.assert_not_called()
@@ -379,6 +378,31 @@ class FrozenOracleGuardTests(unittest.TestCase):
         compile_failure = subprocess.CompletedProcess([], 1, b"error: could not compile\n", b"")
         with self.assertRaisesRegex(oracle.OracleError, "named test"):
             oracle._assert_named_test_result(compile_failure, passed=False, exact_reason="compile")
+
+    def test_preflight_rejects_changed_out_of_crate_embedded_inputs(self):
+        recorded = oracle._candidate_file_records(oracle.ROOT)
+        paths = {item["path"].removeprefix("candidate/") for item in recorded}
+        embedded = ("testdata/rust-port/fixtures/fs-secret/corpus.json", "contracts/secret_refs.json")
+        self.assertTrue(set(embedded).issubset(paths))
+        with tempfile.TemporaryDirectory(prefix="fs-secret-embedded-inputs-") as directory:
+            root = Path(directory)
+            for relative in paths:
+                target = root / relative
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_bytes((oracle.ROOT / relative).read_bytes())
+            capture = {"candidate": {"files": recorded}}
+            oracle._verify_candidate_files(capture, root)
+            for relative in embedded:
+                with self.subTest(input=relative):
+                    target = root / relative
+                    original = target.read_bytes()
+                    target.write_bytes(original + b"\n")
+                    try:
+                        with self.assertRaisesRegex(oracle.OracleError, "source differs"):
+                            oracle._verify_candidate_files(capture, root)
+                    finally:
+                        target.write_bytes(original)
+            oracle._verify_candidate_files(capture, root)
 
     def test_cargo_metadata_guard_binds_workspace_package_target_and_source(self):
         root = Path("/candidate").resolve()

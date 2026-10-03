@@ -639,52 +639,90 @@ jobs:
   rust-rust003-native:
     name: Rust RUST-003 native (${{ matrix.os }})
     needs: changes
-    if: needs.changes.outputs.full == 'true'
+    # Capture-only preparation is not anchored Rust acceptance. Every ordinary
+    # PR/main run still requires this gate after reviewed fixtures are registered.
+    if: needs.changes.outputs.full == 'true' && !(github.event_name == 'workflow_dispatch' && inputs.fs_secret_capture)
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-26, windows-latest]
+    env:
+      GIT_CONFIG_COUNT: '1'
+      GIT_CONFIG_KEY_0: core.autocrlf
+      GIT_CONFIG_VALUE_0: 'false'
+      FS_REPLAY_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
-      - name: Set up Go oracle toolchain
-        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
-        with:
-          go-version: "1.26.6"
       - name: Set up Python
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
-          python-version: "3.12"
+          python-version: "3.14"
       - name: Install pinned Rust toolchain
         shell: bash
         run: rustup toolchain install 1.98.0 --profile minimal --component rustfmt,clippy
-      - name: Format and focused native tests
-        run: |
-          cargo +1.98.0 fmt --all --check
-          cargo +1.98.0 test -p symaira-core-fs -p symaira-core-secretref --all-features --locked
-      - name: Build and run native differential probe
+      - name: Populate Rust dependencies before offline replay
+        run: cargo fetch --locked
+      - name: Run native frozen FS/SEC gate with executable Go and Git denials
         shell: bash
-        env:
-          GOTOOLCHAIN: go1.26.6
-          CGO_ENABLED: 0
         run: |
-          cargo +1.98.0 build --locked --bin rust-fs-secret
-          target="${{ runner.os }}"
-          case "$target" in Linux) target=linux ;; macOS) target=darwin ;; Windows) target=windows ;; esac
-          corpus="$RUNNER_TEMP/rust003-corpus-${target}.json"
-          python scripts/rust-port/generate_fs_secret.py --target "$target" --output "$corpus"
-          python scripts/rust-port/validate_fs_secret.py --target "$target" --corpus "$corpus"
-          python scripts/rust-port/diff_fs_secret.py
-          python scripts/rust-port/fs-path-control-differential.py
-      - name: Retain versioned public path-control evidence
+          python -B - <<'PY'
+          import hashlib, json, os, pathlib, re, shutil, sys, tempfile
+          sys.path.insert(0, "scripts/rust-port")
+          from bounded_oracle_process import run_checked
+          root = pathlib.Path(os.environ["RUNNER_TEMP"]) / "fs-frozen-native"
+          root.mkdir()
+          # Use the OS/private TMPDIR, not artifact storage: security tests must
+          # not inherit a group-writable volume ancestor from a report path.
+          scratch = pathlib.Path(tempfile.mkdtemp(prefix="fs-frozen-native-scratch-"))
+          (root / "scratch-path.json").write_text(json.dumps({"owned_scratch": str(scratch)}) + "\n", encoding="utf-8")
+          denied = root / "denied-tools"
+          denied.mkdir()
+          marker = root / "forbidden-tool-called"
+          source = denied / "blocked.rs"
+          source.write_text('fn main() { std::fs::write(' + json.dumps(marker.as_posix(), ensure_ascii=False) + ', b"invoked").unwrap(); std::process::exit(97); }\n', encoding="utf-8")
+          suffix = ".exe" if os.name == "nt" else ""
+          binary = denied / ("blocked" + suffix)
+          run_checked(["rustc", "--edition=2024", "--crate-name", "blocked_oracle", str(source), "-o", str(binary)], cwd=pathlib.Path.cwd(), env=dict(os.environ), timeout=120, artifact_dir=root / "denial-build", check=True)
+          for name in ("go", "git"):
+              executable = denied / (name + suffix)
+              shutil.copy2(binary, executable)
+              probe = run_checked([str(executable), "--version"], cwd=root, env=dict(os.environ), timeout=30, artifact_dir=root / (name + "-denial-control"), check=False)
+              assert probe.returncode == 97 and marker.read_bytes() == b"invoked"
+              marker.unlink()  # Only the positive control owns this sentinel.
+          env = dict(os.environ, PATH=str(denied) + os.pathsep + os.environ["PATH"], CARGO_NET_OFFLINE="true", RUSTUP_AUTO_INSTALL="0", TMPDIR=str(scratch), PYTHONDONTWRITEBYTECODE="1")
+          try:
+              gate = run_checked(["make", "rust-fs-secret-frozen-contract"], cwd=pathlib.Path.cwd(), env=env, timeout=600, artifact_dir=root / "make-gate", check=True)
+          finally:
+              for instance in scratch.glob("fs-secret-replay-*"):
+                  logs = instance / "logs"
+                  if logs.is_dir():
+                      shutil.copytree(logs, root / "replay-raw" / instance.name)
+          assert not marker.exists(), "frozen acceptance invoked Go or Git"
+          summary = json.loads([line for line in gate.stdout.split(b"\n") if line.strip()][-1])
+          assert summary["status"] == "PASS" and summary["fs_sec_case_count"] == 13
+          assert summary["path_control_count"] == 9 and summary["rust_named_test_passes"] == 1
+          assert len(summary["mutations"]) == 2
+          logs = pathlib.Path(summary["artifacts_dir"]).resolve()
+          assert logs.is_relative_to(scratch.resolve())
+
+          head = os.environ["FS_REPLAY_HEAD"]
+          assert re.fullmatch(r"[0-9a-f]{40}", head)
+          report = dict(summary, execution_head=head, go_git_denial_controls=True, forbidden_tool_called=False, denial_binary_sha256=hashlib.sha256(binary.read_bytes()).hexdigest())
+          (root / "result.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
+          print(json.dumps(report, sort_keys=True))
+          shutil.rmtree(scratch)  # Only this invocation owns the private root.
+          PY
+      - name: Retain frozen replay and executable denial evidence
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: fs-path-native-${{ matrix.os }}-${{ github.event.pull_request.head.sha || github.sha }}
-          path: target/fs-path-control-native.json
+          name: fs-frozen-native-${{ matrix.os }}-${{ github.event.pull_request.head.sha || github.sha }}
+          path: ${{ runner.temp }}/fs-frozen-native
           if-no-files-found: error
           retention-days: 30
       - name: Audit Rust dependencies

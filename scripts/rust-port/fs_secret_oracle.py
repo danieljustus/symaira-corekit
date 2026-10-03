@@ -53,6 +53,9 @@ GROUP_NAMES = ("candidate", "oracle", "modules", "sdk")
 # The independently reviewed anchor is deliberately excluded: review may add
 # its digest after a clean native capture without rewriting captured inputs.
 CANDIDATE_SCRIPT_FILES = (
+    # Both parity binaries embed these inputs from outside their crate roots.
+    "contracts/secret_refs.json",
+    "testdata/rust-port/fixtures/fs-secret/corpus.json",
     "scripts/rust-port/generate_fs_secret.py",
     "scripts/rust-port/validate_fs_secret.py",
     "scripts/rust-port/diff_fs_secret.py",

@@ -77,14 +77,25 @@ rust-sqlite-refreeze:
 	python3 scripts/rust-port/sqlite/diff.py --typed-errors --output testdata/rust-port/sqlite/differential-macos-refreeze-$$(date -u +%Y%m%dT%H%M%SZ).json
 	@echo "REFROZEN: review both artifacts independently, then repoint the acceptance tests."
 
-rust-fs-secret-contract:
+.PHONY: rust-fs-secret-frozen-contract rust-fs-secret-live-oracle
+rust-fs-secret-frozen-contract:
 	cargo fmt --all --check
 	cargo test -p symaira-core-fs -p symaira-core-secretref --all-features --locked
 	cargo clippy -p symaira-core-fs -p symaira-core-secretref --all-targets --all-features --locked -- -D warnings
+	python3 -c 'import pathlib,tomllib; r=pathlib.Path.cwd(); assert (r/"contracts/secret_refs.json").read_bytes()==(r/"rust/symaira-core-secretref/contracts/secret_refs.json").read_bytes(); assert all(tomllib.loads((r/"rust"/c/"Cargo.toml").read_text())["package"]["publish"] is False for c in ("symaira-core-fs","symaira-core-secretref"))'
+	python3 -m unittest discover -s scripts/rust-port -p 'test_fs_secret_oracle.py'
+	python3 scripts/rust-port/fs_secret_oracle.py
+
+# Preserve the original live evidence path, but never invoke it implicitly.
+rust-fs-secret-live-oracle:
+	@test "$$GO_ORACLE" = 1 || { echo "live FS/SEC oracle requires GO_ORACLE=1" >&2; exit 1; }
 	python3 scripts/rust-port/generate_fs_secret.py --check
 	python3 scripts/rust-port/validate_fs_secret.py
 	python3 scripts/rust-port/diff_fs_secret.py
 	python3 scripts/rust-port/fs-path-control-differential.py
+
+# Keep the complete security gate; portable replay does not replace Miri.
+rust-fs-secret-contract: rust-fs-secret-frozen-contract
 	cargo audit
 	cargo deny check
 	@command -v cargo-miri >/dev/null 2>&1 && MIRIFLAGS=-Zmiri-disable-isolation cargo +nightly miri test -p symaira-core-fs -p symaira-core-secretref --all-features || { echo "cargo-miri is required for rust-fs-secret-contract"; exit 1; }
