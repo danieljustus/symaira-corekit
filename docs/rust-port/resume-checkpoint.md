@@ -1,3 +1,14 @@
+## Frozen FS/SEC registration (2026-10-03)
+
+PR #398 now registers the unchanged three-platform Go 1.26.6 fixture bytes
+reviewed at source `5fc5299a56e96b6007fda7d8900363f3aa6ba282`. Separate
+registration reconstructed both Git snapshots, all original bundle files,
+SDK archives/compiler inputs and raw Go observations, and rejected observation
+mutations on every target. See `evidence/fs-frozen-registration-20261003.json`.
+Native Rust acceptance with executable Go/Git denials and both mutation controls
+remains the integration gate. #368 still requires the remaining oracle families
+and aggregate Go-free suite; RUST-016/014/015 and Go retirement remain blocked.
+
 # Resume checkpoint — Rust consumer release gates open
 
 ## Current consumer API completion candidate (2026-10-02)

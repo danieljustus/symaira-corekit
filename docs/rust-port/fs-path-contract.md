@@ -21,11 +21,13 @@ The Rust control predicate remains `char::is_control()`. Do not weaken it to Go'
 
 These are execution requirements, not a claim that pending CI already passed. The earlier ad-hoc C1 stdout capture was incomplete because literal C1 characters were removed in transit; it is not accepted evidence for those cases.
 
-## Frozen oracle preparation
+## Frozen oracle replay
 
 `scripts/rust-port/fs_secret_oracle.py` prepares one native fixture containing the existing thirteen FS/SEC observations and nine strict-v1 controls. Default replay requires a separately reviewed SHA-256 anchor, executes the current Rust binary and the named strict-v1 test, and rejects both an observable mutation and the real DEL-acceptance assertion mutation. It never starts Go or Git.
 
-The anchor map is initially empty. This preparation is not frozen acceptance: fresh clean native captures, independent source/raw-output review, exact-byte registration and native Rust replay are still required. Historical corpora and prior live native reports remain unchanged. The existing Go-based contract target remains in place until the replacement passes all these gates.
+Three unchanged native Go 1.26.6 captures from source `5fc5299a56e96b6007fda7d8900363f3aa6ba282` are registered under `testdata/rust-port/fixtures/fs-secret/frozen-v1/`. The independent provenance review and separate registration reconstruction bind original streams, compiler/module inputs, embedded Rust inputs and exact fixture hashes; see `evidence/fs-frozen-registration-20261003.json`. Default `make rust-fs-secret-frozen-contract` uses these fixed anchors and runs no Go or Git. Native Rust replay acceptance is tracked separately and must pass before integration. Historical corpora and raw bundles remain unchanged.
+
+POSIX captures use the native runner umask `022`; replay must use the same umask to compare the requested `0750` mkdir modes. All scratch roots are explicitly private `0700`. A run inherited from `umask 077` correctly rejects the changed observed mode rather than normalizing it away.
 
 Capture is additive and requires `GO_ORACLE=1`. For example, on native Darwin/arm64, with an installed Go 1.26.6 compiler and populated dependency cache:
 
