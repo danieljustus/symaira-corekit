@@ -9,7 +9,7 @@ Continue the code and integration work from the published repository, without ne
 - Base code commit before this document/checkpoint: `2a6b7b5c15916c946d3c93d45fa856367d4eb022`.
 - Working directory for every command below: the checked-out repository root.
 - Publication does not authorize a merge, release, tag, destructive cleanup or paid service.
-- Continuation draft PR: #157. Keep it draft until its code/acceptance gates are independently satisfied.
+- Continuation PR: #157. The original publication was a draft checkpoint. The subsequent request to complete issues and merge reviewed PRs authorizes its documentation integration; required checks still apply.
 
 No source modifications were made by this work unit. The clean shared-library state and its continuation constraints are published as a reproducible checkpoint.
 
@@ -33,27 +33,26 @@ git ls-remote --exit-code origin refs/heads/handoff/20260930-cloud
 git status --porcelain=v1 -uall
 ```
 
-Locally observed toolchains: Git 2.54.0, gh 2.102.0, Rust/Cargo 1.98.0, Go 1.27.1, Node 22.22.3, Ruby 2.6.10, Swift 6.4, regular Xcode. Rust repositories pin their toolchain in `rust-toolchain.toml`; honor the checked-in manifests. Go Oracle regeneration must use the exact Go version required by its own manifest/generator, not this observed machine version. Native Swift requires full Xcode. Package-manager caches are rebuildable, not required private inputs.
+The original local verification used Swift 6.4 and full Xcode on macOS. Follow `AGENTS.md` and use the Makefile: it selects a full Xcode toolchain without changing the machine-wide selection. Command Line Tools alone are insufficient. Package-manager caches are rebuildable, not required private inputs.
 
 Scoped reproduction commands, not a claim of the complete product suite:
 
 ```sh
-swift test
+make toolchain
+make test
 ```
 
 Build command (not claimed executed unless listed in verification):
 
 ```sh
-swift build
+make build
 ```
 
 Start/help command (not executed for live services/devices):
 
-```sh
-Shared Swift library: no application or daemon start command.
-```
+This is a shared Swift library; it has no application or daemon start command.
 
-For Rust, optional resource limits are `CARGO_BUILD_JOBS=2`, `CARGO_PROFILE_TEST_DEBUG=0`, `CARGO_PROFILE_DEV_DEBUG=0`. `CARGO_TARGET_DIR` may name a fresh build-output directory on stable storage; it is never a source, fixture or configuration input. Do not reuse a build-target directory between code variants when validating changed tests. Each fresh verification uses its own build output. No provider/API secret is required for these scoped mock/unit checks. Do not use real credential, document, broker or router state. Do not enable paid model fallback.
+Use a fresh Swift build-output directory when comparing code variants. No provider/API secret is required for these scoped mock/unit checks. Do not use real credentials or application state. Do not enable paid model fallback.
 
 ## Dependencies and exclusions
 
@@ -62,8 +61,6 @@ Tracked lockfiles, manifests, generators and fixtures are the reproducible input
 Pinned Git dependency commits found in the selected top-level manifest: none in the inspected top-level manifests. Package managers must resolve these through public repositories; a fresh-checkout failure to fetch any is a concrete reproducibility blocker, not permission to alter a pin.
 
 Native GUI/Keychain/Touch ID, signing, notarization, and real user-permission behavior need macOS/hardware and remain unverified by generic cloud execution. Network access to GitHub and applicable package registries is required for dependency setup. Production access, signing credentials and live-service secrets must be separately supplied through approved secret management, never this repository. No cloud job is launched by this document.
-
-
 
 ## Verification record
 
@@ -77,7 +74,9 @@ Fresh remote-clone verification was executed locally on macOS at published check
 swift test
 ```
 
-Rust compilation used two jobs, disabled dev/test debug info and a distinct build-output directory for each variant. Those output directories contained no required source or fixture inputs. Package manager dependency caches were allowed; application state and credentials were not supplied. This verifies repository-contained inputs and these scoped checks, not every product test or native acceptance criterion. Final documentation changes do not change the tested source; the published final HEAD must still be verified before continuation. Target cloud runtime, permissions, secrets and network gates: **not checked**.
+The command above is a historical record, not the recommended entrypoint for new runs. Package manager dependency caches were allowed; application state and credentials were not supplied. This verifies repository-contained inputs and these scoped checks, not every native acceptance criterion. Final documentation changes do not change the tested source; the published final HEAD must still be verified before continuation. Target cloud runtime, permissions, secrets and network gates: **not checked**.
+
+During the 2026-10-03 documentation review, comparison with `main` confirmed that this PR changes only this file. In the Linux cloud checkout, `python3 scripts/test_select_xcode.py` passed all five tests and `python3 scripts/verify-approved-icon.py` verified 25 assets and six renders. `make toolchain` failed because full Xcode is unavailable; no native Swift build/test success is claimed for that environment. GitHub macOS CI remains the native build/test gate for integration.
 
 ## Copyable continuation request
 
