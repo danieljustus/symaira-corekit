@@ -518,6 +518,131 @@ while not pathlib.Path({str(release)!r}).exists(): time.sleep(0.005)
                     thread.join(10.0)
                     self.assertFalse(thread.is_alive())
 
+    def test_member_created_after_inventory_is_not_certified_from_empty_accounting(self):
+        """A real late birth must not be hidden by an empty Job counter."""
+        if os.name != "nt":
+            raise unittest.SkipTest("requires native Windows Job membership")
+        import ctypes
+        from ctypes import wintypes
+        api = bop._new_windows_api()
+        kernel = api.kernel32
+        kernel.TerminateProcess.argtypes = [ctypes.c_void_p, wintypes.UINT]
+        kernel.TerminateProcess.restype = wintypes.BOOL
+        retain = api.retain_job_members
+        late_handles = []
+        observations = {"test": "job-member-born-after-identity-inventory"}
+        with tempfile.TemporaryDirectory(prefix="windows-late-member-") as directory:
+            root = Path(directory)
+            trigger, ready = root / "spawn", root / "pid"
+            child_code = "import os,time; print(os.getpid(),flush=True); time.sleep(30)"
+            parent_code = f'''import pathlib,subprocess,sys,time
+print("READY",flush=True)
+while not pathlib.Path({str(trigger)!r}).exists(): time.sleep(0.005)
+child = subprocess.Popen([sys.executable,"-c",{child_code!r}],stdout=subprocess.PIPE,text=True)
+pid = child.stdout.readline().strip()
+pathlib.Path({str(ready)!r}).write_text(pid)
+time.sleep(30)
+'''
+
+            def snapshot_then_spawn(job):
+                handles = retain(job)
+                observations["total_before_birth"] = api.total_processes(job)
+                trigger.write_bytes(b"spawn after snapshot")
+                deadline = time.monotonic() + 3.0
+                while not ready.exists() or not ready.read_bytes():
+                    if time.monotonic() >= deadline:
+                        # These are caller-owned inventory handles even on a probe failure.
+                        for handle in handles:
+                            api.close_handle(handle)
+                        raise OSError("late descendant did not become ready")
+                    time.sleep(0.005)
+                handle = kernel.OpenProcess(0x00100000 | 0x1000 | 0x0001, False, int(ready.read_text()))
+                self.assertTrue(handle, ctypes.get_last_error())
+                late_handles.append(handle)
+                member = wintypes.BOOL()
+                self.assertTrue(kernel.IsProcessInJob(handle, job, ctypes.byref(member)))
+                self.assertTrue(member.value)
+                self.assertEqual(kernel.WaitForSingleObject(handle, 0), 258)
+                observations.update(total_after_birth=api.total_processes(job), member_after_inventory=True)
+                return handles
+
+            try:
+                failure = None
+                with mock.patch.object(bop, "_new_windows_api", return_value=api), mock.patch.object(api, "retain_job_members", side_effect=snapshot_then_spawn):
+                    try:
+                        result = _run(parent_code, timeout=0.5, limit=256)
+                    except bop.BoundedProcessError as exc:
+                        failure, result = exc, exc.result
+                self.assertGreater(observations["total_after_birth"], observations["total_before_birth"])
+                observations.update(cleanup_verified=result["cleanup_verified"], timed_out=result["timed_out"], wait_after=kernel.WaitForSingleObject(late_handles[0], 0))
+                print("WINDOWS_LATE_MEMBER " + json.dumps(observations, sort_keys=True), flush=True)
+                self.assertIsNotNone(failure, "late unretained identity must fail closed, not inherit Job-empty approval")
+                self.assertFalse(result["cleanup_verified"])
+                self.assertTrue(result["timed_out"])
+                self.assertEqual(_reader_threads(), [])
+            finally:
+                for handle in late_handles:
+                    if kernel.WaitForSingleObject(handle, 3000) == 258:
+                        self.assertTrue(kernel.TerminateProcess(handle, 1))
+                        self.assertEqual(kernel.WaitForSingleObject(handle, 3000), 0)
+                    self.assertTrue(kernel.CloseHandle(handle))
+
+    def test_inventory_failure_retries_first_close_and_closes_later_identities(self):
+        if os.name != "nt":
+            raise unittest.SkipTest("requires native Windows process handles")
+        api = bop._new_windows_api()
+        opened, closed, attempts = [], set(), []
+        original_open = api.kernel32.OpenProcess
+        original_member = api.kernel32.IsProcessInJob
+        original_close = api.close_handle
+        injected = False
+
+        def open_process(*args):
+            handle = original_open(*args)
+            if handle:
+                opened.append(handle)
+            return handle
+
+        def membership(*args):
+            if len(opened) >= 2:
+                raise OSError("injected second identity inventory failure")
+            return original_member(*args)
+
+        def close(handle):
+            nonlocal injected
+            if opened and handle == opened[0]:
+                attempts.append(handle)
+                if not injected:
+                    injected = True
+                    raise OSError("injected first identity CloseHandle failure")
+            original_close(handle)
+            if handle in opened:
+                closed.add(handle)
+
+        child_code = "import os,time; print(os.getpid(),flush=True); time.sleep(30)"
+        parent_code = f'''import subprocess,sys,time
+child = subprocess.Popen([sys.executable,"-c",{child_code!r}],stdout=subprocess.PIPE,text=True)
+print("READY " + child.stdout.readline().strip(),flush=True)
+time.sleep(30)
+'''
+        try:
+            with mock.patch.object(bop, "_new_windows_api", return_value=api), mock.patch.object(api.kernel32, "OpenProcess", side_effect=open_process), mock.patch.object(api.kernel32, "IsProcessInJob", side_effect=membership), mock.patch.object(api, "close_handle", side_effect=close):
+                with self.assertRaises(bop.BoundedProcessError) as caught:
+                    _run(parent_code, timeout=0.5, limit=256)
+            self.assertGreaterEqual(len(opened), 2)
+            self.assertTrue(injected)
+            self.assertEqual(closed, set(opened), "later inventory identities must still close after first-close failure")
+            self.assertEqual(len(attempts), 2)
+            self.assertIn("second identity inventory failure", str(caught.exception))
+            self.assertFalse(caught.exception.result["cleanup_verified"])
+            self.assertEqual(_reader_threads(), [])
+        finally:
+            # Only handles created by this probe are cleaned on an assertion failure.
+            for handle in opened:
+                if handle not in closed:
+                    original_close(handle)
+                    closed.add(handle)
+
     def test_leader_exit_alone_closes_inherited_pipe_descendant(self):
         child_code = "import os,time; print('DESC', os.getpid(), flush=True); time.sleep(30)"
         parent_code = f'''

@@ -489,7 +489,7 @@ if os.name == "nt":
             if not self.kernel32.TerminateJobObject(job, 1):
                 raise self._winerror("TerminateJobObject failed")
 
-        def active_processes(self, job) -> int:
+        def _accounting(self, job):
             info = _BasicAccountingInformation()
             returned = wintypes.DWORD()
             ok = self.kernel32.QueryInformationJobObject(
@@ -503,7 +503,13 @@ if os.name == "nt":
                 raise self._winerror("QueryInformationJobObject failed")
             if returned.value < ctypes.sizeof(info):
                 raise OSError(f"short Job accounting result: {returned.value} bytes")
-            return int(info.ActiveProcesses)
+            return info
+
+        def active_processes(self, job) -> int:
+            return int(self._accounting(job).ActiveProcesses)
+
+        def total_processes(self, job) -> int:
+            return int(self._accounting(job).TotalProcesses)
 
         def retain_job_members(self, job) -> list:
             """Hold verified member identities before initiating termination."""
