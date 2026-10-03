@@ -187,6 +187,178 @@ class StaticUpdateOracleTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "dirty capture is diagnostic only"):
             oracle.validate_capture("response", path)
 
+    def test_go_discovery_uses_path_or_explicit_launcher_and_requires_sdk_file(self):
+        sdk = Path(self.temporary.name) / "SDK with spaces"
+        binary = sdk / "bin" / ("go.exe" if oracle.os.name == "nt" else "go")
+        binary.parent.mkdir(parents=True)
+        binary.write_bytes(b"synthetic compiler path control, never executed")
+        result = subprocess.CompletedProcess([], 0, (str(sdk) + "\n").encode(), b"")
+        for explicit in (None, "/explicit/compiler launcher"):
+            with self.subTest(explicit=explicit), mock.patch.dict(oracle.os.environ):
+                oracle.os.environ.pop("GO_ORACLE_BIN", None)
+                if explicit:
+                    oracle.os.environ["GO_ORACLE_BIN"] = explicit
+                with mock.patch.object(oracle.subprocess, "run", return_value=result) as run:
+                    self.assertEqual(oracle._resolve_go_tool(), binary.resolve())
+                self.assertEqual(run.call_args.args[0], [explicit or "go", "env", "GOROOT"])
+                self.assertEqual(run.call_args.kwargs["env"]["GOTOOLCHAIN"], "go1.26.6")
+                self.assertEqual(run.call_args.kwargs["env"]["GOPROXY"], "off")
+        binary.unlink()
+        with mock.patch.object(oracle.subprocess, "run", return_value=result):
+            with self.assertRaisesRegex(RuntimeError, "no compiler executable"):
+                oracle._resolve_go_tool()
+
+    def test_go_preparation_rejects_wrong_executed_version(self):
+        scratch = Path(self.temporary.name)
+        results = [
+            subprocess.CompletedProcess([], 0, (str(scratch) + "\n").encode(), b""),
+            subprocess.CompletedProcess([], 0, b"go version go1.25.0 darwin/arm64\n", b""),
+        ]
+        with mock.patch.object(oracle, "_resolve_go_tool", return_value=scratch / "go"), mock.patch.object(oracle.subprocess, "run", side_effect=results):
+            with self.assertRaisesRegex(RuntimeError, "expected executed go1.26.6"):
+                oracle._prepare_go_env(scratch / "isolated")
+
+    def test_go_preparation_rejects_cross_target_before_capture(self):
+        scratch = Path(self.temporary.name)
+        results = [
+            subprocess.CompletedProcess([], 0, (str(scratch) + "\n").encode(), b""),
+            subprocess.CompletedProcess([], 0, b"go version go1.26.6 darwin/arm64\n", b""),
+            subprocess.CompletedProcess([], 0, ("go1.26.6\n" + str(scratch) + "\nlinux\namd64\n" + str(scratch) + "\n").encode(), b""),
+        ]
+        with mock.patch.object(oracle, "_resolve_go_tool", return_value=scratch / "go"), mock.patch.object(oracle.subprocess, "run", side_effect=results):
+            with self.assertRaisesRegex(RuntimeError, "does not match the native capture platform"):
+                oracle._prepare_go_env(scratch / "isolated")
+
+    def test_capture_rejects_input_drift_and_keeps_failed_raw_evidence(self):
+        # Synthetic subprocess/snapshot controls only. These reports are not Go
+        # observations and must never be registered as native capture evidence.
+        for failure in ("input-drift", "malformed-observation"):
+            with self.subTest(failure=failure):
+                root = Path(self.temporary.name) / failure
+                root.mkdir()
+                before = {"source_commit": "a" * 40, "working_tree_clean": False, "dirty_paths": ["go.mod"],
+                          "source_files": [{"path": "repository/go.mod", "sha256": "b" * 64}], "go_binary_sha256": "c" * 64}
+                after = json.loads(json.dumps(before))
+                if failure == "input-drift":
+                    after["source_files"][0]["sha256"] = "d" * 64
+                    output = json.dumps(json.loads(oracle.fixture_path("version").read_bytes())["cases"]).encode()
+                else:
+                    output = b"intentionally invalid observation JSON"
+                record = {"stage": "synthetic-unit-control", "command": ["synthetic"], "cwd": "unit-only",
+                          "exit_code": 0, "stdout": output, "stderr": b""}
+                prepared = ({}, "go version go1.26.6 darwin/arm64", str(root), "darwin", "arm64", str(root), root / "fake-go")
+                with mock.patch.dict(oracle.os.environ, {"GO_ORACLE": "1"}), mock.patch.object(oracle, "_prepare_go_env", return_value=prepared), mock.patch.object(oracle, "_capture_inputs", side_effect=[before, after]), mock.patch.object(oracle, "_run", return_value=record):
+                    with self.assertRaises(ValueError):
+                        oracle.capture_go("version", root / "evidence")
+                evidence = list((root / "evidence").iterdir())
+                self.assertEqual(len(evidence), 1)
+                self.assertEqual((evidence[0] / "observation.raw").read_bytes(), output)
+                report = json.loads((evidence[0] / "run.json").read_bytes())
+                self.assertIs(report["success"], False)
+                self.assertEqual(report["input_snapshot"], before)
+
+    def _registration_candidate(self, name, target=("darwin", "arm64")):
+        """Synthetic registration input only; callers explicitly stub its anchor."""
+        root = Path(self.temporary.name) / name
+        root.mkdir(parents=True, exist_ok=True)
+        payload = json.loads(oracle.fixture_path("response").read_bytes())
+        capture = payload["capture"]
+        capture["capturer_sha256"] = oracle.sha256(Path(oracle.__file__).read_bytes())
+        capture["go"].update(goos=target[0], goarch=target[1], version="go version go1.26.6 " + "/".join(target))
+        candidate = root / ("candidate-" + "-".join(target) + ".json")
+        candidate.write_bytes(oracle._json_bytes(payload))
+        return root, candidate, oracle.fixture_path("response", root=root, target=target), "/".join((*target, "response"))
+
+    def test_registration_rejects_malformed_candidates_before_any_write(self):
+        mutations = [
+            ("schema_version", None, True),
+            ("schema_version", None, False),
+            ("schema_version", True, False),
+            ("source_files", None, False),
+            ("working_tree_clean", None, False),
+            ("raw.exit_code", False, False),
+            ("case_count", True, False),
+        ]
+        for i, (field, value, remove) in enumerate(mutations):
+            with self.subTest(field=field, value=value, remove=remove):
+                root, candidate, destination, key = self._registration_candidate(f"schema-{i}")
+                payload = json.loads(candidate.read_bytes())
+                target = payload["capture"]["raw"] if field == "raw.exit_code" else payload["capture"]
+                name = field.split(".")[-1]
+                if remove:
+                    del target[name]
+                else:
+                    target[name] = value
+                candidate.write_bytes(oracle._json_bytes(payload))
+                anchors = {key: oracle.sha256(candidate.read_bytes())}
+                with mock.patch.dict(oracle.os.environ, {"GO_ORACLE": "1"}), mock.patch.object(oracle, "ANCHORS", anchors):
+                    with self.assertRaises(ValueError):
+                        oracle.register_capture(candidate, destination, root=root)
+                self.assertFalse(destination.exists())
+                self.assertFalse((root / "testdata/rust-port/fixtures/update/static-v1/index-v2.json").exists())
+
+    def test_registration_index_failure_rolls_back_owned_capture_and_allows_retry(self):
+        root, first, first_destination, first_key = self._registration_candidate("rollback")
+        _, second, second_destination, second_key = self._registration_candidate("rollback", ("linux", "amd64"))
+        anchors = {first_key: oracle.sha256(first.read_bytes()), second_key: oracle.sha256(second.read_bytes())}
+        index_path = first_destination.parents[1] / "index-v2.json"
+        with mock.patch.dict(oracle.os.environ, {"GO_ORACLE": "1"}), mock.patch.object(oracle, "ANCHORS", anchors):
+            oracle.register_capture(first, first_destination, root=root)
+            original_index = index_path.read_bytes()
+            original_capture = first_destination.read_bytes()
+            with mock.patch.object(oracle.os, "replace", side_effect=PermissionError("injected index publication failure")):
+                with self.assertRaisesRegex(PermissionError, "injected"):
+                    oracle.register_capture(second, second_destination, root=root)
+            self.assertFalse(second_destination.exists())
+            self.assertEqual(index_path.read_bytes(), original_index)
+            self.assertEqual(first_destination.read_bytes(), original_capture)
+            self.assertEqual(list(index_path.parent.glob(".register-*")), [])
+            oracle.register_capture(second, second_destination, root=root)
+            self.assertEqual(second_destination.read_bytes(), second.read_bytes())
+            self.assertEqual(set(json.loads(index_path.read_bytes())["captures"]), set(anchors))
+
+    def test_registration_staging_failure_does_not_publish_capture(self):
+        root, candidate, destination, key = self._registration_candidate("stage-failure")
+        anchors = {key: oracle.sha256(candidate.read_bytes())}
+        original = Path.write_bytes
+
+        def fail_index(path, data):
+            if path.name == "index.json" and path.parent.name.startswith(".register-"):
+                raise OSError("injected staging failure")
+            return original(path, data)
+
+        with mock.patch.dict(oracle.os.environ, {"GO_ORACLE": "1"}), mock.patch.object(oracle, "ANCHORS", anchors), mock.patch.object(Path, "write_bytes", autospec=True, side_effect=fail_index):
+            with self.assertRaisesRegex(OSError, "injected staging failure"):
+                oracle.register_capture(candidate, destination, root=root)
+        self.assertFalse(destination.exists())
+        self.assertFalse((destination.parents[1] / "index-v2.json").exists())
+        self.assertEqual(list(destination.parents[1].glob(".register-*")), [])
+
+    def test_registration_failure_never_removes_a_foreign_destination(self):
+        for phase in ("before-link", "before-index"):
+            with self.subTest(phase=phase):
+                root, candidate, destination, key = self._registration_candidate(phase)
+                anchors = {key: oracle.sha256(candidate.read_bytes())}
+                original_link = oracle.os.link
+
+                def racing_link(source, target):
+                    destination.write_bytes(b"foreign collision sentinel")
+                    return original_link(source, target)
+
+                def racing_replace(source, target):
+                    destination.unlink()
+                    destination.write_bytes(b"foreign collision sentinel")
+                    raise PermissionError("injected replacement race")
+
+                method = "link" if phase == "before-link" else "replace"
+                side_effect = racing_link if phase == "before-link" else racing_replace
+                with mock.patch.dict(oracle.os.environ, {"GO_ORACLE": "1"}), mock.patch.object(oracle, "ANCHORS", anchors), mock.patch.object(oracle.os, method, side_effect=side_effect):
+                    with self.assertRaises(OSError):
+                        oracle.register_capture(candidate, destination, root=root)
+                self.assertEqual(destination.read_bytes(), b"foreign collision sentinel")
+                self.assertFalse((destination.parents[1] / "index-v2.json").exists())
+                self.assertEqual(list(destination.parents[1].glob(".register-*")), [])
+
     def test_synthetic_registration_preserves_two_native_target_entries(self):
         # Synthetic platform records test index mechanics only. Review anchors
         # are explicitly stubbed; neither row is genuine native acceptance.

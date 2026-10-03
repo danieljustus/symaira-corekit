@@ -22,7 +22,7 @@ UPDATE_FIXTURES = ROOT / "testdata/rust-port/fixtures/update"
 STATIC_ROOT = UPDATE_FIXTURES / "static-v1"
 INDEX_PATH = STATIC_ROOT / "index-v2.json"
 MANIFEST = ROOT / "rust/symaira-core-update/Cargo.toml"
-GO_TOOL = Path.home() / "sdk/go1.26.6/bin/go"
+GO_TOOLCHAIN = "go1.26.6"
 
 LANES = {
     "version": {
@@ -157,22 +157,42 @@ def validate_capture(lane: str, path: Path, root: Path = ROOT, *, diagnostic: bo
         raise ValueError(f"{lane} provenance path mismatch")
     if entry.get("sha256") != sha256(raw):
         raise ValueError(f"{lane} Go capture digest mismatch")
+    capture = _validate_payload(lane, payload, (goos, goarch))
+    if capture["capturer_sha256"] != entry.get("capturer_sha256"):
+        raise ValueError(f"{lane} capture helper digest mismatch")
+    if type(entry.get("working_tree_clean")) is not bool:
+        raise ValueError(f"{lane} working_tree_clean must be boolean")
+    if capture["source_commit"] != entry.get("source_commit") or capture["working_tree_clean"] != entry["working_tree_clean"]:
+        raise ValueError(f"{lane} source identity mismatch")
+    if type(entry.get("case_count")) is not int or entry["case_count"] != capture["case_count"] or entry.get("case_ids") != capture["case_ids"]:
+        raise ValueError(f"{lane} provenance case inventory mismatch")
+    if (entry.get("goos"), entry.get("goarch")) != (goos, goarch):
+        raise ValueError(f"{lane} native platform identity mismatch")
+    if ANCHORS.get(key) != sha256(raw):
+        raise ValueError(f"{lane} independently reviewed capture anchor mismatch")
+    if not diagnostic and not capture["working_tree_clean"]:
+        raise ValueError(f"{lane} dirty capture is diagnostic only; clean source-bound recapture required")
+    if not diagnostic and capture.get("capture_mode") != "fresh-pinned-go-execution-additive-v2":
+        raise ValueError(f"{lane} acceptance requires verified pre-execution transitive inputs")
+    return payload
+
+
+def _validate_payload(lane: str, payload: dict, target: tuple[str, str] | None = None) -> dict:
+    """Apply one structural contract before registration and on replay."""
+    if not isinstance(payload, dict):
+        raise ValueError(f"{lane} capture payload must be an object")
     capture = payload.get("capture")
     if not isinstance(capture, dict) or type(capture.get("schema_version")) is not int or capture["schema_version"] != 1:
         raise ValueError(f"{lane} capture lacks versioned provenance")
     if capture.get("lane") != lane:
         raise ValueError(f"{lane} capture lane mismatch")
-    if capture.get("capturer_sha256") != entry.get("capturer_sha256"):
-        raise ValueError(f"{lane} capture helper digest mismatch")
     # The producer is historical. The independent whole-capture anchor binds its
     # identity; changing the validator must not relabel a historical execution.
     for field, pattern in (("source_commit", r"[0-9a-f]{40}"), ("capturer_sha256", r"[0-9a-f]{64}")):
         if not isinstance(capture.get(field), str) or re.fullmatch(pattern, capture[field]) is None:
             raise ValueError(f"{lane} invalid required provenance field: {field}")
-    if type(capture.get("working_tree_clean")) is not bool or type(entry.get("working_tree_clean")) is not bool:
+    if type(capture.get("working_tree_clean")) is not bool:
         raise ValueError(f"{lane} working_tree_clean must be boolean")
-    if capture["source_commit"] != entry.get("source_commit") or capture["working_tree_clean"] != entry["working_tree_clean"]:
-        raise ValueError(f"{lane} source identity mismatch")
     dirty_paths = capture.get("dirty_paths")
     if not isinstance(dirty_paths, list) or any(not isinstance(item, str) for item in dirty_paths):
         raise ValueError(f"{lane} missing or malformed dirty-path inventory")
@@ -192,29 +212,36 @@ def validate_capture(lane: str, path: Path, root: Path = ROOT, *, diagnostic: bo
             if not isinstance(digest, str) or re.fullmatch(r"[0-9a-f]{64}", digest) is None:
                 raise ValueError(f"{lane} invalid provenance input digest: {field}")
             seen.add(name)
-    cases = _at_path(payload, LANES[lane]["case_path"])
+    try:
+        cases = _at_path(payload, LANES[lane]["case_path"])
+        ids = case_ids(lane, payload)
+    except (KeyError, TypeError) as error:
+        raise ValueError(f"{lane} capture lacks a valid case inventory") from error
     if not isinstance(cases, list) or len(cases) != LANES[lane]["count"]:
         raise ValueError(f"{lane} capture case count mismatch")
-    ids = case_ids(lane, payload)
-    if len(set(ids)) != len(ids) or ids != capture.get("case_ids"):
+    if any(not isinstance(item, str) or not item for item in ids) or len(set(ids)) != len(ids) or ids != capture.get("case_ids"):
         raise ValueError(f"{lane} capture case IDs mismatch")
-    if type(entry.get("case_count")) is not int or type(capture.get("case_count")) is not int or capture["case_count"] != len(cases) or entry["case_count"] != len(cases) or entry.get("case_ids") != ids:
+    if type(capture.get("case_count")) is not int or capture["case_count"] != len(cases):
         raise ValueError(f"{lane} provenance case inventory mismatch")
     if capture.get("case_fingerprints_sha256") != _case_fingerprints(lane, payload):
         raise ValueError(f"{lane} case fingerprint inventory mismatch")
     go = capture.get("go")
-    if not isinstance(go, dict) or go.get("version") != "go version go1.26.6 " + go.get("goos", "") + "/" + go.get("goarch", ""):
+    if not isinstance(go, dict) or go.get("goos") not in ("darwin", "linux", "windows") or go.get("goarch") not in ("amd64", "arm64"):
+        raise ValueError(f"{lane} invalid Go platform identity")
+    if go.get("version") != "go version go1.26.6 " + go["goos"] + "/" + go["goarch"]:
         raise ValueError(f"{lane} capture does not record executed Go 1.26.6 identity")
-    if (entry.get("goos"), entry.get("goarch")) != (goos, goarch) or (go.get("goos"), go.get("goarch")) != (goos, goarch):
+    if target is not None and (go["goos"], go["goarch"]) != target:
         raise ValueError(f"{lane} native platform identity mismatch")
-    raw_exit = capture.get("raw", {}).get("exit_code")
+    raw_record = capture.get("raw")
+    raw_exit = raw_record.get("exit_code") if isinstance(raw_record, dict) else None
     if type(raw_exit) is not int or raw_exit != 0:
         raise ValueError(f"{lane} capture records a failed Go execution")
-    if ANCHORS.get(key) != sha256(raw):
-        raise ValueError(f"{lane} independently reviewed capture anchor mismatch")
-    if not diagnostic and not capture["working_tree_clean"]:
-        raise ValueError(f"{lane} dirty capture is diagnostic only; clean source-bound recapture required")
-    return payload
+    if capture.get("capture_mode") == "fresh-pinned-go-execution-additive-v2":
+        snapshot = {name: capture[name] for name in ("source_commit", "working_tree_clean", "dirty_paths", "source_files")}
+        snapshot["go_binary_sha256"] = go.get("binary_sha256")
+        if capture.get("input_inventory_verified") is not True or capture.get("input_snapshot_sha256") != sha256(canonical_json(snapshot)):
+            raise ValueError(f"{lane} invalid verified input snapshot")
+    return capture
 
 
 def _source_files(lane: str) -> list[Path]:
@@ -236,13 +263,62 @@ def _source_files(lane: str) -> list[Path]:
     return paths
 
 
-def _source_inventory(lane: str) -> list[dict]:
-    files = []
-    for path in _source_files(lane):
+def _source_inventory(lane: str, go_tool: Path, env: dict[str, str]) -> list[dict]:
+    """Discover actual transitive native build inputs, including SDK and module files."""
+    package = "./" + str(Path(LANES[lane]["oracle"][0]).parent).replace(os.sep, "/")
+    fields = "Dir,GoFiles,CgoFiles,CFiles,CXXFiles,MFiles,FFiles,SFiles,HFiles,SysoFiles,EmbedFiles,TestGoFiles,XTestGoFiles,TestEmbedFiles,XTestEmbedFiles,Module"
+    command = [str(go_tool), "list", "-deps", "-json=" + fields]
+    if lane == "swap":
+        command.append("-test")
+    result = subprocess.run([*command, package], cwd=ROOT, env=env, capture_output=True, timeout=30, check=False)
+    if result.returncode != 0:
+        raise RuntimeError("cannot discover complete Go oracle build inputs")
+    decoder = json.JSONDecoder()
+    text = result.stdout.decode("utf-8")
+    paths = set(_source_files(lane))
+    while text.strip():
+        text = text.lstrip()
+        obj, end = decoder.raw_decode(text)
+        text = text[end:]
+        directory = Path(obj["Dir"])
+        for field in fields.split(",")[1:-1]:
+            paths.update(directory / name for name in obj.get(field, []))
+        module = obj.get("Module")
+        if isinstance(module, dict):
+            for effective in (module, module.get("Replace", {})):
+                if effective.get("GoMod"):
+                    mod = Path(effective["GoMod"])
+                    paths.add(mod)
+                    if mod.with_name("go.sum").is_file():
+                        paths.add(mod.with_name("go.sum"))
+    tool_dir = subprocess.run([str(go_tool), "env", "GOTOOLDIR"], cwd=ROOT, env=env, capture_output=True, timeout=30, check=True)
+    paths.update(path for path in Path(tool_dir.stdout.decode().strip()).iterdir() if path.is_file())
+    paths.update((go_tool, Path(__file__), Path(__file__).with_name("static_update_anchors.py"), UPDATE_FIXTURES / LANES[lane]["legacy"]))
+    if lane == "extract":
+        paths.update(path for path in (ROOT / "scripts/rust-port/update-extract-oracle/testdata").rglob("*") if path.is_file())
+    roots = [("toolchain", Path(env["GOROOT"]).resolve()), ("modules", Path(env["GOMODCACHE"]).resolve()),
+             ("generated", Path(env["GOCACHE"]).resolve()), ("repository", ROOT.resolve())]
+    files = {}
+    for original in paths:
+        path = original.resolve()
         if not path.is_file():
-            raise ValueError(f"missing Go capture input: {path}")
-        files.append({"path": path.relative_to(ROOT).as_posix(), "sha256": sha256(path.read_bytes())})
-    return files
+            raise ValueError("missing Go capture input")
+        name = next((scope + "/" + path.relative_to(root).as_posix() for scope, root in roots if path.is_relative_to(root)), None)
+        if name is None:
+            raise ValueError("Go oracle input escapes repository, toolchain and module roots")
+        files[name] = {"path": name, "sha256": sha256(path.read_bytes())}
+    return [files[key] for key in sorted(files)]
+
+
+def _capture_inputs(lane: str, go_tool: Path, env: dict[str, str]) -> dict:
+    files = _source_inventory(lane, go_tool, env)
+    status = subprocess.run(["git", "status", "--porcelain=v1", "--untracked-files=all"], cwd=ROOT, capture_output=True, timeout=30, check=True)
+    head = subprocess.run(["git", "rev-parse", "HEAD"], cwd=ROOT, capture_output=True, timeout=30, check=True)
+    binary_name = "toolchain/" + go_tool.relative_to(Path(env["GOROOT"]).resolve()).as_posix()
+    binary_digest = next(item["sha256"] for item in files if item["path"] == binary_name)
+    return {"source_commit": head.stdout.decode().strip(), "working_tree_clean": not bool(status.stdout.strip()),
+            "dirty_paths": [line[3:].decode("utf-8", "replace") for line in status.stdout.splitlines()],
+            "source_files": files, "go_binary_sha256": binary_digest}
 
 
 def _case_fingerprints(lane: str, payload: dict) -> list[str]:
@@ -255,7 +331,7 @@ def _run(command: list[str], env: dict[str, str], cwd: Path, stage: str) -> dict
     temp_root = Path(env["TMPDIR"]).parent
     command_record = []
     for item in command:
-        if item == str(GO_TOOL):
+        if item == str(Path(env["GOROOT"]) / "bin" / ("go.exe" if os.name == "nt" else "go")):
             command_record.append("go")
             continue
         try:
@@ -272,23 +348,43 @@ def _run(command: list[str], env: dict[str, str], cwd: Path, stage: str) -> dict
     }
 
 
-def _prepare_go_env(temp: Path) -> tuple[dict[str, str], str, str, str, str, str]:
-    if not GO_TOOL.is_file():
-        raise RuntimeError(f"pinned Go 1.26.6 SDK missing at {GO_TOOL}")
+def _resolve_go_tool() -> Path:
+    """Resolve the effective pinned compiler before changing HOME, without downloads."""
+    launcher = os.environ.get("GO_ORACLE_BIN", "go")
+    env = dict(os.environ, GOTOOLCHAIN=GO_TOOLCHAIN, GOPROXY="off", GOSUMDB="off", GOENV="off", GOWORK="off")
+    result = subprocess.run([launcher, "env", "GOROOT"], env=env, cwd=ROOT, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=30, check=False)
+    if result.returncode != 0:
+        raise RuntimeError("cannot resolve an installed pinned Go compiler")
+    goroot = Path(result.stdout.decode("utf-8").strip())
+    if not goroot.is_absolute():
+        raise RuntimeError("Go compiler discovery returned a nonabsolute SDK root")
+    tool = goroot / "bin" / ("go.exe" if os.name == "nt" else "go")
+    if not tool.is_file():
+        raise RuntimeError("resolved Go SDK has no compiler executable")
+    return tool.resolve()
+
+
+def _prepare_go_env(temp: Path) -> tuple[dict[str, str], str, str, str, str, str, Path]:
+    go_tool = _resolve_go_tool()
     env = dict(os.environ)
-    base_env = dict(os.environ, GOTOOLCHAIN="local", GOPROXY="off", GOSUMDB="off", GOFLAGS="-mod=readonly")
-    base_modcache = subprocess.run([str(GO_TOOL), "env", "GOMODCACHE"], env=base_env, cwd=ROOT, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False)
+    base_env = dict(os.environ, GOTOOLCHAIN="local", GOPROXY="off", GOSUMDB="off", GOFLAGS="-mod=readonly", GOENV="off", GOWORK="off")
+    base_modcache = subprocess.run([str(go_tool), "env", "GOMODCACHE"], env=base_env, cwd=ROOT, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=30, check=False)
     if base_modcache.returncode != 0:
         raise RuntimeError("cannot resolve existing Go module cache: " + base_modcache.stderr.decode("utf-8", "replace"))
     gomodcache = base_modcache.stdout.decode("utf-8").strip()
     if not Path(gomodcache).is_dir():
         raise RuntimeError(f"existing Go module cache is unavailable: {gomodcache}")
-    for name in ("home", "xdg", "tmp", "gocache"):
+    for name in ("home", "xdg", "config", "data", "state", "tmp", "gocache"):
         (temp / name).mkdir(parents=True, exist_ok=True)
     env.update({
         "HOME": str(temp / "home"),
         "USERPROFILE": str(temp / "home"),
         "XDG_CACHE_HOME": str(temp / "xdg"),
+        "XDG_CONFIG_HOME": str(temp / "config"),
+        "XDG_DATA_HOME": str(temp / "data"),
+        "XDG_STATE_HOME": str(temp / "state"),
+        "APPDATA": str(temp / "config"),
+        "LOCALAPPDATA": str(temp / "data"),
         "TMPDIR": str(temp / "tmp"),
         "TMP": str(temp / "tmp"),
         "TEMP": str(temp / "tmp"),
@@ -299,21 +395,26 @@ def _prepare_go_env(temp: Path) -> tuple[dict[str, str], str, str, str, str, str
         "GOFLAGS": "-mod=readonly",
         "GOMODCACHE": gomodcache,
         "CGO_ENABLED": "0",
+        "GOENV": "off",
+        "GOWORK": "off",
     })
-    actual = subprocess.run([str(GO_TOOL), "version"], env=env, cwd=ROOT, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False)
+    actual = subprocess.run([str(go_tool), "version"], env=env, cwd=ROOT, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=30, check=False)
     if actual.returncode != 0:
         raise RuntimeError("pinned Go version command failed: " + actual.stderr.decode("utf-8", "replace"))
     version = actual.stdout.decode("utf-8").strip()
     if not version.startswith("go version go1.26.6 "):
         raise RuntimeError(f"expected executed go1.26.6 compiler, got {version}")
-    env_output = subprocess.run([str(GO_TOOL), "env", "GOVERSION", "GOROOT", "GOOS", "GOARCH", "GOMODCACHE"], env=env, cwd=ROOT, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False)
+    env_output = subprocess.run([str(go_tool), "env", "GOVERSION", "GOROOT", "GOOS", "GOARCH", "GOMODCACHE"], env=env, cwd=ROOT, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=30, check=False)
     if env_output.returncode != 0:
         raise RuntimeError("pinned Go env command failed: " + env_output.stderr.decode("utf-8", "replace"))
     goversion, goroot, goos, goarch, gomodcache = env_output.stdout.decode("utf-8").splitlines()
     if goversion != "go1.26.6":
         raise RuntimeError(f"go env reported unexpected compiler {goversion}")
+    if (goos, goarch) != native_goos_arch():
+        raise RuntimeError("Go compiler target does not match the native capture platform")
     env["GOMODCACHE"] = gomodcache
-    return env, version, goroot, goos, goarch, gomodcache
+    env["GOROOT"] = goroot
+    return env, version, goroot, goos, goarch, gomodcache, go_tool
 
 
 def _build_payload(lane: str, output: bytes, generated_files: list[dict], goos: str, goarch: str) -> dict:
@@ -371,13 +472,14 @@ def capture_go(lane: str, artifacts_dir: Path | None = None) -> tuple[dict, dict
         raise RuntimeError("live Go capture requires explicit GO_ORACLE=1")
     with tempfile.TemporaryDirectory(prefix=f"static-update-{lane}-") as scratch_name:
         scratch = Path(scratch_name)
-        env, version, goroot, goos, goarch, gomodcache = _prepare_go_env(scratch)
+        env, version, goroot, goos, goarch, gomodcache, go_tool = _prepare_go_env(scratch)
+        inputs_before = _capture_inputs(lane, go_tool, env)
         records: list[dict] = []
         generated_files: list[dict] = []
         observation_bytes: bytes | None = None
         if lane == "extract":
             binary = scratch / ("extract-oracle.exe" if os.name == "nt" else "extract-oracle")
-            build = _run([str(GO_TOOL), "build", "-o", str(binary), "./scripts/rust-port/update-extract-oracle"], env, ROOT, "build-go-extract-oracle")
+            build = _run([str(go_tool), "build", "-o", str(binary), "./scripts/rust-port/update-extract-oracle"], env, ROOT, "build-go-extract-oracle")
             records.append(build)
             if build["exit_code"] != 0:
                 raise RuntimeError("Go extraction oracle build failed")
@@ -394,12 +496,12 @@ def capture_go(lane: str, artifacts_dir: Path | None = None) -> tuple[dict, dict
         elif lane == "swap":
             generated = scratch / "swap-observation.json"
             swap_env = dict(env, COREKIT_SWAP_ORACLE_OUT=str(generated))
-            result = _run([str(GO_TOOL), "test", "-count=1", "-run", "^TestAtomicSwapOracle$", "./updatecheck/updateapply"], swap_env, ROOT, "run-go-swap-test")
+            result = _run([str(go_tool), "test", "-count=1", "-run", "^TestAtomicSwapOracle$", "./updatecheck/updateapply"], swap_env, ROOT, "run-go-swap-test")
             records.append(result)
             if generated.is_file():
                 observation_bytes = generated.read_bytes()
         else:
-            command = [str(GO_TOOL), *LANES[lane]["command"][1:]]
+            command = [str(go_tool), *LANES[lane]["command"][1:]]
             result = _run(command, env, ROOT, f"run-go-{lane}-oracle")
             records.append(result)
             observation_bytes = result["stdout"]
@@ -428,36 +530,41 @@ def capture_go(lane: str, artifacts_dir: Path | None = None) -> tuple[dict, dict
             raise RuntimeError(f"Go {lane} oracle failed; raw execution evidence retained at {evidence_path or 'temporary scratch'}")
         if observation_bytes is None:
             raise RuntimeError(f"Go {lane} oracle produced no observation bytes")
-        payload = _build_payload(lane, observation_bytes, generated_files, goos, goarch)
+        try:
+            payload = _build_payload(lane, observation_bytes, generated_files, goos, goarch)
+            if _capture_inputs(lane, go_tool, env) != inputs_before:
+                raise ValueError("Go oracle source/toolchain inputs changed during execution")
+        except Exception as error:
+            if evidence_path is not None:
+                (evidence_path / "run.json").write_bytes(_json_bytes({"lane": lane, "raw": raw, "go_version": version,
+                    "goos": goos, "goarch": goarch, "success": False, "validation_error": type(error).__name__,
+                    "input_snapshot": inputs_before}))
+            raise
         # Exact historical files remain untouched. Record their digest to bind this
         # additive capture to the pre-existing generation without relabeling it.
-        legacy_path = UPDATE_FIXTURES / LANES[lane]["legacy"]
-        legacy_digest = sha256(legacy_path.read_bytes()) if legacy_path.is_file() else None
-        source_inventory = _source_inventory(lane)
-        status = subprocess.run(["git", "status", "--porcelain=v1", "--untracked-files=all"], cwd=ROOT, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False)
-        head = subprocess.run(["git", "rev-parse", "HEAD"], cwd=ROOT, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False)
-        if status.returncode != 0 or head.returncode != 0:
-            raise RuntimeError("cannot bind Go capture to local source identity")
-        go_binary = GO_TOOL.resolve()
+        frozen = {item["path"]: item["sha256"] for item in inputs_before["source_files"]}
+        legacy_digest = frozen[f"repository/testdata/rust-port/fixtures/update/{LANES[lane]['legacy']}"]
         payload["capture"] = {
             "schema_version": 1,
             "lane": lane,
-            "source_commit": head.stdout.decode().strip(),
-            "working_tree_clean": not bool(status.stdout.strip()),
-            "dirty_paths": [line[3:].decode("utf-8", "replace") for line in status.stdout.splitlines()],
+            "source_commit": inputs_before["source_commit"],
+            "working_tree_clean": inputs_before["working_tree_clean"],
+            "dirty_paths": inputs_before["dirty_paths"],
             "go": {"version": version, "goversion": "go1.26.6", "goroot": Path(goroot).name, "goos": goos, "goarch": goarch,
-                   "binary_sha256": sha256(go_binary.read_bytes()), "gomodcache": "existing-cache-read-only"},
-            "capturer_sha256": sha256(Path(__file__).read_bytes()),
-            "oracle_files": [{"path": path, "sha256": sha256((ROOT / path).read_bytes())} for path in LANES[lane]["oracle"]],
-            "source_files": source_inventory,
-            "go_module_inputs": [{"path": path, "sha256": sha256((ROOT / path).read_bytes())} for path in ("go.mod", "go.sum") if (ROOT / path).is_file()],
+                   "binary_sha256": inputs_before["go_binary_sha256"], "gomodcache": "existing-cache-read-only"},
+            "capturer_sha256": frozen["repository/scripts/rust-port/static_update_oracle.py"],
+            "oracle_files": [{"path": path, "sha256": frozen["repository/" + path]} for path in LANES[lane]["oracle"]],
+            "source_files": inputs_before["source_files"],
+            "go_module_inputs": [{"path": path, "sha256": frozen["repository/" + path]} for path in ("go.mod", "go.sum") if "repository/" + path in frozen],
             "historical_fixture": {"path": f"testdata/rust-port/fixtures/update/{LANES[lane]['legacy']}", "sha256": legacy_digest},
             "case_count": LANES[lane]["count"],
             "case_ids": case_ids(lane, payload),
             "case_fingerprints_sha256": [sha256(canonical_json(case)) for case in _at_path(payload, LANES[lane]["case_path"])],
             "generated_inputs": generated_files,
             "raw": raw,
-            "capture_mode": "fresh-pinned-go-execution-additive-v1",
+            "capture_mode": "fresh-pinned-go-execution-additive-v2",
+            "input_inventory_verified": True,
+            "input_snapshot_sha256": sha256(canonical_json(inputs_before)),
         }
         return payload, payload["capture"], evidence_path
 
@@ -478,9 +585,10 @@ def register_capture(candidate: Path, destination: Path, root: Path = ROOT) -> N
         lane = next(name for name, spec in LANES.items() if spec["fixture"] == destination.name)
     except StopIteration as error:
         raise ValueError("destination filename does not identify an update lane") from error
-    payload = json.loads(candidate.read_text(encoding="utf-8"))
-    capture = payload.get("capture", {})
-    if capture.get("lane") != lane or capture.get("capturer_sha256") != sha256(Path(__file__).read_bytes()):
+    data = candidate.read_bytes()
+    payload = json.loads(data)
+    capture = _validate_payload(lane, payload)
+    if capture["capturer_sha256"] != sha256(Path(__file__).read_bytes()):
         raise ValueError("candidate provenance does not match this lane/capturer")
     go = capture.get("go", {})
     static_root = root / "testdata/rust-port/fixtures/update/static-v1"
@@ -489,9 +597,6 @@ def register_capture(candidate: Path, destination: Path, root: Path = ROOT) -> N
     expected_parent = static_root / _goos_arch(go.get("goos", ""), go.get("goarch", ""))
     if destination.parent != expected_parent.resolve():
         raise ValueError("capture must be registered only to its exact native GOOS/GOARCH directory")
-    if len(case_ids(lane, payload)) != LANES[lane]["count"]:
-        raise ValueError("candidate case count mismatch")
-    data = candidate.read_bytes()
     if ANCHORS.get(key) != sha256(data):
         raise ValueError("registration requires independently reviewed candidate bytes")
     index = {"schema_version": 2, "captures": {}}
@@ -514,10 +619,31 @@ def register_capture(candidate: Path, destination: Path, root: Path = ROOT) -> N
         raise ValueError("refusing to replace a registered native capture")
     index["captures"][key] = entry
     destination.parent.mkdir(parents=True, exist_ok=True)
-    destination.write_bytes(data)
-    index_tmp = index_path.with_suffix(".json.tmp")
-    index_tmp.write_bytes(_json_bytes(index))
-    index_tmp.replace(index_path)
+    # ponytail: one coordinator writes this index. Stage both files and roll back
+    # ordinary publication failures; concurrent writers/crash recovery would need
+    # an interprocess lock and journal, not a claim of two-file atomicity.
+    with tempfile.TemporaryDirectory(prefix=".register-", dir=index_path.parent) as staging:
+        capture_tmp = Path(staging) / "capture.json"
+        index_tmp = Path(staging) / "index.json"
+        capture_tmp.write_bytes(data)
+        index_tmp.write_bytes(_json_bytes(index))
+        owned = capture_tmp.stat()
+        linked = indexed = False
+        try:
+            # A link publishes complete bytes without replacing a racing file.
+            os.link(capture_tmp, destination)
+            linked = True
+            index_tmp.replace(index_path)
+            indexed = True
+        finally:
+            if linked and not indexed:
+                try:
+                    current = destination.lstat()
+                except FileNotFoundError:
+                    pass
+                else:
+                    if os.path.samestat(owned, current):
+                        destination.unlink()
 
 
 def _capture_cli(args) -> None:
