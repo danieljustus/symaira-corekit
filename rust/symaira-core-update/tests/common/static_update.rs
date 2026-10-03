@@ -1,8 +1,20 @@
 use std::path::PathBuf;
 
-/// Resolve only the exact target-native oracle slice. Missing platform evidence is
-/// an error, never a skip or a Darwin fixture relabeled for another target.
+/// Honor the caller's explicit candidate fixture for all replay tests. Otherwise
+/// require the exact native slice, never a skip or another platform's capture.
 pub fn fixture_path(lane: &str) -> PathBuf {
+    let variable = match lane {
+        "version" => "UPDATE_VERSION_FIXTURE",
+        "response" => "RESPONSE_FIXTURE",
+        "install-method" => "INSTALL_METHOD_FIXTURE",
+        "extract" => "EXTRACT_FIXTURE",
+        "swap" => "UPDATE_SWAP_FIXTURE",
+        "checker" => "UPDATE_CHECKER_FIXTURE",
+        other => panic!("unknown static update-oracle lane {other}"),
+    };
+    if let Some(path) = std::env::var_os(variable) {
+        return PathBuf::from(path);
+    }
     let goos = match std::env::consts::OS {
         "macos" => "darwin",
         "linux" => "linux",

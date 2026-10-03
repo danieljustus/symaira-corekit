@@ -68,7 +68,7 @@ jobs:
         include:
           - os: ubuntu-latest
             target: linux-amd64
-          - os: macos-latest
+          - os: macos-26
             target: darwin-arm64
           - os: windows-latest
             target: windows-amd64
@@ -79,16 +79,17 @@ jobs:
       GOTOOLCHAIN: go1.26.6
       STATIC_EVIDENCE_TARGET: ${{ matrix.target }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version: '1.26.6'
           cache: true
       - uses: dtolnay/rust-toolchain@1.98.0
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
-          python-version: '3.12'
+          python-version: '3.14'
       - name: Native owned-process and registration controls
+        shell: bash
         run: |
           python -W error -m unittest discover -s scripts/rust-port -p test_bounded_oracle_process.py -v
           python -W error -m unittest discover -s scripts/rust-port -p test_static_update_oracle.py -v
@@ -135,7 +136,7 @@ jobs:
           PY
       - name: Retain native raw bytes and candidate comparisons
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: static-native-evidence-${{ matrix.target }}-${{ github.sha }}
           path: |

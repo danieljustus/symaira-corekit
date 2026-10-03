@@ -92,7 +92,9 @@ class BoundedCaptureTests(_CaptureAssertions):
 
     def test_stdout_overflow_keeps_only_bounded_raw_prefix(self):
         limit = 73
-        result = _run("import os; os.write(1, b'O' * 8192)", limit=limit)
+        # Closing the bounded reader can interrupt a pending native pipe write.
+        code = "import os\ntry: os.write(1, b'O' * 8192)\nexcept OSError: pass\n"
+        result = _run(code, limit=limit)
         self.assertTrue(result["output_exceeded"])
         self.assertLessEqual(len(result["stdout"]), limit)
         self.assertEqual(result["stdout"], b"O" * limit)
@@ -132,7 +134,7 @@ a.start(); b.start(); a.join(); b.join()
         self.assert_clean(result)
 
     def test_timeout_flag_and_bounded_reaping(self):
-        code = "import time; print('READY', flush=True); time.sleep(30)"
+        code = "import os,time; os.write(1,b'READY\\n'); time.sleep(30)"
         started = time.monotonic()
         result = _run(code, timeout=0.25, limit=64)
         elapsed = time.monotonic() - started
