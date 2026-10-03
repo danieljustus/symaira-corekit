@@ -186,7 +186,8 @@
         "make rust-sqlite-contract",
         "native CI rust-sqlite-native lane"
       ],
-      "stop_rule": "Keep deferred until two Rust consumers need the same SQLite policy. Do not claim parity from SQL text alone; stop on DB bytes/schema/pragmas/locking/rollback drift or unacceptable bundled-SQLite cost."
+      "stop_rule": "Keep deferred until two Rust consumers need the same SQLite policy. Do not claim parity from SQL text alone; stop on DB bytes/schema/pragmas/locking/rollback drift or unacceptable bundled-SQLite cost.",
+      "frozen_replay": "frozen-core-corpora.md"
     },
     {
       "id": "RUST-007",

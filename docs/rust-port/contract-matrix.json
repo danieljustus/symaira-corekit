@@ -962,7 +962,8 @@
         "windows"
       ],
       "rust_test": "symaira-core-sqlite/tests/open_policy.rs",
-      "status": "parity"
+      "status": "parity",
+      "frozen_replay": "frozen-core-corpora.md (original native Go reports and manifests; actual Rust replay with Go denied)"
     },
     {
       "id": "SQL-002",
@@ -977,7 +978,8 @@
         "windows"
       ],
       "rust_test": "symaira-core-sqlite/tests/contracts.rs",
-      "status": "parity"
+      "status": "parity",
+      "frozen_replay": "frozen-core-corpora.md (original native Go reports and manifests; actual Rust replay with Go denied)"
     },
     {
       "id": "SQL-003",
@@ -992,7 +994,8 @@
         "windows"
       ],
       "rust_test": "symaira-core-sqlite/tests/migration_selection.rs",
-      "status": "parity"
+      "status": "parity",
+      "frozen_replay": "frozen-core-corpora.md (original native Go reports and manifests; actual Rust replay with Go denied)"
     },
     {
       "id": "SQL-004",
@@ -1007,7 +1010,8 @@
         "windows"
       ],
       "rust_test": "symaira-core-sqlite/tests/contracts.rs",
-      "status": "parity"
+      "status": "parity",
+      "frozen_replay": "frozen-core-corpora.md (original native Go reports and manifests; actual Rust replay with Go denied)"
     },
     {
       "id": "SQL-005",
@@ -1022,7 +1026,8 @@
         "windows"
       ],
       "rust_test": "symaira-core-sqlite/tests/contracts.rs",
-      "status": "parity"
+      "status": "parity",
+      "frozen_replay": "frozen-core-corpora.md (original native Go reports and manifests; actual Rust replay with Go denied)"
     },
     {
       "id": "SQL-006",
@@ -1037,7 +1042,8 @@
         "windows"
       ],
       "rust_test": "symaira-core-sqlite/tests/sql006.rs",
-      "status": "parity"
+      "status": "parity",
+      "frozen_replay": "frozen-core-corpora.md (original native Go reports and manifests; actual Rust replay with Go denied)"
     },
     {
       "id": "UPD-001",

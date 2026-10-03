@@ -63,7 +63,10 @@ rust-sqlite-contract:
 	cargo test --manifest-path "$(CURDIR)/Cargo.toml" -p symaira-core-sqlite --all-features --locked
 	python3 -m unittest discover -s scripts/rust-port/sqlite -p 'test_*.py'
 	python3 -m unittest discover -s scripts/rust-port -p 'test_rust_sqlite_provenance.py'
-	python3 scripts/rust-port/sqlite/diff.py --typed-errors --output target/sqlite-contract-report.json
+	@if [ "$$GO_ORACLE" = 1 ]; then \
+		python3 scripts/rust-port/sqlite/diff.py --typed-errors --output target/sqlite-contract-report.json; \
+	fi
+	python3 scripts/rust-port/frozen_sqlite_replay.py
 
 # Documented recapture path for a genuine port-input change (see
 # docs/rust-port/adr-rust-003-candidate-source-scope.md). Never run

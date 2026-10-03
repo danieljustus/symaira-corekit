@@ -1,4 +1,4 @@
-name: Frozen Foundation and LLM contracts
+name: Frozen Foundation, LLM and SQLite contracts
 
 on:
   push:
@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   native:
-    name: Frozen Foundation/LLM (${{ matrix.os }})
+    name: Frozen Foundation/LLM/SQLite (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     timeout-minutes: 20
     strategy:
@@ -31,6 +31,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: '3.14'
@@ -40,7 +41,9 @@ jobs:
       - name: Populate dependencies before offline replay
         run: cargo fetch --locked
       - name: Check actual corpus mutation and restoration
-        run: python -B -W error -m unittest discover -s scripts/rust-port -p test_frozen_core_replay.py -v
+        run: |
+          python -B -W error -m unittest discover -s scripts/rust-port -p test_frozen_core_replay.py -v
+          python -B -W error -m unittest discover -s scripts/rust-port -p test_frozen_sqlite_replay.py -v
       - name: Execute default Make targets without Go or Git
         run: python -B scripts/rust-port/frozen_core_ci.py
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
