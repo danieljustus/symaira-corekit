@@ -55,6 +55,7 @@ jobs:
         run: |
           python -B -W error -m unittest discover -s scripts/rust-port -p test_update_fixture_transport.py -v
           python -B -W error -m unittest discover -s scripts/rust-port -p test_frozen_update_replay.py -v
+          python -B -W error -m unittest discover -s scripts/rust-port -p test_frozen_contracts_ci.py -v
       - name: Execute every native functional contract with Go absent and denied
         run: python -B scripts/rust-port/frozen_contracts_ci.py
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

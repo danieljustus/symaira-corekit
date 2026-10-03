@@ -14,6 +14,30 @@ ROOT = Path(__file__).resolve().parents[2]
 COUNTS = {"request": 13, "cache": 7, "persistence": 7, "cosign": 13, "apply": 17, "cancellation": 16}
 
 
+def path_without_go(original, directory):
+    """Hide only Go executables, preserving shared system-bin prerequisites."""
+    paths = []
+    for index, name in enumerate(original.split(os.pathsep)):
+        if not name:
+            continue
+        root = Path(name)
+        if not any((root / executable).is_file() for executable in ("go", "go.exe")):
+            paths.append(name)
+            continue
+        view = directory / f"bin-{index}"
+        view.mkdir()
+        for executable in root.iterdir():
+            lower = executable.name.lower()
+            if lower in {"go", "go.exe", "gofmt", "gofmt.exe", "gccgo", "gccgo.exe"} or re.fullmatch(r"go1\.[0-9.]+(?:\.exe)?", lower):
+                continue
+            if executable.is_file():
+                # Preserve the installed tool's bytes and resource location.
+                # Removing /usr/bin wholesale would also remove Make and cc.
+                (view / executable.name).symlink_to(executable.resolve())
+        paths.append(str(view))
+    return os.pathsep.join(paths)
+
+
 def main():
     head = os.environ["FROZEN_CONTRACTS_HEAD"]
     if not re.fullmatch(r"[0-9a-f]{40}", head):
@@ -34,8 +58,9 @@ def main():
     if control.returncode != 97 or marker.read_bytes() != b"invoked":
         raise ValueError("compiled native Go-denial control failed")
     marker.unlink()
-    paths = [name for name in os.environ["PATH"].split(os.pathsep) if name and not any((Path(name) / executable).is_file() for executable in ("go", "go.exe"))]
-    absent_path = os.pathsep.join(paths)
+    filtered = artifacts / "filtered-path"
+    filtered.mkdir()
+    absent_path = path_without_go(os.environ["PATH"], filtered)
     if shutil.which("go", path=absent_path) is not None:
         raise ValueError("Go remains discoverable in aggregate PATH")
     original_home = Path.home()
@@ -57,7 +82,9 @@ def main():
                 env[variable] = os.environ.get(variable, str(original_home / suffix))
             old = os.umask(0o022) if os.name == "posix" else None
             try:
-                result = run_checked(["make", "rust-contracts"], cwd=ROOT, env=env, timeout=1800, artifact_dir=artifacts / phase, check=True, merge_stderr=True)
+                result = run_checked(["make", "rust-contracts"], cwd=ROOT, env=env, timeout=1800, artifact_dir=artifacts / phase, merge_stderr=True)
+                if result.returncode:
+                    raise RuntimeError(f"Go-{phase} aggregate failed with exit {result.returncode}:\n" + result.stdout.decode(errors="replace")[-4096:])
             finally:
                 if old is not None:
                     os.umask(old)
