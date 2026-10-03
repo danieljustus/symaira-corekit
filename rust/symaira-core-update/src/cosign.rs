@@ -336,6 +336,24 @@ fn verify_with_executable(
     signature: &[u8],
     certificate: &[u8],
 ) -> Result<(), String> {
+    verify_with_command(
+        Command::new(executable),
+        repo,
+        identity_override,
+        content,
+        signature,
+        certificate,
+    )
+}
+
+fn verify_with_command(
+    mut command: Command,
+    repo: &str,
+    identity_override: Option<&str>,
+    content: &[u8],
+    signature: &[u8],
+    certificate: &[u8],
+) -> Result<(), String> {
     let temporary = private_dir()?;
     let content_path = temporary.0.join("content");
     let signature_path = temporary.0.join("signature.sig");
@@ -347,7 +365,7 @@ fn verify_with_executable(
     let pattern = identity_override
         .filter(|override_pattern| !override_pattern.is_empty())
         .map_or_else(|| identity_regexp(repo), str::to_owned);
-    let output = Command::new(executable)
+    let output = command
         .arg("verify-blob")
         .arg("--certificate")
         .arg(&certificate_path)
@@ -529,13 +547,15 @@ mod owned_verifier_tests {
 mod tests {
     use super::verify_signature;
     #[cfg(unix)]
-    use super::{private_dir, verify_with_executable};
+    use super::{private_dir, verify_with_command, verify_with_executable};
     #[cfg(unix)]
     use std::fs;
     #[cfg(unix)]
     use std::os::unix::fs::PermissionsExt;
     #[cfg(unix)]
     use std::path::Path;
+    #[cfg(unix)]
+    use std::process::Command;
 
     #[test]
     #[cfg(unix)]
@@ -562,9 +582,21 @@ mod tests {
 "##,
         )
         .unwrap();
-        fs::set_permissions(&executable, fs::Permissions::from_mode(0o700)).unwrap();
-        verify_with_executable(&executable, repo, None, args.0, args.1, args.2)
+        fs::set_permissions(&executable, fs::Permissions::from_mode(0o600)).unwrap();
+        // Interpret the owned script as data. Executing its newly written inode
+        // can race with Linux filesystem publication and fail with ETXTBSY;
+        // the actual verifier argv, private input files and exit status still run.
+        let mut fixture = Command::new("/bin/sh");
+        fixture.arg(&executable);
+        verify_with_command(fixture, repo, None, args.0, args.1, args.2)
             .expect("the fixture verified exact argv and input bytes");
+        let mut wrong_bytes = Command::new("/bin/sh");
+        wrong_bytes.arg(&executable);
+        assert!(
+            verify_with_command(wrong_bytes, repo, None, b"wrong bytes", args.1, args.2)
+                .unwrap_err()
+                .starts_with("cosign verify-blob failed:")
+        );
         let rejected = verify_with_executable(
             Path::new("/usr/bin/false"),
             repo,
