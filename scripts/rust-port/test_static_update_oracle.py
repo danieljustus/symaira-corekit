@@ -35,15 +35,15 @@ class StaticUpdateOracleTests(unittest.TestCase):
 
     def _temporary_capture(self, lane: str):
         root = Path(self.temporary.name) / lane
-        destination = oracle.fixture_path(lane, root=root, target=("darwin", "arm64"))
+        destination = oracle.fixture_path(lane, root=root, target=("darwin", "arm64"), historical=True)
         destination.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copyfile(oracle.fixture_path(lane), destination)
+        shutil.copyfile(oracle.fixture_path(lane, historical=True), destination)
         helper = root / "scripts/rust-port/static_update_oracle.py"
         helper.parent.mkdir(parents=True)
         shutil.copyfile(Path(oracle.__file__), helper)
         shutil.copyfile(Path(oracle.__file__).with_name("static_update_anchors.py"), helper.with_name("static_update_anchors.py"))
         shutil.copyfile(Path(oracle.__file__).with_name("bounded_oracle_process.py"), helper.with_name("bounded_oracle_process.py"))
-        source_index = json.loads(oracle.INDEX_PATH.read_text(encoding="utf-8"))
+        source_index = json.loads((oracle.HISTORICAL_ROOT / "index-v2.json").read_bytes())
         key = "darwin/arm64/" + lane
         index = {"schema_version": 2, "captures": {key: source_index["captures"][key]}}
         index_path = root / "testdata/rust-port/fixtures/update/static-v1/index-v2.json"
@@ -54,7 +54,7 @@ class StaticUpdateOracleTests(unittest.TestCase):
     def test_all_native_captures_have_exact_live_case_inventories(self):
         for lane, expected_count in EXPECTED_COUNTS.items():
             with self.subTest(lane=lane):
-                path = oracle.fixture_path(lane)
+                path = oracle.fixture_path(lane, historical=True)
                 payload = oracle.validate_capture(lane, path, diagnostic=True)
                 capture = payload["capture"]
                 self.assertEqual(capture["case_count"], expected_count)
@@ -83,7 +83,7 @@ class StaticUpdateOracleTests(unittest.TestCase):
             "validation-remove-failed-existing",
             "backup-cleanup-failed",
         ]
-        capture = oracle.validate_capture("swap", oracle.fixture_path("swap"), diagnostic=True)
+        capture = oracle.validate_capture("swap", oracle.fixture_path("swap", historical=True), diagnostic=True)
         captured_ids = oracle.case_ids("swap", capture)
         legacy_path = oracle.ROOT / capture["capture"]["historical_fixture"]["path"]
         legacy = json.loads(legacy_path.read_text(encoding="utf-8"))
@@ -98,7 +98,7 @@ class StaticUpdateOracleTests(unittest.TestCase):
 
     def test_static_validation_does_not_spawn_go_or_other_subprocesses(self):
         with mock.patch.object(oracle.subprocess, "run", side_effect=AssertionError("unexpected subprocess")):
-            payload = oracle.validate_capture("version", oracle.fixture_path("version"), diagnostic=True)
+            payload = oracle.validate_capture("version", oracle.fixture_path("version", historical=True), diagnostic=True)
         self.assertEqual(len(payload["cases"]), EXPECTED_COUNTS["version"])
 
     def test_changed_capture_bytes_fail_against_separate_index(self):
@@ -183,10 +183,21 @@ class StaticUpdateOracleTests(unittest.TestCase):
                 self.assertIn(message, result.stderr)
 
     def test_dirty_history_cannot_grant_acceptance(self):
-        path = oracle.fixture_path("response")
+        path = oracle.fixture_path("response", historical=True)
         self.assertEqual(len(oracle.validate_capture("response", path, diagnostic=True)["cases"]), 9)
         with self.assertRaisesRegex(ValueError, "dirty capture is diagnostic only"):
             oracle.validate_capture("response", path)
+
+    def test_acceptance_generation_cannot_replace_or_fall_back_to_history(self):
+        current = oracle.fixture_path("response")
+        history = oracle.fixture_path("response", historical=True)
+        self.assertNotEqual(current, history)
+        self.assertIn("static-v2", current.parts)
+        self.assertIn("static-v1", history.parts)
+        before = history.read_bytes()
+        with self.assertRaisesRegex(ValueError, "missing native response Go capture"):
+            oracle.validate_capture("response", oracle.fixture_path("response", root=Path(self.temporary.name)))
+        self.assertEqual(history.read_bytes(), before)
 
     def test_go_discovery_uses_path_or_explicit_launcher_and_requires_sdk_file(self):
         sdk = Path(self.temporary.name) / "SDK with spaces"
@@ -242,7 +253,7 @@ class StaticUpdateOracleTests(unittest.TestCase):
                 after = json.loads(json.dumps(before))
                 if failure == "input-drift":
                     after["source_files"][0]["sha256"] = "d" * 64
-                    output = json.dumps(json.loads(oracle.fixture_path("version").read_bytes())["cases"]).encode()
+                    output = json.dumps(json.loads(oracle.fixture_path("version", historical=True).read_bytes())["cases"]).encode()
                 else:
                     output = b"intentionally invalid observation JSON"
                 record = {"stage": "synthetic-unit-control", "command": ["synthetic"], "cwd": "unit-only",
@@ -262,7 +273,7 @@ class StaticUpdateOracleTests(unittest.TestCase):
         """Synthetic registration input only; callers explicitly stub its anchor."""
         root = Path(self.temporary.name) / name
         root.mkdir(parents=True, exist_ok=True)
-        payload = json.loads(oracle.fixture_path("response").read_bytes())
+        payload = json.loads(oracle.fixture_path("response", historical=True).read_bytes())
         capture = payload["capture"]
         capture["capturer_sha256"] = oracle.sha256(Path(oracle.__file__).read_bytes())
         capture["go"].update(goos=target[0], goarch=target[1], version="go version go1.26.6 " + "/".join(target))
@@ -296,7 +307,7 @@ class StaticUpdateOracleTests(unittest.TestCase):
                     with self.assertRaises(ValueError):
                         oracle.register_capture(candidate, destination, root=root)
                 self.assertFalse(destination.exists())
-                self.assertFalse((root / "testdata/rust-port/fixtures/update/static-v1/index-v2.json").exists())
+                self.assertFalse((root / "testdata/rust-port/fixtures/update/static-v2/index-v2.json").exists())
 
     def test_registration_index_failure_rolls_back_owned_capture_and_allows_retry(self):
         root, first, first_destination, first_key = self._registration_candidate("rollback")
@@ -366,7 +377,7 @@ class StaticUpdateOracleTests(unittest.TestCase):
         root = Path(self.temporary.name) / "registration"
         candidates, anchors = [], {}
         for target in (("darwin", "arm64"), ("linux", "amd64")):
-            payload = json.loads(oracle.fixture_path("response").read_bytes())
+            payload = json.loads(oracle.fixture_path("response", historical=True).read_bytes())
             capture = payload["capture"]
             capture["capturer_sha256"] = oracle.sha256(Path(oracle.__file__).read_bytes())
             capture["go"].update(goos=target[0], goarch=target[1], version="go version go1.26.6 " + "/".join(target))
@@ -381,7 +392,7 @@ class StaticUpdateOracleTests(unittest.TestCase):
                 destination = oracle.fixture_path("response", root=root, target=target)
                 oracle.register_capture(candidate, destination, root=root)
                 self.assertEqual(destination.read_bytes(), raw)
-        index = json.loads((root / "testdata/rust-port/fixtures/update/static-v1/index-v2.json").read_bytes())
+        index = json.loads((root / "testdata/rust-port/fixtures/update/static-v2/index-v2.json").read_bytes())
         self.assertEqual(set(index["captures"]), set(anchors))
         for target, _candidate, raw in candidates:
             key = "/".join((*target, "response"))

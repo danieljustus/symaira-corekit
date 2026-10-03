@@ -15,12 +15,13 @@ import subprocess
 import sys
 import tempfile
 
-from static_update_anchors import ANCHORS
+from static_update_anchors import ANCHORS, HISTORICAL_ANCHORS
 from bounded_oracle_process import run_checked
 
 ROOT = Path(__file__).resolve().parents[2]
 UPDATE_FIXTURES = ROOT / "testdata/rust-port/fixtures/update"
-STATIC_ROOT = UPDATE_FIXTURES / "static-v1"
+HISTORICAL_ROOT = UPDATE_FIXTURES / "static-v1"
+STATIC_ROOT = UPDATE_FIXTURES / "static-v2"
 INDEX_PATH = STATIC_ROOT / "index-v2.json"
 MANIFEST = ROOT / "rust/symaira-core-update/Cargo.toml"
 GO_TOOLCHAIN = "go1.26.6"
@@ -109,11 +110,12 @@ def native_goos_arch() -> tuple[str, str]:
     return goos, goarch
 
 
-def fixture_path(lane: str, root: Path = ROOT, target: tuple[str, str] | None = None) -> Path:
+def fixture_path(lane: str, root: Path = ROOT, target: tuple[str, str] | None = None, *, historical: bool = False) -> Path:
     if lane not in LANES:
         raise ValueError(f"unknown static update lane: {lane}")
     goos, goarch = target or native_goos_arch()
-    return root / "testdata/rust-port/fixtures/update/static-v1" / _goos_arch(goos, goarch) / LANES[lane]["fixture"]
+    generation = "static-v1" if historical else "static-v2"
+    return root / "testdata/rust-port/fixtures/update" / generation / _goos_arch(goos, goarch) / LANES[lane]["fixture"]
 
 
 def _at_path(value, keys):
@@ -137,7 +139,9 @@ def validate_capture(lane: str, path: Path, root: Path = ROOT, *, diagnostic: bo
         raise ValueError(f"unknown static update lane: {lane}")
     if not path.is_file():
         raise ValueError(f"missing native {lane} Go capture: {path}")
-    index_path = root / "testdata/rust-port/fixtures/update/static-v1/index-v2.json"
+    historical = path.resolve().is_relative_to((root / "testdata/rust-port/fixtures/update/static-v1").resolve())
+    generation = "static-v1" if historical else "static-v2"
+    index_path = root / "testdata/rust-port/fixtures/update" / generation / "index-v2.json"
     if not index_path.is_file():
         raise ValueError(f"missing static update provenance index: {index_path}")
     try:
@@ -154,7 +158,7 @@ def validate_capture(lane: str, path: Path, root: Path = ROOT, *, diagnostic: bo
     if not isinstance(entry, dict):
         raise ValueError(f"missing {lane} provenance entry")
     relative = path.resolve().relative_to(root.resolve()).as_posix()
-    if entry.get("path") != relative or path.resolve() != fixture_path(lane, root=root).resolve():
+    if entry.get("path") != relative or path.resolve() != fixture_path(lane, root=root, historical=historical).resolve():
         raise ValueError(f"{lane} provenance path mismatch")
     if entry.get("sha256") != sha256(raw):
         raise ValueError(f"{lane} Go capture digest mismatch")
@@ -169,10 +173,13 @@ def validate_capture(lane: str, path: Path, root: Path = ROOT, *, diagnostic: bo
         raise ValueError(f"{lane} provenance case inventory mismatch")
     if (entry.get("goos"), entry.get("goarch")) != (goos, goarch):
         raise ValueError(f"{lane} native platform identity mismatch")
-    if ANCHORS.get(key) != sha256(raw):
+    anchors = HISTORICAL_ANCHORS if historical else ANCHORS
+    if anchors.get(key) != sha256(raw):
         raise ValueError(f"{lane} independently reviewed capture anchor mismatch")
     if not diagnostic and not capture["working_tree_clean"]:
         raise ValueError(f"{lane} dirty capture is diagnostic only; clean source-bound recapture required")
+    if historical and not diagnostic:
+        raise ValueError(f"{lane} historical capture is diagnostic only")
     if not diagnostic and capture.get("capture_mode") != "fresh-pinned-go-execution-additive-v2":
         raise ValueError(f"{lane} acceptance requires verified pre-execution transitive inputs")
     return payload
@@ -594,7 +601,7 @@ def register_capture(candidate: Path, destination: Path, root: Path = ROOT) -> N
     if capture["capturer_sha256"] != sha256(Path(__file__).read_bytes()):
         raise ValueError("candidate provenance does not match this lane/capturer")
     go = capture.get("go", {})
-    static_root = root / "testdata/rust-port/fixtures/update/static-v1"
+    static_root = root / "testdata/rust-port/fixtures/update/static-v2"
     index_path = static_root / "index-v2.json"
     key = "/".join((go.get("goos", ""), go.get("goarch", ""), lane))
     expected_parent = static_root / _goos_arch(go.get("goos", ""), go.get("goarch", ""))
@@ -682,7 +689,7 @@ def main(argv: list[str] | None = None) -> int:
         register_capture(args.candidate, args.destination)
         print(f"PASS registered additive capture: {args.destination}")
     else:
-        path = args.fixture or fixture_path(args.lane)
+        path = args.fixture or fixture_path(args.lane, historical=args.diagnostic)
         payload = validate_capture(args.lane, path, diagnostic=args.diagnostic)
         classification = "DIAGNOSTIC ONLY" if args.diagnostic else "PASS"
         print(f"{classification} frozen Go {args.lane} capture: {len(_at_path(payload, LANES[args.lane]['case_path']))} cases ({payload['capture']['go']['goos']}/{payload['capture']['go']['goarch']})")

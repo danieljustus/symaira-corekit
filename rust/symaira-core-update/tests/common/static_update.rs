@@ -27,7 +27,7 @@ pub fn fixture_path(lane: &str) -> PathBuf {
         other => panic!("no static update-oracle capture for target architecture {other}"),
     };
     let path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join(format!(
-        "../../testdata/rust-port/fixtures/update/static-v1/{goos}-{goarch}/{lane}.json"
+        "../../testdata/rust-port/fixtures/update/static-v2/{goos}-{goarch}/{lane}.json"
     ));
     assert!(
         path.is_file(),
