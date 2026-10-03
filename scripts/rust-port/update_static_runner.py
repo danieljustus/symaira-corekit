@@ -31,7 +31,7 @@ def _data(payload: dict) -> dict:
 def _rust(lane: str, fixture: Path, filter_name: str | None = None) -> subprocess.CompletedProcess:
     spec = LANE_CONFIG[lane]
     env = dict(os.environ)
-    env[spec["env"]] = str(fixture)
+    env[spec["env"]] = str(fixture.resolve())
     env["CARGO_TARGET_DIR"] = str(ROOT / "target")
     command = ["cargo", "test", "--manifest-path", str(MANIFEST), "--test", spec["test"], "--locked"]
     if filter_name:

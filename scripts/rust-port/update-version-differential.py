@@ -21,7 +21,7 @@ POSITIVE_RESULT = "test result: ok. 1 passed; 0 failed; 0 ignored;"
 
 
 def replay(fixture: Path) -> subprocess.CompletedProcess:
-    env = dict(os.environ, UPDATE_VERSION_FIXTURE=str(fixture), CARGO_TARGET_DIR=str(ROOT / "target"))
+    env = dict(os.environ, UPDATE_VERSION_FIXTURE=str(fixture.resolve()), CARGO_TARGET_DIR=str(ROOT / "target"))
     command = ["cargo", "test", "--manifest-path", str(MANIFEST), "--test", "parity", TEST, "--locked", "--", "--exact", "--nocapture"]
     result = run_checked(
         command,
