@@ -51,10 +51,11 @@ rust-test:
 	cargo test --workspace --all-features --locked
 
 rust-foundation-contract:
-	python3 scripts/rust-port/generate.py --check
-	GOTOOLCHAIN=go1.26.6 CGO_ENABLED=0 go test -count=1 ./versionkit ./exitcodes ./envutil ./logkit ./configkit
-	cargo test -p symaira-contract-fixtures --all-features --locked
-	cargo test -p symaira-core-foundation --all-features --locked
+	@if [ "$$GO_ORACLE" = 1 ]; then \
+		python3 scripts/rust-port/generate.py --check && \
+		GOTOOLCHAIN=go1.26.6 CGO_ENABLED=0 go test -count=1 ./versionkit ./exitcodes ./envutil ./logkit ./configkit; \
+	fi
+	python3 scripts/rust-port/frozen_core_replay.py --family foundation
 
 .PHONY: rust-sqlite-contract
 rust-sqlite-contract:
@@ -113,11 +114,13 @@ rust-mcpcfg-contract:
 	cargo test -p symaira-core-mcpcfg --all-features --locked
 
 rust-llm-contract:
-	GOTOOLCHAIN=go1.26.6 CGO_ENABLED=0 $(GO_RUN) test -count=1 ./llmkit/... ./ollamakit/... ./secretref ./contracts
-	python3 scripts/rust-port/llm-differential.py
+	@if [ "$$GO_ORACLE" = 1 ]; then \
+		GOTOOLCHAIN=go1.26.6 CGO_ENABLED=0 $(GO_RUN) test -count=1 ./llmkit/... ./ollamakit/... ./secretref ./contracts && \
+		python3 scripts/rust-port/llm-differential.py; \
+	fi
+	python3 scripts/rust-port/frozen_core_replay.py --family llm
 	$(CARGO_RUN) fmt --all --check
 	$(CARGO_RUN) clippy --manifest-path "$(CURDIR)/Cargo.toml" -p symaira-core-llm --all-targets --all-features --locked -- -D warnings
-	$(CARGO_RUN) test --manifest-path "$(CURDIR)/Cargo.toml" -p symaira-core-llm --all-targets --all-features --locked
 
 rust-update-version-contract:
 	GOTOOLCHAIN=go1.26.6 CGO_ENABLED=0 $(GO_RUN) test -count=1 ./updatecheck
