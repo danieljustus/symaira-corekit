@@ -1,0 +1,308 @@
+{
+  "go_source_sha256": "6b3d96fbcdb8166f33683f069b2f925b28f0fa7f3a7b4b76e3a2ae6778f0f711",
+  "oracle_sha256": "1e55080d596f786f1ff49b1f9543c37df9e832d562d83124b2f9c09e4532cb6e",
+  "goos": "darwin",
+  "cases": [
+    {
+      "input": {
+        "id": "missing-source",
+        "initial": "old-binary",
+        "source": "",
+        "backup": "",
+        "reject": false
+      },
+      "observation": {
+        "error": true,
+        "target_exists": true,
+        "target_content": "old-binary",
+        "source_exists": false,
+        "backup_exists": false,
+        "validator_saw_target": false,
+        "validator_saw_backup": false,
+        "validator_saw_content": "",
+        "remaining_file_names": [
+          "mytool"
+        ]
+      }
+    },
+    {
+      "input": {
+        "id": "validation-rollback",
+        "initial": "old-binary",
+        "source": "invalid-binary",
+        "backup": "",
+        "reject": true
+      },
+      "observation": {
+        "error": true,
+        "target_exists": true,
+        "target_content": "old-binary",
+        "source_exists": false,
+        "backup_exists": false,
+        "validator_saw_target": true,
+        "validator_saw_backup": true,
+        "validator_saw_content": "invalid-binary",
+        "remaining_file_names": [
+          "mytool"
+        ]
+      }
+    },
+    {
+      "input": {
+        "id": "validation-first-install",
+        "initial": "",
+        "source": "invalid-binary",
+        "backup": "",
+        "reject": true
+      },
+      "observation": {
+        "error": true,
+        "target_exists": false,
+        "target_content": "",
+        "source_exists": false,
+        "backup_exists": false,
+        "validator_saw_target": true,
+        "validator_saw_backup": false,
+        "validator_saw_content": "invalid-binary",
+        "remaining_file_names": []
+      }
+    },
+    {
+      "input": {
+        "id": "preexisting-backup",
+        "initial": "old-binary",
+        "source": "new-binary",
+        "backup": "stale-backup",
+        "reject": false
+      },
+      "observation": {
+        "error": false,
+        "target_exists": true,
+        "target_content": "new-binary",
+        "source_exists": false,
+        "backup_exists": false,
+        "validator_saw_target": false,
+        "validator_saw_backup": false,
+        "validator_saw_content": "",
+        "remaining_file_names": [
+          "mytool"
+        ]
+      }
+    },
+    {
+      "input": {
+        "id": "validation-rollback-failed",
+        "initial": "old-binary",
+        "source": "invalid-binary",
+        "backup": "",
+        "reject": true,
+        "sabotage_backup": true
+      },
+      "observation": {
+        "error": true,
+        "error_prefix": "validate installed binary failed (reject installed binary) and rollback failed: restore previous binary:",
+        "target_exists": false,
+        "target_content": "",
+        "source_exists": false,
+        "backup_exists": false,
+        "validator_saw_target": true,
+        "validator_saw_backup": true,
+        "validator_saw_content": "invalid-binary",
+        "remaining_file_names": []
+      }
+    },
+    {
+      "input": {
+        "id": "validation-remove-failed",
+        "initial": "",
+        "source": "invalid-binary",
+        "backup": "",
+        "reject": true,
+        "block_removal": true
+      },
+      "observation": {
+        "error": true,
+        "error_prefix": "validate installed binary failed (reject installed binary) and remove failed:",
+        "target_exists": true,
+        "target_content": "",
+        "source_exists": false,
+        "backup_exists": false,
+        "validator_saw_target": true,
+        "validator_saw_backup": false,
+        "validator_saw_content": "invalid-binary",
+        "remaining_file_names": [
+          "mytool"
+        ]
+      }
+    },
+    {
+      "input": {
+        "id": "validation-remove-failed-existing",
+        "initial": "old-binary",
+        "source": "invalid-binary",
+        "backup": "",
+        "reject": true,
+        "block_removal": true
+      },
+      "observation": {
+        "error": true,
+        "error_prefix": "validate installed binary failed (reject installed binary) and rollback failed: remove failed installed binary:",
+        "target_exists": true,
+        "target_content": "",
+        "source_exists": false,
+        "backup_exists": true,
+        "validator_saw_target": true,
+        "validator_saw_backup": true,
+        "validator_saw_content": "invalid-binary",
+        "remaining_file_names": [
+          "mytool",
+          "mytool.bak"
+        ]
+      }
+    },
+    {
+      "input": {
+        "id": "backup-cleanup-failed",
+        "initial": "old-binary",
+        "source": "new-binary",
+        "backup": "",
+        "reject": false,
+        "cleanup_backup": true
+      },
+      "observation": {
+        "error": false,
+        "target_exists": true,
+        "target_content": "new-binary",
+        "source_exists": false,
+        "backup_exists": true,
+        "validator_saw_target": true,
+        "validator_saw_backup": true,
+        "validator_saw_content": "new-binary",
+        "remaining_file_names": [
+          "mytool",
+          "mytool.bak"
+        ]
+      }
+    }
+  ],
+  "capture": {
+    "schema_version": 1,
+    "lane": "swap",
+    "source_commit": "635562a4251a12a63d3b5f7a685a896d77eccb06",
+    "working_tree_clean": false,
+    "dirty_paths": [
+      "rust/symaira-core-update/tests/parity.rs",
+      "scripts/rust-port/update-version-differential.py",
+      "rust/symaira-core-update/tests/common/static_update.rs",
+      "scripts/rust-port/static_update_oracle.py",
+      "testdata/rust-port/fixtures/update/static-v1/darwin-arm64/version.json",
+      "testdata/rust-port/fixtures/update/static-v1/index.json"
+    ],
+    "go": {
+      "version": "go version go1.26.6 darwin/arm64",
+      "goversion": "go1.26.6",
+      "goroot": "go1.26.6",
+      "goos": "darwin",
+      "goarch": "arm64",
+      "binary_sha256": "a1c83801d1756c3eca78366c6b585f2c21c20694fb1c7eb92c446a0580420412",
+      "gomodcache": "existing-cache-read-only"
+    },
+    "capturer_sha256": "b7c349fb87271300f34ec82477d1c9b3294708b1c00824aa183353e25a8fd1e8",
+    "oracle_files": [
+      {
+        "path": "updatecheck/updateapply/atomic_swap_oracle_test.go",
+        "sha256": "1e55080d596f786f1ff49b1f9543c37df9e832d562d83124b2f9c09e4532cb6e"
+      }
+    ],
+    "source_files": [
+      {
+        "path": "updatecheck/updateapply/updateapply.go",
+        "sha256": "6b3d96fbcdb8166f33683f069b2f925b28f0fa7f3a7b4b76e3a2ae6778f0f711"
+      },
+      {
+        "path": "updatecheck/updateapply/atomic_swap_oracle_test.go",
+        "sha256": "1e55080d596f786f1ff49b1f9543c37df9e832d562d83124b2f9c09e4532cb6e"
+      },
+      {
+        "path": "updatecheck/updateapply/download_cleanup_test.go",
+        "sha256": "f2889edb97bd1e6cc1ee251347dc8fd9f339b369a4e23f39f7eb74379d83bd74"
+      },
+      {
+        "path": "updatecheck/updateapply/updateapply_integration_test.go",
+        "sha256": "a23cb4b3dd002b8979ca482ee7c8f77ed0d89081f6a567bc3ec8de7e9c58b3bc"
+      },
+      {
+        "path": "updatecheck/updateapply/updateapply_test.go",
+        "sha256": "4a214b7b06ee30ef624b517a1da3760e17aa1fe01fe3337b41fc797907e8f9c7"
+      },
+      {
+        "path": "go.mod",
+        "sha256": "5e2b0ad309b6db5db7abbaf958ef87bc12c0e81605245b897f1b9305a113e57d"
+      },
+      {
+        "path": "go.sum",
+        "sha256": "701d7161d71d4817a59f98bfc6f8ac71d5ee6b7f70cbb8ec96b07a140298929c"
+      }
+    ],
+    "go_module_inputs": [
+      {
+        "path": "go.mod",
+        "sha256": "5e2b0ad309b6db5db7abbaf958ef87bc12c0e81605245b897f1b9305a113e57d"
+      },
+      {
+        "path": "go.sum",
+        "sha256": "701d7161d71d4817a59f98bfc6f8ac71d5ee6b7f70cbb8ec96b07a140298929c"
+      }
+    ],
+    "historical_fixture": {
+      "path": "testdata/rust-port/fixtures/update/swap.json",
+      "sha256": "7a5d614ef537b8e6da080cb571159b6ff9d8d5b8f1d10b28b3731aaa65552132"
+    },
+    "case_count": 8,
+    "case_ids": [
+      "missing-source",
+      "validation-rollback",
+      "validation-first-install",
+      "preexisting-backup",
+      "validation-rollback-failed",
+      "validation-remove-failed",
+      "validation-remove-failed-existing",
+      "backup-cleanup-failed"
+    ],
+    "case_fingerprints_sha256": [
+      "d66a19bf82fd3dc3601da6c6a591f35aa9adb477330e80eb59f076b0fc22fa02",
+      "bcddc44d1d3325c639816ca4c6bdb436c210a91fd542a340da6d19df03cc9dde",
+      "92ca89d4244dcc05a968d004468fad239941b35b569110450bc302898d520389",
+      "e3bd8d8ff8fa9bb1a2e8b71ce9ce609a79d6d8770f98b977c6bac66bfdf2b8cb",
+      "e97b205ecd6780b83d03e61f507ada2bb11cdd4556f3d0eac597736d4f54e735",
+      "ea4641f6d1b322a7cf5bf21ccdbddb78f1b559d4f986ee9000358a28b3834f8d",
+      "e80194f2b301ccac2eef7086884ba4b4582967bcb437920a6efa20e47d5abc69",
+      "e375eda0c8c475bf71b1860bc48af9e57d4e4fc98732b3c0675b3c8f88cc670e"
+    ],
+    "generated_inputs": [],
+    "raw": {
+      "exit_code": 0,
+      "stdout_sha256": "18e8f1716bf5a67c33537fc81327bd345c87b3d42b9b73d109012a68ac26fdee",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "commands": [
+        {
+          "stage": "run-go-swap-test",
+          "command": [
+            "go",
+            "test",
+            "-count=1",
+            "-run",
+            "^TestAtomicSwapOracle$",
+            "./updatecheck/updateapply"
+          ],
+          "cwd": "repository",
+          "exit_code": 0
+        }
+      ],
+      "observation_sha256": "148703ddb983b1b6fdced3cd54147a5474e221f9e6e5ff9246e8616888a79cea",
+      "observation_bytes": 4624,
+      "evidence_id": "swap-i259l42o"
+    },
+    "capture_mode": "fresh-pinned-go-execution-additive-v1"
+  }
+}

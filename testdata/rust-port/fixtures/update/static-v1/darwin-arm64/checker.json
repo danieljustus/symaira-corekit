@@ -1,0 +1,1545 @@
+{
+  "go_source_sha256": "638c263835c1d72982f6fc3391092edc44318f3f5993e83c7c190fae25329cc9",
+  "oracle_sha256": "5977cca7a81f5d9999b2c94fb947dd480d184f1c2ce57238b8d6862962c63f82",
+  "observations": {
+    "canonical_url": "https://api.github.com/repos/owner/repo/releases/latest",
+    "cases": [
+      {
+        "id": "metadata-newer",
+        "mode": "empty",
+        "custom_endpoint": false,
+        "replies": [
+          {
+            "body": "{\"tag_name\":\" v1.3.0 \",\"body\":\"notes <&>\\nnext\",\"html_url\":\" https://github.com/o/r/releases/v1.3.0 \",\"assets\":[{\"name\":\"tool.tar.gz\",\"browser_download_url\":\"https://github.com/o/r/a\",\"size\":42},{\"name\":\"checksums\",\"browser_download_url\":\"https://github.com/o/r/s\",\"size\":7}]}",
+            "status": 200,
+            "rate_limit": false,
+            "error": ""
+          }
+        ],
+        "steps": [
+          {
+            "endpoint_override": false,
+            "current": " v1.2.3 ",
+            "force": false,
+            "fresh": false,
+            "expire": false
+          }
+        ],
+        "results": [
+          {
+            "release": {
+              "TagName": "v1.3.0",
+              "Body": "notes <&>\nnext",
+              "HTMLURL": "https://github.com/o/r/releases/v1.3.0",
+              "Assets": [
+                {
+                  "Name": "tool.tar.gz",
+                  "BrowserDownloadURL": "https://github.com/o/r/a",
+                  "Size": 42
+                },
+                {
+                  "Name": "checksums",
+                  "BrowserDownloadURL": "https://github.com/o/r/s",
+                  "Size": 7
+                }
+              ]
+            },
+            "error": null,
+            "calls": 1,
+            "user_agents": [
+              "symaira-updatecheck/v1.2.3"
+            ],
+            "cache_exists": false
+          }
+        ]
+      },
+      {
+        "id": "equal",
+        "mode": "empty",
+        "custom_endpoint": false,
+        "replies": [
+          {
+            "body": "{\"tag_name\":\" v1.3.0 \",\"body\":\"notes <&>\\nnext\",\"html_url\":\" https://github.com/o/r/releases/v1.3.0 \",\"assets\":[{\"name\":\"tool.tar.gz\",\"browser_download_url\":\"https://github.com/o/r/a\",\"size\":42},{\"name\":\"checksums\",\"browser_download_url\":\"https://github.com/o/r/s\",\"size\":7}]}",
+            "status": 200,
+            "rate_limit": false,
+            "error": ""
+          }
+        ],
+        "steps": [
+          {
+            "endpoint_override": false,
+            "current": "1.3.0",
+            "force": false,
+            "fresh": false,
+            "expire": false
+          }
+        ],
+        "results": [
+          {
+            "release": null,
+            "error": null,
+            "calls": 1,
+            "user_agents": [
+              "symaira-updatecheck/1.3.0"
+            ],
+            "cache_exists": false
+          }
+        ]
+      },
+      {
+        "id": "older",
+        "mode": "empty",
+        "custom_endpoint": false,
+        "replies": [
+          {
+            "body": "{\"tag_name\":\" v1.3.0 \",\"body\":\"notes <&>\\nnext\",\"html_url\":\" https://github.com/o/r/releases/v1.3.0 \",\"assets\":[{\"name\":\"tool.tar.gz\",\"browser_download_url\":\"https://github.com/o/r/a\",\"size\":42},{\"name\":\"checksums\",\"browser_download_url\":\"https://github.com/o/r/s\",\"size\":7}]}",
+            "status": 200,
+            "rate_limit": false,
+            "error": ""
+          }
+        ],
+        "steps": [
+          {
+            "endpoint_override": false,
+            "current": "2.0.0",
+            "force": false,
+            "fresh": false,
+            "expire": false
+          }
+        ],
+        "results": [
+          {
+            "release": null,
+            "error": null,
+            "calls": 1,
+            "user_agents": [
+              "symaira-updatecheck/2.0.0"
+            ],
+            "cache_exists": false
+          }
+        ]
+      },
+      {
+        "id": "v0-to-v1",
+        "mode": "empty",
+        "custom_endpoint": false,
+        "replies": [
+          {
+            "body": "{\"tag_name\":\" v1.3.0 \",\"body\":\"notes <&>\\nnext\",\"html_url\":\" https://github.com/o/r/releases/v1.3.0 \",\"assets\":[{\"name\":\"tool.tar.gz\",\"browser_download_url\":\"https://github.com/o/r/a\",\"size\":42},{\"name\":\"checksums\",\"browser_download_url\":\"https://github.com/o/r/s\",\"size\":7}]}",
+            "status": 200,
+            "rate_limit": false,
+            "error": ""
+          }
+        ],
+        "steps": [
+          {
+            "endpoint_override": false,
+            "current": "v0.9.0",
+            "force": false,
+            "fresh": false,
+            "expire": false
+          }
+        ],
+        "results": [
+          {
+            "release": null,
+            "error": null,
+            "calls": 1,
+            "user_agents": [
+              "symaira-updatecheck/v0.9.0"
+            ],
+            "cache_exists": false
+          }
+        ]
+      },
+      {
+        "id": "invalid-current",
+        "mode": "explicit",
+        "custom_endpoint": false,
+        "replies": [
+          {
+            "body": "{\"tag_name\":\" v1.3.0 \",\"body\":\"notes <&>\\nnext\",\"html_url\":\" https://github.com/o/r/releases/v1.3.0 \",\"assets\":[{\"name\":\"tool.tar.gz\",\"browser_download_url\":\"https://github.com/o/r/a\",\"size\":42},{\"name\":\"checksums\",\"browser_download_url\":\"https://github.com/o/r/s\",\"size\":7}]}",
+            "status": 200,
+            "rate_limit": false,
+            "error": ""
+          }
+        ],
+        "steps": [
+          {
+            "endpoint_override": false,
+            "current": "dev",
+            "force": true,
+            "fresh": false,
+            "expire": false
+          },
+          {
+            "endpoint_override": false,
+            "current": "1.2.3-beta",
+            "force": false,
+            "fresh": false,
+            "expire": false
+          },
+          {
+            "endpoint_override": false,
+            "current": "",
+            "force": false,
+            "fresh": false,
+            "expire": false
+          },
+          {
+            "endpoint_override": false,
+            "current": "1.2",
+            "force": false,
+            "fresh": false,
+            "expire": false
+          }
+        ],
+        "results": [
+          {
+            "release": null,
+            "error": null,
+            "calls": 0,
+            "user_agents": [],
+            "cache_exists": false
+          },
+          {
+            "release": null,
+            "error": null,
+            "calls": 0,
+            "user_agents": [],
+            "cache_exists": false
+          },
+          {
+            "release": null,
+            "error": null,
+            "calls": 0,
+            "user_agents": [],
+            "cache_exists": false
+          },
+          {
+            "release": null,
+            "error": null,
+            "calls": 0,
+            "user_agents": [],
+            "cache_exists": false
+          }
+        ]
+      },
+      {
+        "id": "memory-conditioned",
+        "mode": "empty",
+        "custom_endpoint": false,
+        "replies": [
+          {
+            "body": "{\"tag_name\":\" v1.3.0 \",\"body\":\"notes <&>\\nnext\",\"html_url\":\" https://github.com/o/r/releases/v1.3.0 \",\"assets\":[{\"name\":\"tool.tar.gz\",\"browser_download_url\":\"https://github.com/o/r/a\",\"size\":42},{\"name\":\"checksums\",\"browser_download_url\":\"https://github.com/o/r/s\",\"size\":7}]}",
+            "status": 200,
+            "rate_limit": false,
+            "error": ""
+          }
+        ],
+        "steps": [
+          {
+            "endpoint_override": false,
+            "current": " v1.2.3 ",
+            "force": false,
+            "fresh": false,
+            "expire": false
+          },
+          {
+            "endpoint_override": false,
+            "current": "1.3.0",
+            "force": false,
+            "fresh": false,
+            "expire": false
+          },
+          {
+            "endpoint_override": false,
+            "current": "2.0.0",
+            "force": false,
+            "fresh": false,
+            "expire": false
+          },
+          {
+            "endpoint_override": false,
+            "current": "0.9.0",
+            "force": false,
+            "fresh": false,
+            "expire": false
+          },
+          {
+            "endpoint_override": false,
+            "current": " v1.2.3 ",
+            "force": false,
+            "fresh": false,
+            "expire": false
+          }
+        ],
+        "results": [
+          {
+            "release": {
+              "TagName": "v1.3.0",
+              "Body": "notes <&>\nnext",
+              "HTMLURL": "https://github.com/o/r/releases/v1.3.0",
+              "Assets": [
+                {
+                  "Name": "tool.tar.gz",
+                  "BrowserDownloadURL": "https://github.com/o/r/a",
+                  "Size": 42
+                },
+                {
+                  "Name": "checksums",
+                  "BrowserDownloadURL": "https://github.com/o/r/s",
+                  "Size": 7
+                }
+              ]
+            },
+            "error": null,
+            "calls": 1,
+            "user_agents": [
+              "symaira-updatecheck/v1.2.3"
+            ],
+            "cache_exists": false
+          },
+          {
+            "release": null,
+            "error": null,
+            "calls": 1,
+            "user_agents": [
+              "symaira-updatecheck/v1.2.3"
+            ],
+            "cache_exists": false
+          },
+          {
+            "release": null,
+            "error": null,
+            "calls": 1,
+            "user_agents": [
+              "symaira-updatecheck/v1.2.3"
+            ],
+            "cache_exists": false
+          },
+          {
+            "release": null,
+            "error": null,
+            "calls": 1,
+            "user_agents": [
+              "symaira-updatecheck/v1.2.3"
+            ],
+            "cache_exists": false
+          },
+          {
+            "release": {
+              "TagName": "v1.3.0",
+              "Body": "notes <&>\nnext",
+              "HTMLURL": "https://github.com/o/r/releases/v1.3.0",
+              "Assets": [
+                {
+                  "Name": "tool.tar.gz",
+                  "BrowserDownloadURL": "https://github.com/o/r/a",
+                  "Size": 42
+                },
+                {
+                  "Name": "checksums",
+                  "BrowserDownloadURL": "https://github.com/o/r/s",
+                  "Size": 7
+                }
+              ]
+            },
+            "error": null,
+            "calls": 1,
+            "user_agents": [
+              "symaira-updatecheck/v1.2.3"
+            ],
+            "cache_exists": false
+          }
+        ]
+      },
+      {
+        "id": "forced-refresh",
+        "mode": "explicit",
+        "custom_endpoint": false,
+        "replies": [
+          {
+            "body": "{\"tag_name\":\" v1.3.0 \",\"body\":\"notes <&>\\nnext\",\"html_url\":\" https://github.com/o/r/releases/v1.3.0 \",\"assets\":[{\"name\":\"tool.tar.gz\",\"browser_download_url\":\"https://github.com/o/r/a\",\"size\":42},{\"name\":\"checksums\",\"browser_download_url\":\"https://github.com/o/r/s\",\"size\":7}]}",
+            "status": 200,
+            "rate_limit": false,
+            "error": ""
+          },
+          {
+            "body": "{\"tag_name\":\"v1.4.0\"}",
+            "status": 200,
+            "rate_limit": false,
+            "error": ""
+          },
+          {
+            "body": "{\"tag_name\":\"v1.6.0\"}",
+            "status": 200,
+            "rate_limit": false,
+            "error": ""
+          }
+        ],
+        "steps": [
+          {
+            "endpoint_override": false,
+            "current": " v1.2.3 ",
+            "force": false,
+            "fresh": false,
+            "expire": false
+          },
+          {
+            "endpoint_override": false,
+            "current": "1.2.3",
+            "force": true,
+            "fresh": false,
+            "expire": false
+          },
+          {
+            "endpoint_override": false,
+            "current": " v1.2.3 ",
+            "force": false,
+            "fresh": false,
+            "expire": false
+          },
+          {
+            "endpoint_override": false,
+            "current": "1.2.3",
+            "force": true,
+            "fresh": true,
+            "expire": false
+          }
+        ],
+        "results": [
+          {
+            "release": {
+              "TagName": "v1.3.0",
+              "Body": "notes <&>\nnext",
+              "HTMLURL": "https://github.com/o/r/releases/v1.3.0",
+              "Assets": [
+                {
+                  "Name": "tool.tar.gz",
+                  "BrowserDownloadURL": "https://github.com/o/r/a",
+                  "Size": 42
+                },
+                {
+                  "Name": "checksums",
+                  "BrowserDownloadURL": "https://github.com/o/r/s",
+                  "Size": 7
+                }
+              ]
+            },
+            "error": null,
+            "calls": 1,
+            "user_agents": [
+              "symaira-updatecheck/v1.2.3"
+            ],
+            "cache_exists": true
+          },
+          {
+            "release": {
+              "TagName": "v1.4.0",
+              "Body": "",
+              "HTMLURL": "",
+              "Assets": []
+            },
+            "error": null,
+            "calls": 2,
+            "user_agents": [
+              "symaira-updatecheck/v1.2.3",
+              "symaira-updatecheck/1.2.3"
+            ],
+            "cache_exists": true
+          },
+          {
+            "release": {
+              "TagName": "v1.4.0",
+              "Body": "",
+              "HTMLURL": "",
+              "Assets": []
+            },
+            "error": null,
+            "calls": 2,
+            "user_agents": [
+              "symaira-updatecheck/v1.2.3",
+              "symaira-updatecheck/1.2.3"
+            ],
+            "cache_exists": true
+          },
+          {
+            "release": {
+              "TagName": "v1.6.0",
+              "Body": "",
+              "HTMLURL": "",
+              "Assets": []
+            },
+            "error": null,
+            "calls": 3,
+            "user_agents": [
+              "symaira-updatecheck/v1.2.3",
+              "symaira-updatecheck/1.2.3",
+              "symaira-updatecheck/1.2.3"
+            ],
+            "cache_exists": true
+          }
+        ]
+      },
+      {
+        "id": "empty-persistence",
+        "mode": "empty",
+        "custom_endpoint": false,
+        "replies": [
+          {
+            "body": "{\"tag_name\":\" v1.3.0 \",\"body\":\"notes <&>\\nnext\",\"html_url\":\" https://github.com/o/r/releases/v1.3.0 \",\"assets\":[{\"name\":\"tool.tar.gz\",\"browser_download_url\":\"https://github.com/o/r/a\",\"size\":42},{\"name\":\"checksums\",\"browser_download_url\":\"https://github.com/o/r/s\",\"size\":7}]}",
+            "status": 200,
+            "rate_limit": false,
+            "error": ""
+          },
+          {
+            "body": "{\"tag_name\":\" v1.3.0 \",\"body\":\"notes <&>\\nnext\",\"html_url\":\" https://github.com/o/r/releases/v1.3.0 \",\"assets\":[{\"name\":\"tool.tar.gz\",\"browser_download_url\":\"https://github.com/o/r/a\",\"size\":42},{\"name\":\"checksums\",\"browser_download_url\":\"https://github.com/o/r/s\",\"size\":7}]}",
+            "status": 200,
+            "rate_limit": false,
+            "error": ""
+          }
+        ],
+        "steps": [
+          {
+            "endpoint_override": false,
+            "current": " v1.2.3 ",
+            "force": false,
+            "fresh": false,
+            "expire": false
+          },
+          {
+            "endpoint_override": false,
+            "current": "1.2.3",
+            "force": false,
+            "fresh": true,
+            "expire": false
+          }
+        ],
+        "results": [
+          {
+            "release": {
+              "TagName": "v1.3.0",
+              "Body": "notes <&>\nnext",
+              "HTMLURL": "https://github.com/o/r/releases/v1.3.0",
+              "Assets": [
+                {
+                  "Name": "tool.tar.gz",
+                  "BrowserDownloadURL": "https://github.com/o/r/a",
+                  "Size": 42
+                },
+                {
+                  "Name": "checksums",
+                  "BrowserDownloadURL": "https://github.com/o/r/s",
+                  "Size": 7
+                }
+              ]
+            },
+            "error": null,
+            "calls": 1,
+            "user_agents": [
+              "symaira-updatecheck/v1.2.3"
+            ],
+            "cache_exists": false
+          },
+          {
+            "release": {
+              "TagName": "v1.3.0",
+              "Body": "notes <&>\nnext",
+              "HTMLURL": "https://github.com/o/r/releases/v1.3.0",
+              "Assets": [
+                {
+                  "Name": "tool.tar.gz",
+                  "BrowserDownloadURL": "https://github.com/o/r/a",
+                  "Size": 42
+                },
+                {
+                  "Name": "checksums",
+                  "BrowserDownloadURL": "https://github.com/o/r/s",
+                  "Size": 7
+                }
+              ]
+            },
+            "error": null,
+            "calls": 2,
+            "user_agents": [
+              "symaira-updatecheck/v1.2.3",
+              "symaira-updatecheck/1.2.3"
+            ],
+            "cache_exists": false
+          }
+        ]
+      },
+      {
+        "id": "persistent",
+        "mode": "explicit",
+        "custom_endpoint": false,
+        "replies": [
+          {
+            "body": "{\"tag_name\":\" v1.3.0 \",\"body\":\"notes <&>\\nnext\",\"html_url\":\" https://github.com/o/r/releases/v1.3.0 \",\"assets\":[{\"name\":\"tool.tar.gz\",\"browser_download_url\":\"https://github.com/o/r/a\",\"size\":42},{\"name\":\"checksums\",\"browser_download_url\":\"https://github.com/o/r/s\",\"size\":7}]}",
+            "status": 200,
+            "rate_limit": false,
+            "error": ""
+          }
+        ],
+        "steps": [
+          {
+            "endpoint_override": false,
+            "current": " v1.2.3 ",
+            "force": false,
+            "fresh": false,
+            "expire": false
+          },
+          {
+            "endpoint_override": false,
+            "current": "1.2.3",
+            "force": false,
+            "fresh": true,
+            "expire": false
+          }
+        ],
+        "results": [
+          {
+            "release": {
+              "TagName": "v1.3.0",
+              "Body": "notes <&>\nnext",
+              "HTMLURL": "https://github.com/o/r/releases/v1.3.0",
+              "Assets": [
+                {
+                  "Name": "tool.tar.gz",
+                  "BrowserDownloadURL": "https://github.com/o/r/a",
+                  "Size": 42
+                },
+                {
+                  "Name": "checksums",
+                  "BrowserDownloadURL": "https://github.com/o/r/s",
+                  "Size": 7
+                }
+              ]
+            },
+            "error": null,
+            "calls": 1,
+            "user_agents": [
+              "symaira-updatecheck/v1.2.3"
+            ],
+            "cache_exists": true
+          },
+          {
+            "release": {
+              "TagName": "v1.3.0",
+              "Body": "notes <&>\nnext",
+              "HTMLURL": "https://github.com/o/r/releases/v1.3.0",
+              "Assets": [
+                {
+                  "Name": "tool.tar.gz",
+                  "BrowserDownloadURL": "https://github.com/o/r/a",
+                  "Size": 42
+                },
+                {
+                  "Name": "checksums",
+                  "BrowserDownloadURL": "https://github.com/o/r/s",
+                  "Size": 7
+                }
+              ]
+            },
+            "error": null,
+            "calls": 1,
+            "user_agents": [
+              "symaira-updatecheck/v1.2.3"
+            ],
+            "cache_exists": true
+          }
+        ]
+      },
+      {
+        "id": "expired",
+        "mode": "explicit",
+        "custom_endpoint": false,
+        "replies": [
+          {
+            "body": "{\"tag_name\":\" v1.3.0 \",\"body\":\"notes <&>\\nnext\",\"html_url\":\" https://github.com/o/r/releases/v1.3.0 \",\"assets\":[{\"name\":\"tool.tar.gz\",\"browser_download_url\":\"https://github.com/o/r/a\",\"size\":42},{\"name\":\"checksums\",\"browser_download_url\":\"https://github.com/o/r/s\",\"size\":7}]}",
+            "status": 200,
+            "rate_limit": false,
+            "error": ""
+          },
+          {
+            "body": "{\"tag_name\":\"v1.4.0\"}",
+            "status": 200,
+            "rate_limit": false,
+            "error": ""
+          }
+        ],
+        "steps": [
+          {
+            "endpoint_override": false,
+            "current": " v1.2.3 ",
+            "force": false,
+            "fresh": false,
+            "expire": false
+          },
+          {
+            "endpoint_override": false,
+            "current": "1.2.3",
+            "force": false,
+            "fresh": false,
+            "expire": true
+          }
+        ],
+        "results": [
+          {
+            "release": {
+              "TagName": "v1.3.0",
+              "Body": "notes <&>\nnext",
+              "HTMLURL": "https://github.com/o/r/releases/v1.3.0",
+              "Assets": [
+                {
+                  "Name": "tool.tar.gz",
+                  "BrowserDownloadURL": "https://github.com/o/r/a",
+                  "Size": 42
+                },
+                {
+                  "Name": "checksums",
+                  "BrowserDownloadURL": "https://github.com/o/r/s",
+                  "Size": 7
+                }
+              ]
+            },
+            "error": null,
+            "calls": 1,
+            "user_agents": [
+              "symaira-updatecheck/v1.2.3"
+            ],
+            "cache_exists": true
+          },
+          {
+            "release": {
+              "TagName": "v1.4.0",
+              "Body": "",
+              "HTMLURL": "",
+              "Assets": []
+            },
+            "error": null,
+            "calls": 2,
+            "user_agents": [
+              "symaira-updatecheck/v1.2.3",
+              "symaira-updatecheck/1.2.3"
+            ],
+            "cache_exists": true
+          }
+        ]
+      },
+      {
+        "id": "default-canonical",
+        "mode": "default",
+        "custom_endpoint": false,
+        "replies": [
+          {
+            "body": "{\"tag_name\":\" v1.3.0 \",\"body\":\"notes <&>\\nnext\",\"html_url\":\" https://github.com/o/r/releases/v1.3.0 \",\"assets\":[{\"name\":\"tool.tar.gz\",\"browser_download_url\":\"https://github.com/o/r/a\",\"size\":42},{\"name\":\"checksums\",\"browser_download_url\":\"https://github.com/o/r/s\",\"size\":7}]}",
+            "status": 200,
+            "rate_limit": false,
+            "error": ""
+          }
+        ],
+        "steps": [
+          {
+            "endpoint_override": false,
+            "current": " v1.2.3 ",
+            "force": false,
+            "fresh": false,
+            "expire": false
+          },
+          {
+            "endpoint_override": false,
+            "current": "1.2.3",
+            "force": false,
+            "fresh": true,
+            "expire": false
+          }
+        ],
+        "results": [
+          {
+            "release": {
+              "TagName": "v1.3.0",
+              "Body": "notes <&>\nnext",
+              "HTMLURL": "https://github.com/o/r/releases/v1.3.0",
+              "Assets": [
+                {
+                  "Name": "tool.tar.gz",
+                  "BrowserDownloadURL": "https://github.com/o/r/a",
+                  "Size": 42
+                },
+                {
+                  "Name": "checksums",
+                  "BrowserDownloadURL": "https://github.com/o/r/s",
+                  "Size": 7
+                }
+              ]
+            },
+            "error": null,
+            "calls": 1,
+            "user_agents": [
+              "symaira-updatecheck/v1.2.3"
+            ],
+            "cache_exists": true
+          },
+          {
+            "release": {
+              "TagName": "v1.3.0",
+              "Body": "notes <&>\nnext",
+              "HTMLURL": "https://github.com/o/r/releases/v1.3.0",
+              "Assets": [
+                {
+                  "Name": "tool.tar.gz",
+                  "BrowserDownloadURL": "https://github.com/o/r/a",
+                  "Size": 42
+                },
+                {
+                  "Name": "checksums",
+                  "BrowserDownloadURL": "https://github.com/o/r/s",
+                  "Size": 7
+                }
+              ]
+            },
+            "error": null,
+            "calls": 1,
+            "user_agents": [
+              "symaira-updatecheck/v1.2.3"
+            ],
+            "cache_exists": true
+          }
+        ]
+      },
+      {
+        "id": "endpoint-isolation",
+        "mode": "default",
+        "custom_endpoint": false,
+        "replies": [
+          {
+            "body": "{\"tag_name\":\" v1.3.0 \",\"body\":\"notes <&>\\nnext\",\"html_url\":\" https://github.com/o/r/releases/v1.3.0 \",\"assets\":[{\"name\":\"tool.tar.gz\",\"browser_download_url\":\"https://github.com/o/r/a\",\"size\":42},{\"name\":\"checksums\",\"browser_download_url\":\"https://github.com/o/r/s\",\"size\":7}]}",
+            "status": 200,
+            "rate_limit": false,
+            "error": ""
+          },
+          {
+            "body": "{\"tag_name\":\"v1.4.0\"}",
+            "status": 200,
+            "rate_limit": false,
+            "error": ""
+          }
+        ],
+        "steps": [
+          {
+            "endpoint_override": false,
+            "current": " v1.2.3 ",
+            "force": false,
+            "fresh": false,
+            "expire": false
+          },
+          {
+            "endpoint_override": true,
+            "current": "1.2.3",
+            "force": false,
+            "fresh": true,
+            "expire": false
+          },
+          {
+            "endpoint_override": false,
+            "current": "1.2.3",
+            "force": false,
+            "fresh": true,
+            "expire": false
+          }
+        ],
+        "results": [
+          {
+            "release": {
+              "TagName": "v1.3.0",
+              "Body": "notes <&>\nnext",
+              "HTMLURL": "https://github.com/o/r/releases/v1.3.0",
+              "Assets": [
+                {
+                  "Name": "tool.tar.gz",
+                  "BrowserDownloadURL": "https://github.com/o/r/a",
+                  "Size": 42
+                },
+                {
+                  "Name": "checksums",
+                  "BrowserDownloadURL": "https://github.com/o/r/s",
+                  "Size": 7
+                }
+              ]
+            },
+            "error": null,
+            "calls": 1,
+            "user_agents": [
+              "symaira-updatecheck/v1.2.3"
+            ],
+            "cache_exists": true
+          },
+          {
+            "release": {
+              "TagName": "v1.4.0",
+              "Body": "",
+              "HTMLURL": "",
+              "Assets": []
+            },
+            "error": null,
+            "calls": 2,
+            "user_agents": [
+              "symaira-updatecheck/v1.2.3",
+              "symaira-updatecheck/1.2.3"
+            ],
+            "cache_exists": true
+          },
+          {
+            "release": {
+              "TagName": "v1.3.0",
+              "Body": "notes <&>\nnext",
+              "HTMLURL": "https://github.com/o/r/releases/v1.3.0",
+              "Assets": [
+                {
+                  "Name": "tool.tar.gz",
+                  "BrowserDownloadURL": "https://github.com/o/r/a",
+                  "Size": 42
+                },
+                {
+                  "Name": "checksums",
+                  "BrowserDownloadURL": "https://github.com/o/r/s",
+                  "Size": 7
+                }
+              ]
+            },
+            "error": null,
+            "calls": 2,
+            "user_agents": [
+              "symaira-updatecheck/v1.2.3",
+              "symaira-updatecheck/1.2.3"
+            ],
+            "cache_exists": true
+          }
+        ]
+      },
+      {
+        "id": "endpoint-explicit",
+        "mode": "explicit",
+        "custom_endpoint": true,
+        "replies": [
+          {
+            "body": "{\"tag_name\":\" v1.3.0 \",\"body\":\"notes <&>\\nnext\",\"html_url\":\" https://github.com/o/r/releases/v1.3.0 \",\"assets\":[{\"name\":\"tool.tar.gz\",\"browser_download_url\":\"https://github.com/o/r/a\",\"size\":42},{\"name\":\"checksums\",\"browser_download_url\":\"https://github.com/o/r/s\",\"size\":7}]}",
+            "status": 200,
+            "rate_limit": false,
+            "error": ""
+          }
+        ],
+        "steps": [
+          {
+            "endpoint_override": false,
+            "current": " v1.2.3 ",
+            "force": false,
+            "fresh": false,
+            "expire": false
+          },
+          {
+            "endpoint_override": false,
+            "current": "1.2.3",
+            "force": false,
+            "fresh": true,
+            "expire": false
+          }
+        ],
+        "results": [
+          {
+            "release": {
+              "TagName": "v1.3.0",
+              "Body": "notes <&>\nnext",
+              "HTMLURL": "https://github.com/o/r/releases/v1.3.0",
+              "Assets": [
+                {
+                  "Name": "tool.tar.gz",
+                  "BrowserDownloadURL": "https://github.com/o/r/a",
+                  "Size": 42
+                },
+                {
+                  "Name": "checksums",
+                  "BrowserDownloadURL": "https://github.com/o/r/s",
+                  "Size": 7
+                }
+              ]
+            },
+            "error": null,
+            "calls": 1,
+            "user_agents": [
+              "symaira-updatecheck/v1.2.3"
+            ],
+            "cache_exists": true
+          },
+          {
+            "release": {
+              "TagName": "v1.3.0",
+              "Body": "notes <&>\nnext",
+              "HTMLURL": "https://github.com/o/r/releases/v1.3.0",
+              "Assets": [
+                {
+                  "Name": "tool.tar.gz",
+                  "BrowserDownloadURL": "https://github.com/o/r/a",
+                  "Size": 42
+                },
+                {
+                  "Name": "checksums",
+                  "BrowserDownloadURL": "https://github.com/o/r/s",
+                  "Size": 7
+                }
+              ]
+            },
+            "error": null,
+            "calls": 1,
+            "user_agents": [
+              "symaira-updatecheck/v1.2.3"
+            ],
+            "cache_exists": true
+          }
+        ]
+      },
+      {
+        "id": "valid-invalid-valid",
+        "mode": "explicit",
+        "custom_endpoint": false,
+        "replies": [
+          {
+            "body": "{\"tag_name\":\" v1.3.0 \",\"body\":\"notes <&>\\nnext\",\"html_url\":\" https://github.com/o/r/releases/v1.3.0 \",\"assets\":[{\"name\":\"tool.tar.gz\",\"browser_download_url\":\"https://github.com/o/r/a\",\"size\":42},{\"name\":\"checksums\",\"browser_download_url\":\"https://github.com/o/r/s\",\"size\":7}]}",
+            "status": 200,
+            "rate_limit": false,
+            "error": ""
+          },
+          {
+            "body": "{\"tag_name\":\"broken\"}",
+            "status": 200,
+            "rate_limit": false,
+            "error": ""
+          },
+          {
+            "body": "{\"tag_name\":\"v1.5.0\"}",
+            "status": 200,
+            "rate_limit": false,
+            "error": ""
+          }
+        ],
+        "steps": [
+          {
+            "endpoint_override": false,
+            "current": " v1.2.3 ",
+            "force": false,
+            "fresh": false,
+            "expire": false
+          },
+          {
+            "endpoint_override": false,
+            "current": "1.2.3",
+            "force": true,
+            "fresh": false,
+            "expire": false
+          },
+          {
+            "endpoint_override": false,
+            "current": "1.2.3",
+            "force": true,
+            "fresh": false,
+            "expire": false
+          },
+          {
+            "endpoint_override": false,
+            "current": " v1.2.3 ",
+            "force": false,
+            "fresh": false,
+            "expire": false
+          }
+        ],
+        "results": [
+          {
+            "release": {
+              "TagName": "v1.3.0",
+              "Body": "notes <&>\nnext",
+              "HTMLURL": "https://github.com/o/r/releases/v1.3.0",
+              "Assets": [
+                {
+                  "Name": "tool.tar.gz",
+                  "BrowserDownloadURL": "https://github.com/o/r/a",
+                  "Size": 42
+                },
+                {
+                  "Name": "checksums",
+                  "BrowserDownloadURL": "https://github.com/o/r/s",
+                  "Size": 7
+                }
+              ]
+            },
+            "error": null,
+            "calls": 1,
+            "user_agents": [
+              "symaira-updatecheck/v1.2.3"
+            ],
+            "cache_exists": true
+          },
+          {
+            "release": null,
+            "error": "latest release tag \"broken\" is not a stable semantic version",
+            "calls": 2,
+            "user_agents": [
+              "symaira-updatecheck/v1.2.3",
+              "symaira-updatecheck/1.2.3"
+            ],
+            "cache_exists": true
+          },
+          {
+            "release": {
+              "TagName": "v1.5.0",
+              "Body": "",
+              "HTMLURL": "",
+              "Assets": []
+            },
+            "error": null,
+            "calls": 3,
+            "user_agents": [
+              "symaira-updatecheck/v1.2.3",
+              "symaira-updatecheck/1.2.3",
+              "symaira-updatecheck/1.2.3"
+            ],
+            "cache_exists": true
+          },
+          {
+            "release": {
+              "TagName": "v1.5.0",
+              "Body": "",
+              "HTMLURL": "",
+              "Assets": []
+            },
+            "error": null,
+            "calls": 3,
+            "user_agents": [
+              "symaira-updatecheck/v1.2.3",
+              "symaira-updatecheck/1.2.3",
+              "symaira-updatecheck/1.2.3"
+            ],
+            "cache_exists": true
+          }
+        ]
+      },
+      {
+        "id": "invalid-retry",
+        "mode": "explicit",
+        "custom_endpoint": false,
+        "replies": [
+          {
+            "body": "{\"tag_name\":\"broken\"}",
+            "status": 200,
+            "rate_limit": false,
+            "error": ""
+          },
+          {
+            "body": "{\"tag_name\":\" v1.3.0 \",\"body\":\"notes <&>\\nnext\",\"html_url\":\" https://github.com/o/r/releases/v1.3.0 \",\"assets\":[{\"name\":\"tool.tar.gz\",\"browser_download_url\":\"https://github.com/o/r/a\",\"size\":42},{\"name\":\"checksums\",\"browser_download_url\":\"https://github.com/o/r/s\",\"size\":7}]}",
+            "status": 200,
+            "rate_limit": false,
+            "error": ""
+          }
+        ],
+        "steps": [
+          {
+            "endpoint_override": false,
+            "current": " v1.2.3 ",
+            "force": false,
+            "fresh": false,
+            "expire": false
+          },
+          {
+            "endpoint_override": false,
+            "current": " v1.2.3 ",
+            "force": false,
+            "fresh": false,
+            "expire": false
+          }
+        ],
+        "results": [
+          {
+            "release": null,
+            "error": "latest release tag \"broken\" is not a stable semantic version",
+            "calls": 1,
+            "user_agents": [
+              "symaira-updatecheck/v1.2.3"
+            ],
+            "cache_exists": false
+          },
+          {
+            "release": {
+              "TagName": "v1.3.0",
+              "Body": "notes <&>\nnext",
+              "HTMLURL": "https://github.com/o/r/releases/v1.3.0",
+              "Assets": [
+                {
+                  "Name": "tool.tar.gz",
+                  "BrowserDownloadURL": "https://github.com/o/r/a",
+                  "Size": 42
+                },
+                {
+                  "Name": "checksums",
+                  "BrowserDownloadURL": "https://github.com/o/r/s",
+                  "Size": 7
+                }
+              ]
+            },
+            "error": null,
+            "calls": 2,
+            "user_agents": [
+              "symaira-updatecheck/v1.2.3",
+              "symaira-updatecheck/v1.2.3"
+            ],
+            "cache_exists": true
+          }
+        ]
+      },
+      {
+        "id": "draft",
+        "mode": "explicit",
+        "custom_endpoint": false,
+        "replies": [
+          {
+            "body": "{\"draft\":true,\"tag_name\":\"v1.4.0\"}",
+            "status": 200,
+            "rate_limit": false,
+            "error": ""
+          }
+        ],
+        "steps": [
+          {
+            "endpoint_override": false,
+            "current": " v1.2.3 ",
+            "force": false,
+            "fresh": false,
+            "expire": false
+          }
+        ],
+        "results": [
+          {
+            "release": null,
+            "error": "latest release response returned a draft release",
+            "calls": 1,
+            "user_agents": [
+              "symaira-updatecheck/v1.2.3"
+            ],
+            "cache_exists": false
+          }
+        ]
+      },
+      {
+        "id": "prerelease",
+        "mode": "explicit",
+        "custom_endpoint": false,
+        "replies": [
+          {
+            "body": "{\"prerelease\":true,\"tag_name\":\"v1.4.0\"}",
+            "status": 200,
+            "rate_limit": false,
+            "error": ""
+          }
+        ],
+        "steps": [
+          {
+            "endpoint_override": false,
+            "current": " v1.2.3 ",
+            "force": false,
+            "fresh": false,
+            "expire": false
+          }
+        ],
+        "results": [
+          {
+            "release": null,
+            "error": "latest release response returned a prerelease",
+            "calls": 1,
+            "user_agents": [
+              "symaira-updatecheck/v1.2.3"
+            ],
+            "cache_exists": false
+          }
+        ]
+      },
+      {
+        "id": "missing-tag",
+        "mode": "explicit",
+        "custom_endpoint": false,
+        "replies": [
+          {
+            "body": "{\"body\":\"missing\"}",
+            "status": 200,
+            "rate_limit": false,
+            "error": ""
+          }
+        ],
+        "steps": [
+          {
+            "endpoint_override": false,
+            "current": " v1.2.3 ",
+            "force": false,
+            "fresh": false,
+            "expire": false
+          }
+        ],
+        "results": [
+          {
+            "release": null,
+            "error": "latest release response did not include a tag name",
+            "calls": 1,
+            "user_agents": [
+              "symaira-updatecheck/v1.2.3"
+            ],
+            "cache_exists": false
+          }
+        ]
+      },
+      {
+        "id": "http-404",
+        "mode": "explicit",
+        "custom_endpoint": false,
+        "replies": [
+          {
+            "body": "",
+            "status": 404,
+            "rate_limit": false,
+            "error": ""
+          }
+        ],
+        "steps": [
+          {
+            "endpoint_override": false,
+            "current": " v1.2.3 ",
+            "force": false,
+            "fresh": false,
+            "expire": false
+          }
+        ],
+        "results": [
+          {
+            "release": null,
+            "error": "GitHub API returned HTTP 404",
+            "calls": 1,
+            "user_agents": [
+              "symaira-updatecheck/v1.2.3"
+            ],
+            "cache_exists": false
+          }
+        ]
+      },
+      {
+        "id": "rate-limit",
+        "mode": "explicit",
+        "custom_endpoint": false,
+        "replies": [
+          {
+            "body": "",
+            "status": 403,
+            "rate_limit": true,
+            "error": ""
+          }
+        ],
+        "steps": [
+          {
+            "endpoint_override": false,
+            "current": " v1.2.3 ",
+            "force": false,
+            "fresh": false,
+            "expire": false
+          }
+        ],
+        "results": [
+          {
+            "release": null,
+            "error": "GitHub API rate limit exceeded",
+            "calls": 1,
+            "user_agents": [
+              "symaira-updatecheck/v1.2.3"
+            ],
+            "cache_exists": false
+          }
+        ]
+      },
+      {
+        "id": "transport-error",
+        "mode": "explicit",
+        "custom_endpoint": false,
+        "replies": [
+          {
+            "body": "",
+            "status": 0,
+            "rate_limit": false,
+            "error": "oracle transport failure"
+          }
+        ],
+        "steps": [
+          {
+            "endpoint_override": false,
+            "current": " v1.2.3 ",
+            "force": false,
+            "fresh": false,
+            "expire": false
+          }
+        ],
+        "results": [
+          {
+            "release": null,
+            "error": "request latest release: oracle transport failure",
+            "calls": 1,
+            "user_agents": [
+              "symaira-updatecheck/v1.2.3"
+            ],
+            "cache_exists": false
+          }
+        ]
+      }
+    ],
+    "default_path": "symaira/updatecheck/0791cc94ae70fc511f23a9170dd389bfcb89f132cd78118b9f3c314a3e5903b4.json",
+    "empty_xdg_path": ".cache/symaira/updatecheck/0791cc94ae70fc511f23a9170dd389bfcb89f132cd78118b9f3c314a3e5903b4.json",
+    "relative_xdg_path": ".cache/symaira/updatecheck/0791cc94ae70fc511f23a9170dd389bfcb89f132cd78118b9f3c314a3e5903b4.json"
+  },
+  "capture": {
+    "schema_version": 1,
+    "lane": "checker",
+    "source_commit": "635562a4251a12a63d3b5f7a685a896d77eccb06",
+    "working_tree_clean": false,
+    "dirty_paths": [
+      "rust/symaira-core-update/tests/parity.rs",
+      "scripts/rust-port/update-version-differential.py",
+      "rust/symaira-core-update/tests/common/static_update.rs",
+      "scripts/rust-port/static_update_oracle.py",
+      "testdata/rust-port/fixtures/update/static-v1/darwin-arm64/version.json",
+      "testdata/rust-port/fixtures/update/static-v1/index.json"
+    ],
+    "go": {
+      "version": "go version go1.26.6 darwin/arm64",
+      "goversion": "go1.26.6",
+      "goroot": "go1.26.6",
+      "goos": "darwin",
+      "goarch": "arm64",
+      "binary_sha256": "a1c83801d1756c3eca78366c6b585f2c21c20694fb1c7eb92c446a0580420412",
+      "gomodcache": "existing-cache-read-only"
+    },
+    "capturer_sha256": "b7c349fb87271300f34ec82477d1c9b3294708b1c00824aa183353e25a8fd1e8",
+    "oracle_files": [
+      {
+        "path": "scripts/rust-port/update-checker-oracle/main.go",
+        "sha256": "5977cca7a81f5d9999b2c94fb947dd480d184f1c2ce57238b8d6862962c63f82"
+      }
+    ],
+    "source_files": [
+      {
+        "path": "updatecheck/updatecheck.go",
+        "sha256": "638c263835c1d72982f6fc3391092edc44318f3f5993e83c7c190fae25329cc9"
+      },
+      {
+        "path": "scripts/rust-port/update-checker-oracle/main.go",
+        "sha256": "5977cca7a81f5d9999b2c94fb947dd480d184f1c2ce57238b8d6862962c63f82"
+      },
+      {
+        "path": "updatecheck/contract_test.go",
+        "sha256": "bdfc0e300d7b550978e03565938ffb12c3907e914af5cf7f9573462d31d3a31e"
+      },
+      {
+        "path": "updatecheck/secureclient_test.go",
+        "sha256": "dcb0cf916b761314b69b308fd84548db25752aceba7c3232c36d15a9662445c3"
+      },
+      {
+        "path": "updatecheck/updatecheck_test.go",
+        "sha256": "ffce042aaf118f7c71428a5703771cafbf92f7bd343f0377f094c318c9f026f3"
+      },
+      {
+        "path": "go.mod",
+        "sha256": "5e2b0ad309b6db5db7abbaf958ef87bc12c0e81605245b897f1b9305a113e57d"
+      },
+      {
+        "path": "go.sum",
+        "sha256": "701d7161d71d4817a59f98bfc6f8ac71d5ee6b7f70cbb8ec96b07a140298929c"
+      }
+    ],
+    "go_module_inputs": [
+      {
+        "path": "go.mod",
+        "sha256": "5e2b0ad309b6db5db7abbaf958ef87bc12c0e81605245b897f1b9305a113e57d"
+      },
+      {
+        "path": "go.sum",
+        "sha256": "701d7161d71d4817a59f98bfc6f8ac71d5ee6b7f70cbb8ec96b07a140298929c"
+      }
+    ],
+    "historical_fixture": {
+      "path": "testdata/rust-port/fixtures/update/checker.json",
+      "sha256": "869b091d78f044a6dbfea33a8c2f5989688d7cb73db273cdc7fede0245915e67"
+    },
+    "case_count": 21,
+    "case_ids": [
+      "metadata-newer",
+      "equal",
+      "older",
+      "v0-to-v1",
+      "invalid-current",
+      "memory-conditioned",
+      "forced-refresh",
+      "empty-persistence",
+      "persistent",
+      "expired",
+      "default-canonical",
+      "endpoint-isolation",
+      "endpoint-explicit",
+      "valid-invalid-valid",
+      "invalid-retry",
+      "draft",
+      "prerelease",
+      "missing-tag",
+      "http-404",
+      "rate-limit",
+      "transport-error"
+    ],
+    "case_fingerprints_sha256": [
+      "9b8bdcb590fa3380731163966c5b09adfcf85af438dc1fbe427e473d0b7efc8e",
+      "2abeac751fb5e20390a4bd11d127da19ea6a7fda2418d8fe8135b92a3ac4231c",
+      "547432053c358c55048125a72327b49c235987dd3812dbb790fee9108ba70db1",
+      "7695026376ef4080938d7c7fe6f7385fe8ea0d21fe999c6205a802321588eb9f",
+      "831619704f02d04c091f89546694c733b7868140dfca5de4618e2156f0abd11d",
+      "1a7e0070c83dc3429c3d126465e88b679ba95de1bbfd034b9e97f445e7d08751",
+      "6cd7237e2710b6c823d7b6a07f747f1eec076e0be92809b6b73a6323b4df6deb",
+      "3d6d08cf1b284dee26da6b8485ef188a386832d36539722704bc79b4dea3a344",
+      "2d2baa4d875e4429da6eb39840d6cf860de7f1e32ae8f759aaeb7ee5ad2b99bb",
+      "067ecb318fee244e631fc4e810ee2b4a2fc41a92dbcd300b4d0c24f0342a3783",
+      "f91204e5b22fb96db5644f806e07cf5557af66e38793e0f3dbb7aa43994d71c6",
+      "56377ef3c2e8613e718b7331a9b181ab9edbd43c31e7e526686b805e23c66e6b",
+      "713680531363307e1f2283aed52d515e81d7d2a915a46108a9173afb3baf2de4",
+      "1d48025d06c9317f1a1c9d5d83017fa7cf9895e3c6d833c6de24778fd08bb615",
+      "c9f46405486a694f43a5e6df404f20b9d5c42ec56f79e7a0a0974efd9e14bee4",
+      "76c31abec68e46ba1eb1bca554d1401debf00cac7c1912120f28be569349d356",
+      "e73f2280284d297a77727fdad957ffc89af23c2c86266d2586e9419ccaf08265",
+      "962c646f72ae186278c1a25823c233c938035eb7b6d1fe364b0eab0b5f1c2814",
+      "86420d6b88a52420eae5a6de9993252ec63fdeaa3fba424ad6c2fac105f37123",
+      "4bd055f302a6209cb1c3fba26ae2cd5ff7cdd16dcdc0dcbf601be756a6ee54ec",
+      "137708214b319a76b62975d157fa717e5fb33fd515c426645f7fff5cffee0bfe"
+    ],
+    "generated_inputs": [],
+    "raw": {
+      "exit_code": 0,
+      "stdout_sha256": "cf51e6bad79f7d60a46d8a6b924721838d42d78fab74ad87a399c2c93cee740d",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "commands": [
+        {
+          "stage": "run-go-checker-oracle",
+          "command": [
+            "go",
+            "run",
+            "./scripts/rust-port/update-checker-oracle"
+          ],
+          "cwd": "repository",
+          "exit_code": 0
+        }
+      ],
+      "observation_sha256": "cf51e6bad79f7d60a46d8a6b924721838d42d78fab74ad87a399c2c93cee740d",
+      "observation_bytes": 23501,
+      "evidence_id": "checker-vhw0ve5j"
+    },
+    "capture_mode": "fresh-pinned-go-execution-additive-v1"
+  }
+}

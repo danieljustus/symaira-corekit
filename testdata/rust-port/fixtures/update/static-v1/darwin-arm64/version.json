@@ -1,0 +1,375 @@
+{
+  "go_source_sha256": "638c263835c1d72982f6fc3391092edc44318f3f5993e83c7c190fae25329cc9",
+  "oracle_sha256": "e24768b040fe090ece6918b3cb6a68c072f5d90236a160b2ee214d32ca4a647d",
+  "cases": [
+    {
+      "current": "dev",
+      "latest": "v1.2.3",
+      "available": false,
+      "invalid_latest": false,
+      "requests": 0
+    },
+    {
+      "current": "v1.2.3-rc1",
+      "latest": "v1.2.4",
+      "available": false,
+      "invalid_latest": false,
+      "requests": 0
+    },
+    {
+      "current": "v1.2.3+build",
+      "latest": "v1.2.4",
+      "available": false,
+      "invalid_latest": false,
+      "requests": 0
+    },
+    {
+      "current": "",
+      "latest": "v1.2.4",
+      "available": false,
+      "invalid_latest": false,
+      "requests": 0
+    },
+    {
+      "current": "v0.9.0",
+      "latest": "v1.0.0",
+      "available": false,
+      "invalid_latest": false,
+      "requests": 1
+    },
+    {
+      "current": "v0.9.0",
+      "latest": "v0.10.0",
+      "available": true,
+      "invalid_latest": false,
+      "requests": 1
+    },
+    {
+      "current": "v1.2.3",
+      "latest": "v1.2.3",
+      "available": false,
+      "invalid_latest": false,
+      "requests": 1
+    },
+    {
+      "current": "v1.2.3",
+      "latest": "v1.2.2",
+      "available": false,
+      "invalid_latest": false,
+      "requests": 1
+    },
+    {
+      "current": "  v1.2.3  ",
+      "latest": "v1.2.4",
+      "available": true,
+      "invalid_latest": false,
+      "requests": 1
+    },
+    {
+      "current": "+1.2.3",
+      "latest": "v1.2.4",
+      "available": false,
+      "invalid_latest": false,
+      "requests": 0
+    },
+    {
+      "current": "v1.2.3",
+      "latest": "v1.2.4-rc1",
+      "available": false,
+      "invalid_latest": true,
+      "requests": 1
+    },
+    {
+      "current": "v1.2.3",
+      "latest": "latest",
+      "available": false,
+      "invalid_latest": true,
+      "requests": 1
+    },
+    {
+      "current": "1.2.3",
+      "latest": "1.2.4",
+      "available": true,
+      "invalid_latest": false,
+      "requests": 1
+    },
+    {
+      "current": "v1.2",
+      "latest": "v1.2.4",
+      "available": false,
+      "invalid_latest": false,
+      "requests": 0
+    },
+    {
+      "current": "v1.2.3.4",
+      "latest": "v1.2.4",
+      "available": false,
+      "invalid_latest": false,
+      "requests": 0
+    },
+    {
+      "current": "v1..3",
+      "latest": "v1.2.4",
+      "available": false,
+      "invalid_latest": false,
+      "requests": 0
+    },
+    {
+      "current": "v1.a.3",
+      "latest": "v1.2.4",
+      "available": false,
+      "invalid_latest": false,
+      "requests": 0
+    },
+    {
+      "current": "v-1.2.3",
+      "latest": "v1.2.4",
+      "available": false,
+      "invalid_latest": false,
+      "requests": 0
+    },
+    {
+      "current": "v+1.2.3",
+      "latest": "v1.2.4",
+      "available": false,
+      "invalid_latest": false,
+      "requests": 0
+    },
+    {
+      "current": "v1.2.+3",
+      "latest": "v1.2.4",
+      "available": false,
+      "invalid_latest": false,
+      "requests": 0
+    },
+    {
+      "current": "v01.02.003",
+      "latest": "v1.2.4",
+      "available": true,
+      "invalid_latest": false,
+      "requests": 1
+    },
+    {
+      "current": "V1.2.3",
+      "latest": "v1.2.4",
+      "available": false,
+      "invalid_latest": false,
+      "requests": 0
+    },
+    {
+      "current": "v1.2.3",
+      "latest": " v1.2.4 ",
+      "available": true,
+      "invalid_latest": false,
+      "requests": 1
+    },
+    {
+      "current": "v1.2.3",
+      "latest": "v1.2.3+build",
+      "available": false,
+      "invalid_latest": true,
+      "requests": 1
+    },
+    {
+      "current": "v1.2.3",
+      "latest": "v1.2",
+      "available": false,
+      "invalid_latest": true,
+      "requests": 1
+    },
+    {
+      "current": "v1.2.3",
+      "latest": "v1.2.4.5",
+      "available": false,
+      "invalid_latest": true,
+      "requests": 1
+    },
+    {
+      "current": "v1.2.3",
+      "latest": "v1.a.4",
+      "available": false,
+      "invalid_latest": true,
+      "requests": 1
+    },
+    {
+      "current": "v1.2.3",
+      "latest": "v-1.2.4",
+      "available": false,
+      "invalid_latest": true,
+      "requests": 1
+    },
+    {
+      "current": "v1.2.3",
+      "latest": "v1.2.+4",
+      "available": false,
+      "invalid_latest": true,
+      "requests": 1
+    },
+    {
+      "current": "v0.9.0",
+      "latest": "v0.9.1",
+      "available": true,
+      "invalid_latest": false,
+      "requests": 1
+    }
+  ],
+  "capture": {
+    "schema_version": 1,
+    "lane": "version",
+    "source_commit": "635562a4251a12a63d3b5f7a685a896d77eccb06",
+    "working_tree_clean": false,
+    "dirty_paths": [
+      "rust/symaira-core-update/tests/parity.rs",
+      "scripts/rust-port/update-version-differential.py",
+      "rust/symaira-core-update/tests/common/static_update.rs",
+      "scripts/rust-port/static_update_oracle.py"
+    ],
+    "go": {
+      "version": "go version go1.26.6 darwin/arm64",
+      "goversion": "go1.26.6",
+      "goroot": "go1.26.6",
+      "goos": "darwin",
+      "goarch": "arm64",
+      "binary_sha256": "a1c83801d1756c3eca78366c6b585f2c21c20694fb1c7eb92c446a0580420412",
+      "gomodcache": "existing-cache-read-only"
+    },
+    "capturer_sha256": "b7c349fb87271300f34ec82477d1c9b3294708b1c00824aa183353e25a8fd1e8",
+    "oracle_files": [
+      {
+        "path": "scripts/rust-port/update-oracle/main.go",
+        "sha256": "e24768b040fe090ece6918b3cb6a68c072f5d90236a160b2ee214d32ca4a647d"
+      }
+    ],
+    "source_files": [
+      {
+        "path": "updatecheck/updatecheck.go",
+        "sha256": "638c263835c1d72982f6fc3391092edc44318f3f5993e83c7c190fae25329cc9"
+      },
+      {
+        "path": "scripts/rust-port/update-oracle/main.go",
+        "sha256": "e24768b040fe090ece6918b3cb6a68c072f5d90236a160b2ee214d32ca4a647d"
+      },
+      {
+        "path": "updatecheck/contract_test.go",
+        "sha256": "bdfc0e300d7b550978e03565938ffb12c3907e914af5cf7f9573462d31d3a31e"
+      },
+      {
+        "path": "updatecheck/secureclient_test.go",
+        "sha256": "dcb0cf916b761314b69b308fd84548db25752aceba7c3232c36d15a9662445c3"
+      },
+      {
+        "path": "updatecheck/updatecheck_test.go",
+        "sha256": "ffce042aaf118f7c71428a5703771cafbf92f7bd343f0377f094c318c9f026f3"
+      },
+      {
+        "path": "go.mod",
+        "sha256": "5e2b0ad309b6db5db7abbaf958ef87bc12c0e81605245b897f1b9305a113e57d"
+      },
+      {
+        "path": "go.sum",
+        "sha256": "701d7161d71d4817a59f98bfc6f8ac71d5ee6b7f70cbb8ec96b07a140298929c"
+      }
+    ],
+    "go_module_inputs": [
+      {
+        "path": "go.mod",
+        "sha256": "5e2b0ad309b6db5db7abbaf958ef87bc12c0e81605245b897f1b9305a113e57d"
+      },
+      {
+        "path": "go.sum",
+        "sha256": "701d7161d71d4817a59f98bfc6f8ac71d5ee6b7f70cbb8ec96b07a140298929c"
+      }
+    ],
+    "historical_fixture": {
+      "path": "testdata/rust-port/fixtures/update/stable-versions.json",
+      "sha256": "145a9d5ede271db110cf28a0c86870aeb53c745e787e95dd4422c85a961a1fbf"
+    },
+    "case_count": 30,
+    "case_ids": [
+      "stable-version-001",
+      "stable-version-002",
+      "stable-version-003",
+      "stable-version-004",
+      "stable-version-005",
+      "stable-version-006",
+      "stable-version-007",
+      "stable-version-008",
+      "stable-version-009",
+      "stable-version-010",
+      "stable-version-011",
+      "stable-version-012",
+      "stable-version-013",
+      "stable-version-014",
+      "stable-version-015",
+      "stable-version-016",
+      "stable-version-017",
+      "stable-version-018",
+      "stable-version-019",
+      "stable-version-020",
+      "stable-version-021",
+      "stable-version-022",
+      "stable-version-023",
+      "stable-version-024",
+      "stable-version-025",
+      "stable-version-026",
+      "stable-version-027",
+      "stable-version-028",
+      "stable-version-029",
+      "stable-version-030"
+    ],
+    "case_fingerprints_sha256": [
+      "650dd31a5755ab13c91404ae339fcaf666859dc5c8a251ca3391afef9e79eb62",
+      "5dbb5633b3096cdd4d13125b2a49d21f5f7a3d19bc27ff134e6aa8ae7ffc7c26",
+      "358fb8807d65e18e34039a76e966b76bfc7317d8b500643b36b9da39b4db7ce5",
+      "793e97ab8f4e5ff680c7f9221704231e7c583b98defa4e6d58a1015dfd3852d7",
+      "6775b25700887f2241c4e752f96af5b1bda92bfa2913d79e420b16aa463ebb87",
+      "315fd2d601043174796dc109ecad669cf01177145f5ec4420b7141824d0049f2",
+      "24916b3d676c2586b50ec1e4e58fdbb1101f682deff904925316fdbdad29acb6",
+      "a00e3c318072eade005dab7bc65a825e065dce31fdd073a3318d09d99fcabb4f",
+      "08440b0f707067c1e9873b570651e557635eb166cbc7bc1b55ac64b4c669cc6c",
+      "1b5290c914b5abdaa2a242f5c4a0f4bf82e131d876bd623da0f617f993d14514",
+      "9273a7964f035d7111d92085ac4d4a54758b8fc843da05e1e175537ebdd42596",
+      "153cefa4314c651caae2704d83dddca9dabae667b46d5b488adce037676fbfde",
+      "bb7f2493d3ed4f8eb3bf2b40a56daef89c26e4026dc3158daf7b1c194d16d65e",
+      "a559f7570d2e29ef2179a66abc60aaa1e88583918bee99d6b40ae832862459e0",
+      "0990c94ee66a265b4a4f5a1fdce607c80c395fbef225c19792458184e2aab6f6",
+      "bcf0d0a9cad7061fd2a26e0b9fc01b80f1e0d781e01afc3a93bf66976fb5aeb9",
+      "1b4547cca946ee1f4290c5f8fde4c8fb1204eb7b0f2dc8dd4fedce3132935a0b",
+      "88810d0909f0f25e22c1b1d5253212f93a51659f86dec57eab1ca86e21b5125f",
+      "122037e030c230dfe744057c15463688dd20a8e09613d4e591780d02de9e93ea",
+      "35ffbedce29bb346af51d6a8e07f9ed48e6eab2fafe924c80b7b24a5079389d1",
+      "22a633fab0455b38dd2e1542a03b299c171cea599b5bcc905f59b4198c4de0f0",
+      "035f73b316a1429c33e3c3a89fc647093fa978c3df4e09816a08fee95da032f8",
+      "8bd84d5ae29ab7d60b378af9ee4f8d7886140e6a5ab43a96e9c847c39bb26739",
+      "1a68d890828ba4005872892325e19edb014cada308119c92e1bea073ff23a18a",
+      "a876ad6bd34174cbb1c84bd7fd7b3e72427ca5d30a00a99f8ab9eebfa3b5576a",
+      "1110674d00cf06c591e836a84cf2e55ea4b174d246662709e4371d0cda0f4c92",
+      "6f4da4ab07d668c0ff9abbe8f608be8f79446c754e0d3bd547f51227610bfa7d",
+      "78c7cba08662a30a79f3ee3f27d8328eb006943146f537b66a97d23cde2c26a9",
+      "de4d7a5dfffaab6cade635f5bcde1ae612b608805ffb4db13f6e1c21ef97f4a4",
+      "ee35fe66985049c9fa34c030304f92633725b6c876625c4f09ead72fc20e7efa"
+    ],
+    "generated_inputs": [],
+    "raw": {
+      "exit_code": 0,
+      "stdout_sha256": "177418d1d15ba1df884a96b582a155d42eb30b59d96d9238a41047cd6664c554",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "commands": [
+        {
+          "stage": "run-go-version-oracle",
+          "command": [
+            "go",
+            "run",
+            "./scripts/rust-port/update-oracle"
+          ],
+          "cwd": "repository",
+          "exit_code": 0
+        }
+      ],
+      "observation_sha256": "177418d1d15ba1df884a96b582a155d42eb30b59d96d9238a41047cd6664c554",
+      "observation_bytes": 2802,
+      "evidence_id": "version-uduvcjdu"
+    },
+    "capture_mode": "fresh-pinned-go-execution-additive-v1"
+  }
+}

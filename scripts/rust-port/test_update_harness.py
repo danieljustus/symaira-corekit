@@ -11,8 +11,8 @@ import unittest
 from unittest.mock import patch
 
 
-def load(name):
-    path = Path(__file__).with_name(name + "-differential.py")
+def load(name, suffix="-differential"):
+    path = Path(__file__).with_name(name + suffix + ".py")
     spec = importlib.util.spec_from_file_location(name, path)
     assert spec is not None and spec.loader is not None
     module = importlib.util.module_from_spec(spec)
@@ -21,30 +21,54 @@ def load(name):
 
 
 class UpdateHarnessTests(unittest.TestCase):
+    def test_native_cosign_gate_rejects_zero_or_wrong_test_success(self):
+        module = load("update-native-acceptance", suffix="")
+        named = f"test {module.REAL_COSIGN_TEST} ... ok\n"
+        count = "test result: ok. 1 passed; 0 failed; 0 ignored;"
+        module.require_real_cosign_rejection(0, named + count)
+        for status, output in (
+            (0, "test result: ok. 0 passed; 0 failed; 0 ignored;"),
+            (0, named),
+            (0, "test unrelated ... ok\n" + count),
+            (0, named + "test result: ok. 2 passed; 0 failed; 0 ignored;"),
+            (1, named + count),
+        ):
+            with self.subTest(status=status, output=output):
+                with self.assertRaises(RuntimeError):
+                    module.require_real_cosign_rejection(status, output)
+
     def test_extraction_negative_requires_native_rust_assertion(self):
-        module = load("update-extract")
-        fixture = json.loads(module.FIXTURE.read_text(encoding="utf-8"))
-        native = json.loads(json.dumps(fixture))
-        native["goos"] = module.goos_name()
-        assertion = native["cases"][0]["id"] + " content"
-        for recorded in (native, dict(fixture, goos="foreign")):
-            for status, output, accepted in ((101, assertion, True), (0, "", False), (101, "compile failed", False)):
-                with self.subTest(goos=recorded["goos"], status=status, output=output):
-                    with tempfile.TemporaryDirectory() as directory:
-                        path = Path(directory) / "fixture.json"
-                        path.write_text(json.dumps(recorded), encoding="utf-8")
-                        def replay(candidate):
-                            mutated = json.loads(candidate.read_text(encoding="utf-8"))
-                            self.assertEqual(mutated["goos"], module.goos_name())
-                            self.assertEqual(mutated["cases"][0]["files"][0]["content"], "mutated")
-                            return subprocess.CompletedProcess([], status, stdout=output)
-                        with patch.object(sys, "argv", ["test", "--negative-control", "--fixture", str(path)]), patch.object(module, "live_observation", return_value=native), patch.object(module, "replay", side_effect=replay) as runner:
-                            if accepted:
-                                self.assertEqual(module.main(), 0)
-                            else:
-                                with self.assertRaises(RuntimeError):
-                                    module.main()
-                            runner.assert_called_once()
+        entry = load("update-extract")
+        module = sys.modules[entry.main_for_lane.__module__]
+        native = module.oracle.fixture_path("extract")
+        assertion = "tar-success content"
+        failed = "test result: FAILED"
+        controls = (
+            (101, assertion + "\n" + failed, True),
+            (0, "", False),
+            (101, "compile failed", False),
+            (101, assertion, False),
+            (101, failed, False),
+        )
+        for status, output, accepted in controls:
+            with self.subTest(status=status, output=output):
+                def replay(lane, candidate, filter_name=None):
+                    self.assertEqual(lane, "extract")
+                    self.assertIsNone(filter_name)
+                    if candidate == native:
+                        return subprocess.CompletedProcess(
+                            [], 0, stdout="test result: ok. 2 passed; 0 failed; 0 ignored;"
+                        )
+                    mutated = json.loads(candidate.read_bytes())
+                    self.assertEqual(mutated["cases"][0]["files"][0]["content"], "mutated")
+                    return subprocess.CompletedProcess([], status, stdout=output)
+                with patch.dict(os.environ, {"GO_ORACLE": "0"}), patch.object(module, "_rust", side_effect=replay) as runner:
+                    if accepted:
+                        self.assertEqual(entry.main_for_lane("extract", ["--negative-control"]), 0)
+                    else:
+                        with self.assertRaises(RuntimeError):
+                            entry.main_for_lane("extract", ["--negative-control"])
+                    self.assertEqual(runner.call_count, 2)
 
     def test_apply_real_oracle_ignores_parent_temp_contamination(self):
         module = load("update-apply")

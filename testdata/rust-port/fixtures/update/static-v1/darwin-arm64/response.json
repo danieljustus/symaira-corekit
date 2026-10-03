@@ -1,0 +1,285 @@
+{
+  "go_source_sha256": "638c263835c1d72982f6fc3391092edc44318f3f5993e83c7c190fae25329cc9",
+  "oracle_sha256": "896ea430890635976b58528fa29f2ff27838d00dba5e459dc9b28942eba0e08f",
+  "cases": [
+    {
+      "id": "available-assets",
+      "current": "v1.2.3",
+      "response": "{\"tag_name\":\" v1.3.0 \",\"body\":\"Release notes\\nFixes\",\"html_url\":\" https://github.com/acme/tool/releases/tag/v1.3.0 \",\"assets\":[{\"name\":\"tool-darwin-arm64.tar.gz\",\"browser_download_url\":\"https://github.com/acme/tool/releases/download/v1.3.0/tool-darwin-arm64.tar.gz\",\"size\":12345},{\"name\":\"checksums.txt\",\"browser_download_url\":\"https://github.com/acme/tool/releases/download/v1.3.0/checksums.txt\",\"size\":87}]}",
+      "result": {
+        "release": {
+          "tag_name": "v1.3.0",
+          "body": "Release notes\nFixes",
+          "html_url": "https://github.com/acme/tool/releases/tag/v1.3.0",
+          "assets": [
+            {
+              "name": "tool-darwin-arm64.tar.gz",
+              "browser_download_url": "https://github.com/acme/tool/releases/download/v1.3.0/tool-darwin-arm64.tar.gz",
+              "size": 12345
+            },
+            {
+              "name": "checksums.txt",
+              "browser_download_url": "https://github.com/acme/tool/releases/download/v1.3.0/checksums.txt",
+              "size": 87
+            }
+          ]
+        },
+        "error": null
+      },
+      "request": {
+        "count": 1,
+        "method": "GET",
+        "path": "/releases/latest",
+        "accept": "application/vnd.github+json",
+        "user_agent": "symaira-updatecheck/v1.2.3"
+      }
+    },
+    {
+      "id": "up-to-date",
+      "current": "v1.2.3",
+      "response": "{\"tag_name\":\"v1.2.3\",\"body\":\"Current\",\"html_url\":\"https://github.com/acme/tool/releases/tag/v1.2.3\",\"assets\":[]}",
+      "result": {
+        "release": null,
+        "error": null
+      },
+      "request": {
+        "count": 1,
+        "method": "GET",
+        "path": "/releases/latest",
+        "accept": "application/vnd.github+json",
+        "user_agent": "symaira-updatecheck/v1.2.3"
+      }
+    },
+    {
+      "id": "older-release",
+      "current": "v1.2.3",
+      "response": "{\"tag_name\":\"v1.2.2\",\"body\":\"Old\",\"html_url\":\"https://github.com/acme/tool/releases/tag/v1.2.2\",\"assets\":[]}",
+      "result": {
+        "release": null,
+        "error": null
+      },
+      "request": {
+        "count": 1,
+        "method": "GET",
+        "path": "/releases/latest",
+        "accept": "application/vnd.github+json",
+        "user_agent": "symaira-updatecheck/v1.2.3"
+      }
+    },
+    {
+      "id": "draft",
+      "current": "v1.2.3",
+      "response": "{\"tag_name\":\"v1.3.0\",\"draft\":true}",
+      "result": {
+        "release": null,
+        "error": "latest release response returned a draft release"
+      },
+      "request": {
+        "count": 1,
+        "method": "GET",
+        "path": "/releases/latest",
+        "accept": "application/vnd.github+json",
+        "user_agent": "symaira-updatecheck/v1.2.3"
+      }
+    },
+    {
+      "id": "prerelease",
+      "current": "v1.2.3",
+      "response": "{\"tag_name\":\"v1.3.0-rc.1\",\"prerelease\":true}",
+      "result": {
+        "release": null,
+        "error": "latest release response returned a prerelease"
+      },
+      "request": {
+        "count": 1,
+        "method": "GET",
+        "path": "/releases/latest",
+        "accept": "application/vnd.github+json",
+        "user_agent": "symaira-updatecheck/v1.2.3"
+      }
+    },
+    {
+      "id": "empty-tag",
+      "current": "v1.2.3",
+      "response": "{\"tag_name\":\"  \"}",
+      "result": {
+        "release": null,
+        "error": "latest release response did not include a tag name"
+      },
+      "request": {
+        "count": 1,
+        "method": "GET",
+        "path": "/releases/latest",
+        "accept": "application/vnd.github+json",
+        "user_agent": "symaira-updatecheck/v1.2.3"
+      }
+    },
+    {
+      "id": "malformed-prerelease-tag",
+      "current": "v1.2.3",
+      "response": "{\"tag_name\":\"v1.3.0-rc.1\"}",
+      "result": {
+        "release": null,
+        "error": "latest release tag \"v1.3.0-rc.1\" is not a stable semantic version"
+      },
+      "request": {
+        "count": 1,
+        "method": "GET",
+        "path": "/releases/latest",
+        "accept": "application/vnd.github+json",
+        "user_agent": "symaira-updatecheck/v1.2.3"
+      }
+    },
+    {
+      "id": "malformed-tag",
+      "current": "v1.2.3",
+      "response": "{\"tag_name\":\"latest\"}",
+      "result": {
+        "release": null,
+        "error": "latest release tag \"latest\" is not a stable semantic version"
+      },
+      "request": {
+        "count": 1,
+        "method": "GET",
+        "path": "/releases/latest",
+        "accept": "application/vnd.github+json",
+        "user_agent": "symaira-updatecheck/v1.2.3"
+      }
+    },
+    {
+      "id": "invalid-current",
+      "current": "dev",
+      "response": "{\"tag_name\":\"v1.3.0\"}",
+      "result": {
+        "release": null,
+        "error": null
+      },
+      "request": {
+        "count": 0,
+        "method": "",
+        "path": "",
+        "accept": "",
+        "user_agent": ""
+      }
+    }
+  ],
+  "capture": {
+    "schema_version": 1,
+    "lane": "response",
+    "source_commit": "635562a4251a12a63d3b5f7a685a896d77eccb06",
+    "working_tree_clean": false,
+    "dirty_paths": [
+      "rust/symaira-core-update/tests/parity.rs",
+      "scripts/rust-port/update-version-differential.py",
+      "rust/symaira-core-update/tests/common/static_update.rs",
+      "scripts/rust-port/static_update_oracle.py",
+      "testdata/rust-port/fixtures/update/static-v1/darwin-arm64/version.json",
+      "testdata/rust-port/fixtures/update/static-v1/index.json"
+    ],
+    "go": {
+      "version": "go version go1.26.6 darwin/arm64",
+      "goversion": "go1.26.6",
+      "goroot": "go1.26.6",
+      "goos": "darwin",
+      "goarch": "arm64",
+      "binary_sha256": "a1c83801d1756c3eca78366c6b585f2c21c20694fb1c7eb92c446a0580420412",
+      "gomodcache": "existing-cache-read-only"
+    },
+    "capturer_sha256": "b7c349fb87271300f34ec82477d1c9b3294708b1c00824aa183353e25a8fd1e8",
+    "oracle_files": [
+      {
+        "path": "scripts/rust-port/update-response-oracle/main.go",
+        "sha256": "896ea430890635976b58528fa29f2ff27838d00dba5e459dc9b28942eba0e08f"
+      }
+    ],
+    "source_files": [
+      {
+        "path": "updatecheck/updatecheck.go",
+        "sha256": "638c263835c1d72982f6fc3391092edc44318f3f5993e83c7c190fae25329cc9"
+      },
+      {
+        "path": "scripts/rust-port/update-response-oracle/main.go",
+        "sha256": "896ea430890635976b58528fa29f2ff27838d00dba5e459dc9b28942eba0e08f"
+      },
+      {
+        "path": "updatecheck/contract_test.go",
+        "sha256": "bdfc0e300d7b550978e03565938ffb12c3907e914af5cf7f9573462d31d3a31e"
+      },
+      {
+        "path": "updatecheck/secureclient_test.go",
+        "sha256": "dcb0cf916b761314b69b308fd84548db25752aceba7c3232c36d15a9662445c3"
+      },
+      {
+        "path": "updatecheck/updatecheck_test.go",
+        "sha256": "ffce042aaf118f7c71428a5703771cafbf92f7bd343f0377f094c318c9f026f3"
+      },
+      {
+        "path": "go.mod",
+        "sha256": "5e2b0ad309b6db5db7abbaf958ef87bc12c0e81605245b897f1b9305a113e57d"
+      },
+      {
+        "path": "go.sum",
+        "sha256": "701d7161d71d4817a59f98bfc6f8ac71d5ee6b7f70cbb8ec96b07a140298929c"
+      }
+    ],
+    "go_module_inputs": [
+      {
+        "path": "go.mod",
+        "sha256": "5e2b0ad309b6db5db7abbaf958ef87bc12c0e81605245b897f1b9305a113e57d"
+      },
+      {
+        "path": "go.sum",
+        "sha256": "701d7161d71d4817a59f98bfc6f8ac71d5ee6b7f70cbb8ec96b07a140298929c"
+      }
+    ],
+    "historical_fixture": {
+      "path": "testdata/rust-port/fixtures/update/responses.json",
+      "sha256": "3a4dcc4ebd7710dd67e6ab1df41036a20cfcdec5d48177f869bf64fa741c416b"
+    },
+    "case_count": 9,
+    "case_ids": [
+      "available-assets",
+      "up-to-date",
+      "older-release",
+      "draft",
+      "prerelease",
+      "empty-tag",
+      "malformed-prerelease-tag",
+      "malformed-tag",
+      "invalid-current"
+    ],
+    "case_fingerprints_sha256": [
+      "bf37c584413c6eec4acf1e38bfb94b0850cd26a2e2f733a74e80f35f6f7c8001",
+      "02c9b57e92a249a27c4f79d4fb5dcdf919ca567f7675754106f429f5873ed260",
+      "d101d2f1cb00e51493961c21ca57bd00572205a20dc6c6e2d9c94a8f0c93ff4c",
+      "93ee212063d09675890f976d3f1f80ca17bb25b46cba4ed2dd84b28f9db634df",
+      "7f432cc25f321806475a5564d547713ef84f939945f0f5086bbaea1ff6992e6b",
+      "3c676f12dbcc107ddfc430cfc8166968b74cebc5d601c9d5a614d273eaf75c3e",
+      "ddcab3bd8d72008f30af1dcf98fb1dded89392b2cd161881a79c8d66154dd15c",
+      "4d02138eaf6bb7a46bf7e1c7edf9a3a4164d0143e76b799a33d73d459fa69cc3",
+      "4e10b6f3a17a96297fa33d1a1738aad785e64ebaad7a955d78929f451d80eb8c"
+    ],
+    "generated_inputs": [],
+    "raw": {
+      "exit_code": 0,
+      "stdout_sha256": "d765dbec43e9345c75f9bc13f8d527bb795385e837ccf7c18f4537f6f10e3384",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "commands": [
+        {
+          "stage": "run-go-response-oracle",
+          "command": [
+            "go",
+            "run",
+            "./scripts/rust-port/update-response-oracle"
+          ],
+          "cwd": "repository",
+          "exit_code": 0
+        }
+      ],
+      "observation_sha256": "d765dbec43e9345c75f9bc13f8d527bb795385e837ccf7c18f4537f6f10e3384",
+      "observation_bytes": 3622,
+      "evidence_id": "response-3n74ngsz"
+    },
+    "capture_mode": "fresh-pinned-go-execution-additive-v1"
+  }
+}
