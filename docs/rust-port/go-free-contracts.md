@@ -83,6 +83,13 @@ budget after native OpenSSL RSA generation exceeded 15 seconds in run
 preflight rejects default trust and accepts only the explicitly trusted fixture.
 Failure artifacts now retain raw Cargo output as well as the outer Make log.
 
+Regular Windows run `37148284785` rejected CRLF-converted `go.mod` before
+update replay, even though the clean native aggregate passed on both Linux and
+Windows. Root `go.mod` and `go.sum` now have explicit LF checkout attributes,
+like the other hashed Go/Python/Cargo sources. Exact original byte guards and
+all recorded hashes remain unchanged; a real CRLF-configured checkout verifies
+the correction rather than normalizing changed input inside the verifier.
+
 Linux run `37144921600` at `0c25794a9a11f4b2d4b784dc91b3086dbb86d685`
 passed both complete Go-absent and Go-denied phases. The filtered PATH views
 now live outside the evidence directory: uploading those system-tool symlinks

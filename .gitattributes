@@ -1,6 +1,8 @@
 # Differential source manifests hash exact checkout bytes on every platform.
 *.go text eol=lf
 *.py text eol=lf
+/go.mod text eol=lf
+/go.sum text eol=lf
 /testdata/rust-port/*-cases.json text eol=lf
 /testdata/rust-port/fixtures/*-differential-*.json text eol=lf
 /Cargo.toml text eol=lf
