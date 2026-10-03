@@ -28,7 +28,6 @@ from typing import Any, cast
 from trust import assert_origin, checkout_for_record, safe_checkout_child, safe_workspace_path
 
 ROOT = Path(__file__).resolve().parents[2]
-WORKSPACE = ROOT.parents[2]
 EVIDENCE = ROOT / "testdata/rust-port/adoption/evidence.json"
 CANARIES = ROOT / "testdata/rust-port/cases/consumer-canaries.json"
 DEFAULT_REPORT = ROOT / "testdata/rust-port/benchmarks/foundation.json"
