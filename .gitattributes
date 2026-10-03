@@ -42,3 +42,4 @@
 /testdata/rust-port/fixtures/llm/** -text
 /rust/test-support/symaira-contract-fixtures/fixtures/foundation/** -text
 /rust/test-support/symaira-contract-fixtures/fixtures/contracts/** -text
+/testdata/rust-port/fixtures/update/native-v1/** -text

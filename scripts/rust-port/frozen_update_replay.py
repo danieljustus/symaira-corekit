@@ -27,6 +27,21 @@ def digest(data):
     return hashlib.sha256(data).hexdigest()
 
 
+def rust_snapshot():
+    paths = set(path for path in (ROOT / "rust").rglob("*") if path.is_file())
+    paths.update(ROOT / name for name in ("Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "Makefile"))
+    paths.update(path for path in (ROOT / ".cargo").rglob("*") if path.is_file())
+    paths.update(Path(__file__).with_name(name) for name in (
+        "frozen_update_replay.py", "frozen_update_anchors.py", "update_fixture_transport.py",
+        "update-owned-verifier.rs", "bounded_oracle_process.py"))
+    records = []
+    for path in sorted(paths):
+        if path.is_symlink() or not path.resolve().is_relative_to(ROOT):
+            raise ValueError("Rust replay input escapes the candidate checkout")
+        records.append({"path": path.relative_to(ROOT).as_posix(), "sha256": digest(path.read_bytes())})
+    return records
+
+
 def read_capture(lane, alternate=None):
     target = "-".join(native_goos_arch())
     expected = ANCHORS.get(target, {}).get(lane)
@@ -49,6 +64,10 @@ def read_capture(lane, alternate=None):
         raise ValueError("native update compiler platform differs")
     if record["raw"]["exit_code"] != 0:
         raise ValueError("original native Go execution failed")
+    for stream in ("stdout", "stderr"):
+        original = FIXTURES / target / f"{lane}.{stream}"
+        if original.is_symlink() or not original.is_file() or digest(original.read_bytes()) != record["raw"][stream + "_sha256"]:
+            raise ValueError("original native Go raw stream changed")
     seen = set()
     files = record["source_files"] + [record["producer"]]
     for item in files:
@@ -180,28 +199,47 @@ def replay_lane(lane, observations, directory, env, artifacts):
             cargo(public, env, artifacts, 0, negative_marker="public cancellation observation mismatch")
 
 
-def main():
+def legacy_entry(lane, args):
+    """Keep historical CLI flags while requiring opt-in for live Go execution."""
+    if os.environ.get("GO_ORACLE") == "1":
+        return False
+    if getattr(args, "write", False):
+        raise ValueError("live Go regeneration requires explicit GO_ORACLE=1")
+    arguments = ["--lane", lane]
+    if any(argument == "--fixture" or argument.startswith("--fixture=") for argument in sys.argv[1:]):
+        arguments += ["--fixture", str(args.fixture)]
+    main(arguments)
+    return True
+
+
+def main(argv=None):
     parser = argparse.ArgumentParser()
     parser.add_argument("--lane", choices=tuple(COUNTS), required=True)
     parser.add_argument("--verify-only", action="store_true")
     parser.add_argument("--fixture", type=Path)
     parser.add_argument("--output", type=Path, default=ROOT / "target/frozen-update")
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
     raw, observations = read_capture(args.lane, args.fixture)
     if args.verify_only:
         print(f"PASS fixed original native {args.lane} capture")
         return
     args.output.mkdir(parents=True, exist_ok=True)
+    snapshot = rust_snapshot()
     with tempfile.TemporaryDirectory(prefix=f"rust-update-{args.lane}-") as name:
         directory = Path(name)
-        env = dict(os.environ, CARGO_NET_OFFLINE="true", TMPDIR=str(directory), TMP=str(directory), TEMP=str(directory))
-        for variable, suffix in (("HOME", "home"), ("USERPROFILE", "home"), ("XDG_CACHE_HOME", "cache"), ("XDG_CONFIG_HOME", "config"), ("XDG_DATA_HOME", "data"), ("XDG_STATE_HOME", "state")):
+        env = dict(os.environ, CARGO_NET_OFFLINE="true", CARGO_TARGET_DIR=str(ROOT / "target"), TMPDIR=str(directory), TMP=str(directory), TEMP=str(directory))
+        for variable, suffix in (("HOME", "home"), ("USERPROFILE", "home"), ("APPDATA", "config"), ("LOCALAPPDATA", "data"), ("XDG_CACHE_HOME", "cache"), ("XDG_CONFIG_HOME", "config"), ("XDG_DATA_HOME", "data"), ("XDG_STATE_HOME", "state")):
             path = directory / suffix
             path.mkdir(mode=0o700, exist_ok=True)
             env[variable] = str(path)
         # Resolve toolchain homes before isolating HOME, without launching Go.
         for variable, suffix in (("CARGO_HOME", ".cargo"), ("RUSTUP_HOME", ".rustup")):
             env[variable] = os.environ.get(variable, str(Path.home() / suffix))
+        metadata = run_checked(["cargo", "metadata", "--offline", "--locked", "--no-deps", "--format-version", "1"], cwd=ROOT, env=env, timeout=30, artifact_dir=args.output, check=True)
+        metadata = json.loads(metadata.stdout)
+        package = next(package for package in metadata["packages"] if package["name"] == "symaira-core-update")
+        if Path(package["manifest_path"]).resolve() != ROOT / "rust/symaira-core-update/Cargo.toml" or Path(metadata["workspace_root"]).resolve() != ROOT or Path(metadata["target_directory"]).resolve() != ROOT / "target":
+            raise ValueError("Cargo selected another candidate or target directory")
         previous_umask = os.umask(0o022) if os.name == "posix" else None
         try:
             replay_lane(args.lane, observations, directory, env, args.output)
@@ -210,9 +248,11 @@ def main():
                 os.umask(previous_umask)
     if read_capture(args.lane, args.fixture)[0] != raw:
         raise ValueError("native update recording changed during replay")
-    report = {"status": "PASS", "target": "-".join(native_goos_arch()), "lane": args.lane, "case_count": COUNTS[args.lane], "fixture_sha256": digest(raw), "actual_rust_executed": True}
+    if rust_snapshot() != snapshot:
+        raise ValueError("Rust source inputs changed during native execution")
+    report = {"status": "PASS", "target": "-".join(native_goos_arch()), "lane": args.lane, "case_count": COUNTS[args.lane], "fixture_sha256": digest(raw), "actual_rust_executed": True, "rust_input_sha256": digest(canonical_json(snapshot)), "rust_inputs": snapshot}
     (args.output / f"{args.lane}-report.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
-    print(json.dumps(report, sort_keys=True))
+    print(json.dumps({key: value for key, value in report.items() if key != "rust_inputs"}, sort_keys=True))
 
 
 if __name__ == "__main__":

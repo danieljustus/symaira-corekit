@@ -76,6 +76,7 @@ rust-sqlite-contract:
 # a separate reviewed change.
 .PHONY: rust-sqlite-refreeze
 rust-sqlite-refreeze:
+	@test "$$GO_ORACLE" = 1 || { echo "live SQLite recapture requires GO_ORACLE=1" >&2; exit 1; }
 	@echo "REFREEZE: regenerates the frozen manifest and a new capture; review is still required."
 	python3 scripts/rust-port/sqlite/candidate.py --output testdata/rust-port/sqlite/candidate-source.json
 	python3 scripts/rust-port/sqlite/diff.py --typed-errors --output testdata/rust-port/sqlite/differential-macos-refreeze-$$(date -u +%Y%m%dT%H%M%SZ).json
@@ -126,18 +127,19 @@ rust-llm-contract:
 	$(CARGO_RUN) clippy --manifest-path "$(CURDIR)/Cargo.toml" -p symaira-core-llm --all-targets --all-features --locked -- -D warnings
 
 rust-update-version-contract:
-	GOTOOLCHAIN=go1.26.6 CGO_ENABLED=0 $(GO_RUN) test -count=1 ./updatecheck
+	@if [ "$$GO_ORACLE" = 1 ]; then GOTOOLCHAIN=go1.26.6 CGO_ENABLED=0 $(GO_RUN) test -count=1 ./updatecheck; fi
 	GOTOOLCHAIN=go1.26.6 CGO_ENABLED=0 python3 scripts/rust-port/update-version-differential.py
 	$(CARGO_RUN) fmt --all --check
 	$(CARGO_RUN) clippy --manifest-path "$(CURDIR)/Cargo.toml" -p symaira-core-update --all-targets --all-features --locked -- -D warnings
 	$(CARGO_RUN) test --manifest-path "$(CURDIR)/Cargo.toml" -p symaira-core-update --all-targets --all-features --locked
 
-# Update replay and production Apply against fresh Go observations, with
-# mutations rejected. The separate signed-release acceptance gate runs in CI
+# Update replay and production Apply against frozen native Go observations, with
+# mutations rejected. Live regeneration requires explicit GO_ORACLE=1.
+# The separate signed-release acceptance gate runs in CI
 # and can be invoked locally when the verifier and its trust endpoints exist.
 rust-update-contract: rust-update-version-contract
 	python3 -m unittest discover -s scripts/rust-port -p 'test_update_harness.py'
-	GOTOOLCHAIN=go1.26.6 CGO_ENABLED=0 $(GO_RUN) test -count=1 ./updatecheck/...
+	@if [ "$$GO_ORACLE" = 1 ]; then GOTOOLCHAIN=go1.26.6 CGO_ENABLED=0 $(GO_RUN) test -count=1 ./updatecheck/...; fi
 	GOTOOLCHAIN=go1.26.6 CGO_ENABLED=0 python3 scripts/rust-port/update-response-differential.py
 	GOTOOLCHAIN=go1.26.6 CGO_ENABLED=0 python3 scripts/rust-port/update-response-differential.py --negative-control
 	GOTOOLCHAIN=go1.26.6 CGO_ENABLED=0 python3 scripts/rust-port/update-request-differential.py
@@ -157,6 +159,16 @@ rust-update-contract: rust-update-version-contract
 # replaces only an isolated disposable target, never an installed binary.
 rust-update-signed-contract:
 	GOTOOLCHAIN=go1.26.6 CGO_ENABLED=0 python3 scripts/rust-port/cosign-valid-differential.py
+
+# Complete native functional replay. FS security/Miri and workspace hardening
+# retain their separate required CI lanes; Miri is not a native Windows gate.
+# The real signed-release gate needs pinned Cosign, curl and public trust access.
+.PHONY: rust-contracts
+rust-contracts: rust-foundation-contract rust-fs-secret-frozen-contract rust-mcp-contract rust-mcpcfg-contract mcp-differential mcpcfg-differential rust-llm-contract rust-sqlite-contract rust-update-contract rust-update-signed-contract
+
+.PHONY: mcpcfg-differential
+mcpcfg-differential:
+	python3 scripts/rust-port/mcpcfg-differential.py --check
 
 rust-release-contract: consumer-pin-regression
 	cargo semver-checks check-release

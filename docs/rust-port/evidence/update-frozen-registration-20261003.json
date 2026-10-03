@@ -1,0 +1,170 @@
+{
+  "native_run": 37141133260,
+  "captures": [
+    {
+      "target": "linux-amd64",
+      "artifact_id": 11280950725,
+      "archive_sha256": "0b017c549411c44675b244c0a4fecf4406308a643953b2609002a741b1058010",
+      "source_commit": "8670450fbd3bd4d57a4c737f29abec113dd8eb70",
+      "official_sdk": {
+        "filename": "go1.26.6.linux-amd64.tar.gz",
+        "sha256": "708effb774be8237570d0add163225abbdfaf4fca28b2611df167beba4feef89"
+      },
+      "lanes": [
+        {
+          "lane": "request",
+          "sha256": "f017b8b6a233365f51ec0a81b0c9097bc157b570e77a3bcd100b0c4e7c17332d",
+          "case_count": 13,
+          "input_files": 1911,
+          "observation_mutation_rejected": true
+        },
+        {
+          "lane": "cache",
+          "sha256": "cc5c185a50c2b262979609d733cb01d51a16149a8c68fcaa4c0a583f40e2f7e3",
+          "case_count": 7,
+          "input_files": 1910,
+          "observation_mutation_rejected": true
+        },
+        {
+          "lane": "persistence",
+          "sha256": "cbc95f8835c685c13572aaa32b241895cc7105c18f71d4a3f3a5fe628eacea4e",
+          "case_count": 7,
+          "input_files": 1910,
+          "observation_mutation_rejected": true
+        },
+        {
+          "lane": "cosign",
+          "sha256": "c266f7a26adb17c9df1aa347000abbcb4e2346ce252c5b2dab5714025fb0e370",
+          "case_count": 13,
+          "input_files": 1932,
+          "observation_mutation_rejected": true
+        },
+        {
+          "lane": "apply",
+          "sha256": "ddd0626731e5bf60dea3e966241f54a3067986360f86fb1cfcd587e8f3eb8b38",
+          "case_count": 17,
+          "input_files": 1987,
+          "observation_mutation_rejected": true
+        },
+        {
+          "lane": "cancellation",
+          "sha256": "dbc850b991a6d4ca35abecb599fcd175c1376e134d5fdc3437696be429744a1b",
+          "case_count": 16,
+          "input_files": 1987,
+          "observation_mutation_rejected": true
+        }
+      ],
+      "status": "PASS"
+    },
+    {
+      "target": "windows-amd64",
+      "artifact_id": 11280343912,
+      "archive_sha256": "768577e1364a36d6022b54732a6ea040aa19aa9355c05b6427bb90d32f7ba6d0",
+      "source_commit": "8670450fbd3bd4d57a4c737f29abec113dd8eb70",
+      "official_sdk": {
+        "filename": "go1.26.6.windows-amd64.zip",
+        "sha256": "5b6c5b556525810463b5c897b50dc7a82d6a3dc0bfaf55d990a7e9f31d6b2318"
+      },
+      "lanes": [
+        {
+          "lane": "request",
+          "sha256": "a68e8ed42f86a6d355f964bc8c416efcf2a85e269fdef89ac178e81dceea7710",
+          "case_count": 13,
+          "input_files": 1779,
+          "observation_mutation_rejected": true
+        },
+        {
+          "lane": "cache",
+          "sha256": "e0df86ff3db802e15b07c838f5126305f70a00bb98be830ce0b8eb478e14738a",
+          "case_count": 7,
+          "input_files": 1778,
+          "observation_mutation_rejected": true
+        },
+        {
+          "lane": "persistence",
+          "sha256": "1e32f9b7683a29c5cac130e40141dfb52dc58534f29ef8c1651b665175e25763",
+          "case_count": 7,
+          "input_files": 1778,
+          "observation_mutation_rejected": true
+        },
+        {
+          "lane": "cosign",
+          "sha256": "ca19515b2ac21e01f53b049131ad0be2694d55e711eeacb30df7ac03518f2a14",
+          "case_count": 13,
+          "input_files": 1798,
+          "observation_mutation_rejected": true
+        },
+        {
+          "lane": "apply",
+          "sha256": "bd92e74e890e148a3e9275dac40057b0534bf8bf00a51504c0802a62726951fd",
+          "case_count": 17,
+          "input_files": 1843,
+          "observation_mutation_rejected": true
+        },
+        {
+          "lane": "cancellation",
+          "sha256": "92793df27226cd9ff71db1337bc552ba9d2d5ca4e43beac44e32af83a951f934",
+          "case_count": 16,
+          "input_files": 1843,
+          "observation_mutation_rejected": true
+        }
+      ],
+      "status": "PASS"
+    },
+    {
+      "target": "darwin-arm64",
+      "artifact_id": 11280239565,
+      "archive_sha256": "a5a508ec8075957b8adedaf0ad25ef0585bd40cc04b0455783c578167b00c8a6",
+      "source_commit": "8670450fbd3bd4d57a4c737f29abec113dd8eb70",
+      "official_sdk": {
+        "filename": "go1.26.6.darwin-arm64.tar.gz",
+        "sha256": "2dc95ce4675829f2df0e86b28bcef3283635902062a5f0580ca659bf570f3204"
+      },
+      "lanes": [
+        {
+          "lane": "request",
+          "sha256": "674861839bf4660ef9551acfc8498e12583ad7096cb3c3f66406e35bb476f8c1",
+          "case_count": 13,
+          "input_files": 1849,
+          "observation_mutation_rejected": true
+        },
+        {
+          "lane": "cache",
+          "sha256": "1e873fab161c41123075de189c125cf73f778fd85e0a98a91e8a95a7a6d16a94",
+          "case_count": 7,
+          "input_files": 1848,
+          "observation_mutation_rejected": true
+        },
+        {
+          "lane": "persistence",
+          "sha256": "f4c3e34c08b95b1abbdeb0588441fa703087b03da42c2c60378765b6ca768f13",
+          "case_count": 7,
+          "input_files": 1848,
+          "observation_mutation_rejected": true
+        },
+        {
+          "lane": "cosign",
+          "sha256": "9906b99ff46cf7a3dc809f36a93e8f45a98ddc9eb1b0c757fe5e7bff06933845",
+          "case_count": 13,
+          "input_files": 1869,
+          "observation_mutation_rejected": true
+        },
+        {
+          "lane": "apply",
+          "sha256": "1bf8cb3ad42624b7a8d0a76421b5f560e2be30bbcffedf50637b000fd58a4541",
+          "case_count": 17,
+          "input_files": 1924,
+          "observation_mutation_rejected": true
+        },
+        {
+          "lane": "cancellation",
+          "sha256": "3095b027bb62535774018f4228cf1048e6f3720e087a43abb7f384b2d3e7aa83",
+          "case_count": 16,
+          "input_files": 1924,
+          "observation_mutation_rejected": true
+        }
+      ],
+      "status": "PASS"
+    }
+  ]
+}

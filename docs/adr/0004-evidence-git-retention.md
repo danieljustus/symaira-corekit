@@ -18,6 +18,7 @@ The initial references, verified through the remote after pushing, are:
 | --- | --- |
 | `evidence/corekit-native-oracles-20261003` | `95e098f08c6cccca671ea5a07507a7932409e8c9` |
 | `evidence/corekit-static-oracles-20261002` | `b028717ef247c1817bd9285634db7a29157e9661` |
+| `evidence/corekit-update-oracles-20261003` | `8670450fbd3bd4d57a4c737f29abec113dd8eb70` |
 
 Their ancestry retains the original FS source `5fc5299a56e96b6007fda7d8900363f3aa6ba282`,
 SQLite capture source `c3f026dcf7f1c7164f3f709677cdf5b438cba1cc`, and static update

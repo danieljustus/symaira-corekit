@@ -57,12 +57,14 @@ def main():
         )
         if "test result: ok. 1 passed;" not in rust:
             raise RuntimeError("the Rust real-signature test did not run exactly once")
-        go = run(
-            ["go", "test", "-count=1", "-v", "./updatecheck/cosign", "-run", GO_TEST],
-            env,
-        )
-        if "--- PASS: TestRealSignedReleaseAcceptsAndRejects" not in go:
-            raise RuntimeError("the Go real-signature test did not pass")
+        if os.environ.get("GO_ORACLE") == "1":
+            go = run(
+                ["go", "test", "-count=1", "-v", "./updatecheck/cosign", "-run", GO_TEST],
+                env,
+            )
+            if "--- PASS: TestRealSignedReleaseAcceptsAndRejects" not in go:
+                raise RuntimeError("the Go real-signature test did not pass")
+            print("PASS explicit live Go real-signature acceptance and rejection")
         apply = run(
             ["cargo", "test", "-p", "symaira-core-update", "--test",
              "applier_real_release", "--locked", "--", "--ignored", "--exact",
@@ -72,7 +74,7 @@ def main():
         if "test result: ok. 1 passed;" not in apply:
             raise RuntimeError("the signed end-to-end Apply test did not run exactly once")
     print("PASS pinned public release assets match all three SHA-256 digests")
-    print("PASS real Go and Rust Cosign: valid signature accepted; tampered bytes and wrong identity rejected")
+    print("PASS real Rust Cosign: valid signature accepted; tampered bytes and wrong identity rejected")
     print("PASS signed release asset fetched, verified, extracted and installed only to a disposable target")
     return 0
 

@@ -226,7 +226,9 @@
         "python3 scripts/rust-port/cosign-contract-differential.py",
         "python3 scripts/rust-port/update-apply-differential.py"
       ],
-      "stop_rule": "Do not mark complete until UPD-001..012 have executable Go/Rust parity and native evidence on every required target. Stop on redirect/TLS weakening, traversal/symlink writes, checksum-byte drift, broken rollback or replacement of a known-good binary."
+      "stop_rule": "Do not mark complete until UPD-001..012 have executable Go/Rust parity and native evidence on every required target. Stop on redirect/TLS weakening, traversal/symlink writes, checksum-byte drift, broken rollback or replacement of a known-good binary.",
+      "frozen_go_evidence": "evidence/update-frozen-registration-20261003.json",
+      "go_free_acceptance": "go-free-contracts.md; aggregate exact-head native acceptance pending"
     },
     {
       "id": "RUST-008",
@@ -404,7 +406,7 @@
         "python3 port/consumer/verify.py --git-pinned-consumers",
         "python3 scripts/rust-port/adoption.py --check --min-consumers 2"
       ],
-      "stop_rule": "Before any crates.io publication, each recorded consumer must have a real public release of its exact Git-pinned Rust snapshot, source-bound standalone/rollback reports, artifact and report digests, and independent release-artifact readback. A local tag or verifier pass alone is insufficient; retain Go support."
+      "stop_rule": "Each recorded consumer must have a real public release of its exact Git-pinned Rust snapshot, source-bound standalone and Go-to-Rust-to-Go rollback reports, artifact/report digests, independent release-artifact readback and its minimum seven-day observation. A local tag or verifier pass alone is insufficient; retain Go support until released imports and retirement gates are cleared. ADR 0002 defers optional crates.io publication."
     },
     {
       "id": "RUST-014",
@@ -480,7 +482,9 @@
         "cargo clippy --workspace --all-targets --all-features --locked -- -D warnings",
         "cargo fmt --all --check"
       ],
-      "stop_rule": "Stop on unmapped consumer API, unversioned drift, skipped/zero-case/native-missing evidence, weakened filesystem/TLS policy, unbounded cancellation or missing rollback. Mapping alone does not authorize consumer cutover."
+      "stop_rule": "Stop on unmapped consumer API, unversioned drift, skipped/zero-case/native-missing evidence, weakened filesystem/TLS policy, unbounded cancellation or missing rollback. Mapping alone does not authorize consumer cutover.",
+      "frozen_go_evidence": "evidence/update-frozen-registration-20261003.json",
+      "go_free_acceptance": "go-free-contracts.md; aggregate exact-head native acceptance pending"
     }
   ]
 }

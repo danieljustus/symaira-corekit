@@ -291,6 +291,10 @@ jobs:
           python-version: "3.12"
       - name: Verify vendored brand assets
         run: python scripts/verify-brand-assets.py
+      - name: Verify opt-in Go Apply capture isolation
+        env:
+          GO_ORACLE: '1'
+        run: python -B -W error -m unittest discover -s scripts/rust-port -p test_update_harness.py -k apply_real_oracle -v
       - name: Download dependencies
         run: go mod download
       - name: Verify dependencies
