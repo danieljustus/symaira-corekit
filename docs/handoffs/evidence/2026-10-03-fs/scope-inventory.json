@@ -1141,7 +1141,7 @@
   "stash_count": 0,
   "main": "Clean divergent pre-existing local main d559ca34f0d533143896ba37f943b62bda32c24b retained, not integrated or pushed by this handoff",
   "unrelated_branches_and_worktrees": "September handoffs, older migration/recovery branches and unrelated active work remain excluded and untouched",
-  "worker_prototypes": "b2cc2d09d861cc3b2577bbc60711ce7ac8a41264 prototype superseded by reviewed/integrated process helper; empty worker branch at original main has no new deliverable",
+  "worker_prototypes": "All30 non-identical uncommitted source/diagnostic paths preserved exactly on handoff/20261003-static-prototype at816de140e9c664b7f4c03745706b5320287e9cfe; bounded committed prototype b2cc2d09d861cc3b2577bbc60711ce7ac8a41264 separately preserved on handoff/20261003-bounded-prototype. Original dirty worker remains untouched; neither alternative is accepted. See prototype-preservation.json.",
   "pending_review": "Independent 5fc source/capture reviewer completed or pending delivery; no anchor approval inferred. Re-run public verifier as needed.",
   "private_skill_lessons": "Local note retained; canonical skill ownership not established, no mirror or other profile modified",
   "cleanup": "No local original deleted; no global pruning helper; read-only fetch used"

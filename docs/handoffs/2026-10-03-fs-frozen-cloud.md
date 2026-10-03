@@ -9,7 +9,7 @@ This is preserved **unfinished work**, not migration acceptance. Keep the pull r
 - Base code commit: `5fc5299a56e96b6007fda7d8900363f3aa6ba282`.
 - Integration base: merged PR #393, `ff26856c91abca26311be8b06cd4e416a9e8cb06`.
 - Primary issue: #368. Defects tracked separately in #396 (Windows checkout configuration) and #397 (embedded compilation inputs absent from source inventory).
-- Final documentation/evidence HEAD and draft PR are given by the publication record. Verify the exact remote branch before continuing; do not substitute the local or remote default branch.
+- Continuation draft PR: [#398](https://github.com/danieljustus/symaira-corekit/pull/398). Keep it draft and auto-merge disabled. The final documentation/evidence HEAD is given by the publication record. Verify the exact remote branch before continuing; do not substitute the local or remote default branch.
 
 Read `AGENTS.md`, `docs/product-boundaries.md`, `docs/rust-port/fs-path-contract.md`, and `docs/rust-port/work-items.json`. CoreKit remains a domain-free shared backend library, separate from AppKit and product policy. Keep consumer tools standalone and require two real consumers for shared modules. No credential crypto, browser engine or native automation is moved here.
 
@@ -45,7 +45,12 @@ Additional preserved source checkpoints, all in this repository, are alternative
 | `agent/issue368-process-review-20261002` | `bdc55423a7cb401d31bf2005cb00af2ab34d2644` |
 | `agent/issue368-static-update-20261002` | `b028717ef247c1817bd9285634db7a29157e9661` |
 
-Prior merged work and issue readbacks are in `published-checkpoints.json`; production fixes and accepted older fixture families are already tracked in the merged repository. Worker-only prototype commits were superseded by reviewed implementation; do not cherry-pick those prototypes. Original divergent local main and earlier September handoffs predate this work and are excluded from this continuation; no global cleanup or synchronization is authorized.
+Prior merged work and issue readbacks are in `published-checkpoints.json`; production fixes and accepted older fixture families are already tracked in the merged repository. Worker-only prototypes were superseded by reviewed implementation but their non-identical original bytes are separately preserved, not deleted. Do not cherry-pick or merge them into the accepted source:
+
+- `handoff/20261003-static-prototype` at `816de140e9c664b7f4c03745706b5320287e9cfe` preserves all 30 previously uncommitted worker source/diagnostic paths byte-for-byte. Its own handoff is `docs/handoffs/2026-10-03-static-prototype.md`; its per-path inventory is `docs/handoffs/static-prototype-inventory.json`. No tests or acceptance are claimed for it.
+- `handoff/20261003-bounded-prototype` at `b2cc2d09d861cc3b2577bbc60711ce7ac8a41264` preserves the original committed bounded-process prototype, including its historical test log. That log is not current native acceptance.
+
+The original worker checkout is intentionally left dirty and unchanged; its exact safe contents now have a verified remote copy. Original divergent local main and earlier September handoffs predate this work and are excluded from this continuation; no global cleanup or synchronization is authorized.
 
 ## Setup from GitHub only
 
@@ -101,7 +106,9 @@ No provider, signing, vault or production credentials are needed for these check
 
 Previously executed on the corrected source: 18 focused Python guard tests passed, actionlint passed, ledger validation passed. Actual Darwin CI-wrapper execution passed its real prerequisite Rust checks/Clippy and failed at the missing independent anchor; explicit Go/Git denial controls each exited 97, and the gate made no forbidden invocation. Native capture-only run 37107725386 succeeded, with all three capture jobs independently read back at the exact base SHA. Complete parent provenance verification passed for all three raw captures with observation-mutation rejection.
 
-Fresh remote-checkout results for this publication are recorded separately in `fresh-checkout.json`. A local clean clone proves repository completeness for the commands exercised, **not** execution in another cloud runtime. Final PR/HEAD CI is read back separately; pending or failed checks stay visible. No extra cloud job, paid model/provider, release, credential creation or deployment is authorized by this document.
+An actual fresh HTTPS clone at `0ccad40fa518bd3edf17572460b1b6b1b95a2f7f` reconstructed the exact source/oracle Git objects, verified every preserved bundle file, freshly downloaded all three SDK archives, and passed the portable provenance verifier, 18 guard tests, ledger validation, Cargo formatting and locked dependency fetch. The offline frozen Make target executed its real Rust prerequisites and returned exit 2 specifically for the absent independent anchor. Detailed [fresh-checkout results](evidence/2026-10-03-fs/fresh-checkout.json) are preserved. The final changes after that tested checkpoint are documentation/result records only; captured compiler and harness bytes remain unchanged.
+
+A local clean clone proves repository completeness for the commands exercised, **not** execution in another cloud runtime. Final PR/HEAD CI is read back separately; pending or failed checks stay visible. No extra cloud job, paid model/provider, release, credential creation or deployment is authorized by this document.
 
 Cloud runtime, permissions, secrets, network gates and native Rust acceptance: **not checked** by the local publication test. GitHub and public crate/SDK registry network are required during setup; after fetch, the frozen Rust gate runs offline. Native final Rust acceptance needs Darwin/arm64, Linux/amd64 and Windows/amd64 runners. No local GUI, native automation, physical device, private repository, LFS object or submodule is needed for the supplied provenance and focused source checks. Dependency/build caches and official downloaded SDK copies are reproducible and deliberately excluded. Private instruction/prompt/event logs, raw chat, personal data, credentials, `.env` contents and unrelated old audits are not published.
 
