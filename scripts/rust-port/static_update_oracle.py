@@ -10,14 +10,17 @@ import json
 import os
 from pathlib import Path
 import platform
+import re
 import subprocess
 import sys
 import tempfile
 
+from static_update_anchors import ANCHORS
+
 ROOT = Path(__file__).resolve().parents[2]
 UPDATE_FIXTURES = ROOT / "testdata/rust-port/fixtures/update"
 STATIC_ROOT = UPDATE_FIXTURES / "static-v1"
-INDEX_PATH = STATIC_ROOT / "index.json"
+INDEX_PATH = STATIC_ROOT / "index-v2.json"
 MANIFEST = ROOT / "rust/symaira-core-update/Cargo.toml"
 GO_TOOL = Path.home() / "sdk/go1.26.6/bin/go"
 
@@ -127,13 +130,13 @@ def case_ids(lane: str, payload: dict) -> list[str]:
     return [case["id"] for case in cases]
 
 
-def validate_capture(lane: str, path: Path, root: Path = ROOT) -> dict:
-    """Validate a checked-in capture against its separately stored lane index."""
+def validate_capture(lane: str, path: Path, root: Path = ROOT, *, diagnostic: bool = False) -> dict:
+    """Require reviewed bytes and native provenance; dirty history is diagnostic only."""
     if lane not in LANES:
         raise ValueError(f"unknown static update lane: {lane}")
     if not path.is_file():
         raise ValueError(f"missing native {lane} Go capture: {path}")
-    index_path = root / "testdata/rust-port/fixtures/update/static-v1/index.json"
+    index_path = root / "testdata/rust-port/fixtures/update/static-v1/index-v2.json"
     if not index_path.is_file():
         raise ValueError(f"missing static update provenance index: {index_path}")
     try:
@@ -142,41 +145,75 @@ def validate_capture(lane: str, path: Path, root: Path = ROOT) -> dict:
         payload = json.loads(raw)
     except (OSError, UnicodeDecodeError, json.JSONDecodeError) as error:
         raise ValueError(f"cannot read static {lane} Go capture: {error}") from error
-    if type(index.get("schema_version")) is not int or index["schema_version"] != 1:
+    if type(index.get("schema_version")) is not int or index["schema_version"] != 2:
         raise ValueError("unsupported static update provenance index version")
-    entry = index.get("captures", {}).get(lane)
+    goos, goarch = native_goos_arch()
+    key = "/".join((goos, goarch, lane))
+    entry = index.get("captures", {}).get(key)
     if not isinstance(entry, dict):
         raise ValueError(f"missing {lane} provenance entry")
     relative = path.resolve().relative_to(root.resolve()).as_posix()
-    if entry.get("path") != relative:
+    if entry.get("path") != relative or path.resolve() != fixture_path(lane, root=root).resolve():
         raise ValueError(f"{lane} provenance path mismatch")
     if entry.get("sha256") != sha256(raw):
         raise ValueError(f"{lane} Go capture digest mismatch")
     capture = payload.get("capture")
-    if not isinstance(capture, dict) or capture.get("schema_version") != 1:
+    if not isinstance(capture, dict) or type(capture.get("schema_version")) is not int or capture["schema_version"] != 1:
         raise ValueError(f"{lane} capture lacks versioned provenance")
     if capture.get("lane") != lane:
         raise ValueError(f"{lane} capture lane mismatch")
     if capture.get("capturer_sha256") != entry.get("capturer_sha256"):
         raise ValueError(f"{lane} capture helper digest mismatch")
-    helper_path = root / "scripts/rust-port/static_update_oracle.py"
-    if not helper_path.is_file() or capture.get("capturer_sha256") != sha256(helper_path.read_bytes()):
-        raise ValueError(f"{lane} capture was produced by different helper bytes")
+    # The producer is historical. The independent whole-capture anchor binds its
+    # identity; changing the validator must not relabel a historical execution.
+    for field, pattern in (("source_commit", r"[0-9a-f]{40}"), ("capturer_sha256", r"[0-9a-f]{64}")):
+        if not isinstance(capture.get(field), str) or re.fullmatch(pattern, capture[field]) is None:
+            raise ValueError(f"{lane} invalid required provenance field: {field}")
+    if type(capture.get("working_tree_clean")) is not bool or type(entry.get("working_tree_clean")) is not bool:
+        raise ValueError(f"{lane} working_tree_clean must be boolean")
+    if capture["source_commit"] != entry.get("source_commit") or capture["working_tree_clean"] != entry["working_tree_clean"]:
+        raise ValueError(f"{lane} source identity mismatch")
+    dirty_paths = capture.get("dirty_paths")
+    if not isinstance(dirty_paths, list) or any(not isinstance(item, str) for item in dirty_paths):
+        raise ValueError(f"{lane} missing or malformed dirty-path inventory")
+    if capture["working_tree_clean"] != (not dirty_paths):
+        raise ValueError(f"{lane} dirty-path inventory contradicts source status")
+    for field in ("source_files", "oracle_files", "go_module_inputs"):
+        files = capture.get(field)
+        if not isinstance(files, list) or not files:
+            raise ValueError(f"{lane} missing required provenance inventory: {field}")
+        seen = set()
+        for item in files:
+            if not isinstance(item, dict):
+                raise ValueError(f"{lane} malformed provenance inventory: {field}")
+            name, digest = item.get("path"), item.get("sha256")
+            if not isinstance(name, str) or not name or name.startswith("/") or "\\" in name or ":" in name or any(part in ("", ".", "..") for part in name.split("/")) or name in seen:
+                raise ValueError(f"{lane} invalid provenance input path: {field}")
+            if not isinstance(digest, str) or re.fullmatch(r"[0-9a-f]{64}", digest) is None:
+                raise ValueError(f"{lane} invalid provenance input digest: {field}")
+            seen.add(name)
     cases = _at_path(payload, LANES[lane]["case_path"])
     if not isinstance(cases, list) or len(cases) != LANES[lane]["count"]:
         raise ValueError(f"{lane} capture case count mismatch")
     ids = case_ids(lane, payload)
     if len(set(ids)) != len(ids) or ids != capture.get("case_ids"):
         raise ValueError(f"{lane} capture case IDs mismatch")
-    if entry.get("case_count") != len(cases) or entry.get("case_ids") != ids:
+    if type(entry.get("case_count")) is not int or type(capture.get("case_count")) is not int or capture["case_count"] != len(cases) or entry["case_count"] != len(cases) or entry.get("case_ids") != ids:
         raise ValueError(f"{lane} provenance case inventory mismatch")
+    if capture.get("case_fingerprints_sha256") != _case_fingerprints(lane, payload):
+        raise ValueError(f"{lane} case fingerprint inventory mismatch")
     go = capture.get("go")
     if not isinstance(go, dict) or go.get("version") != "go version go1.26.6 " + go.get("goos", "") + "/" + go.get("goarch", ""):
         raise ValueError(f"{lane} capture does not record executed Go 1.26.6 identity")
-    if entry.get("goos") != go.get("goos") or entry.get("goarch") != go.get("goarch"):
+    if (entry.get("goos"), entry.get("goarch")) != (goos, goarch) or (go.get("goos"), go.get("goarch")) != (goos, goarch):
         raise ValueError(f"{lane} native platform identity mismatch")
-    if capture.get("raw", {}).get("exit_code") != 0:
+    raw_exit = capture.get("raw", {}).get("exit_code")
+    if type(raw_exit) is not int or raw_exit != 0:
         raise ValueError(f"{lane} capture records a failed Go execution")
+    if ANCHORS.get(key) != sha256(raw):
+        raise ValueError(f"{lane} independently reviewed capture anchor mismatch")
+    if not diagnostic and not capture["working_tree_clean"]:
+        raise ValueError(f"{lane} dirty capture is diagnostic only; clean source-bound recapture required")
     return payload
 
 
@@ -446,31 +483,41 @@ def register_capture(candidate: Path, destination: Path, root: Path = ROOT) -> N
     if capture.get("lane") != lane or capture.get("capturer_sha256") != sha256(Path(__file__).read_bytes()):
         raise ValueError("candidate provenance does not match this lane/capturer")
     go = capture.get("go", {})
-    expected_parent = STATIC_ROOT / _goos_arch(go.get("goos", ""), go.get("goarch", ""))
+    static_root = root / "testdata/rust-port/fixtures/update/static-v1"
+    index_path = static_root / "index-v2.json"
+    key = "/".join((go.get("goos", ""), go.get("goarch", ""), lane))
+    expected_parent = static_root / _goos_arch(go.get("goos", ""), go.get("goarch", ""))
     if destination.parent != expected_parent.resolve():
         raise ValueError("capture must be registered only to its exact native GOOS/GOARCH directory")
     if len(case_ids(lane, payload)) != LANES[lane]["count"]:
         raise ValueError("candidate case count mismatch")
-    index = {"schema_version": 1, "captures": {}}
-    if INDEX_PATH.exists():
-        index = json.loads(INDEX_PATH.read_text(encoding="utf-8"))
+    data = candidate.read_bytes()
+    if ANCHORS.get(key) != sha256(data):
+        raise ValueError("registration requires independently reviewed candidate bytes")
+    index = {"schema_version": 2, "captures": {}}
+    if index_path.exists():
+        index = json.loads(index_path.read_text(encoding="utf-8"))
+        if type(index.get("schema_version")) is not int or index["schema_version"] != 2:
+            raise ValueError("unsupported static update provenance index version")
         for prior_lane, prior in index.get("captures", {}).items():
-            prior_path = root / prior["path"]
-            if not prior_path.is_file() or sha256(prior_path.read_bytes()) != prior.get("sha256"):
+            prior_path = (root / prior["path"]).resolve()
+            if not prior_path.is_relative_to(root.resolve()) or not prior_path.is_file():
+                raise ValueError(f"existing {prior_lane} capture path escapes the evidence root")
+            digest = sha256(prior_path.read_bytes())
+            if digest != prior.get("sha256") or digest != ANCHORS.get(prior_lane):
                 raise ValueError(f"existing {prior_lane} capture/index integrity check failed")
     rel = destination.relative_to(root.resolve()).as_posix()
-    entry = {"path": rel, "sha256": sha256(_json_bytes(payload)), "capturer_sha256": capture["capturer_sha256"],
+    entry = {"path": rel, "sha256": sha256(data), "capturer_sha256": capture["capturer_sha256"],
              "goos": go["goos"], "goarch": go["goarch"], "case_count": capture["case_count"], "case_ids": capture["case_ids"],
              "source_commit": capture["source_commit"], "working_tree_clean": capture["working_tree_clean"]}
-    index.setdefault("captures", {})[lane] = entry
+    if key in index["captures"]:
+        raise ValueError("refusing to replace a registered native capture")
+    index["captures"][key] = entry
     destination.parent.mkdir(parents=True, exist_ok=True)
-    data = _json_bytes(payload)
-    if sha256(data) != entry["sha256"]:
-        raise RuntimeError("candidate serialization changed during registration")
     destination.write_bytes(data)
-    index_tmp = INDEX_PATH.with_suffix(".json.tmp")
+    index_tmp = index_path.with_suffix(".json.tmp")
     index_tmp.write_bytes(_json_bytes(index))
-    index_tmp.replace(INDEX_PATH)
+    index_tmp.replace(index_path)
 
 
 def _capture_cli(args) -> None:
@@ -498,6 +545,7 @@ def main(argv: list[str] | None = None) -> int:
     check = sub.add_parser("check", help="validate a frozen native capture without running Go")
     check.add_argument("--lane", choices=tuple(LANES), required=True)
     check.add_argument("--fixture", type=Path)
+    check.add_argument("--diagnostic", action="store_true", help="inspect retained dirty evidence; never grants acceptance")
     args = parser.parse_args(argv)
     if args.action == "capture":
         _capture_cli(args)
@@ -506,8 +554,9 @@ def main(argv: list[str] | None = None) -> int:
         print(f"PASS registered additive capture: {args.destination}")
     else:
         path = args.fixture or fixture_path(args.lane)
-        payload = validate_capture(args.lane, path)
-        print(f"PASS frozen Go {args.lane} capture: {len(_at_path(payload, LANES[args.lane]['case_path']))} cases ({payload['capture']['go']['goos']}/{payload['capture']['go']['goarch']})")
+        payload = validate_capture(args.lane, path, diagnostic=args.diagnostic)
+        classification = "DIAGNOSTIC ONLY" if args.diagnostic else "PASS"
+        print(f"{classification} frozen Go {args.lane} capture: {len(_at_path(payload, LANES[args.lane]['case_path']))} cases ({payload['capture']['go']['goos']}/{payload['capture']['go']['goarch']})")
     return 0
 
 
