@@ -33,3 +33,10 @@
 /testdata/rust-port/fixtures/update/static-v2/** -text whitespace=cr-at-eol
 /testdata/rust-port/fixtures/fs-secret/frozen-v1/** -text whitespace=cr-at-eol
 /testdata/rust-port/sqlite/frozen-v1/** -text whitespace=cr-at-eol
+# Frozen Foundation/LLM hashes bind original JSON bytes on every checkout,
+# including ordinary Windows CI jobs that inherit core.autocrlf=true.
+/testdata/rust-port/fixtures/foundation/** -text
+/testdata/rust-port/fixtures/contracts/** -text
+/testdata/rust-port/fixtures/llm/** -text
+/rust/test-support/symaira-contract-fixtures/fixtures/foundation/** -text
+/rust/test-support/symaira-contract-fixtures/fixtures/contracts/** -text

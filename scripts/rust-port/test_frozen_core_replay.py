@@ -25,6 +25,9 @@ class FrozenCoreReplayTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "byte mismatch"), patch.object(replay, "run_checked") as run:
                     replay.run_rust("foundation")
                 run.assert_not_called()
+                fixture.write_bytes(original.replace(b"\n", b"\r\n"))
+                with self.assertRaisesRegex(ValueError, "byte mismatch"):
+                    replay.verify_family("foundation")
                 fixture.write_bytes(original)
                 replay.verify_family("foundation")
                 (fixture.parent / "extra.json").write_text("{}")
