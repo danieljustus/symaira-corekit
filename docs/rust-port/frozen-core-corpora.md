@@ -64,8 +64,18 @@ provenance controls remain part of the default Make gate.
 
 Local Linux default SQLite Make gate passed with Go denied: six cases, 42
 checked fields and semantic mutation rejection. Original Darwin and Windows
-Go captures and verdicts are verified; new native Go-free Rust execution there
-remains required. Raw new Rust observations and the source-bound replay report
+Go captures and verdicts are verified. Native run
+[37140016877](https://github.com/danieljustus/symaira-corekit/actions/runs/37140016877)
+at `95e098f08c6cccca671ea5a07507a7932409e8c9` passed all three platforms;
+the downloaded archive digests and original reports are retained in
+[`evidence/frozen-core-native-20261003.json`](evidence/frozen-core-native-20261003.json).
+All runs verify 65 Foundation/wire inputs, five LLM inputs and six SQLite cases,
+including actual mutation and executable tool-denial controls. Linux/macOS run
+21 Foundation tests and 42 SQLite fields; Windows runs 22 tests and 40 fields.
+All platforms run 48 LLM tests. The legacy macOS check context executed on
+macOS 15.7.9 ARM64, confirmed by its runner identity and `sw_vers` log.
+Later integration heads still require their own CI.
+Raw new Rust observations and the source-bound replay report
 are retained alongside native CI's full default-Make output.
 
 This is a slice of #368, not aggregate completion. FS/SEC, MCP/MCP-config and
