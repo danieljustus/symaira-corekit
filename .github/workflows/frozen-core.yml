@@ -16,7 +16,8 @@ concurrency:
 jobs:
   native:
     name: Frozen Foundation/LLM/SQLite (${{ matrix.os }})
-    runs-on: ${{ matrix.os }}
+    # Keep legacy check-context names; actual native runner is recorded below.
+    runs-on: ${{ matrix.os == 'macos-26' && 'macos-15' || matrix.os }}
     timeout-minutes: 20
     strategy:
       fail-fast: false
@@ -28,6 +29,12 @@ jobs:
       GIT_CONFIG_KEY_0: core.autocrlf
       GIT_CONFIG_VALUE_0: 'false'
     steps:
+      - name: Record native macOS runner identity
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          sw_vers
+          test "$(uname -m)" = arm64
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
