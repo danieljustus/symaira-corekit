@@ -478,6 +478,14 @@ jobs:
         run: |
           cargo install cargo-deny --version 0.20.2 --locked
           cargo deny check
+      - name: Retain bounded frozen contract output
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: frozen-contract-raw-${{ matrix.os }}-${{ github.event.pull_request.head.sha || github.sha }}
+          path: target/frozen-core-replay/
+          if-no-files-found: warn
+          retention-days: 30
 
   rust-update-signed:
     name: Rust update signed-release acceptance (${{ matrix.os }})

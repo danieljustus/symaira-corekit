@@ -35,6 +35,7 @@
 /testdata/rust-port/sqlite/frozen-v1/** -text whitespace=cr-at-eol
 # Frozen Foundation/LLM hashes bind original JSON bytes on every checkout,
 # including ordinary Windows CI jobs that inherit core.autocrlf=true.
+/contracts/*.json -text
 /testdata/rust-port/fixtures/foundation/** -text
 /testdata/rust-port/fixtures/contracts/** -text
 /testdata/rust-port/fixtures/llm/** -text

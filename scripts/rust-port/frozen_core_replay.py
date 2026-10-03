@@ -85,6 +85,12 @@ def main() -> int:
             run_rust(arguments.family)
         return 0
     except (ValueError, OSError, subprocess.SubprocessError) as error:
+        if isinstance(error, subprocess.CalledProcessError):
+            # Full bounded output remains in the raw artifact; expose the
+            # relevant tail in ordinary CI instead of hiding Cargo's reason.
+            for stream in (error.stdout, error.stderr):
+                if stream:
+                    print(stream[-4096:].decode("utf-8", "replace"), file=sys.stderr)
         print(f"FAIL frozen core replay: {error}", file=sys.stderr)
         return 1
 

@@ -29,12 +29,16 @@ positive controls prove both denials work before the gate.
 
 | Family | Frozen inputs | Contract groups | Actual local Rust tests |
 | --- | ---: | ---: | ---: |
-| Foundation and wire contracts | 56 (19 groups + 9 wire contracts, original and Rust snapshots) | 19 | 21 |
+| Foundation and wire contracts | 65 (19 groups in original/Rust snapshots + 9 wire contracts in source/original/Rust snapshots) | 19 | 21 |
 | LLM and provider/error wire contracts | 5 | 12 | 48 |
 
 Two cumulative guard tests exercise an actual registered fixture's clean,
 mutated, restored and extra-file states; the corrupted state cannot start Cargo.
 Both default Make targets passed locally with executable Go/Git denials.
+The nine root `contracts/*.json` inputs are also anchored and protected against
+newline conversion: real Rust fixture tests compare their exact source bytes
+to embedded snapshots. A real CRLF-configured Git checkout reproduced the
+ordinary Windows CI failure before this protection; the strict tests stay active.
 Exact committed native Linux/macOS/Windows CI remains required before merge.
 
 ## Native SQLite replay
