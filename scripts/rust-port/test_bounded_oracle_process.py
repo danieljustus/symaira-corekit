@@ -185,6 +185,26 @@ a.start(); b.start(); a.join(); b.join()
                     self.assertEqual(output, b"X" * bop.DEFAULT_LIMIT)
                 self.assertEqual(_reader_threads(), [])
 
+    def test_empty_job_accounting_does_not_replace_member_handle_wait(self):
+        from types import SimpleNamespace
+        for terminated in (False, True):
+            with self.subTest(terminated=terminated):
+                closed = []
+                waited = []
+
+                def wait(handle, timeout):
+                    waited.append(handle)
+                    return terminated
+
+                api = SimpleNamespace(retain_job_members=lambda job: [2],
+                                      wait_job_empty=lambda job, timeout: True,
+                                      wait_process=wait, close_handle=closed.append)
+                verified, errors = bop._windows_cleanup(None, 1, True, None, api)
+                self.assertEqual(verified, terminated)
+                self.assertEqual(waited, [2])
+                self.assertEqual(closed, [2, 1])
+                self.assertEqual(bool(errors), not terminated)
+
     def test_invalid_invocation_fails_explicitly(self):
         with self.assertRaises(TypeError):
             bop.run_bounded("python -V", cwd=ROOT, env=_test_env(), timeout=1)

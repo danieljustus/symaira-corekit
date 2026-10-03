@@ -440,6 +440,12 @@ if os.name == "nt":
                 wintypes.DWORD, ctypes.POINTER(wintypes.DWORD),
             ]
             k.QueryInformationJobObject.restype = wintypes.BOOL
+            k.OpenProcess.argtypes = [wintypes.DWORD, wintypes.BOOL, wintypes.DWORD]
+            k.OpenProcess.restype = ctypes.c_void_p
+            k.IsProcessInJob.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.POINTER(wintypes.BOOL)]
+            k.IsProcessInJob.restype = wintypes.BOOL
+            k.WaitForSingleObject.argtypes = [ctypes.c_void_p, wintypes.DWORD]
+            k.WaitForSingleObject.restype = wintypes.DWORD
             k.CloseHandle.argtypes = [ctypes.c_void_p]
             k.CloseHandle.restype = wintypes.BOOL
             k.CreateToolhelp32Snapshot.argtypes = [wintypes.DWORD, wintypes.DWORD]
@@ -498,6 +504,54 @@ if os.name == "nt":
             if returned.value < ctypes.sizeof(info):
                 raise OSError(f"short Job accounting result: {returned.value} bytes")
             return int(info.ActiveProcesses)
+
+        def retain_job_members(self, job) -> list:
+            """Hold verified member identities before initiating termination."""
+            capacity = 64
+            while capacity <= 4096:
+                class ProcessIds(ctypes.Structure):
+                    _fields_ = [("assigned", wintypes.DWORD), ("listed", wintypes.DWORD),
+                                ("ids", ctypes.c_size_t * capacity)]
+                info = ProcessIds()
+                ok = self.kernel32.QueryInformationJobObject(job, 3, ctypes.byref(info), ctypes.sizeof(info), None)
+                if not ok and ctypes.get_last_error() == 234:
+                    capacity *= 2
+                    continue
+                if not ok:
+                    raise self._winerror("QueryInformationJobObject process identities failed")
+                if info.listed > capacity or info.assigned > capacity:
+                    capacity *= 2
+                    continue
+                handles = []
+                try:
+                    for pid in info.ids[:info.listed]:
+                        handle = self.kernel32.OpenProcess(0x00100000 | 0x1000, False, pid)
+                        if not handle:
+                            if ctypes.get_last_error() == 87:
+                                continue  # The member exited before its identity could be held.
+                            raise self._winerror("OpenProcess Job member failed")
+                        handles.append(handle)
+                        member = wintypes.BOOL()
+                        if not self.kernel32.IsProcessInJob(handle, job, ctypes.byref(member)):
+                            raise self._winerror("IsProcessInJob identity check failed")
+                        if not member.value:
+                            # A recycled PID outside this private Job is never targeted.
+                            self.close_handle(handle)
+                            handles.pop()
+                    return handles
+                except BaseException:
+                    for handle in handles:
+                        self.close_handle(handle)
+                    raise
+            raise OSError("private Job identity inventory exceeds 4096-process bound")
+
+        def wait_process(self, handle, timeout: float) -> bool:
+            result = self.kernel32.WaitForSingleObject(handle, max(0, int(timeout * 1000)))
+            if result == 0:
+                return True
+            if result == 258:
+                return False
+            raise self._winerror("WaitForSingleObject Job member failed")
 
         def wait_job_empty(self, job, timeout: float) -> bool:
             # A Job handle is not signaled when ordinary processes exit; poll
@@ -607,6 +661,14 @@ def _windows_cleanup(proc, job, assigned, capture, api) -> tuple[bool, list[str]
     job_closed = job is None
     process_handle_closed = proc is None
     termination_errors: list[str] = []
+    members = []
+    members_verified = True
+    if job is not None and assigned:
+        try:
+            members = api.retain_job_members(job)
+        except BaseException as exc:
+            errors.append(f"Job member identities could not be retained: {exc}")
+            members_verified = False
 
     if proc is not None:
         try:
@@ -682,6 +744,21 @@ def _windows_cleanup(proc, job, assigned, capture, api) -> tuple[bool, list[str]
             if job_closed:
                 job = None
 
+    # ActiveProcesses can reach zero before an exiting process object is signaled.
+    # Wait on identities retained while membership was verifiable, never a new PID lookup.
+    member_deadline = time.monotonic() + _CLEANUP_WAIT
+    for handle in members:
+        try:
+            if not api.wait_process(handle, max(0.0, member_deadline - time.monotonic())):
+                errors.append("retained Job member did not terminate within cleanup bound")
+                members_verified = False
+        except BaseException as exc:
+            errors.append(f"retained Job member wait failed: {exc}")
+            members_verified = False
+        finally:
+            if not _close_owned_handle(api, handle, "Job member identity", errors):
+                members_verified = False
+
     readers_done = True
     if capture is not None:
         readers_done = capture.join(_CLEANUP_WAIT)
@@ -693,7 +770,7 @@ def _windows_cleanup(proc, job, assigned, capture, api) -> tuple[bool, list[str]
     if proc is not None and proc.returncode is None:
         process_handle_closed = False
     verified = (
-        job_empty and job_closed and process_handle_closed and pipes_closed and readers_done
+        job_empty and job_closed and process_handle_closed and pipes_closed and readers_done and members_verified
         and (proc is None or proc.returncode is not None)
     )
     return verified, errors
