@@ -289,6 +289,10 @@ jobs:
           python-version: "3.12"
       - name: Validate fixture metadata
         run: python docs/rust-port/validate.py
+      - name: Verify canonical consumer workspace and adoption controls
+        run: |
+          python -W error -m unittest discover -s scripts/rust-port -p test_workspace_root.py -v
+          python -W error -m unittest discover -s scripts/rust-port -p test_rust005.py -v
       - name: Verify oracle provenance and generated fixtures
         run: python scripts/rust-port/generate.py --check-source && python scripts/rust-port/generate.py --check
       - name: Verify real regeneration preserves independent corpora

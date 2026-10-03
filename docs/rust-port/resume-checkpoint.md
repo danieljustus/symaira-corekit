@@ -1,3 +1,20 @@
+## Portable consumer evidence verification (2026-10-03)
+
+RUST-016 remains blocked by real consumer releases and source-bound
+standalone/rollback records. The adoption/benchmark trust helpers now locate
+sibling consumers through the canonical Git common directory, including linked
+worktrees outside the repository. Standalone shallow `/workspace` checkouts no
+longer fail during import due to a fixed ancestor index. The exact origin,
+revision, cleanliness, path traversal and symlink controls remain active.
+
+Two actual Git workspace tests, seven RUST-005 controls, and both script
+self-tests pass. `adoption.py --check --min-consumers 2` and
+`bench.py --suite foundation --check` pass with public immutable consumer
+snapshots. `port/consumer/verify.py --git-pinned-consumers` remains blocked:
+current consumer mains differ from the manifest and consumer release/build/
+rollback/digest evidence is missing. No consumer release or Go removal is
+claimed by this repair. Native CI runs the workspace controls on all three OSes.
+
 # Resume checkpoint — Rust consumer release gates open
 
 ## Current consumer API completion candidate (2026-10-02)
