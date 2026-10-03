@@ -28,7 +28,8 @@ jobs:
   fs-secret-evidence:
     name: FS/SEC capture (${{ matrix.target }})
     if: github.event_name == 'workflow_dispatch' && inputs.fs_secret_capture
-    runs-on: ${{ matrix.os }}
+    # matrix.os preserves legacy protected check names; see ADR 0003.
+    runs-on: ${{ matrix.os == 'macos-26' && 'macos-15' || matrix.os }}
     timeout-minutes: 15
     strategy:
       fail-fast: false
@@ -48,6 +49,12 @@ jobs:
       GIT_CONFIG_KEY_0: core.autocrlf
       GIT_CONFIG_VALUE_0: 'false'
     steps:
+      - name: Record native macOS runner identity
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          sw_vers
+          test "$(uname -m)" = arm64
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
         with:
           fetch-depth: 0
@@ -85,7 +92,8 @@ jobs:
   process-oracle-capture:
     name: Native process-oracle capture (${{ matrix.os }})
     if: github.event_name == 'workflow_dispatch' && inputs.go_oracle
-    runs-on: ${{ matrix.os }}
+    # matrix.os preserves legacy protected check names; see ADR 0003.
+    runs-on: ${{ matrix.os == 'macos-26' && 'macos-15' || matrix.os }}
     timeout-minutes: 15
     strategy:
       fail-fast: false
@@ -94,6 +102,12 @@ jobs:
     env:
       GO_ORACLE: "1"
     steps:
+      - name: Record native macOS runner identity
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          sw_vers
+          test "$(uname -m)" = arm64
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
         with:
           fetch-depth: 0
@@ -133,13 +147,20 @@ jobs:
             target: darwin-arm64
           - os: windows-latest
             target: windows-amd64
-    runs-on: ${{ matrix.os }}
+    # matrix.os preserves legacy protected check names; see ADR 0003.
+    runs-on: ${{ matrix.os == 'macos-26' && 'macos-15' || matrix.os }}
     timeout-minutes: 20
     env:
       CGO_ENABLED: 0
       GOTOOLCHAIN: go1.26.6
       STATIC_EVIDENCE_TARGET: ${{ matrix.target }}
     steps:
+      - name: Record native macOS runner identity
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          sw_vers
+          test "$(uname -m)" = arm64
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
@@ -250,8 +271,15 @@ jobs:
       matrix:
         os: ${{ fromJSON(needs.changes.outputs.test_matrix) }}
         go-version: ["1.26.6"]
-    runs-on: ${{ matrix.os }}
+    # matrix.os preserves legacy protected check names; see ADR 0003.
+    runs-on: ${{ matrix.os == 'macos-26' && 'macos-15' || matrix.os }}
     steps:
+      - name: Record native macOS runner identity
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          sw_vers
+          test "$(uname -m)" = arm64
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
       - name: Run tests
         uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
@@ -332,11 +360,18 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-26, windows-latest]
-    runs-on: ${{ matrix.os }}
+    # matrix.os preserves legacy protected check names; see ADR 0003.
+    runs-on: ${{ matrix.os == 'macos-26' && 'macos-15' || matrix.os }}
     env:
       GOTOOLCHAIN: go1.26.6
       CGO_ENABLED: 0
     steps:
+      - name: Record native macOS runner identity
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          sw_vers
+          test "$(uname -m)" = arm64
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
         with:
           fetch-depth: 0
@@ -385,10 +420,17 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-26, windows-latest]
-    runs-on: ${{ matrix.os }}
+    # matrix.os preserves legacy protected check names; see ADR 0003.
+    runs-on: ${{ matrix.os == 'macos-26' && 'macos-15' || matrix.os }}
     env:
       GOBIN: ${{ github.workspace }}/.bin
     steps:
+      - name: Record native macOS runner identity
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          sw_vers
+          test "$(uname -m)" = arm64
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
         with:
           fetch-depth: 0
@@ -437,12 +479,19 @@ jobs:
     name: Rust foundation (${{ matrix.os }})
     needs: changes
     if: needs.changes.outputs.full == 'true'
-    runs-on: ${{ matrix.os }}
+    # matrix.os preserves legacy protected check names; see ADR 0003.
+    runs-on: ${{ matrix.os == 'macos-26' && 'macos-15' || matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-26, windows-latest]
     steps:
+      - name: Record native macOS runner identity
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          sw_vers
+          test "$(uname -m)" = arm64
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
         with:
           fetch-depth: 0
@@ -479,13 +528,20 @@ jobs:
     name: Rust update signed-release acceptance (${{ matrix.os }})
     needs: changes
     if: needs.changes.outputs.full == 'true'
-    runs-on: ${{ matrix.os }}
+    # matrix.os preserves legacy protected check names; see ADR 0003.
+    runs-on: ${{ matrix.os == 'macos-26' && 'macos-15' || matrix.os }}
     timeout-minutes: 40
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-26, windows-latest]
     steps:
+      - name: Record native macOS runner identity
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          sw_vers
+          test "$(uname -m)" = arm64
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
         with:
           fetch-depth: 0
@@ -527,12 +583,19 @@ jobs:
     name: Rust MCP (${{ matrix.os }})
     needs: changes
     if: needs.changes.outputs.full == 'true'
-    runs-on: ${{ matrix.os }}
+    # matrix.os preserves legacy protected check names; see ADR 0003.
+    runs-on: ${{ matrix.os == 'macos-26' && 'macos-15' || matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-26, windows-latest]
     steps:
+      - name: Record native macOS runner identity
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          sw_vers
+          test "$(uname -m)" = arm64
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
         with:
           fetch-depth: 0
@@ -561,12 +624,19 @@ jobs:
     name: Rust MCP config (${{ matrix.os }})
     needs: changes
     if: needs.changes.outputs.full == 'true'
-    runs-on: ${{ matrix.os }}
+    # matrix.os preserves legacy protected check names; see ADR 0003.
+    runs-on: ${{ matrix.os == 'macos-26' && 'macos-15' || matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-26, windows-latest]
     steps:
+      - name: Record native macOS runner identity
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          sw_vers
+          test "$(uname -m)" = arm64
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
         with:
           fetch-depth: 0
@@ -588,12 +658,19 @@ jobs:
     name: Rust SQLite native (${{ matrix.os }})
     needs: changes
     if: needs.changes.outputs.full == 'true'
-    runs-on: ${{ matrix.os }}
+    # matrix.os preserves legacy protected check names; see ADR 0003.
+    runs-on: ${{ matrix.os == 'macos-26' && 'macos-15' || matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-26, windows-latest]
     steps:
+      - name: Record native macOS runner identity
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          sw_vers
+          test "$(uname -m)" = arm64
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
         with:
           fetch-depth: 0
@@ -642,7 +719,8 @@ jobs:
     # Capture-only preparation is not anchored Rust acceptance. Every ordinary
     # PR/main run still requires this gate after reviewed fixtures are registered.
     if: needs.changes.outputs.full == 'true' && !(github.event_name == 'workflow_dispatch' && inputs.fs_secret_capture)
-    runs-on: ${{ matrix.os }}
+    # matrix.os preserves legacy protected check names; see ADR 0003.
+    runs-on: ${{ matrix.os == 'macos-26' && 'macos-15' || matrix.os }}
     timeout-minutes: 20
     strategy:
       fail-fast: false
@@ -654,6 +732,12 @@ jobs:
       GIT_CONFIG_VALUE_0: 'false'
       FS_REPLAY_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
     steps:
+      - name: Record native macOS runner identity
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          sw_vers
+          test "$(uname -m)" = arm64
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
         with:
           fetch-depth: 0
@@ -770,12 +854,19 @@ jobs:
     name: Rust RUST-013 native (${{ matrix.os }})
     needs: changes
     if: needs.changes.outputs.full == 'true'
-    runs-on: ${{ matrix.os }}
+    # matrix.os preserves legacy protected check names; see ADR 0003.
+    runs-on: ${{ matrix.os == 'macos-26' && 'macos-15' || matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-26, windows-latest]
     steps:
+      - name: Record native macOS runner identity
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          sw_vers
+          test "$(uname -m)" = arm64
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
       - name: Install pinned Rust toolchain
         shell: bash
