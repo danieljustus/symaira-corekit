@@ -1,0 +1,293 @@
+{
+  "preserved_branches": [
+    {
+      "branch": "agent/issue368-freeze-20261002-091556",
+      "head": "808965742f3bb3ee06164bbb9d554231911f4fac",
+      "remote_verified": true,
+      "state": "preserved superseded source/evidence checkpoint; do not merge as new work"
+    },
+    {
+      "branch": "agent/issue368-process-review-20261002",
+      "head": "bdc55423a7cb401d31bf2005cb00af2ab34d2644",
+      "remote_verified": true,
+      "state": "preserved superseded source/evidence checkpoint; do not merge as new work"
+    },
+    {
+      "branch": "agent/issue368-static-update-20261002",
+      "head": "b028717ef247c1817bd9285634db7a29157e9661",
+      "remote_verified": true,
+      "state": "preserved superseded source/evidence checkpoint; do not merge as new work"
+    }
+  ],
+  "merged_pull_requests": [
+    {
+      "number": 374,
+      "url": "https://github.com/danieljustus/symaira-corekit/pull/374",
+      "state": "closed",
+      "merged": true,
+      "merge_commit_sha": "b90004d0446099bd5ed0f09c8e669b5cdd1d8523",
+      "head_sha": "0e84279a591486792dca417292b0275516a9ec31",
+      "head_branch": "agent/issue357-native-20261002-091556"
+    },
+    {
+      "number": 375,
+      "url": "https://github.com/danieljustus/symaira-corekit/pull/375",
+      "state": "closed",
+      "merged": true,
+      "merge_commit_sha": "375b9bbdeca9d5dda307723e8fbe04e2b713ce73",
+      "head_sha": "00873d9119397c28c4ac7df1a8b51462579e4fd5",
+      "head_branch": "agent/issue369-retirement-20261002-091556"
+    },
+    {
+      "number": 376,
+      "url": "https://github.com/danieljustus/symaira-corekit/pull/376",
+      "state": "closed",
+      "merged": true,
+      "merge_commit_sha": "e39507e27025e3754c6924756177e408df8bceb3",
+      "head_sha": "02a38c7e45c89450202e15a448ac448627cc28c0",
+      "head_branch": "agent/issue365-native-20261002-091556"
+    },
+    {
+      "number": 379,
+      "url": "https://github.com/danieljustus/symaira-corekit/pull/379",
+      "state": "closed",
+      "merged": true,
+      "merge_commit_sha": "2ad0a60540f2e0249a0eea36d5af962770256e9e",
+      "head_sha": "98afb89b71159b676793c97c29563a6f287cd368",
+      "head_branch": "agent/issue377-oracle-path-20261002-091556"
+    },
+    {
+      "number": 381,
+      "url": "https://github.com/danieljustus/symaira-corekit/pull/381",
+      "state": "closed",
+      "merged": true,
+      "merge_commit_sha": "0242cceec35fb9478d03d1952ed5d2d279f6e3c4",
+      "head_sha": "4822edf2b0a938937e31fdd6dc50965ea567517c",
+      "head_branch": "agent/issue378-preserve-20261002-091556"
+    },
+    {
+      "number": 383,
+      "url": "https://github.com/danieljustus/symaira-corekit/pull/383",
+      "state": "closed",
+      "merged": true,
+      "merge_commit_sha": "14c839e4c963d3365c210f748e615da2fc3f22ef",
+      "head_sha": "2cfb83c362d303a85288e05bff93b37949b1ea7a",
+      "head_branch": "agent/issue382-fs-oracle-20261002-091556"
+    },
+    {
+      "number": 384,
+      "url": "https://github.com/danieljustus/symaira-corekit/pull/384",
+      "state": "closed",
+      "merged": true,
+      "merge_commit_sha": "bba6cd1d727e938e32d485b31bf1adbcfce64f6d",
+      "head_sha": "04a0bc26e789f8b6739c56ba8d846b9dd27648e6",
+      "head_branch": "agent/issue367-api-20261002-091556"
+    },
+    {
+      "number": 389,
+      "url": "https://github.com/danieljustus/symaira-corekit/pull/389",
+      "state": "closed",
+      "merged": true,
+      "merge_commit_sha": "e80a90026dba858c403577c90fb023387278e1e2",
+      "head_sha": "808965742f3bb3ee06164bbb9d554231911f4fac",
+      "head_branch": "agent/issue368-freeze-20261002-091556"
+    },
+    {
+      "number": 393,
+      "url": "https://github.com/danieljustus/symaira-corekit/pull/393",
+      "state": "closed",
+      "merged": true,
+      "merge_commit_sha": "ff26856c91abca26311be8b06cd4e416a9e8cb06",
+      "head_sha": "b028717ef247c1817bd9285634db7a29157e9661",
+      "head_branch": "agent/issue368-static-update-20261002"
+    }
+  ],
+  "issue_readbacks": [
+    {
+      "number": 357,
+      "url": "https://github.com/danieljustus/symaira-corekit/issues/357",
+      "state": "closed",
+      "state_reason": "completed",
+      "labels": [
+        "group: rust-migration"
+      ]
+    },
+    {
+      "number": 365,
+      "url": "https://github.com/danieljustus/symaira-corekit/issues/365",
+      "state": "closed",
+      "state_reason": "completed",
+      "labels": [
+        "priority: high",
+        "group: rust-migration"
+      ]
+    },
+    {
+      "number": 366,
+      "url": "https://github.com/danieljustus/symaira-corekit/issues/366",
+      "state": "closed",
+      "state_reason": "completed",
+      "labels": [
+        "priority: high",
+        "group: rust-migration"
+      ]
+    },
+    {
+      "number": 367,
+      "url": "https://github.com/danieljustus/symaira-corekit/issues/367",
+      "state": "closed",
+      "state_reason": "completed",
+      "labels": [
+        "priority: high",
+        "group: rust-migration"
+      ]
+    },
+    {
+      "number": 368,
+      "url": "https://github.com/danieljustus/symaira-corekit/issues/368",
+      "state": "open",
+      "state_reason": null,
+      "labels": [
+        "priority: medium",
+        "auto-claimed",
+        "group: rust-migration"
+      ]
+    },
+    {
+      "number": 369,
+      "url": "https://github.com/danieljustus/symaira-corekit/issues/369",
+      "state": "closed",
+      "state_reason": "completed",
+      "labels": [
+        "priority: medium",
+        "group: rust-migration"
+      ]
+    },
+    {
+      "number": 371,
+      "url": "https://github.com/danieljustus/symaira-corekit/issues/371",
+      "state": "open",
+      "state_reason": null,
+      "labels": [
+        "priority: medium",
+        "group: rust-migration"
+      ]
+    },
+    {
+      "number": 372,
+      "url": "https://github.com/danieljustus/symaira-corekit/issues/372",
+      "state": "open",
+      "state_reason": null,
+      "labels": [
+        "priority: medium",
+        "group: rust-migration"
+      ]
+    },
+    {
+      "number": 377,
+      "url": "https://github.com/danieljustus/symaira-corekit/issues/377",
+      "state": "closed",
+      "state_reason": "completed",
+      "labels": []
+    },
+    {
+      "number": 378,
+      "url": "https://github.com/danieljustus/symaira-corekit/issues/378",
+      "state": "closed",
+      "state_reason": "completed",
+      "labels": []
+    },
+    {
+      "number": 380,
+      "url": "https://github.com/danieljustus/symaira-corekit/issues/380",
+      "state": "closed",
+      "state_reason": "completed",
+      "labels": []
+    },
+    {
+      "number": 382,
+      "url": "https://github.com/danieljustus/symaira-corekit/issues/382",
+      "state": "closed",
+      "state_reason": "completed",
+      "labels": []
+    },
+    {
+      "number": 385,
+      "url": "https://github.com/danieljustus/symaira-corekit/issues/385",
+      "state": "closed",
+      "state_reason": "completed",
+      "labels": []
+    },
+    {
+      "number": 386,
+      "url": "https://github.com/danieljustus/symaira-corekit/issues/386",
+      "state": "closed",
+      "state_reason": "completed",
+      "labels": []
+    },
+    {
+      "number": 387,
+      "url": "https://github.com/danieljustus/symaira-corekit/issues/387",
+      "state": "closed",
+      "state_reason": "completed",
+      "labels": []
+    },
+    {
+      "number": 388,
+      "url": "https://github.com/danieljustus/symaira-corekit/issues/388",
+      "state": "closed",
+      "state_reason": "completed",
+      "labels": []
+    },
+    {
+      "number": 390,
+      "url": "https://github.com/danieljustus/symaira-corekit/issues/390",
+      "state": "closed",
+      "state_reason": "completed",
+      "labels": []
+    },
+    {
+      "number": 391,
+      "url": "https://github.com/danieljustus/symaira-corekit/issues/391",
+      "state": "closed",
+      "state_reason": "completed",
+      "labels": []
+    },
+    {
+      "number": 392,
+      "url": "https://github.com/danieljustus/symaira-corekit/issues/392",
+      "state": "closed",
+      "state_reason": "completed",
+      "labels": []
+    },
+    {
+      "number": 394,
+      "url": "https://github.com/danieljustus/symaira-corekit/issues/394",
+      "state": "closed",
+      "state_reason": "completed",
+      "labels": []
+    },
+    {
+      "number": 395,
+      "url": "https://github.com/danieljustus/symaira-corekit/issues/395",
+      "state": "closed",
+      "state_reason": "completed",
+      "labels": []
+    },
+    {
+      "number": 396,
+      "url": "https://github.com/danieljustus/symaira-corekit/issues/396",
+      "state": "open",
+      "state_reason": null,
+      "labels": []
+    },
+    {
+      "number": 397,
+      "url": "https://github.com/danieljustus/symaira-corekit/issues/397",
+      "state": "open",
+      "state_reason": null,
+      "labels": []
+    }
+  ],
+  "overall_state": "paused incomplete migration; capture preparation preserved; no release or issue368 closure"
+}

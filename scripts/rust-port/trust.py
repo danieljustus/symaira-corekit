@@ -11,7 +11,6 @@ from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
 ROOT = Path(__file__).resolve().parents[2]
-WORKSPACE = ROOT.parents[2].resolve()
 GITHUB_API = "https://api.github.com"
 GITHUB_WEB = "https://github.com"
 
@@ -28,6 +27,15 @@ def git(*args: str, cwd: Path) -> str:
     if completed.returncode:
         raise RuntimeError(f"git {' '.join(args)} failed: {completed.stderr.strip()}")
     return completed.stdout.strip()
+
+
+def workspace_root(root: Path = ROOT) -> Path:
+    """Resolve sibling consumers from the canonical checkout, including worktrees."""
+    common = Path(git("rev-parse", "--path-format=absolute", "--git-common-dir", cwd=root))
+    if not common.is_absolute() or not common.is_dir():
+        fail("Git common directory must be an existing absolute directory")
+    checkout = common.parent if common.name == ".git" else common
+    return checkout.parent.resolve()
 
 
 def _parts(value: Any, label: str) -> tuple[str, ...]:
@@ -51,7 +59,7 @@ def _no_symlink_traversal(path: Path, base: Path, label: str) -> None:
 
 def safe_workspace_path(value: Any, label: str = "checkout") -> Path:
     parts = _parts(value, label)
-    base = WORKSPACE
+    base = workspace_root()
     candidate = base.joinpath(*parts)
     resolved_base = base.resolve()
     resolved = candidate.resolve(strict=False)

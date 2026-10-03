@@ -1,0 +1,63 @@
+{
+  "source_commit": "5fc5299a56e96b6007fda7d8900363f3aa6ba282",
+  "capture_run": 37107725386,
+  "review_id": "deleg_b25f789a",
+  "verdict": "APPROVE exact native Go capture digests and reviewed four-file source delta within provenance scope only",
+  "capture_approvals": [
+    {
+      "target": "darwin-arm64",
+      "fixture_sha256": "802fb2e1f85d07be948ef81361953196e117ad74ef4e66749acf4cdc70deda5a",
+      "approved": true
+    },
+    {
+      "target": "linux-amd64",
+      "fixture_sha256": "6bb7b00fe62a957c9710ebb0dd0642c4e94000597f4fc7ad6714188ff948930a",
+      "approved": true
+    },
+    {
+      "target": "windows-amd64",
+      "fixture_sha256": "b6219a2cd8c83d6fddbd4b3c0956e8c7ee306012c4092f7e1e8a859f50a55cb7",
+      "approved": true
+    }
+  ],
+  "executed_verifier": {
+    "original_sha256": "2a5cd90493281cac6126c96e50307349ceca3efbbe10d759c0002d5cabbe0e45",
+    "command": "PYTHONDONTWRITEBYTECODE=1 python3 -B verify-fresh-fs-captures.py",
+    "exit_code": 0,
+    "source_snapshot": "source-5fc5299 reconstructed from exact Git object",
+    "public_reproduction": "Follow the private-workspace setup in ../../2026-10-03-fs-frozen-cloud.md; the published path-only adaptation uses the same validation logic."
+  },
+  "verified_per_target": {
+    "case_count": 13,
+    "path_control_count": 9,
+    "command_count": 19,
+    "raw_stream_count": 38,
+    "reconstructed_module_inputs": 6,
+    "observed_boolean_mutation_rejected": true
+  },
+  "sdk_input_counts": {
+    "darwin-arm64": 1134,
+    "linux-amd64": 1194,
+    "windows-amd64": 1091
+  },
+  "reviewed_source_delta": [
+    "Makefile",
+    ".github/workflows/ci.yml",
+    "scripts/rust-port/fs_secret_oracle.py",
+    "scripts/rust-port/test_fs_secret_oracle.py"
+  ],
+  "findings": [
+    "Both out-of-crate embedded inputs are source-bound; each mutation is rejected, restoration is verified.",
+    "Missing-anchor guard forces an empty map and fails before subprocess execution rather than skipping.",
+    "Frozen and opt-in live checks remain distinct; full security target retains audit/deny/Miri.",
+    "Native wrapper exercises Go/Git-denying shims before the offline gate and rejects forbidden invocations. Recorded unanchored diagnostic is not acceptance."
+  ],
+  "review_execution_note": "Initial source-diff attempt used a wrong root-level test path and failed; reviewer corrected it to scripts/rust-port/test_fs_secret_oracle.py and reviewed the complete four-file delta.",
+  "parent_readback": "Reviewed terminal execution status in retained review trace; rehashed original verifier and all three published fixture bytes, and verified reviewed harness bytes remain unchanged. Private transcript and absolute operator paths are not published.",
+  "pending_gates": [
+    "Separate anchor decision and exact-byte registration review.",
+    "Successful default anchored Go/Git-free native Rust gates on required targets.",
+    "Broader migration/security/parity acceptance."
+  ],
+  "no_state_transition": "Approval does not register an anchor, close an issue, ready or merge PR398, or authorize publication."
+}
