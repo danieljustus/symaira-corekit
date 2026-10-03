@@ -1,3 +1,16 @@
+# Current continuation (2026-10-03)
+
+The historical unregistered checkpoint below is preserved verbatim. The new
+maintainer goal authorizes completing and merging PR #398 after its gates.
+Three unchanged provenance-approved captures are now registered, with a separate
+full reconstruction recorded in `docs/rust-port/evidence/fs-frozen-registration-20261003.json`.
+The Linux native wrapper passed on the registration working tree: 13 cases,
+nine controls, exactly one named strict-v1 test, both mutations, executable
+Go/Git denial controls and no forbidden invocation. POSIX replay uses native
+capture umask `022`; the original cloud `077` mismatch was retained as a failure.
+Exact-head ordinary three-platform CI remains required before merge. #368 and
+consumer/release/Go-retirement gates stay open; no broader completion is claimed.
+
 # Frozen FS/SEC evidence: code and review continuation
 
 ## State and immutable code checkpoint
