@@ -42,6 +42,11 @@ jobs:
             target: windows-amd64
     env:
       FS_NATIVE_TARGET: ${{ matrix.target }}
+      # The capture deliberately ignores operator Git configuration. Check out
+      # the same exact bytes first, rather than inheriting Windows autocrlf.
+      GIT_CONFIG_COUNT: '1'
+      GIT_CONFIG_KEY_0: core.autocrlf
+      GIT_CONFIG_VALUE_0: 'false'
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
         with:
