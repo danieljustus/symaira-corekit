@@ -89,6 +89,7 @@ def execute_phases(head, artifacts, denied, marker, absent_path):
             try:
                 result = run_checked(["make", "rust-contracts"], cwd=ROOT, env=env, timeout=1800, artifact_dir=artifacts / phase, merge_stderr=True)
                 if result.returncode:
+                    retain_update_logs(artifacts)
                     raise RuntimeError(f"Go-{phase} aggregate failed with exit {result.returncode}:\n" + result.stdout.decode(errors="replace")[-4096:])
             finally:
                 if old is not None:
@@ -124,13 +125,19 @@ def execute_phases(head, artifacts, denied, marker, absent_path):
             phases.append({"mode": phase, "exit_code": result.returncode, "update_cases": {lane: report["case_count"] for lane, report in reports.items()},
                            "families": families, "fs_cases": 13, "fs_controls": 9, "mcp_cases": 46, "mcpcfg_cases": 24,
                            "sqlite_cases": 6, "sqlite_checked_fields": sqlite["checked_fields"], "raw_stdout_sha256": hashlib.sha256(result.stdout).hexdigest()})
-    shutil.copytree(ROOT / "target/frozen-update", artifacts / "update-raw")
+    retain_update_logs(artifacts)
     for name in ("sqlite-frozen-replay.json", "sqlite-frozen-replay.rust.raw"):
         shutil.copy2(ROOT / "target" / name, artifacts / name)
     report = {"status": "PASS", "execution_head": head, "go_absent_from_path": True, "native_go_denial_control": True,
               "forbidden_go_called": False, "phases": phases}
     (artifacts / "result.json").write_text(json.dumps(report, indent=2) + "\n")
     print(json.dumps(report, sort_keys=True))
+
+
+def retain_update_logs(artifacts):
+    source = ROOT / "target/frozen-update"
+    if source.is_dir():
+        shutil.copytree(source, artifacts / "update-raw", dirs_exist_ok=True)
 
 
 if __name__ == "__main__":

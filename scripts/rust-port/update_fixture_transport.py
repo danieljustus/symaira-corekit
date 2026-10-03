@@ -31,7 +31,7 @@ def write_ready(name, private_tmp):
     requested = Path(name)
     root = private_tmp.resolve(strict=True)
     if not requested.is_absolute() or not requested.is_relative_to(root):
-        raise ValueError("readiness path escapes disposable TMPDIR")
+        raise ValueError(f"readiness path escapes disposable TMPDIR: requested={requested!s}; root={root!s}")
     relative = requested.relative_to(root)
     current = root
     for component in relative.parts:
