@@ -13,6 +13,7 @@ ROOT = Path(__file__).resolve().parents[2]
 MANIFEST = ROOT / "rust/symaira-core-update/Cargo.toml"
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import static_update_oracle as oracle  # noqa: E402
+from bounded_oracle_process import run_checked  # noqa: E402
 
 LANE = "version"
 TEST = "stable_release_decisions_match_public_go_checker"
@@ -21,15 +22,16 @@ POSITIVE_RESULT = "test result: ok. 1 passed; 0 failed; 0 ignored;"
 
 def replay(fixture: Path) -> subprocess.CompletedProcess:
     env = dict(os.environ, UPDATE_VERSION_FIXTURE=str(fixture), CARGO_TARGET_DIR=str(ROOT / "target"))
-    return subprocess.run(
-        ["cargo", "test", "--manifest-path", str(MANIFEST), "--test", "parity", TEST, "--", "--exact", "--nocapture"],
+    command = ["cargo", "test", "--manifest-path", str(MANIFEST), "--test", "parity", TEST, "--locked", "--", "--exact", "--nocapture"]
+    result = run_checked(
+        command,
         cwd=ROOT,
         env=env,
-        text=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        check=False,
+        timeout=600,
+        merge_stderr=True,
+        artifact_dir=ROOT / "target/static-update-process",
     )
+    return subprocess.CompletedProcess(command, result.returncode, result.stdout.decode("utf-8", "replace"), "")
 
 
 def require_positive(result: subprocess.CompletedProcess) -> None:

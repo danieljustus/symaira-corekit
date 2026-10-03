@@ -16,6 +16,7 @@ import sys
 import tempfile
 
 from static_update_anchors import ANCHORS
+from bounded_oracle_process import run_checked
 
 ROOT = Path(__file__).resolve().parents[2]
 UPDATE_FIXTURES = ROOT / "testdata/rust-port/fixtures/update"
@@ -263,14 +264,14 @@ def _source_files(lane: str) -> list[Path]:
     return paths
 
 
-def _source_inventory(lane: str, go_tool: Path, env: dict[str, str]) -> list[dict]:
+def _source_inventory(lane: str, go_tool: Path, env: dict[str, str], artifacts_dir: Path | None = None) -> list[dict]:
     """Discover actual transitive native build inputs, including SDK and module files."""
     package = "./" + str(Path(LANES[lane]["oracle"][0]).parent).replace(os.sep, "/")
     fields = "Dir,GoFiles,CgoFiles,CFiles,CXXFiles,MFiles,FFiles,SFiles,HFiles,SysoFiles,EmbedFiles,TestGoFiles,XTestGoFiles,TestEmbedFiles,XTestEmbedFiles,Module"
     command = [str(go_tool), "list", "-deps", "-json=" + fields]
     if lane == "swap":
         command.append("-test")
-    result = subprocess.run([*command, package], cwd=ROOT, env=env, capture_output=True, timeout=30, check=False)
+    result = run_checked([*command, package], cwd=ROOT, env=env, timeout=30, artifact_dir=artifacts_dir)
     if result.returncode != 0:
         raise RuntimeError("cannot discover complete Go oracle build inputs")
     decoder = json.JSONDecoder()
@@ -291,9 +292,9 @@ def _source_inventory(lane: str, go_tool: Path, env: dict[str, str]) -> list[dic
                     paths.add(mod)
                     if mod.with_name("go.sum").is_file():
                         paths.add(mod.with_name("go.sum"))
-    tool_dir = subprocess.run([str(go_tool), "env", "GOTOOLDIR"], cwd=ROOT, env=env, capture_output=True, timeout=30, check=True)
+    tool_dir = run_checked([str(go_tool), "env", "GOTOOLDIR"], cwd=ROOT, env=env, timeout=30, artifact_dir=artifacts_dir, check=True)
     paths.update(path for path in Path(tool_dir.stdout.decode().strip()).iterdir() if path.is_file())
-    paths.update((go_tool, Path(__file__), Path(__file__).with_name("static_update_anchors.py"), UPDATE_FIXTURES / LANES[lane]["legacy"]))
+    paths.update((go_tool, Path(__file__), Path(__file__).with_name("static_update_anchors.py"), Path(__file__).with_name("bounded_oracle_process.py"), UPDATE_FIXTURES / LANES[lane]["legacy"]))
     if lane == "extract":
         paths.update(path for path in (ROOT / "scripts/rust-port/update-extract-oracle/testdata").rglob("*") if path.is_file())
     roots = [("toolchain", Path(env["GOROOT"]).resolve()), ("modules", Path(env["GOMODCACHE"]).resolve()),
@@ -310,10 +311,10 @@ def _source_inventory(lane: str, go_tool: Path, env: dict[str, str]) -> list[dic
     return [files[key] for key in sorted(files)]
 
 
-def _capture_inputs(lane: str, go_tool: Path, env: dict[str, str]) -> dict:
-    files = _source_inventory(lane, go_tool, env)
-    status = subprocess.run(["git", "status", "--porcelain=v1", "--untracked-files=all"], cwd=ROOT, capture_output=True, timeout=30, check=True)
-    head = subprocess.run(["git", "rev-parse", "HEAD"], cwd=ROOT, capture_output=True, timeout=30, check=True)
+def _capture_inputs(lane: str, go_tool: Path, env: dict[str, str], artifacts_dir: Path | None = None) -> dict:
+    files = _source_inventory(lane, go_tool, env, artifacts_dir)
+    status = run_checked(["git", "status", "--porcelain=v1", "--untracked-files=all"], cwd=ROOT, env=env, timeout=30, artifact_dir=artifacts_dir, check=True)
+    head = run_checked(["git", "rev-parse", "HEAD"], cwd=ROOT, env=env, timeout=30, artifact_dir=artifacts_dir, check=True)
     binary_name = "toolchain/" + go_tool.relative_to(Path(env["GOROOT"]).resolve()).as_posix()
     binary_digest = next(item["sha256"] for item in files if item["path"] == binary_name)
     return {"source_commit": head.stdout.decode().strip(), "working_tree_clean": not bool(status.stdout.strip()),
@@ -326,8 +327,8 @@ def _case_fingerprints(lane: str, payload: dict) -> list[str]:
     return [sha256(canonical_json(case)) for case in cases]
 
 
-def _run(command: list[str], env: dict[str, str], cwd: Path, stage: str) -> dict:
-    result = subprocess.run(command, cwd=cwd, env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False)
+def _run(command: list[str], env: dict[str, str], cwd: Path, stage: str, artifacts_dir: Path | None = None) -> dict:
+    result = run_checked(command, cwd=cwd, env=env, timeout=120, artifact_dir=artifacts_dir)
     temp_root = Path(env["TMPDIR"]).parent
     command_record = []
     for item in command:
@@ -348,11 +349,11 @@ def _run(command: list[str], env: dict[str, str], cwd: Path, stage: str) -> dict
     }
 
 
-def _resolve_go_tool() -> Path:
+def _resolve_go_tool(artifacts_dir: Path | None = None) -> Path:
     """Resolve the effective pinned compiler before changing HOME, without downloads."""
     launcher = os.environ.get("GO_ORACLE_BIN", "go")
     env = dict(os.environ, GOTOOLCHAIN=GO_TOOLCHAIN, GOPROXY="off", GOSUMDB="off", GOENV="off", GOWORK="off")
-    result = subprocess.run([launcher, "env", "GOROOT"], env=env, cwd=ROOT, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=30, check=False)
+    result = run_checked([launcher, "env", "GOROOT"], env=env, cwd=ROOT, timeout=30, artifact_dir=artifacts_dir)
     if result.returncode != 0:
         raise RuntimeError("cannot resolve an installed pinned Go compiler")
     goroot = Path(result.stdout.decode("utf-8").strip())
@@ -364,11 +365,11 @@ def _resolve_go_tool() -> Path:
     return tool.resolve()
 
 
-def _prepare_go_env(temp: Path) -> tuple[dict[str, str], str, str, str, str, str, Path]:
-    go_tool = _resolve_go_tool()
+def _prepare_go_env(temp: Path, artifacts_dir: Path | None = None) -> tuple[dict[str, str], str, str, str, str, str, Path]:
+    go_tool = _resolve_go_tool(artifacts_dir)
     env = dict(os.environ)
     base_env = dict(os.environ, GOTOOLCHAIN="local", GOPROXY="off", GOSUMDB="off", GOFLAGS="-mod=readonly", GOENV="off", GOWORK="off")
-    base_modcache = subprocess.run([str(go_tool), "env", "GOMODCACHE"], env=base_env, cwd=ROOT, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=30, check=False)
+    base_modcache = run_checked([str(go_tool), "env", "GOMODCACHE"], env=base_env, cwd=ROOT, timeout=30, artifact_dir=artifacts_dir)
     if base_modcache.returncode != 0:
         raise RuntimeError("cannot resolve existing Go module cache: " + base_modcache.stderr.decode("utf-8", "replace"))
     gomodcache = base_modcache.stdout.decode("utf-8").strip()
@@ -398,13 +399,13 @@ def _prepare_go_env(temp: Path) -> tuple[dict[str, str], str, str, str, str, str
         "GOENV": "off",
         "GOWORK": "off",
     })
-    actual = subprocess.run([str(go_tool), "version"], env=env, cwd=ROOT, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=30, check=False)
+    actual = run_checked([str(go_tool), "version"], env=env, cwd=ROOT, timeout=30, artifact_dir=artifacts_dir)
     if actual.returncode != 0:
         raise RuntimeError("pinned Go version command failed: " + actual.stderr.decode("utf-8", "replace"))
     version = actual.stdout.decode("utf-8").strip()
     if not version.startswith("go version go1.26.6 "):
         raise RuntimeError(f"expected executed go1.26.6 compiler, got {version}")
-    env_output = subprocess.run([str(go_tool), "env", "GOVERSION", "GOROOT", "GOOS", "GOARCH", "GOMODCACHE"], env=env, cwd=ROOT, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=30, check=False)
+    env_output = run_checked([str(go_tool), "env", "GOVERSION", "GOROOT", "GOOS", "GOARCH", "GOMODCACHE"], env=env, cwd=ROOT, timeout=30, artifact_dir=artifacts_dir)
     if env_output.returncode != 0:
         raise RuntimeError("pinned Go env command failed: " + env_output.stderr.decode("utf-8", "replace"))
     goversion, goroot, goos, goarch, gomodcache = env_output.stdout.decode("utf-8").splitlines()
@@ -470,23 +471,25 @@ def capture_go(lane: str, artifacts_dir: Path | None = None) -> tuple[dict, dict
         raise ValueError(f"unknown static update lane: {lane}")
     if os.environ.get("GO_ORACLE") != "1":
         raise RuntimeError("live Go capture requires explicit GO_ORACLE=1")
+    if artifacts_dir is None:
+        raise RuntimeError("live Go capture requires a raw execution evidence directory")
     with tempfile.TemporaryDirectory(prefix=f"static-update-{lane}-") as scratch_name:
         scratch = Path(scratch_name)
-        env, version, goroot, goos, goarch, gomodcache, go_tool = _prepare_go_env(scratch)
-        inputs_before = _capture_inputs(lane, go_tool, env)
+        env, version, goroot, goos, goarch, gomodcache, go_tool = _prepare_go_env(scratch, artifacts_dir)
+        inputs_before = _capture_inputs(lane, go_tool, env, artifacts_dir)
         records: list[dict] = []
         generated_files: list[dict] = []
         observation_bytes: bytes | None = None
         if lane == "extract":
             binary = scratch / ("extract-oracle.exe" if os.name == "nt" else "extract-oracle")
-            build = _run([str(go_tool), "build", "-o", str(binary), "./scripts/rust-port/update-extract-oracle"], env, ROOT, "build-go-extract-oracle")
+            build = _run([str(go_tool), "build", "-o", str(binary), "./scripts/rust-port/update-extract-oracle"], env, ROOT, "build-go-extract-oracle", artifacts_dir)
             records.append(build)
             if build["exit_code"] != 0:
                 raise RuntimeError("Go extraction oracle build failed")
             run_root = scratch / "extract-cwd"
             output_dir = run_root / "scripts/rust-port/update-extract-oracle/testdata"
             output_dir.mkdir(parents=True)
-            result = _run([str(binary)], env, run_root, "run-go-extract-oracle")
+            result = _run([str(binary)], env, run_root, "run-go-extract-oracle", artifacts_dir)
             records.append(result)
             output_dir = run_root / "scripts/rust-port/update-extract-oracle/testdata"
             for generated in sorted(output_dir.iterdir()):
@@ -496,13 +499,13 @@ def capture_go(lane: str, artifacts_dir: Path | None = None) -> tuple[dict, dict
         elif lane == "swap":
             generated = scratch / "swap-observation.json"
             swap_env = dict(env, COREKIT_SWAP_ORACLE_OUT=str(generated))
-            result = _run([str(go_tool), "test", "-count=1", "-run", "^TestAtomicSwapOracle$", "./updatecheck/updateapply"], swap_env, ROOT, "run-go-swap-test")
+            result = _run([str(go_tool), "test", "-count=1", "-run", "^TestAtomicSwapOracle$", "./updatecheck/updateapply"], swap_env, ROOT, "run-go-swap-test", artifacts_dir)
             records.append(result)
             if generated.is_file():
                 observation_bytes = generated.read_bytes()
         else:
             command = [str(go_tool), *LANES[lane]["command"][1:]]
-            result = _run(command, env, ROOT, f"run-go-{lane}-oracle")
+            result = _run(command, env, ROOT, f"run-go-{lane}-oracle", artifacts_dir)
             records.append(result)
             observation_bytes = result["stdout"]
         successful = all(item["exit_code"] == 0 for item in records) and observation_bytes is not None
@@ -532,7 +535,7 @@ def capture_go(lane: str, artifacts_dir: Path | None = None) -> tuple[dict, dict
             raise RuntimeError(f"Go {lane} oracle produced no observation bytes")
         try:
             payload = _build_payload(lane, observation_bytes, generated_files, goos, goarch)
-            if _capture_inputs(lane, go_tool, env) != inputs_before:
+            if _capture_inputs(lane, go_tool, env, artifacts_dir) != inputs_before:
                 raise ValueError("Go oracle source/toolchain inputs changed during execution")
         except Exception as error:
             if evidence_path is not None:

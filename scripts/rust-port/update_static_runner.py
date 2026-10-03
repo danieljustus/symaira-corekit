@@ -13,6 +13,7 @@ ROOT = Path(__file__).resolve().parents[2]
 MANIFEST = ROOT / "rust/symaira-core-update/Cargo.toml"
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import static_update_oracle as oracle  # noqa: E402
+from bounded_oracle_process import run_checked  # noqa: E402
 
 LANE_CONFIG = {
     "response": {"test": "response", "count": 1, "filter": None, "env": "RESPONSE_FIXTURE"},
@@ -38,15 +39,15 @@ def _rust(lane: str, fixture: Path, filter_name: str | None = None) -> subproces
     command.extend(["--", "--nocapture"])
     if filter_name:
         command.append("--exact")
-    return subprocess.run(
+    result = run_checked(
         command,
         cwd=ROOT,
         env=env,
-        text=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        check=False,
+        timeout=600,
+        merge_stderr=True,
+        artifact_dir=ROOT / "target/static-update-process",
     )
+    return subprocess.CompletedProcess(command, result.returncode, result.stdout.decode("utf-8", "replace"), "")
 
 
 def _require_positive(lane: str, result: subprocess.CompletedProcess) -> None:

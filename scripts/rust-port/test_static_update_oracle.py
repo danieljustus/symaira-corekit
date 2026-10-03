@@ -42,6 +42,7 @@ class StaticUpdateOracleTests(unittest.TestCase):
         helper.parent.mkdir(parents=True)
         shutil.copyfile(Path(oracle.__file__), helper)
         shutil.copyfile(Path(oracle.__file__).with_name("static_update_anchors.py"), helper.with_name("static_update_anchors.py"))
+        shutil.copyfile(Path(oracle.__file__).with_name("bounded_oracle_process.py"), helper.with_name("bounded_oracle_process.py"))
         source_index = json.loads(oracle.INDEX_PATH.read_text(encoding="utf-8"))
         key = "darwin/arm64/" + lane
         index = {"schema_version": 2, "captures": {key: source_index["captures"][key]}}
@@ -198,13 +199,13 @@ class StaticUpdateOracleTests(unittest.TestCase):
                 oracle.os.environ.pop("GO_ORACLE_BIN", None)
                 if explicit:
                     oracle.os.environ["GO_ORACLE_BIN"] = explicit
-                with mock.patch.object(oracle.subprocess, "run", return_value=result) as run:
+                with mock.patch.object(oracle, "run_checked", return_value=result) as run:
                     self.assertEqual(oracle._resolve_go_tool(), binary.resolve())
                 self.assertEqual(run.call_args.args[0], [explicit or "go", "env", "GOROOT"])
                 self.assertEqual(run.call_args.kwargs["env"]["GOTOOLCHAIN"], "go1.26.6")
                 self.assertEqual(run.call_args.kwargs["env"]["GOPROXY"], "off")
         binary.unlink()
-        with mock.patch.object(oracle.subprocess, "run", return_value=result):
+        with mock.patch.object(oracle, "run_checked", return_value=result):
             with self.assertRaisesRegex(RuntimeError, "no compiler executable"):
                 oracle._resolve_go_tool()
 
@@ -214,7 +215,7 @@ class StaticUpdateOracleTests(unittest.TestCase):
             subprocess.CompletedProcess([], 0, (str(scratch) + "\n").encode(), b""),
             subprocess.CompletedProcess([], 0, b"go version go1.25.0 darwin/arm64\n", b""),
         ]
-        with mock.patch.object(oracle, "_resolve_go_tool", return_value=scratch / "go"), mock.patch.object(oracle.subprocess, "run", side_effect=results):
+        with mock.patch.object(oracle, "_resolve_go_tool", return_value=scratch / "go"), mock.patch.object(oracle, "run_checked", side_effect=results):
             with self.assertRaisesRegex(RuntimeError, "expected executed go1.26.6"):
                 oracle._prepare_go_env(scratch / "isolated")
 
@@ -225,7 +226,7 @@ class StaticUpdateOracleTests(unittest.TestCase):
             subprocess.CompletedProcess([], 0, b"go version go1.26.6 darwin/arm64\n", b""),
             subprocess.CompletedProcess([], 0, ("go1.26.6\n" + str(scratch) + "\nlinux\namd64\n" + str(scratch) + "\n").encode(), b""),
         ]
-        with mock.patch.object(oracle, "_resolve_go_tool", return_value=scratch / "go"), mock.patch.object(oracle.subprocess, "run", side_effect=results):
+        with mock.patch.object(oracle, "_resolve_go_tool", return_value=scratch / "go"), mock.patch.object(oracle, "run_checked", side_effect=results):
             with self.assertRaisesRegex(RuntimeError, "does not match the native capture platform"):
                 oracle._prepare_go_env(scratch / "isolated")
 
