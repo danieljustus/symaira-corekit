@@ -1,0 +1,1148 @@
+{
+  "repository": "danieljustus/symaira-corekit",
+  "scope": "Current source and review/evidence continuation plus remote accounting for completed fixes; no global backup or cleanup",
+  "source_checkpoint": "5fc5299a56e96b6007fda7d8900363f3aa6ba282",
+  "external_units": [
+    {
+      "unit": "0ba3554-local-clippy.log",
+      "file_count": 1,
+      "bytes": 4962,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "0ba3554-local-fmt.log",
+      "file_count": 1,
+      "bytes": 0,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "0ba3554-local-nextest.log",
+      "file_count": 1,
+      "bytes": 8274,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "0ba3554-local-workspace-checks.json",
+      "file_count": 1,
+      "bytes": 914,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "api367-codex-audit.json",
+      "file_count": 1,
+      "bytes": 26220,
+      "decision": "Private agent instructions/events and superseded worker output excluded; no build or evidence acceptance dependency. Integrated source is preserved in remote commits."
+    },
+    {
+      "unit": "api367-codex-events.jsonl",
+      "file_count": 1,
+      "bytes": 465902,
+      "decision": "Private agent instructions/events and superseded worker output excluded; no build or evidence acceptance dependency. Integrated source is preserved in remote commits."
+    },
+    {
+      "unit": "api367-codex-launch.log",
+      "file_count": 1,
+      "bytes": 0,
+      "decision": "Private agent instructions/events and superseded worker output excluded; no build or evidence acceptance dependency. Integrated source is preserved in remote commits."
+    },
+    {
+      "unit": "api367-codex-prompt.txt",
+      "file_count": 1,
+      "bytes": 3099,
+      "decision": "Private agent instructions/events and superseded worker output excluded; no build or evidence acceptance dependency. Integrated source is preserved in remote commits."
+    },
+    {
+      "unit": "api367-codex-schema.json",
+      "file_count": 1,
+      "bytes": 970,
+      "decision": "Private agent instructions/events and superseded worker output excluded; no build or evidence acceptance dependency. Integrated source is preserved in remote commits."
+    },
+    {
+      "unit": "api367-consumer-sources.json",
+      "file_count": 1,
+      "bytes": 2203643,
+      "decision": "Superseded API-inventory/capture working inputs excluded; released source and tracked consumer/contract ledgers preserve required inputs. Not needed by current FS/SEC continuation."
+    },
+    {
+      "unit": "api367-coverage-draft.json",
+      "file_count": 1,
+      "bytes": 343288,
+      "decision": "Superseded API-inventory/capture working inputs excluded; released source and tracked consumer/contract ledgers preserve required inputs. Not needed by current FS/SEC continuation."
+    },
+    {
+      "unit": "api367-direct-selectors.json",
+      "file_count": 1,
+      "bytes": 469712,
+      "decision": "Superseded API-inventory/capture working inputs excluded; released source and tracked consumer/contract ledgers preserve required inputs. Not needed by current FS/SEC continuation."
+    },
+    {
+      "unit": "api367-parent-update-green.log",
+      "file_count": 1,
+      "bytes": 9465,
+      "decision": "Superseded API-inventory/capture working inputs excluded; released source and tracked consumer/contract ledgers preserve required inputs. Not needed by current FS/SEC continuation."
+    },
+    {
+      "unit": "api367-selector-inventory.go",
+      "file_count": 1,
+      "bytes": 2714,
+      "decision": "Superseded API-inventory/capture working inputs excluded; released source and tracked consumer/contract ledgers preserve required inputs. Not needed by current FS/SEC continuation."
+    },
+    {
+      "unit": "archive-stderr-bug.md",
+      "file_count": 1,
+      "bytes": 556,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "artifact-184defa-sqlite-linux",
+      "file_count": 2,
+      "bytes": 60409,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "artifact-184defa-sqlite-windows",
+      "file_count": 2,
+      "bytes": 61453,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "artifact-184defa-update-linux",
+      "file_count": 3,
+      "bytes": 30948,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "artifacts-04a0bc2",
+      "file_count": 21,
+      "bytes": 289820,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "cancellation367-parent-diagnosis.log",
+      "file_count": 1,
+      "bytes": 1998,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "cancellation367-parent-first.log",
+      "file_count": 1,
+      "bytes": 1894,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "cancellation367-parent-tls-fixed.log",
+      "file_count": 1,
+      "bytes": 158,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "capture367-native-local.py",
+      "file_count": 1,
+      "bytes": 4246,
+      "decision": "Superseded API-inventory/capture working inputs excluded; released source and tracked consumer/contract ledgers preserve required inputs. Not needed by current FS/SEC continuation."
+    },
+    {
+      "unit": "checker367-parent-first.log",
+      "file_count": 1,
+      "bytes": 2783,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "checker367-parent-green.log",
+      "file_count": 1,
+      "bytes": 979,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "checker367-update-all.log",
+      "file_count": 1,
+      "bytes": 13192,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "ci37006030921-lint.log",
+      "file_count": 1,
+      "bytes": 27013,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "ci376-current.json",
+      "file_count": 1,
+      "bytes": 234,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "ci376-wait-02a38c7.json",
+      "file_count": 1,
+      "bytes": 3557,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "ci376-wait-08df3b1.json",
+      "file_count": 1,
+      "bytes": 3557,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "ci376-wait-d7be6e2.json",
+      "file_count": 1,
+      "bytes": 0,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "ci379-wait-98afb89.json",
+      "file_count": 1,
+      "bytes": 3312,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "ci381-wait-408b88f.json",
+      "file_count": 1,
+      "bytes": 3318,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "ci381-wait-4822edf.json",
+      "file_count": 1,
+      "bytes": 3550,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "completed-wave-final-readback.json",
+      "file_count": 1,
+      "bytes": 8105,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "corekit-swap-69001-0-1790943980503859000",
+      "file_count": 1,
+      "bytes": 10,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "corekit-swap-69008-4-1790943980618771000",
+      "file_count": 0,
+      "bytes": 0,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "corekit-swap-69010-7-1790943980740230000",
+      "file_count": 2,
+      "bytes": 20,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "cosign-pinned-local",
+      "file_count": 1,
+      "bytes": 134201970,
+      "decision": "Downloaded tool binary excluded; reproduce official pinned tool using existing native-update workflow, no local tool-path dependency."
+    },
+    {
+      "unit": "cosign365",
+      "file_count": 1,
+      "bytes": 134201970,
+      "decision": "Downloaded tool binary excluded; reproduce official pinned tool using existing native-update workflow, no local tool-path dependency."
+    },
+    {
+      "unit": "current-artifacts.json",
+      "file_count": 1,
+      "bytes": 8531,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "current-foundation-job.json",
+      "file_count": 1,
+      "bytes": 4159,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "failed-download-temp-cleanup-issue.md",
+      "file_count": 1,
+      "bytes": 922,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "final-ci-04a0bc2.json",
+      "file_count": 1,
+      "bytes": 136732,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "final-merged-readback-while367-active.json",
+      "file_count": 1,
+      "bytes": 5734,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "final-review-04a0bc2.json",
+      "file_count": 1,
+      "bytes": 4033,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "fixture-preservation-bug.md",
+      "file_count": 1,
+      "bytes": 927,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "fixture378-green.log",
+      "file_count": 1,
+      "bytes": 608,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "fixture378-red.log",
+      "file_count": 1,
+      "bytes": 1267,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "fixture381-integrated-green.log",
+      "file_count": 1,
+      "bytes": 608,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "fresh-terminal-and-pr-readback-0ba3554.json",
+      "file_count": 1,
+      "bytes": 4759,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "fs-control-public-go-observations.json",
+      "file_count": 1,
+      "bytes": 1003,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "fs-control-public-go-probe.go",
+      "file_count": 1,
+      "bytes": 661,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "fs-secret-space-repro.json",
+      "file_count": 1,
+      "bytes": 1393,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "issue-fs-secret-space-body.md",
+      "file_count": 1,
+      "bytes": 919,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "issue-fs-secret-space-readback.json",
+      "file_count": 1,
+      "bytes": 1152,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "issue367-final-body.json",
+      "file_count": 1,
+      "bytes": 2404,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "issue368-audit",
+      "file_count": 16,
+      "bytes": 378866,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "issue368-final-process-review",
+      "file_count": 3948,
+      "bytes": 421179523,
+      "decision": "Historical/accepted MCP/static-update work preserved in merged PRs #389/#393, tracked fixtures and separately verified source branches. Intermediate diagnostics, dependency SDK copies, immutable local source copies and build outputs excluded; reproduce exact Git snapshots and CI observations instead."
+    },
+    {
+      "unit": "issue368-fs-freeze-design",
+      "file_count": 5437,
+      "bytes": 270154575,
+      "decision": "Current native raw evidence/verifier/counterexample published here; source snapshots reproduced by exact Git commits; SDK archives reproduced by pinned public downloads. Older unanchored captures and disposable diagnostics excluded from current acceptance, retained locally unchanged."
+    },
+    {
+      "unit": "issue368-native-process-captures",
+      "file_count": 9,
+      "bytes": 120301,
+      "decision": "Historical/accepted MCP/static-update work preserved in merged PRs #389/#393, tracked fixtures and separately verified source branches. Intermediate diagnostics, dependency SDK copies, immutable local source copies and build outputs excluded; reproduce exact Git snapshots and CI observations instead."
+    },
+    {
+      "unit": "issue368-process-repair",
+      "file_count": 30,
+      "bytes": 425076,
+      "decision": "Historical/accepted MCP/static-update work preserved in merged PRs #389/#393, tracked fixtures and separately verified source branches. Intermediate diagnostics, dependency SDK copies, immutable local source copies and build outputs excluded; reproduce exact Git snapshots and CI observations instead."
+    },
+    {
+      "unit": "issue368-process-review",
+      "file_count": 2,
+      "bytes": 15583,
+      "decision": "Historical/accepted MCP/static-update work preserved in merged PRs #389/#393, tracked fixtures and separately verified source branches. Intermediate diagnostics, dependency SDK copies, immutable local source copies and build outputs excluded; reproduce exact Git snapshots and CI observations instead."
+    },
+    {
+      "unit": "issue368-static-parent-review",
+      "file_count": 602,
+      "bytes": 30974391,
+      "decision": "Historical/accepted MCP/static-update work preserved in merged PRs #389/#393, tracked fixtures and separately verified source branches. Intermediate diagnostics, dependency SDK copies, immutable local source copies and build outputs excluded; reproduce exact Git snapshots and CI observations instead."
+    },
+    {
+      "unit": "issue368-static-process-design",
+      "file_count": 25107,
+      "bytes": 722129222,
+      "decision": "Historical/accepted MCP/static-update work preserved in merged PRs #389/#393, tracked fixtures and separately verified source branches. Intermediate diagnostics, dependency SDK copies, immutable local source copies and build outputs excluded; reproduce exact Git snapshots and CI observations instead."
+    },
+    {
+      "unit": "issue368-static-review",
+      "file_count": 23,
+      "bytes": 332715,
+      "decision": "Historical/accepted MCP/static-update work preserved in merged PRs #389/#393, tracked fixtures and separately verified source branches. Intermediate diagnostics, dependency SDK copies, immutable local source copies and build outputs excluded; reproduce exact Git snapshots and CI observations instead."
+    },
+    {
+      "unit": "issue368-static-update",
+      "file_count": 156,
+      "bytes": 617539,
+      "decision": "Historical/accepted MCP/static-update work preserved in merged PRs #389/#393, tracked fixtures and separately verified source branches. Intermediate diagnostics, dependency SDK copies, immutable local source copies and build outputs excluded; reproduce exact Git snapshots and CI observations instead."
+    },
+    {
+      "unit": "issue387-local-clippy.log",
+      "file_count": 1,
+      "bytes": 263,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "issue387-local-fmt.log",
+      "file_count": 1,
+      "bytes": 0,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "issue387-local-nextest.log",
+      "file_count": 1,
+      "bytes": 23423,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "issue387-local-workspace-checks.json",
+      "file_count": 1,
+      "bytes": 1187,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "issue387-local-xdg-focus.log",
+      "file_count": 1,
+      "bytes": 1517,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "logs-04a0bc2",
+      "file_count": 13,
+      "bytes": 1044349,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "main-protection-final.json",
+      "file_count": 1,
+      "bytes": 1963,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "merge-safety-384.json",
+      "file_count": 1,
+      "bytes": 3164,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "native-execution-04a0bc2.json",
+      "file_count": 1,
+      "bytes": 15005,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "native-local367",
+      "file_count": 7,
+      "bytes": 66232,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "native-local367-failed-external-ancestor",
+      "file_count": 5,
+      "bytes": 17584,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "native-update-local-location.json",
+      "file_count": 1,
+      "bytes": 166,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "native-update-local-pinned-location.json",
+      "file_count": 1,
+      "bytes": 125,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "native-update-local367-first-failure",
+      "file_count": 3,
+      "bytes": 27311,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "native-update-local367-pinned.log",
+      "file_count": 1,
+      "bytes": 20423,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "native-update-local367.log",
+      "file_count": 1,
+      "bytes": 11478,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "native365-base-merge-check.log",
+      "file_count": 1,
+      "bytes": 428,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "native365-ci-08df3b1",
+      "file_count": 6,
+      "bytes": 49585,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "native365-darwin-preflight",
+      "file_count": 1,
+      "bytes": 474,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "native365-darwin-preflight-v2",
+      "file_count": 2,
+      "bytes": 16178,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "native365-darwin-preflight-v2.log",
+      "file_count": 1,
+      "bytes": 20533,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "native365-darwin-preflight-v3",
+      "file_count": 2,
+      "bytes": 16640,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "native365-darwin-preflight-v3.log",
+      "file_count": 1,
+      "bytes": 17284,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "native365-darwin-preflight.log",
+      "file_count": 1,
+      "bytes": 2922,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "native365-final-02a38c7",
+      "file_count": 6,
+      "bytes": 49585,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "native365-final-verification.json",
+      "file_count": 1,
+      "bytes": 3345,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "new-fixture-preservation-issue.json",
+      "file_count": 1,
+      "bytes": 1060,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "new-oracle-path-issue.json",
+      "file_count": 1,
+      "bytes": 1068,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "oracle-path-bug.md",
+      "file_count": 1,
+      "bytes": 850,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "oracle377-green.log",
+      "file_count": 1,
+      "bytes": 8900,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "oracle377-mcp-live.log",
+      "file_count": 1,
+      "bytes": 1208,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "oracle377-mcpcfg-live.log",
+      "file_count": 1,
+      "bytes": 1057,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "oracle377-red.log",
+      "file_count": 1,
+      "bytes": 611,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "pr365-body.md",
+      "file_count": 1,
+      "bytes": 1409,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "pr365-final-body.md",
+      "file_count": 1,
+      "bytes": 1795,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "pr365-final-readback.json",
+      "file_count": 1,
+      "bytes": 5346,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "pr365-readback.json",
+      "file_count": 1,
+      "bytes": 2773,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "pr367-body.md",
+      "file_count": 1,
+      "bytes": 3216,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "pr376-exact-head-ci-final.json",
+      "file_count": 1,
+      "bytes": 16429,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "pr376-final-artifacts-index.json",
+      "file_count": 1,
+      "bytes": 5721,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "pr376-final-readback.json",
+      "file_count": 1,
+      "bytes": 21751,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "pr376-final-threads.json",
+      "file_count": 1,
+      "bytes": 2705,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "pr376-merged.json",
+      "file_count": 1,
+      "bytes": 1025,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "pr377-body.md",
+      "file_count": 1,
+      "bytes": 916,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "pr377-readback.json",
+      "file_count": 1,
+      "bytes": 2226,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "pr378-body.md",
+      "file_count": 1,
+      "bytes": 1271,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "pr378-readback.json",
+      "file_count": 1,
+      "bytes": 3038,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "pr379-exact-ci.json",
+      "file_count": 1,
+      "bytes": 15633,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "pr379-merged.json",
+      "file_count": 1,
+      "bytes": 678,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "pr379-pr383-merge-closure-readback.json",
+      "file_count": 1,
+      "bytes": 38123,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "pr379-review-gate.json",
+      "file_count": 1,
+      "bytes": 1532,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "pr381-final-threads-4822edf.json",
+      "file_count": 1,
+      "bytes": 1297,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "pr381-last-exact-ci-4822edf.json",
+      "file_count": 1,
+      "bytes": 16429,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "pr381-merged.json",
+      "file_count": 1,
+      "bytes": 623,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "pr381-readback-4822edf.json",
+      "file_count": 1,
+      "bytes": 16374,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "pr382-body.md",
+      "file_count": 1,
+      "bytes": 744,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "pr383-mcp-macos-failed.log",
+      "file_count": 1,
+      "bytes": 0,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "pr383-mcp-macos-job.log",
+      "file_count": 1,
+      "bytes": 19742,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "pr384-04a0bc2-ci.status.json",
+      "file_count": 1,
+      "bytes": 371,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "pr384-04a0bc2-ci.stderr.log",
+      "file_count": 1,
+      "bytes": 0,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "pr384-04a0bc2-ci.stdout.json",
+      "file_count": 1,
+      "bytes": 3556,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "pr384-0ba3554-ci.status.json",
+      "file_count": 1,
+      "bytes": 369,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "pr384-0ba3554-ci.stderr.log",
+      "file_count": 1,
+      "bytes": 0,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "pr384-0ba3554-ci.stdout.json",
+      "file_count": 1,
+      "bytes": 3623,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "pr384-0ba3554-initial-jobs.json",
+      "file_count": 1,
+      "bytes": 4290,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "pr384-184defa-capture-jobs.json",
+      "file_count": 1,
+      "bytes": 493,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "pr384-184defa-foundation-linux-direct.log",
+      "file_count": 1,
+      "bytes": 99,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "pr384-184defa-foundation-linux-plain.log",
+      "file_count": 1,
+      "bytes": 107438,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "pr384-184defa-foundation-linux.log",
+      "file_count": 1,
+      "bytes": 81,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "pr384-184defa-lint-direct.log",
+      "file_count": 1,
+      "bytes": 26931,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "pr384-184defa-lint.log",
+      "file_count": 1,
+      "bytes": 81,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "pr384-184defa-sqlite-linux-direct.log",
+      "file_count": 1,
+      "bytes": 99,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "pr384-184defa-sqlite-linux-plain.log",
+      "file_count": 1,
+      "bytes": 98730,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "pr384-184defa-sqlite-linux.log",
+      "file_count": 1,
+      "bytes": 81,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "pr384-184defa-update-linux-direct.log",
+      "file_count": 1,
+      "bytes": 99,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "pr384-184defa-update-linux-plain.log",
+      "file_count": 1,
+      "bytes": 119010,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "pr384-184defa-update-linux.log",
+      "file_count": 1,
+      "bytes": 81,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "pr384-648f934-ci-snapshot.json",
+      "file_count": 1,
+      "bytes": 7490,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "pr384-648f934-foundation-windows.log",
+      "file_count": 1,
+      "bytes": 112448,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "pr384-648f934-hardening.log",
+      "file_count": 1,
+      "bytes": 130978,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "pr384-648f934-lint.log",
+      "file_count": 1,
+      "bytes": 28168,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "pr384-648f934-sqlite-linux.log",
+      "file_count": 1,
+      "bytes": 56151,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "pr384-648f934-sqlite-windows.log",
+      "file_count": 1,
+      "bytes": 60108,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "pr384-648f934-update-windows.log",
+      "file_count": 1,
+      "bytes": 122278,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "pr384-final-context.json",
+      "file_count": 1,
+      "bytes": 7829,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "pr389-635562a-foundation-linux.log",
+      "file_count": 1,
+      "bytes": 54727,
+      "decision": "Historical/accepted MCP/static-update work preserved in merged PRs #389/#393, tracked fixtures and separately verified source branches. Intermediate diagnostics, dependency SDK copies, immutable local source copies and build outputs excluded; reproduce exact Git snapshots and CI observations instead."
+    },
+    {
+      "unit": "pr389-635562a-foundation-mac.log",
+      "file_count": 1,
+      "bytes": 55031,
+      "decision": "Historical/accepted MCP/static-update work preserved in merged PRs #389/#393, tracked fixtures and separately verified source branches. Intermediate diagnostics, dependency SDK copies, immutable local source copies and build outputs excluded; reproduce exact Git snapshots and CI observations instead."
+    },
+    {
+      "unit": "pr389-635562a-foundation-win.log",
+      "file_count": 1,
+      "bytes": 56215,
+      "decision": "Historical/accepted MCP/static-update work preserved in merged PRs #389/#393, tracked fixtures and separately verified source branches. Intermediate diagnostics, dependency SDK copies, immutable local source copies and build outputs excluded; reproduce exact Git snapshots and CI observations instead."
+    },
+    {
+      "unit": "pr389-635562a-hardening.log",
+      "file_count": 1,
+      "bytes": 345168,
+      "decision": "Historical/accepted MCP/static-update work preserved in merged PRs #389/#393, tracked fixtures and separately verified source branches. Intermediate diagnostics, dependency SDK copies, immutable local source copies and build outputs excluded; reproduce exact Git snapshots and CI observations instead."
+    },
+    {
+      "unit": "pr389-635562a-lint.log",
+      "file_count": 1,
+      "bytes": 27820,
+      "decision": "Historical/accepted MCP/static-update work preserved in merged PRs #389/#393, tracked fixtures and separately verified source branches. Intermediate diagnostics, dependency SDK copies, immutable local source copies and build outputs excluded; reproduce exact Git snapshots and CI observations instead."
+    },
+    {
+      "unit": "pr389-635562a-port-linux.log",
+      "file_count": 1,
+      "bytes": 25377,
+      "decision": "Historical/accepted MCP/static-update work preserved in merged PRs #389/#393, tracked fixtures and separately verified source branches. Intermediate diagnostics, dependency SDK copies, immutable local source copies and build outputs excluded; reproduce exact Git snapshots and CI observations instead."
+    },
+    {
+      "unit": "pr389-bdc5542-native",
+      "file_count": 8,
+      "bytes": 240309,
+      "decision": "Historical/accepted MCP/static-update work preserved in merged PRs #389/#393, tracked fixtures and separately verified source branches. Intermediate diagnostics, dependency SDK copies, immutable local source copies and build outputs excluded; reproduce exact Git snapshots and CI observations instead."
+    },
+    {
+      "unit": "pr389-provenance-refreeze.json",
+      "file_count": 1,
+      "bytes": 536,
+      "decision": "Historical/accepted MCP/static-update work preserved in merged PRs #389/#393, tracked fixtures and separately verified source branches. Intermediate diagnostics, dependency SDK copies, immutable local source copies and build outputs excluded; reproduce exact Git snapshots and CI observations instead."
+    },
+    {
+      "unit": "remaining-review-384.diff",
+      "file_count": 1,
+      "bytes": 33346,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "report.json",
+      "file_count": 1,
+      "bytes": 133829,
+      "decision": "Private mixed operational report excluded from publication; public issue/PR readbacks and exact continuation requirements reconstructed in published-checkpoints.json and handoff. Raw report remains local, not a continuation dependency."
+    },
+    {
+      "unit": "review376-coordinator-08df3b1.json",
+      "file_count": 1,
+      "bytes": 1282,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "review376-final.json",
+      "file_count": 1,
+      "bytes": 1267,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "review379-coordinator.json",
+      "file_count": 1,
+      "bytes": 837,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "review381-final-4822edf.json",
+      "file_count": 1,
+      "bytes": 1680,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "verified-native-04a0bc2.json",
+      "file_count": 1,
+      "bytes": 3103,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "verifier-completed-pid-issue.md",
+      "file_count": 1,
+      "bytes": 957,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "watch-pr384-184defa-capture.sh",
+      "file_count": 1,
+      "bytes": 1372,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "watch-pr384-648f934.sh",
+      "file_count": 1,
+      "bytes": 2071,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    },
+    {
+      "unit": "worker367-cancellation-events.jsonl",
+      "file_count": 1,
+      "bytes": 399737,
+      "decision": "Private agent instructions/events and superseded worker output excluded; no build or evidence acceptance dependency. Integrated source is preserved in remote commits."
+    },
+    {
+      "unit": "worker367-cancellation-launch.log",
+      "file_count": 1,
+      "bytes": 0,
+      "decision": "Private agent instructions/events and superseded worker output excluded; no build or evidence acceptance dependency. Integrated source is preserved in remote commits."
+    },
+    {
+      "unit": "worker367-cancellation-prompt.txt",
+      "file_count": 1,
+      "bytes": 4542,
+      "decision": "Private agent instructions/events and superseded worker output excluded; no build or evidence acceptance dependency. Integrated source is preserved in remote commits."
+    },
+    {
+      "unit": "worker367-cancellation-result.json",
+      "file_count": 1,
+      "bytes": 2678,
+      "decision": "Private agent instructions/events and superseded worker output excluded; no build or evidence acceptance dependency. Integrated source is preserved in remote commits."
+    },
+    {
+      "unit": "worker367-checker-events.jsonl",
+      "file_count": 1,
+      "bytes": 1549493,
+      "decision": "Private agent instructions/events and superseded worker output excluded; no build or evidence acceptance dependency. Integrated source is preserved in remote commits."
+    },
+    {
+      "unit": "worker367-checker-launch.log",
+      "file_count": 1,
+      "bytes": 0,
+      "decision": "Private agent instructions/events and superseded worker output excluded; no build or evidence acceptance dependency. Integrated source is preserved in remote commits."
+    },
+    {
+      "unit": "worker367-checker-prompt.txt",
+      "file_count": 1,
+      "bytes": 5883,
+      "decision": "Private agent instructions/events and superseded worker output excluded; no build or evidence acceptance dependency. Integrated source is preserved in remote commits."
+    },
+    {
+      "unit": "worker367-checker-result.json",
+      "file_count": 1,
+      "bytes": 4898,
+      "decision": "Private agent instructions/events and superseded worker output excluded; no build or evidence acceptance dependency. Integrated source is preserved in remote commits."
+    },
+    {
+      "unit": "worker367-checker-schema.json",
+      "file_count": 1,
+      "bytes": 686,
+      "decision": "Private agent instructions/events and superseded worker output excluded; no build or evidence acceptance dependency. Integrated source is preserved in remote commits."
+    },
+    {
+      "unit": "xdg-foundation-test-issue.md",
+      "file_count": 1,
+      "bytes": 949,
+      "decision": "Completed earlier fixes and their cloud PR/CI/issue evidence are preserved in published-checkpoints.json and merged repository. Superseded local diagnostics, temporary helper files and derived logs are excluded from active FS/SEC input scope; originals retained."
+    }
+  ],
+  "session_worktrees": [
+    {
+      "name": "issue368-freeze-20261002-091556",
+      "head": "e80a90026dba858c403577c90fb023387278e1e2",
+      "uncommitted_owned_files": [],
+      "ignored_groups": {
+        "scripts": 7,
+        "target": 5833
+      },
+      "decision": "Preserve source branch remotely; exclude/rebuild target outputs and Python bytecode; keep local original worktree unchanged."
+    },
+    {
+      "name": "issue368-process-review-20261002",
+      "head": "bdc55423a7cb401d31bf2005cb00af2ab34d2644",
+      "uncommitted_owned_files": [],
+      "ignored_groups": {
+        "scripts": 5,
+        "target": 3341
+      },
+      "decision": "Preserve source branch remotely; exclude/rebuild target outputs and Python bytecode; keep local original worktree unchanged."
+    },
+    {
+      "name": "issue368-static-update-20261002",
+      "head": "b028717ef247c1817bd9285634db7a29157e9661",
+      "uncommitted_owned_files": [],
+      "ignored_groups": {
+        "scripts": 2,
+        "target": 14755
+      },
+      "decision": "Preserve source branch remotely; exclude/rebuild target outputs and Python bytecode; keep local original worktree unchanged."
+    },
+    {
+      "name": "issue368-fs-freeze-20261003",
+      "head": "5fc5299a56e96b6007fda7d8900363f3aa6ba282",
+      "uncommitted_owned_files": [
+        "?? docs/handoffs/2026-10-03-fs-frozen-cloud.md",
+        "?? docs/handoffs/evidence/2026-10-03-fs/bundle-inventory.json",
+        "?? docs/handoffs/evidence/2026-10-03-fs/darwin-arm64.tar.gz",
+        "?? docs/handoffs/evidence/2026-10-03-fs/embedded-input-preflight-counterexample.json",
+        "?? docs/handoffs/evidence/2026-10-03-fs/fresh-5fc-native-locations.json",
+        "?? docs/handoffs/evidence/2026-10-03-fs/independent-b069-registration-rejection.json",
+        "?? docs/handoffs/evidence/2026-10-03-fs/linux-amd64.tar.gz",
+        "?? docs/handoffs/evidence/2026-10-03-fs/parent-verification.json",
+        "?? docs/handoffs/evidence/2026-10-03-fs/published-checkpoints.json",
+        "?? docs/handoffs/evidence/2026-10-03-fs/source-5fc5299-manifest.json",
+        "?? docs/handoffs/evidence/2026-10-03-fs/verify-fresh-fs-captures.py",
+        "?? docs/handoffs/evidence/2026-10-03-fs/windows-amd64.tar.gz"
+      ],
+      "ignored_groups": {
+        "target": 5252
+      },
+      "decision": "Preserve source branch remotely; exclude/rebuild target outputs and Python bytecode; keep local original worktree unchanged."
+    }
+  ],
+  "stash_count": 0,
+  "main": "Clean divergent pre-existing local main d559ca34f0d533143896ba37f943b62bda32c24b retained, not integrated or pushed by this handoff",
+  "unrelated_branches_and_worktrees": "September handoffs, older migration/recovery branches and unrelated active work remain excluded and untouched",
+  "worker_prototypes": "b2cc2d09d861cc3b2577bbc60711ce7ac8a41264 prototype superseded by reviewed/integrated process helper; empty worker branch at original main has no new deliverable",
+  "pending_review": "Independent 5fc source/capture reviewer completed or pending delivery; no anchor approval inferred. Re-run public verifier as needed.",
+  "private_skill_lessons": "Local note retained; canonical skill ownership not established, no mirror or other profile modified",
+  "cleanup": "No local original deleted; no global pruning helper; read-only fetch used"
+}
