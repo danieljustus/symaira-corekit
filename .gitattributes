@@ -27,4 +27,6 @@
 /.gitattributes text eol=lf
 # Retain exact native CI artifact bytes, including producer CRLF.
 /docs/rust-port/evidence/update-native-20261002/** -text whitespace=cr-at-eol
+# Historical fixture digests are also exact-byte anchors, not normalized JSON.
+/testdata/rust-port/fixtures/update/*.json -text whitespace=cr-at-eol
 /testdata/rust-port/fixtures/update/static-v1/** -text whitespace=cr-at-eol
