@@ -277,6 +277,7 @@
     {
       "id": "MCP-011",
       "mode": "line",
+      "exchange": "request-response",
       "requests": [
         {
           "jsonrpc": "2.0",
