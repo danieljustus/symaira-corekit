@@ -78,7 +78,10 @@ def tls_fixture(mode, private_tmp):
              "-addext", "basicConstraints=critical,CA:TRUE" if untrusted else "basicConstraints=critical,CA:FALSE",
              "-addext", "keyUsage=critical,digitalSignature,keyCertSign" if untrusted else "keyUsage=critical,digitalSignature",
              "-addext", "extendedKeyUsage=serverAuth"],
-            capture_output=True, timeout=15, check=False,
+            # Bound identity setup separately from the unchanged HTTP and
+            # cancellation deadlines; native Windows RSA generation has
+            # exceeded 15 seconds on a loaded hosted runner.
+            capture_output=True, timeout=45, check=False,
         )
         if creation.returncode:
             raise RuntimeError("ephemeral TLS identity creation failed: " + creation.stderr.decode(errors="replace"))

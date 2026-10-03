@@ -227,7 +227,9 @@ def main(argv=None):
     args.output.mkdir(parents=True, exist_ok=True)
     snapshot = rust_snapshot()
     with tempfile.TemporaryDirectory(prefix=f"rust-update-{args.lane}-") as name:
-        directory = Path(name)
+        # Windows' default temp parent may use a DOS short name. Export the
+        # same canonical root that the loopback readiness guard verifies.
+        directory = Path(name).resolve(strict=True)
         env = dict(os.environ, CARGO_NET_OFFLINE="true", CARGO_TARGET_DIR=str(ROOT / "target"), TMPDIR=str(directory), TMP=str(directory), TEMP=str(directory))
         for variable, suffix in (("HOME", "home"), ("USERPROFILE", "home"), ("APPDATA", "config"), ("LOCALAPPDATA", "data"), ("XDG_CACHE_HOME", "cache"), ("XDG_CONFIG_HOME", "config"), ("XDG_DATA_HOME", "data"), ("XDG_STATE_HOME", "state")):
             path = directory / suffix

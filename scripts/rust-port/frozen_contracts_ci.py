@@ -72,7 +72,7 @@ def execute_phases(head, artifacts, denied, marker, absent_path):
     phases = []
     for phase in ("absent", "denied"):
         with tempfile.TemporaryDirectory(prefix=f"rust-contracts-{phase}-") as name:
-            private = Path(name)
+            private = Path(name).resolve(strict=True)
             env = dict(os.environ, PATH=(str(denied) + os.pathsep if phase == "denied" else "") + absent_path,
                        CARGO_NET_OFFLINE="true", CARGO_TARGET_DIR=str(ROOT / "target"), RUSTUP_AUTO_INSTALL="0",
                        GOTOOLCHAIN="local", GOPROXY="off", GOSUMDB="off", GOENV="off", GOWORK="off")

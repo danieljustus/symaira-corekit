@@ -74,6 +74,15 @@ Native controls exercise the prefixed valid path and a prefixed escape; UNC
 paths do not gain access. No cancellation, rollback or process-tree assertion
 is removed. Complete Windows acceptance remains pending the corrected run.
 
+The generated sandbox roots are canonicalized before HOME/XDG/TMP are exported:
+native Windows logs include the `RUNNER~1` DOS spelling, while readiness guards
+resolve their private root. Resolving only the guard can reject an equivalent
+generated client path. Identity creation has a separate bounded 45-second setup
+budget after native OpenSSL RSA generation exceeded 15 seconds in run
+`37147556899`; HTTP and cancellation deadlines are unchanged. An actual RSA TLS
+preflight rejects default trust and accepts only the explicitly trusted fixture.
+Failure artifacts now retain raw Cargo output as well as the outer Make log.
+
 Linux run `37144921600` at `0c25794a9a11f4b2d4b784dc91b3086dbb86d685`
 passed both complete Go-absent and Go-denied phases. The filtered PATH views
 now live outside the evidence directory: uploading those system-tool symlinks
