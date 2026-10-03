@@ -12,6 +12,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import os
 from pathlib import Path
 import platform
+import re
 import shutil
 import socket
 import ssl
@@ -22,6 +23,11 @@ from urllib.parse import urlsplit
 
 
 def write_ready(name, private_tmp):
+    # Rust canonicalizes local Windows paths to \\?\ drive spelling. Python's
+    # lexical relative-path check treats that prefix as a different drive.
+    # Normalize only that equivalent local-drive form; UNC paths stay rejected.
+    if os.name == "nt" and re.match(r"^\\\\\?\\[A-Za-z]:[\\/]", name):
+        name = name[4:]
     requested = Path(name)
     root = private_tmp.resolve(strict=True)
     if not requested.is_absolute() or not requested.is_relative_to(root):

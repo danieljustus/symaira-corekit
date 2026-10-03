@@ -66,6 +66,14 @@ so standalone execution cannot write verifier state into the operator's home.
 The local run with the pinned real Cosign 3.0.5 passed valid, tampered,
 wrong-identity and disposable installation checks.
 
+The corrected Windows run `37145832091` passed Request, Cache/Persistence,
+Cosign and Apply before exposing canonical readiness paths with the local-drive
+`\\?\` prefix. The fixture now removes only that equivalent Windows drive
+prefix before its existing private-root, no-symlink and exclusive-create checks.
+Native controls exercise the prefixed valid path and a prefixed escape; UNC
+paths do not gain access. No cancellation, rollback or process-tree assertion
+is removed. Complete Windows acceptance remains pending the corrected run.
+
 Linux run `37144921600` at `0c25794a9a11f4b2d4b784dc91b3086dbb86d685`
 passed both complete Go-absent and Go-denied phases. The filtered PATH views
 now live outside the evidence directory: uploading those system-tool symlinks

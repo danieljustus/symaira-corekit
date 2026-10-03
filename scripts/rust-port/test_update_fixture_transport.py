@@ -48,7 +48,13 @@ class NativeTransportTests(unittest.TestCase):
                 link.symlink_to(outside, target_is_directory=True)
                 with self.assertRaises(ValueError):
                     write_ready(str(link / "escape"), directory)
-                self.assertFalse((Path(outside) / "escape").exists())
+            self.assertFalse((Path(outside) / "escape").exists())
+            if os.name == "nt":
+                prefixed = directory / "ready-canonical"
+                write_ready("\\\\?\\" + str(prefixed), directory)
+                self.assertEqual(prefixed.read_bytes(), b"ready")
+                with self.assertRaises(ValueError):
+                    write_ready("\\\\?\\" + str(Path(outside) / "escape"), directory)
 
 
 if __name__ == "__main__":
