@@ -45,3 +45,17 @@ source only after examining its actual error. An observed Linux `ETXTBSY` when
 starting a freshly written test fixture is such a candidate; reproducible
 failure requires a fix. A rerun does not replace a passing test or alter its
 assertions, inputs or process-cleanup requirements.
+
+## Linux executable fixture publication
+
+The unchanged `verifier_process_success_and_failure_are_not_confused` test
+failed with `ETXTBSY` in two different native Linux jobs, including run
+`37139913445`, job `111252961736`. This repeated failure needs a fixture repair.
+The private synchronous verifier now accepts a preconstructed command; production
+still constructs the same installed Cosign executable with the same arguments.
+The Unix test interprets its private, non-executable script with `/bin/sh`, so it
+reads the newly written file instead of executing that inode. Its exact argument,
+input-byte and failure checks remain active, with an additional actual wrong-byte
+rejection. No production retry, security assertion removal or passing result is
+substituted for a failed execution. The signed-release and native process-tree
+gates continue to execute their real commands.
