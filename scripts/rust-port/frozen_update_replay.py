@@ -94,7 +94,7 @@ def cargo(arguments, env, artifacts, minimum, *, negative_marker=None):
     result = run_checked(["cargo", "test", "--offline", "--locked", "-p", "symaira-core-update", *arguments], cwd=ROOT, env=env, timeout=180, artifact_dir=artifacts, merge_stderr=True)
     output = result.stdout.decode("utf-8", errors="replace")
     if negative_marker:
-        if result.returncode == 0 or negative_marker not in output:
+        if result.returncode == 0 or negative_marker not in output or "test result: FAILED." not in output or "panicked at" not in output:
             raise ValueError(f"mutation was not rejected at {negative_marker}:\n{output[-4096:]}")
         return
     results = re.findall(r"test result: ok\. (\d+) passed; (\d+) failed; (\d+) ignored;", output)
@@ -124,9 +124,10 @@ def replay_lane(lane, observations, directory, env, artifacts):
             command = ["--test", "request"]
             cargo(command, env, artifacts, 2)
             mutated = copy.deepcopy(observations)
-            next(row for row in mutated["cases"] if row["id"] == "request")["headers"]["User-Agent"] += "-mutated"
+            headers = next(row for row in mutated["cases"] if row["id"] == "request")["headers"]
+            headers["User-Agent"] += "-mutated"
             fixture.write_text(json.dumps(mutated), encoding="utf-8")
-            cargo(command, env, artifacts, 0, negative_marker="update_request_and_errors_match_go_oracle")
+            cargo(command, env, artifacts, 0, negative_marker=headers["User-Agent"])
     elif lane == "cache":
         # The Rust cache test embeds the unchanged original cache fixture.
         original = json.loads((ROOT / "testdata/rust-port/fixtures/update/cache.json").read_text(encoding="utf-8"))
@@ -153,7 +154,7 @@ def replay_lane(lane, observations, directory, env, artifacts):
         mutated = copy.deepcopy(observations)
         mutated["cases"][0]["result"]["body"] += "-mutated"
         fixture.write_text(json.dumps(mutated), encoding="utf-8")
-        cargo(command, env, artifacts, 0, negative_marker="cosign_contract_observations_match_go_api")
+        cargo(command, env, artifacts, 0, negative_marker="case fetch-signature")
     elif lane == "apply":
         env["UPDATE_APPLY_FIXTURE"] = str(fixture)
         for name in ("apply", "applier"):
