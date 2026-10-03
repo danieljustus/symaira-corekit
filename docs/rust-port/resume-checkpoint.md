@@ -1,3 +1,22 @@
+## Current distribution and native-runner decisions (2026-10-03)
+
+The maintainer delegated implementation decisions and their documentation.
+[ADR 0002](../adr/0002-rust-distribution-git-pins.md) selects exact Git revisions
+and Cargo.lock as supported Rust distribution. RUST-014/015 are demand-driven
+and deferred; registry publication and its conditional rollout are not planned.
+RUST-016 still requires real source-bound released consumer builds, standalone
+and Go-to-Rust-to-Go rollback evidence, and the seven-day observation gate.
+Go remains while released consumers import it.
+
+[ADR 0003](../adr/0003-native-macos-ci.md) selects supported macOS 15 ARM64,
+records the actual native runner and retains legacy protected check contexts.
+All native, security, API, signed-release and semantic-mutation assertions
+remain required. The repeated Linux ETXTBSY shell-fixture publication failure
+is repaired through an explicitly interpreted test script, retaining real argv,
+private input bytes and failure checks. Exact-head CI is still required before
+integration. Older checkpoint restrictions below describe their historical
+sessions and do not override the current delegated instruction.
+
 ## Frozen FS/SEC registration (2026-10-03)
 
 PR #398 now registers the unchanged three-platform Go 1.26.6 fixture bytes
@@ -7,7 +26,8 @@ SDK archives/compiler inputs and raw Go observations, and rejected observation
 mutations on every target. See `evidence/fs-frozen-registration-20261003.json`.
 Native Rust acceptance with executable Go/Git denials and both mutation controls
 remains the integration gate. #368 still requires the remaining oracle families
-and aggregate Go-free suite; RUST-016/014/015 and Go retirement remain blocked.
+and aggregate Go-free suite; RUST-016 and Go retirement remain blocked, and
+RUST-014/015 are deferred under ADR 0002.
 
 # Resume checkpoint — Rust consumer release gates open
 
