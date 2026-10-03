@@ -70,6 +70,7 @@ class UpdateHarnessTests(unittest.TestCase):
                             entry.main_for_lane("extract", ["--negative-control"])
                     self.assertEqual(runner.call_count, 2)
 
+    @unittest.skipUnless(os.environ.get("GO_ORACLE") == "1", "live Go oracle requires explicit GO_ORACLE=1; regular Go CI runs this regression")
     def test_apply_real_oracle_ignores_parent_temp_contamination(self):
         module = load("update-apply")
         with tempfile.TemporaryDirectory(prefix="update-harness-parent-") as directory:

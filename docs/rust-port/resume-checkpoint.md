@@ -1,3 +1,51 @@
+## Portable consumer evidence verification (2026-10-03)
+
+RUST-016 remains blocked by real consumer releases and source-bound
+standalone/rollback records. The adoption/benchmark trust helpers now locate
+sibling consumers through the canonical Git common directory, including linked
+worktrees outside the repository. Standalone shallow `/workspace` checkouts no
+longer fail during import due to a fixed ancestor index. The exact origin,
+revision, cleanliness, path traversal and symlink controls remain active.
+
+Two actual Git workspace tests, seven RUST-005 controls, and both script
+self-tests pass. `adoption.py --check --min-consumers 2` and
+`bench.py --suite foundation --check` pass with public immutable consumer
+snapshots. `port/consumer/verify.py --git-pinned-consumers` remains blocked:
+current consumer mains differ from the manifest and consumer release/build/
+rollback/digest evidence is missing. No consumer release or Go removal is
+claimed by this repair. Native CI runs the workspace controls on all three OSes.
+
+## Current distribution and native-runner decisions (2026-10-03)
+
+The maintainer delegated implementation decisions and their documentation.
+[ADR 0002](../adr/0002-rust-distribution-git-pins.md) selects exact Git revisions
+and Cargo.lock as supported Rust distribution. RUST-014/015 are demand-driven
+and deferred; registry publication and its conditional rollout are not planned.
+RUST-016 still requires real source-bound released consumer builds, standalone
+and Go-to-Rust-to-Go rollback evidence, and the seven-day observation gate.
+Go remains while released consumers import it.
+
+[ADR 0003](../adr/0003-native-macos-ci.md) selects supported macOS 15 ARM64,
+records the actual native runner and retains legacy protected check contexts.
+All native, security, API, signed-release and semantic-mutation assertions
+remain required. The repeated Linux ETXTBSY shell-fixture publication failure
+is repaired through an explicitly interpreted test script, retaining real argv,
+private input bytes and failure checks. Exact-head CI is still required before
+integration. Older checkpoint restrictions below describe their historical
+sessions and do not override the current delegated instruction.
+
+## Frozen FS/SEC registration (2026-10-03)
+
+PR #398 now registers the unchanged three-platform Go 1.26.6 fixture bytes
+reviewed at source `5fc5299a56e96b6007fda7d8900363f3aa6ba282`. Separate
+registration reconstructed both Git snapshots, all original bundle files,
+SDK archives/compiler inputs and raw Go observations, and rejected observation
+mutations on every target. See `evidence/fs-frozen-registration-20261003.json`.
+Native Rust acceptance with executable Go/Git denials and both mutation controls
+remains the integration gate. #368 still requires the remaining oracle families
+and aggregate Go-free suite; RUST-016 and Go retirement remain blocked, and
+RUST-014/015 are deferred under ADR 0002.
+
 # Resume checkpoint — Rust consumer release gates open
 
 ## Current consumer API completion candidate (2026-10-02)

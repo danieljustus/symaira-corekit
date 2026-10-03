@@ -2,6 +2,7 @@
 """Exercise Go and Rust Cosign against one pinned public signed release."""
 
 import hashlib
+import json
 import os
 from pathlib import Path
 import shutil
@@ -35,6 +36,10 @@ def main():
         raise RuntimeError("real Cosign verification requires a local cosign CLI")
     if shutil.which("curl") is None:
         raise RuntimeError("pinned artifact download requires curl")
+    original_home = Path.home()
+    toolchain = {}
+    if os.environ.get("GO_ORACLE") == "1":
+        toolchain = json.loads(run(["go", "env", "-json", "GOMODCACHE", "GOROOT"], dict(os.environ, GOTOOLCHAIN="go1.26.6")))
     with tempfile.TemporaryDirectory(prefix="corekit-cosign-valid-") as directory:
         for name, expected in ASSETS.items():
             result = subprocess.run(
@@ -51,18 +56,34 @@ def main():
             (Path(directory) / name).write_bytes(result.stdout)
         env = dict(os.environ, GOTOOLCHAIN="go1.26.6", CGO_ENABLED="0",
                    COSIGN_VALID_FIXTURE_DIR=directory)
+        env.update(toolchain)
+        for variable, suffix in (("CARGO_HOME", ".cargo"), ("RUSTUP_HOME", ".rustup")):
+            env[variable] = os.environ.get(variable, str(original_home / suffix))
+        for variable, suffix in (("HOME", "home"), ("USERPROFILE", "home"), ("XDG_CACHE_HOME", "cache"), ("XDG_CONFIG_HOME", "config"), ("APPDATA", "config"), ("XDG_DATA_HOME", "data"), ("LOCALAPPDATA", "data"), ("XDG_STATE_HOME", "state"), ("TMPDIR", "tmp"), ("TMP", "tmp"), ("TEMP", "tmp")):
+            private = Path(directory) / suffix
+            private.mkdir(mode=0o700, exist_ok=True)
+            env[variable] = str(private)
         rust = run(
             ["cargo", "test", "-p", "symaira-core-update", "--lib", "--locked",
              RUST_TEST, "--", "--ignored", "--exact"], env,
         )
         if "test result: ok. 1 passed;" not in rust:
             raise RuntimeError("the Rust real-signature test did not run exactly once")
-        go = run(
-            ["go", "test", "-count=1", "-v", "./updatecheck/cosign", "-run", GO_TEST],
-            env,
+        rejection = run(
+            ["cargo", "test", "-p", "symaira-core-update", "--lib", "--locked",
+             "cosign::tests::real_cosign_rejects_invalid_signature_and_certificate",
+             "--", "--ignored", "--exact"], env,
         )
-        if "--- PASS: TestRealSignedReleaseAcceptsAndRejects" not in go:
-            raise RuntimeError("the Go real-signature test did not pass")
+        if "test result: ok. 1 passed; 0 failed; 0 ignored;" not in rejection:
+            raise RuntimeError("the real invalid-signature test did not execute exactly once")
+        if os.environ.get("GO_ORACLE") == "1":
+            go = run(
+                ["go", "test", "-count=1", "-v", "./updatecheck/cosign", "-run", GO_TEST],
+                env,
+            )
+            if "--- PASS: TestRealSignedReleaseAcceptsAndRejects" not in go:
+                raise RuntimeError("the Go real-signature test did not pass")
+            print("PASS explicit live Go real-signature acceptance and rejection")
         apply = run(
             ["cargo", "test", "-p", "symaira-core-update", "--test",
              "applier_real_release", "--locked", "--", "--ignored", "--exact",
@@ -72,7 +93,7 @@ def main():
         if "test result: ok. 1 passed;" not in apply:
             raise RuntimeError("the signed end-to-end Apply test did not run exactly once")
     print("PASS pinned public release assets match all three SHA-256 digests")
-    print("PASS real Go and Rust Cosign: valid signature accepted; tampered bytes and wrong identity rejected")
+    print("PASS real Rust Cosign: valid signature accepted; tampered bytes and wrong identity rejected")
     print("PASS signed release asset fetched, verified, extracted and installed only to a disposable target")
     return 0
 

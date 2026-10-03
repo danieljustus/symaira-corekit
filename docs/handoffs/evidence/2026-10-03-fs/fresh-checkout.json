@@ -1,0 +1,170 @@
+{
+  "state": "passed scoped repository-completeness and provenance checks; expected fail-closed missing-anchor outcome verified",
+  "tested_remote_head": "0ccad40fa518bd3edf17572460b1b6b1b95a2f7f",
+  "source_checkpoint": "5fc5299a56e96b6007fda7d8900363f3aa6ba282",
+  "fresh_clone": "actual HTTPS clone from GitHub, no source/config/cache/SDK copies from existing local worktrees",
+  "source_reconstruction": "git archive exact source and oracle commits from fresh clone; all630 source hashes verified",
+  "sdk_reconstruction": "three fresh HTTPS official downloads, all archive/compiler/SDK-input hashes verified",
+  "bundles": "all three remote-cloned bundles and every original file digest verified",
+  "commands": [
+    {
+      "name": "clone",
+      "command": [
+        "git",
+        "clone",
+        "--branch",
+        "agent/issue368-fs-freeze-20261003",
+        "https://github.com/danieljustus/symaira-corekit.git",
+        "${PRIVATE_WORKSPACE}/repo"
+      ],
+      "exit": 0,
+      "expected_exit": 0
+    },
+    {
+      "name": "download-go1.26.6.darwin-arm64.tar.gz",
+      "command": [
+        "curl",
+        "--fail",
+        "--location",
+        "https://dl.google.com/go/go1.26.6.darwin-arm64.tar.gz",
+        "--output",
+        "${PRIVATE_WORKSPACE}/evidence/sdk/go1.26.6.darwin-arm64.tar.gz"
+      ],
+      "exit": 0,
+      "expected_exit": 0
+    },
+    {
+      "name": "download-go1.26.6.linux-amd64.tar.gz",
+      "command": [
+        "curl",
+        "--fail",
+        "--location",
+        "https://dl.google.com/go/go1.26.6.linux-amd64.tar.gz",
+        "--output",
+        "${PRIVATE_WORKSPACE}/evidence/sdk/go1.26.6.linux-amd64.tar.gz"
+      ],
+      "exit": 0,
+      "expected_exit": 0
+    },
+    {
+      "name": "download-go1.26.6.windows-amd64.zip",
+      "command": [
+        "curl",
+        "--fail",
+        "--location",
+        "https://dl.google.com/go/go1.26.6.windows-amd64.zip",
+        "--output",
+        "${PRIVATE_WORKSPACE}/evidence/sdk/go1.26.6.windows-amd64.zip"
+      ],
+      "exit": 0,
+      "expected_exit": 0
+    },
+    {
+      "name": "portable-provenance",
+      "command": [
+        "python3",
+        "-B",
+        "${PRIVATE_WORKSPACE}/evidence/verify-fresh-fs-captures.py"
+      ],
+      "exit": 0,
+      "expected_exit": 0
+    },
+    {
+      "name": "guards",
+      "command": [
+        "python3",
+        "-B",
+        "-W",
+        "error",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "scripts/rust-port",
+        "-p",
+        "test_fs_secret_oracle.py",
+        "-v"
+      ],
+      "exit": 0,
+      "expected_exit": 0
+    },
+    {
+      "name": "ledger",
+      "command": [
+        "python3",
+        "-B",
+        "docs/rust-port/validate.py"
+      ],
+      "exit": 0,
+      "expected_exit": 0
+    },
+    {
+      "name": "rustfmt",
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--check"
+      ],
+      "exit": 0,
+      "expected_exit": 0
+    },
+    {
+      "name": "cargo-fetch",
+      "command": [
+        "cargo",
+        "fetch",
+        "--locked"
+      ],
+      "exit": 0,
+      "expected_exit": 0
+    },
+    {
+      "name": "frozen-gate",
+      "command": [
+        "make",
+        "rust-fs-secret-frozen-contract"
+      ],
+      "exit": 2,
+      "expected_exit": 2
+    }
+  ],
+  "guard_tests": 18,
+  "targets": [
+    {
+      "target": "darwin-arm64",
+      "fixture_sha256": "802fb2e1f85d07be948ef81361953196e117ad74ef4e66749acf4cdc70deda5a",
+      "raw_streams_verified": 38,
+      "sdk_inputs_verified": 1134,
+      "module_inputs_reproduced": 6,
+      "actual_observation_mutation_rejected": true
+    },
+    {
+      "target": "linux-amd64",
+      "fixture_sha256": "6bb7b00fe62a957c9710ebb0dd0642c4e94000597f4fc7ad6714188ff948930a",
+      "raw_streams_verified": 38,
+      "sdk_inputs_verified": 1194,
+      "module_inputs_reproduced": 6,
+      "actual_observation_mutation_rejected": true
+    },
+    {
+      "target": "windows-amd64",
+      "fixture_sha256": "b6219a2cd8c83d6fddbd4b3c0956e8c7ee306012c4092f7e1e8a859f50a55cb7",
+      "raw_streams_verified": 38,
+      "sdk_inputs_verified": 1091,
+      "module_inputs_reproduced": 6,
+      "actual_observation_mutation_rejected": true
+    }
+  ],
+  "frozen_gate": "real Rust prerequisites execute; fails closed specifically because no independent anchor exists, exit2, not Rust acceptance",
+  "final_tracked_status": "clean",
+  "runtime": {
+    "os": "macOS arm64 local fresh clone, not target cloud",
+    "python": "Python 3.14.7",
+    "rustc": "rustc 1.98.0 (88d9e12ae 2026-08-18)",
+    "cargo": "cargo 1.98.0 (797e8a9bc 2026-08-05)"
+  },
+  "cloud_runtime": "not checked",
+  "native_Rust_Darwin_Linux_Windows_acceptance": "pending",
+  "package_cache": "standard existing Cargo package cache permitted; no copied source, Go SDK or application-state input"
+}

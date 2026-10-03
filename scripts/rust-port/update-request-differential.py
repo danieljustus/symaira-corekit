@@ -98,6 +98,9 @@ def main():
     parser.add_argument("--write", action="store_true")
     parser.add_argument("--fixture", type=Path, default=FIXTURE)
     args = parser.parse_args()
+    from frozen_update_replay import legacy_entry
+    if legacy_entry("request", args):
+        return
     current = observed()
     current["goos"] = goos_name()
     if args.write:

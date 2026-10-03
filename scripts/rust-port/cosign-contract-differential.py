@@ -97,6 +97,9 @@ def main():
     parser.add_argument("--write", action="store_true")
     parser.add_argument("--fixture", type=Path, default=FIXTURE)
     args = parser.parse_args()
+    from frozen_update_replay import legacy_entry
+    if legacy_entry("cosign", args):
+        return 0
     current = observe()
     if args.write:
         args.fixture.parent.mkdir(parents=True, exist_ok=True)

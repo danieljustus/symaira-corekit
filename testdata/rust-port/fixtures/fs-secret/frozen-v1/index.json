@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "source_commit": "5fc5299a56e96b6007fda7d8900363f3aa6ba282",
+  "oracle_commit": "f3d3eb79b9b1f31b4f973d2ed518a8292cedf588",
+  "capture_run": 37107725386,
+  "provenance_review": "docs/handoffs/evidence/2026-10-03-fs/independent-5fc-provenance-review.json",
+  "registration_review": "docs/rust-port/evidence/fs-frozen-registration-20261003.json",
+  "fixtures": [
+    {
+      "target": "darwin-arm64",
+      "path": "darwin-arm64.json",
+      "sha256": "802fb2e1f85d07be948ef81361953196e117ad74ef4e66749acf4cdc70deda5a",
+      "case_count": 13,
+      "path_control_count": 9
+    },
+    {
+      "target": "linux-amd64",
+      "path": "linux-amd64.json",
+      "sha256": "6bb7b00fe62a957c9710ebb0dd0642c4e94000597f4fc7ad6714188ff948930a",
+      "case_count": 13,
+      "path_control_count": 9
+    },
+    {
+      "target": "windows-amd64",
+      "path": "windows-amd64.json",
+      "sha256": "b6219a2cd8c83d6fddbd4b3c0956e8c7ee306012c4092f7e1e8a859f50a55cb7",
+      "case_count": 13,
+      "path_control_count": 9
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 # Go→Rust migration handoff
 
-Status: **RUST-001 through RUST-006, RUST-010 and RUST-013 complete; RUST-016 is ready for Git-pinned consumer releases, RUST-014 remains in progress without registry evidence, and RUST-015 is blocked on both. Go remains the supported executable oracle and no broad cutover is implied**.
+Status: **Git-pinned Rust consumer releases remain the distribution path. RUST-014/015 registry work is not planned and is demand-driven/deferred by [ADR 0002](../adr/0002-rust-distribution-git-pins.md). RUST-016 remains blocked on actual consumer release/standalone/rollback evidence and shared native/API gates. Go remains supported while released consumers import it.**
 
 This directory freezes the starting point for a contract-first Rust implementation of `symaira-corekit`. The Go implementation remains supported, buildable and the executable oracle while Go consumers exist. Rust crates are added beside it and are adopted package by package; this is not a flag-day repository rewrite.
 

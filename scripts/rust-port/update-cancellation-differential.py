@@ -32,6 +32,9 @@ def main():
     group.add_argument('--write', action='store_true')
     group.add_argument('--check', action='store_true')
     args=parser.parse_args()
+    from frozen_update_replay import legacy_entry
+    if legacy_entry('cancellation', args):
+        return
     env=dict(os.environ, CARGO_TARGET_DIR=str(TARGET))
     metadata=json.loads(run(['cargo','metadata','--offline','--locked','--no-deps','--format-version','1','--manifest-path',str(MANIFEST)],env))
     package=next(p for p in metadata['packages'] if p['name']=='symaira-core-update')

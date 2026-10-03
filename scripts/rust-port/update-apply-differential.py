@@ -89,6 +89,9 @@ def main():
     parser.add_argument("--write", action="store_true")
     parser.add_argument("--fixture", type=Path, default=FIXTURE)
     args = parser.parse_args()
+    from frozen_update_replay import legacy_entry
+    if legacy_entry("apply", args):
+        return 0
     current = observed()
     native = ROOT / "target/update-apply-native.json"
     native.parent.mkdir(parents=True, exist_ok=True)
