@@ -69,7 +69,29 @@ def main():
             text = result.stdout.decode(errors="replace")
             if "PASS real Rust Cosign: valid signature accepted" not in text or "PASS signed release asset fetched, verified, extracted" not in text:
                 raise ValueError("aggregate lacks real signed-release acceptance")
-            phases.append({"mode": phase, "exit_code": result.returncode, "update_cases": {lane: report["case_count"] for lane, report in reports.items()}, "raw_stdout_sha256": hashlib.sha256(result.stdout).hexdigest()})
+            documents = []
+            for line in text.splitlines():
+                if line.startswith("{"):
+                    try:
+                        documents.append(json.loads(line))
+                    except json.JSONDecodeError:
+                        pass
+            families = [row for row in documents if row.get("family") in {"foundation", "llm"}]
+            if len(families) != 2 or {row["family"] for row in families} != {"foundation", "llm"} or any(row["status"] != "PASS" or row["fixture_mutation_rejected"] is not True or row["rust_tests"] == 0 for row in families):
+                raise ValueError("aggregate lacks complete Foundation/LLM execution and mutations")
+            fs = [row for row in documents if "fs_sec_case_count" in row]
+            if len(fs) != 1 or fs[0]["status"] != "PASS" or fs[0]["fs_sec_case_count"] != 13 or fs[0]["path_control_count"] != 9 or fs[0]["rust_named_test_passes"] != 1 or len(fs[0]["mutations"]) != 2:
+                raise ValueError("aggregate lacks actual FS rows, controls or named mutation gates")
+            shutil.copytree(Path(fs[0]["artifacts_dir"]), artifacts / (phase + "-fs-raw"))
+            for name, count in (("mcp", 46), ("mcpcfg", 24)):
+                if f"PASS {name}-differential ({count} executed Rust cases; frozen Go expected;" not in text:
+                    raise ValueError("aggregate lacks complete " + name + " process corpus")
+            sqlite = json.loads((ROOT / "target/sqlite-frozen-replay.json").read_bytes())
+            if sqlite["status"] != "PASS" or sqlite["case_count"] != 6 or sqlite["semantic_mutation_rejected"] is not True:
+                raise ValueError("aggregate lacks original SQLite cases and actual semantic mutation")
+            phases.append({"mode": phase, "exit_code": result.returncode, "update_cases": {lane: report["case_count"] for lane, report in reports.items()},
+                           "families": families, "fs_cases": 13, "fs_controls": 9, "mcp_cases": 46, "mcpcfg_cases": 24,
+                           "sqlite_cases": 6, "sqlite_checked_fields": sqlite["checked_fields"], "raw_stdout_sha256": hashlib.sha256(result.stdout).hexdigest()})
     shutil.copytree(ROOT / "target/frozen-update", artifacts / "update-raw")
     for name in ("sqlite-frozen-replay.json", "sqlite-frozen-replay.rust.raw"):
         shutil.copy2(ROOT / "target" / name, artifacts / name)

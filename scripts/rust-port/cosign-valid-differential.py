@@ -57,6 +57,13 @@ def main():
         )
         if "test result: ok. 1 passed;" not in rust:
             raise RuntimeError("the Rust real-signature test did not run exactly once")
+        rejection = run(
+            ["cargo", "test", "-p", "symaira-core-update", "--lib", "--locked",
+             "cosign::tests::real_cosign_rejects_invalid_signature_and_certificate",
+             "--", "--ignored", "--exact"], env,
+        )
+        if "test result: ok. 1 passed; 0 failed; 0 ignored;" not in rejection:
+            raise RuntimeError("the real invalid-signature test did not execute exactly once")
         if os.environ.get("GO_ORACLE") == "1":
             go = run(
                 ["go", "test", "-count=1", "-v", "./updatecheck/cosign", "-run", GO_TEST],
