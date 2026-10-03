@@ -1,0 +1,70 @@
+{
+  "source_commit": "5fc5299a56e96b6007fda7d8900363f3aa6ba282",
+  "native_capture_run": 37107725386,
+  "source_files": 630,
+  "verifier_sha256": "2a5cd90493281cac6126c96e50307349ceca3efbbe10d759c0002d5cabbe0e45",
+  "captures": [
+    {
+      "target": "darwin-arm64",
+      "fixture": "darwin-arm64/fixture.json",
+      "fixture_sha256": "802fb2e1f85d07be948ef81361953196e117ad74ef4e66749acf4cdc70deda5a",
+      "raw_root": "darwin-arm64/raw",
+      "job": 111159440962,
+      "case_count": 13,
+      "path_control_count": 9,
+      "command_count": 19,
+      "raw_streams_verified": 38,
+      "sdk_inputs_verified": 1134,
+      "module_inputs_reproduced": 6,
+      "embedded_inputs_bound": [
+        "candidate/contracts/secret_refs.json",
+        "candidate/testdata/rust-port/fixtures/fs-secret/corpus.json"
+      ],
+      "official_sdk_sha256": "2dc95ce4675829f2df0e86b28bcef3283635902062a5f0580ca659bf570f3204",
+      "verified": true,
+      "actual_observation_mutation_rejected": true
+    },
+    {
+      "target": "linux-amd64",
+      "fixture": "linux-amd64/fixture.json",
+      "fixture_sha256": "6bb7b00fe62a957c9710ebb0dd0642c4e94000597f4fc7ad6714188ff948930a",
+      "raw_root": "linux-amd64/raw",
+      "job": 111159440965,
+      "case_count": 13,
+      "path_control_count": 9,
+      "command_count": 19,
+      "raw_streams_verified": 38,
+      "sdk_inputs_verified": 1194,
+      "module_inputs_reproduced": 6,
+      "embedded_inputs_bound": [
+        "candidate/contracts/secret_refs.json",
+        "candidate/testdata/rust-port/fixtures/fs-secret/corpus.json"
+      ],
+      "official_sdk_sha256": "708effb774be8237570d0add163225abbdfaf4fca28b2611df167beba4feef89",
+      "verified": true,
+      "actual_observation_mutation_rejected": true
+    },
+    {
+      "target": "windows-amd64",
+      "fixture": "windows-amd64/fixture.json",
+      "fixture_sha256": "b6219a2cd8c83d6fddbd4b3c0956e8c7ee306012c4092f7e1e8a859f50a55cb7",
+      "raw_root": "windows-amd64/raw",
+      "job": 111159440945,
+      "case_count": 13,
+      "path_control_count": 9,
+      "command_count": 19,
+      "raw_streams_verified": 38,
+      "sdk_inputs_verified": 1091,
+      "module_inputs_reproduced": 6,
+      "embedded_inputs_bound": [
+        "candidate/contracts/secret_refs.json",
+        "candidate/testdata/rust-port/fixtures/fs-secret/corpus.json"
+      ],
+      "official_sdk_sha256": "5b6c5b556525810463b5c897b50dc7a82d6a3dc0bfaf55d990a7e9f31d6b2318",
+      "verified": true,
+      "actual_observation_mutation_rejected": true
+    }
+  ],
+  "scope": "complete original Go/native provenance verification; independent anchor decision and native Rust acceptance still required",
+  "record_scope": "Executed original verifier locally, byte-identical capture bundles preserved; portable path-only verifier adaptation must be exercised in fresh remote checkout."
+}

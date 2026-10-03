@@ -31,3 +31,4 @@
 /testdata/rust-port/fixtures/update/*.json -text whitespace=cr-at-eol
 /testdata/rust-port/fixtures/update/static-v1/** -text whitespace=cr-at-eol
 /testdata/rust-port/fixtures/update/static-v2/** -text whitespace=cr-at-eol
+/testdata/rust-port/fixtures/fs-secret/frozen-v1/** -text whitespace=cr-at-eol
