@@ -1,0 +1,107 @@
+[
+  {
+    "artifact_id": 11280680413,
+    "archive_sha256": "0cdf5ecb2be251b7a54fb492c7f155b692f69101f5561fff514c81ff15f8730e",
+    "result": {
+      "execution_head": "95e098f08c6cccca671ea5a07507a7932409e8c9",
+      "go_git_denial_controls": true,
+      "forbidden_tool_called": false,
+      "denial_binary_sha256": "f668e62b79d413fb319e778ba70139c1714e222708fca685c6b7039eeed7f59e",
+      "families": [
+        {
+          "contract_groups": 19,
+          "family": "foundation",
+          "files": 65,
+          "fixture_mutation_rejected": true,
+          "rust_tests": 21,
+          "status": "PASS"
+        },
+        {
+          "contract_groups": 12,
+          "family": "llm",
+          "files": 5,
+          "fixture_mutation_rejected": true,
+          "rust_tests": 48,
+          "status": "PASS"
+        }
+      ],
+      "sqlite": {
+        "status": "PASS",
+        "native_target": "linux-amd64",
+        "case_count": 6,
+        "checked_fields": 42,
+        "semantic_mutation_rejected": true
+      }
+    }
+  },
+  {
+    "artifact_id": 11280063026,
+    "archive_sha256": "a29cc7bf7b1a2698908f94b7c4718e8c05e4e9a3ecc26bc2f7fbcb4b15be63c0",
+    "result": {
+      "execution_head": "95e098f08c6cccca671ea5a07507a7932409e8c9",
+      "go_git_denial_controls": true,
+      "forbidden_tool_called": false,
+      "denial_binary_sha256": "c8c2ea587ca4ca154ab984be08480dfddfdd405cb04beb6c35e491dfa6e2d952",
+      "families": [
+        {
+          "contract_groups": 19,
+          "family": "foundation",
+          "files": 65,
+          "fixture_mutation_rejected": true,
+          "rust_tests": 22,
+          "status": "PASS"
+        },
+        {
+          "contract_groups": 12,
+          "family": "llm",
+          "files": 5,
+          "fixture_mutation_rejected": true,
+          "rust_tests": 48,
+          "status": "PASS"
+        }
+      ],
+      "sqlite": {
+        "status": "PASS",
+        "native_target": "windows-amd64",
+        "case_count": 6,
+        "checked_fields": 40,
+        "semantic_mutation_rejected": true
+      }
+    }
+  },
+  {
+    "artifact_id": 11279954772,
+    "archive_sha256": "bcc05a37a8641ffc9270440830624d7a43a94c538aef13d15317a6d5d7ae2e44",
+    "result": {
+      "execution_head": "95e098f08c6cccca671ea5a07507a7932409e8c9",
+      "go_git_denial_controls": true,
+      "forbidden_tool_called": false,
+      "denial_binary_sha256": "88b2814fe4d01abc114d968c934a6a8b9caa56fc860fccf4700248e34126ed6a",
+      "families": [
+        {
+          "contract_groups": 19,
+          "family": "foundation",
+          "files": 65,
+          "fixture_mutation_rejected": true,
+          "rust_tests": 21,
+          "status": "PASS"
+        },
+        {
+          "contract_groups": 12,
+          "family": "llm",
+          "files": 5,
+          "fixture_mutation_rejected": true,
+          "rust_tests": 48,
+          "status": "PASS"
+        }
+      ],
+      "sqlite": {
+        "status": "PASS",
+        "native_target": "darwin-arm64",
+        "case_count": 6,
+        "checked_fields": 42,
+        "semantic_mutation_rejected": true
+      }
+    }
+  }
+]

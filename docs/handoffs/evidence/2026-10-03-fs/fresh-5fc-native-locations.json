@@ -1,0 +1,24 @@
+{
+  "head": "5fc5299a56e96b6007fda7d8900363f3aa6ba282",
+  "run": 37107725386,
+  "captures": [
+    {
+      "target": "darwin-arm64",
+      "fixture": "darwin-arm64/fixture.json",
+      "raw_root": "darwin-arm64/raw",
+      "job": 111159440962
+    },
+    {
+      "target": "linux-amd64",
+      "fixture": "linux-amd64/fixture.json",
+      "raw_root": "linux-amd64/raw",
+      "job": 111159440965
+    },
+    {
+      "target": "windows-amd64",
+      "fixture": "windows-amd64/fixture.json",
+      "raw_root": "windows-amd64/raw",
+      "job": 111159440945
+    }
+  ]
+}

@@ -24,7 +24,6 @@ from typing import Any, cast
 from trust import assert_clean_checkout, assert_origin, checkout_for_record, github_json, safe_checkout_child, safe_workspace_path
 
 ROOT = Path(__file__).resolve().parents[2]
-WORKSPACE = ROOT.parents[2]
 DEFAULT_EVIDENCE = ROOT / "testdata/rust-port/adoption/evidence.json"
 DEFAULT_REPORT = ROOT / "testdata/rust-port/adoption/report.json"
 REV_RE = re.compile(r"^[0-9a-f]{40}$")

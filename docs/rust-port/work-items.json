@@ -77,7 +77,8 @@
         "make rust-test",
         "make rust-foundation-contract"
       ],
-      "stop_rule": "Do not accept changed bytes, paths, errors or defaults because Rust/framework conventions differ."
+      "stop_rule": "Do not accept changed bytes, paths, errors or defaults because Rust/framework conventions differ.",
+      "frozen_replay": "frozen-core-corpora.md"
     },
     {
       "id": "RUST-003",
@@ -185,7 +186,8 @@
         "make rust-sqlite-contract",
         "native CI rust-sqlite-native lane"
       ],
-      "stop_rule": "Keep deferred until two Rust consumers need the same SQLite policy. Do not claim parity from SQL text alone; stop on DB bytes/schema/pragmas/locking/rollback drift or unacceptable bundled-SQLite cost."
+      "stop_rule": "Keep deferred until two Rust consumers need the same SQLite policy. Do not claim parity from SQL text alone; stop on DB bytes/schema/pragmas/locking/rollback drift or unacceptable bundled-SQLite cost.",
+      "frozen_replay": "frozen-core-corpora.md"
     },
     {
       "id": "RUST-007",
@@ -253,7 +255,8 @@
         "make rust-llm-contract",
         "python3 scripts/rust-port/llm-differential.py"
       ],
-      "stop_rule": "Do not duplicate provider wire transports in consumers or create a Rust ollamakit clone. Chat/stream cancellation and async transport injection are implemented; keep the item in progress while remaining per-operation cancellation and parity evidence are open. Consumer adapters retain product policy and exact Git pins. Stop on credential leakage, redirect drift, streaming/tool-wire drift or taxonomy changes."
+      "stop_rule": "Do not duplicate provider wire transports in consumers or create a Rust ollamakit clone. Chat/stream cancellation and async transport injection are implemented; keep the item in progress while remaining per-operation cancellation and parity evidence are open. Consumer adapters retain product policy and exact Git pins. Stop on credential leakage, redirect drift, streaming/tool-wire drift or taxonomy changes.",
+      "frozen_replay": "frozen-core-corpora.md"
     },
     {
       "id": "RUST-009",
@@ -415,14 +418,17 @@
         "REL-003",
         "REL-005"
       ],
-      "status": "blocked",
-      "demand_class": "required",
+      "status": "deferred",
+      "demand_class": "demand_driven",
       "acceptance_commands": [
         "cargo semver-checks check-release",
         "python3 port/release/verify.py --dry-run",
         "python3 docs/rust-port/validate.py"
       ],
-      "stop_rule": "Do not publish before RUST-016 release and artifact evidence, required migration/native/security gates and a separate release approval. Publish only adopted crates with explicit versions/order/provenance and external registry read-back; repository tags must remain unambiguous for Go consumers."
+      "stop_rule": "Do not publish before RUST-016 release and artifact evidence, required migration/native/security gates and a separate release approval. Publish only adopted crates with explicit versions/order/provenance and external registry read-back; repository tags must remain unambiguous for Go consumers.",
+      "disposition": "not_planned_git_pinned_distribution",
+      "decision_record": "docs/adr/0002-rust-distribution-git-pins.md",
+      "reconsider_when": "External registry demand or demonstrated Git distribution limitations justify a new reviewed proposal."
     },
     {
       "id": "RUST-015",
@@ -435,15 +441,18 @@
         "REL-006",
         "PERF-004"
       ],
-      "status": "blocked",
-      "demand_class": "required",
+      "status": "deferred",
+      "demand_class": "demand_driven",
       "acceptance_commands": [
         "python3 -m unittest discover -s port/consumer -p 'test_*.py'",
         "python3 port/consumer/verify.py --released-consumers",
         "make consumer-drift",
         "python3 scripts/rust-port/adoption.py --check"
       ],
-      "stop_rule": "Do not pass this gate without new releases pinned to exact registry versions and verified lockfiles/artifacts. No Go package removal while a released consumer imports it; retirement is a separate major-version decision with a tested rollback."
+      "stop_rule": "Do not pass this gate without new releases pinned to exact registry versions and verified lockfiles/artifacts. No Go package removal while a released consumer imports it; retirement is a separate major-version decision with a tested rollback.",
+      "disposition": "not_planned_git_pinned_distribution",
+      "decision_record": "docs/adr/0002-rust-distribution-git-pins.md",
+      "reconsider_when": "External registry demand or demonstrated Git distribution limitations justify a new reviewed proposal."
     },
     {
       "id": "RUST-017",
@@ -465,6 +474,8 @@
         "make rust-update-contract",
         "python3 scripts/rust-port/fs-path-control-differential.py",
         "python3 scripts/rust-port/diff_fs_secret.py",
+        "python3 -m unittest discover -s scripts/rust-port -p 'test_fs_secret_oracle.py'",
+        "python3 scripts/rust-port/fs_secret_oracle.py",
         "cargo nextest run --workspace --all-features --locked",
         "cargo clippy --workspace --all-targets --all-features --locked -- -D warnings",
         "cargo fmt --all --check"

@@ -1,0 +1,26 @@
+{
+  "delegation": "deleg_4391684b",
+  "source_commit": "b069b399d21024b89d3cdbabea83731a130d4c5f",
+  "verdict": "reject",
+  "reason": "reviewer did not independently reconstruct strict raw-stream/probe/module bindings; not approval",
+  "source_manifest_and_single_workflow_delta_verified": true,
+  "official_archive_sha_and_VERSION_verified": true,
+  "approvals": [
+    {
+      "target": "darwin-arm64",
+      "fixture_sha256": "493d253014a9e926ab618c1a58ae4b3f56ed13fdb8f5c16e893259f56f0e3cbd",
+      "approved": false
+    },
+    {
+      "target": "linux-amd64",
+      "fixture_sha256": "170e443fbcbca00aab0223eb87d47d4be076540f2ce89e520d967682ddc94a91",
+      "approved": false
+    },
+    {
+      "target": "windows-amd64",
+      "fixture_sha256": "10e7bb0ec2329c7c5e3a8c93ad3854c0a012bb4a77394efece914c2725aaaec9",
+      "approved": false
+    }
+  ],
+  "subsequent_parent_finding": "two compiled embedded inputs missing; authentic b069 observations retained, cannot approve newer harness"
+}
