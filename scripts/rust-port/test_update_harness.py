@@ -11,8 +11,8 @@ import unittest
 from unittest.mock import patch
 
 
-def load(name):
-    path = Path(__file__).with_name(name + "-differential.py")
+def load(name, suffix="-differential"):
+    path = Path(__file__).with_name(name + suffix + ".py")
     spec = importlib.util.spec_from_file_location(name, path)
     assert spec is not None and spec.loader is not None
     module = importlib.util.module_from_spec(spec)
@@ -21,6 +21,22 @@ def load(name):
 
 
 class UpdateHarnessTests(unittest.TestCase):
+    def test_native_cosign_gate_rejects_zero_or_wrong_test_success(self):
+        module = load("update-native-acceptance", suffix="")
+        named = f"test {module.REAL_COSIGN_TEST} ... ok\n"
+        count = "test result: ok. 1 passed; 0 failed; 0 ignored;"
+        module.require_real_cosign_rejection(0, named + count)
+        for status, output in (
+            (0, "test result: ok. 0 passed; 0 failed; 0 ignored;"),
+            (0, named),
+            (0, "test unrelated ... ok\n" + count),
+            (0, named + "test result: ok. 2 passed; 0 failed; 0 ignored;"),
+            (1, named + count),
+        ):
+            with self.subTest(status=status, output=output):
+                with self.assertRaises(RuntimeError):
+                    module.require_real_cosign_rejection(status, output)
+
     def test_extraction_negative_requires_native_rust_assertion(self):
         entry = load("update-extract")
         module = sys.modules[entry.main_for_lane.__module__]

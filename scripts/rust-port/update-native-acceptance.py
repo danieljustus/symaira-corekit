@@ -10,7 +10,17 @@ import subprocess
 import sys
 import tempfile
 
+from bounded_oracle_process import run_checked
+
 ROOT = Path(__file__).resolve().parents[2]
+REAL_COSIGN_TEST = "cosign::tests::real_cosign_rejects_invalid_signature_and_certificate"
+
+
+def require_real_cosign_rejection(returncode: int, output: str) -> None:
+    if (returncode != 0
+            or f"test {REAL_COSIGN_TEST} ... ok" not in output
+            or "test result: ok. 1 passed; 0 failed; 0 ignored;" not in output):
+        raise RuntimeError("real Cosign rejection did not execute exactly one passing named test")
 
 
 def main():
@@ -48,7 +58,7 @@ def main():
             [sys.executable, "scripts/rust-port/update-apply-differential.py", "--write", "--fixture", str(fixture)],
             ["make", "rust-update-version-contract", "rust-update-contract", "rust-update-signed-contract"],
             ["cargo", "test", "--manifest-path", str(ROOT / "Cargo.toml"), "-p", "symaira-core-update",
-             "--lib", "--locked", "cosign::tests::real_cosign_rejects_invalid_signature_and_certificate",
+             "--lib", "--locked", REAL_COSIGN_TEST,
              "--", "--ignored", "--exact"],
             ["cargo", "nextest", "run", "--manifest-path", str(ROOT / "Cargo.toml"),
              "--locked", "-p", "symaira-core-update"],
@@ -56,9 +66,22 @@ def main():
         try:
             for command in commands:
                 print("RUN " + " ".join(command), flush=True)
-                result = subprocess.run(command, cwd=ROOT, env=env, check=False)
+                output = ""
+                if REAL_COSIGN_TEST in command:
+                    observed = run_checked(
+                        command, cwd=ROOT, env=env, timeout=120, merge_stderr=True,
+                        artifact_dir=args.report_dir / "raw-real-cosign-rejection",
+                    )
+                    output = observed.stdout.decode("utf-8", "replace")
+                    print(output, end="", flush=True)
+                    result = subprocess.CompletedProcess(command, observed.returncode, output)
+                else:
+                    result = subprocess.run(command, cwd=ROOT, env=env, check=False)
                 report["commands"].append({"argv": command, "exit_code": result.returncode})
                 result.check_returncode()
+                if REAL_COSIGN_TEST in command:
+                    require_real_cosign_rejection(result.returncode, output)
+                    report["commands"][-1].update(named_test=REAL_COSIGN_TEST, executed_tests=1)
             captured = json.loads(fixture.read_text(encoding="utf-8"))
             if not captured["cases"]:
                 raise ValueError("native Go Apply capture contains no cases")

@@ -525,14 +525,20 @@ mod owned_verifier_tests {
     }
 }
 
-#[cfg(all(test, unix))]
+#[cfg(test)]
 mod tests {
-    use super::{private_dir, verify_signature, verify_with_executable};
+    use super::verify_signature;
+    #[cfg(unix)]
+    use super::{private_dir, verify_with_executable};
+    #[cfg(unix)]
     use std::fs;
+    #[cfg(unix)]
     use std::os::unix::fs::PermissionsExt;
+    #[cfg(unix)]
     use std::path::Path;
 
     #[test]
+    #[cfg(unix)]
     fn verifier_process_success_and_failure_are_not_confused() {
         let repo = "owner/repo";
         let args = (
