@@ -483,7 +483,7 @@
       "rust_test": "symaira-core-fs/tests/parity.rs",
       "status": "accepted-difference",
       "deviation": "fs-path-contract.md",
-      "native_acceptance": "pending exact-head nine-case public Go differential"
+      "native_acceptance": "Historical live evidence retained; three unchanged independently reviewed frozen-v1 captures registered with complete original source/raw/SDK reconstruction. Exact-head native Go/Git-denied Rust replay remains required before integration."
     },
     {
       "id": "FS-002",

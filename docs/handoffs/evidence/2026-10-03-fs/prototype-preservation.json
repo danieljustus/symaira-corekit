@@ -1,0 +1,18 @@
+{
+  "classification": "unapproved preserved historical worker alternatives, not current acceptance",
+  "static_prototype": {
+    "branch": "handoff/20261003-static-prototype",
+    "head": "816de140e9c664b7f4c03745706b5320287e9cfe",
+    "inventory": "docs/handoffs/static-prototype-inventory.json",
+    "file_count": 30,
+    "all_source_bytes_verified": true,
+    "original_unchanged": true,
+    "tests": "not run; preservation only"
+  },
+  "bounded_prototype": {
+    "branch": "handoff/20261003-bounded-prototype",
+    "head": "b2cc2d09d861cc3b2577bbc60711ce7ac8a41264",
+    "tests": "historical prototype log only, not current acceptance"
+  },
+  "actions": "originals retained; no deletion; independent recovery branch; no PR or merge of alternatives"
+}

@@ -1,5 +1,10 @@
 # RUST-014 release contract
 
+Current distribution decision: [ADR 0002](../adr/0002-rust-distribution-git-pins.md)
+selects exact Git revisions. Registry publishing and registry rollout are not
+planned; RUST-014/015 are demand-driven/deferred. The planning tools and their
+historical evidence below remain available for a future justified proposal.
+
 RUST-014 adds a release plan at [`../../port/release/manifest.json`](../../port/release/manifest.json) and a safe verifier at [`../../port/release/verify.py`](../../port/release/verify.py).
 
 ## Tag and version rules

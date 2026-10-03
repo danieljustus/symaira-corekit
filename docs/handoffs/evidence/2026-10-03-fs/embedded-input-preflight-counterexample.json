@@ -1,0 +1,34 @@
+{
+  "source_commit": "b069b399d21024b89d3cdbabea83731a130d4c5f",
+  "actual_embed_usages": [
+    {
+      "source": "rust/symaira-core-fs/tests/parity.rs",
+      "embedded_input": "testdata/rust-port/fixtures/fs-secret/corpus.json"
+    },
+    {
+      "source": "rust/symaira-core-secretref/tests/parity.rs",
+      "embedded_input": "testdata/rust-port/fixtures/fs-secret/corpus.json"
+    },
+    {
+      "source": "rust/symaira-core-secretref/tests/parity.rs",
+      "embedded_input": "contracts/secret_refs.json"
+    }
+  ],
+  "counterexamples": [
+    {
+      "path": "contracts/secret_refs.json",
+      "valid_preflight": "passes",
+      "mutated_compiled_embed_preflight": "incorrectlypasses",
+      "before_sha256": "2c52935aa5374941cf19ae767956488d83257ea29b83d116eb6e3a246eb2ba2d",
+      "after_sha256": "e5e0ede60b3022f3ec71deeadfa42b7c0719a412b00743f8322be020f8b579e9"
+    },
+    {
+      "path": "testdata/rust-port/fixtures/fs-secret/corpus.json",
+      "valid_preflight": "passes",
+      "mutated_compiled_embed_preflight": "incorrectlypasses",
+      "before_sha256": "05b3b0884cb7be0aa63451985d26016b418865280c424b75d5ddcc1a56c1a727",
+      "after_sha256": "87c3267683124677b56830a4322d96a0962e34c29dabe31be881d5a77aa6ca8d"
+    }
+  ],
+  "scope": "disposablecopiedcandidate; actual source-bindinggap, no nativeRustparityfailureclaim/noobservationsrewritten"
+}
