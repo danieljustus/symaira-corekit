@@ -395,6 +395,109 @@ time.sleep(30)
         self.assertFalse(self._windows_pid_live(int(match.group(1))), "Job descendant survived cleanup")
         self.assert_clean(result)
 
+    def test_leader_exit_identity_and_job_accounting(self):
+        """Retain the same descendant object before releasing its parent."""
+        if os.name != "nt":
+            raise unittest.SkipTest("requires native Windows process handles")
+        import ctypes
+        from ctypes import wintypes
+        kernel = ctypes.WinDLL("kernel32", use_last_error=True)
+        kernel.OpenProcess.argtypes = [wintypes.DWORD, wintypes.BOOL, wintypes.DWORD]
+        kernel.OpenProcess.restype = wintypes.HANDLE
+        kernel.WaitForSingleObject.argtypes = [wintypes.HANDLE, wintypes.DWORD]
+        kernel.WaitForSingleObject.restype = wintypes.DWORD
+        kernel.GetProcessTimes.argtypes = [wintypes.HANDLE, *([ctypes.POINTER(wintypes.FILETIME)] * 4)]
+        kernel.GetProcessTimes.restype = wintypes.BOOL
+        kernel.IsProcessInJob.argtypes = [wintypes.HANDLE, wintypes.HANDLE, ctypes.POINTER(wintypes.BOOL)]
+        kernel.IsProcessInJob.restype = wintypes.BOOL
+        kernel.TerminateProcess.argtypes = [wintypes.HANDLE, wintypes.UINT]
+        kernel.TerminateProcess.restype = wintypes.BOOL
+        kernel.CloseHandle.argtypes = [wintypes.HANDLE]
+        kernel.CloseHandle.restype = wintypes.BOOL
+        api = bop._new_windows_api()
+        job_holder = []
+        counts = []
+        original_create = api.create_job
+        original_active = api.active_processes
+        result_holder = {}
+        handle = None
+
+        def create():
+            job = original_create()
+            job_holder.append(job)
+            return job
+
+        def active(job):
+            count = original_active(job)
+            counts.append(count)
+            return count
+
+        def creation_time():
+            values = [wintypes.FILETIME() for _ in range(4)]
+            if not kernel.GetProcessTimes(handle, *(ctypes.byref(value) for value in values)):
+                raise ctypes.WinError(ctypes.get_last_error())
+            return (values[0].dwHighDateTime << 32) | values[0].dwLowDateTime
+
+        with tempfile.TemporaryDirectory(prefix="windows-held-identity-") as directory:
+            root = Path(directory)
+            ready, release = root / "pid", root / "release"
+            child_code = "import os,time; print('DESC',os.getpid(),flush=True); time.sleep(30)"
+            parent_code = f'''import pathlib,subprocess,sys,time
+child = subprocess.Popen([sys.executable, "-c", {child_code!r}], stdout=subprocess.PIPE, text=True)
+line = child.stdout.readline()
+pathlib.Path({str(ready)!r}).write_text(line.strip().split()[1])
+print(line.strip(), flush=True)
+while not pathlib.Path({str(release)!r}).exists(): time.sleep(0.005)
+'''
+
+            def run():
+                try:
+                    result_holder["result"] = _run(parent_code, timeout=5.0, limit=1024)
+                except BaseException as exc:
+                    result_holder["error"] = exc
+
+            with mock.patch.object(bop, "_new_windows_api", return_value=api), mock.patch.object(api, "create_job", side_effect=create), mock.patch.object(api, "active_processes", side_effect=active):
+                thread = threading.Thread(target=run, name="held-process-identity-probe")
+                thread.start()
+                observations = {"test": "leader-exit-held-process-identity", "job_active_counts": counts}
+                try:
+                    deadline = time.monotonic() + 3.0
+                    while not ready.exists() or not ready.read_bytes():
+                        self.assertLess(time.monotonic(), deadline, result_holder)
+                        time.sleep(0.005)
+                    pid = int(ready.read_text())
+                    handle = kernel.OpenProcess(0x00100000 | 0x1000 | 0x0001, False, pid)
+                    self.assertTrue(handle, ctypes.get_last_error())
+                    before = creation_time()
+                    member = wintypes.BOOL()
+                    self.assertTrue(kernel.IsProcessInJob(handle, job_holder[0], ctypes.byref(member)))
+                    observations.update(pid=pid, creation_time=before, member_before=bool(member.value), wait_before=kernel.WaitForSingleObject(handle, 0))
+                    self.assertTrue(member.value, observations)
+                    self.assertEqual(observations["wait_before"], 258, observations)
+                    release.write_bytes(b"release parent")
+                    thread.join(10.0)
+                    self.assertFalse(thread.is_alive(), "bounded helper did not return")
+                    error = result_holder.get("error")
+                    result = result_holder.get("result") or getattr(error, "result", {}) or {}
+                    observations.update(wait_after=kernel.WaitForSingleObject(handle, 0), creation_time_after=creation_time(), cleanup_verified=result.get("cleanup_verified"), returncode=result.get("returncode"), timed_out=result.get("timed_out"), cleanup_errors=result.get("cleanup_errors"), error_type=type(error).__name__ if error else None)
+                    print("WINDOWS_HELD_IDENTITY " + json.dumps(observations, sort_keys=True), flush=True)
+                    if error:
+                        raise error
+                    self.assertEqual(observations["creation_time_after"], before)
+                    self.assertEqual(observations["wait_after"], 0, observations)
+                    self.assertEqual(result["returncode"], 0)
+                    self.assertFalse(result["timed_out"])
+                    self.assert_clean(result)
+                finally:
+                    release.write_bytes(b"release parent")
+                    if handle:
+                        if kernel.WaitForSingleObject(handle, 0) == 258:
+                            self.assertTrue(kernel.TerminateProcess(handle, 1))
+                            self.assertEqual(kernel.WaitForSingleObject(handle, 3000), 0)
+                        self.assertTrue(kernel.CloseHandle(handle))
+                    thread.join(10.0)
+                    self.assertFalse(thread.is_alive())
+
     def test_leader_exit_alone_closes_inherited_pipe_descendant(self):
         child_code = "import os,time; print('DESC', os.getpid(), flush=True); time.sleep(30)"
         parent_code = f'''
