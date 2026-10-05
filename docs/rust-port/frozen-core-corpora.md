@@ -78,9 +78,12 @@ Later integration heads still require their own CI.
 Raw new Rust observations and the source-bound replay report
 are retained alongside native CI's full default-Make output.
 
-This is a slice of #368, not aggregate completion. FS/SEC, MCP/MCP-config and
-static-update frozen families retain their own gates. Request/TLS/cancellation
-and signed-update helpers, Apply/Cosign platform corpora and cache-persistence
-observations still require Go-free replacements and complete native accounting
-before `make rust-contracts` can be introduced.
+The complete `make rust-contracts` aggregate is implemented alongside these
+families; see [go-free-contracts.md](go-free-contracts.md). At candidate
+`9971be82bae4f39575be0899e71032ecc46c313a`, native Linux, macOS and Windows
+[run 37149358746](https://github.com/danieljustus/symaira-corekit/actions/runs/37149358746)
+passed both Go-absent and executable Go-denial phases, including all remaining
+update families and real signed acceptance. #368 remains open until the
+reviewed changes are integrated and the complete gate passes on integrated
+`main`; later heads require their own exact-head evidence.
 No Go removal, consumer release or crates.io publication is claimed.

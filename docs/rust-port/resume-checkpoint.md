@@ -1,3 +1,18 @@
+## Complete Go-free integration candidate (2026-10-05)
+
+PR #401 contains the reviewed changes from #398, #399 and #400, whose exact
+heads are ancestors of candidate `9971be82bae4f39575be0899e71032ecc46c313a`.
+Its ordinary CI [37149358706](https://github.com/danieljustus/symaira-corekit/actions/runs/37149358706)
+and complete native Go-free aggregate [37149358746](https://github.com/danieljustus/symaira-corekit/actions/runs/37149358746)
+passed on Linux, macOS and Windows. Integration is consolidated in #401 rather
+than replaying the same cumulative source through four squash merges.
+Documentation-only status corrections do not change the frozen compiler,
+harness or fixture inputs. The new head still requires its own CI, and #368
+closes only after successful integrated-main aggregate readback. #396/#397
+are included fixes; #364, #370 and #373 remain open for released consumer,
+standalone/rollback, observation and Go-retirement gates. All checkpoint
+sections below retain their dated historical evidence.
+
 ## Portable consumer evidence verification (2026-10-03)
 
 RUST-016 remains blocked by real consumer releases and source-bound
@@ -42,8 +57,9 @@ registration reconstructed both Git snapshots, all original bundle files,
 SDK archives/compiler inputs and raw Go observations, and rejected observation
 mutations on every target. See `evidence/fs-frozen-registration-20261003.json`.
 Native Rust acceptance with executable Go/Git denials and both mutation controls
-remains the integration gate. #368 still requires the remaining oracle families
-and aggregate Go-free suite; RUST-016 and Go retirement remain blocked, and
+passed on all three platforms at the #401 candidate above. The remaining
+oracle families and aggregate Go-free suite also passed; #368 still requires
+integrated-main verification. RUST-016 and Go retirement remain blocked, and
 RUST-014/015 are deferred under ADR 0002.
 
 # Resume checkpoint — Rust consumer release gates open

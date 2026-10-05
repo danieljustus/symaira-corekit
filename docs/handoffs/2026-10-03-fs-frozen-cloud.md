@@ -8,8 +8,14 @@ The Linux native wrapper passed on the registration working tree: 13 cases,
 nine controls, exactly one named strict-v1 test, both mutations, executable
 Go/Git denial controls and no forbidden invocation. POSIX replay uses native
 capture umask `022`; the original cloud `077` mismatch was retained as a failure.
-Exact-head ordinary three-platform CI remains required before merge. #368 and
-consumer/release/Go-retirement gates stay open; no broader completion is claimed.
+Ordinary three-platform CI passed at #398 head
+`1e3cb58735ea07668583e8159ceab7745755db7e` in
+[run 37141793738](https://github.com/danieljustus/symaira-corekit/actions/runs/37141793738).
+The complete #401 candidate also passed ordinary CI and the native Go-free
+aggregate on all three platforms. Integration now proceeds through cumulative
+PR #401, which contains the reviewed #398–#400 changes; later heads and
+integrated `main` still require their own gates. #368 and consumer/release/
+Go-retirement gates stay open until their respective acceptance is verified.
 
 # Frozen FS/SEC evidence: code and review continuation
 
