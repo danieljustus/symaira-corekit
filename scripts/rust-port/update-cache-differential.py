@@ -125,6 +125,12 @@ def main():
     mode.add_argument("--negative-control", action="store_true", help="prove a mutated fixture is rejected")
     parser.add_argument("--fixture", type=Path, default=FIXTURE)
     args = parser.parse_args()
+    from frozen_update_replay import legacy_entry
+    if legacy_entry("cache", args):
+        if not args.write:
+            from frozen_update_replay import main as frozen_main
+            frozen_main(["--lane", "persistence"])
+        return
     observed = observe_go()
     if args.write:
         args.fixture.parent.mkdir(parents=True, exist_ok=True)

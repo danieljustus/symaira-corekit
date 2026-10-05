@@ -1,0 +1,67 @@
+name: Complete Go-free native contracts
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: frozen-contracts-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  native:
+    name: Go-free aggregate (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 65
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-15, windows-latest]
+    env:
+      FROZEN_CONTRACTS_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+      GIT_CONFIG_COUNT: '1'
+      GIT_CONFIG_KEY_0: core.autocrlf
+      GIT_CONFIG_VALUE_0: 'false'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+      - name: Record native macOS identity
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          sw_vers
+          test "$(uname -m)" = arm64
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.14'
+      - name: Install pinned Rust
+        shell: bash
+        run: rustup toolchain install 1.98.0 --profile minimal --component rustfmt,clippy
+      - name: Populate dependencies before offline replay
+        run: cargo fetch --locked
+      - name: Install pinned real signature verifier
+        shell: bash
+        run: |
+          python -B scripts/rust-port/install-cosign.py --directory "$RUNNER_TEMP/cosign-bin"
+          echo "$RUNNER_TEMP/cosign-bin" >> "$GITHUB_PATH"
+      - name: Verify actual corpus mutations and TLS negotiation
+        run: |
+          python -B -W error -m unittest discover -s scripts/rust-port -p test_update_fixture_transport.py -v
+          python -B -W error -m unittest discover -s scripts/rust-port -p test_frozen_update_replay.py -v
+          python -B -W error -m unittest discover -s scripts/rust-port -p test_frozen_contracts_ci.py -v
+      - name: Execute every native functional contract with Go absent and denied
+        run: python -B scripts/rust-port/frozen_contracts_ci.py
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: frozen-contracts-native-${{ matrix.os }}-${{ github.event.pull_request.head.sha || github.sha }}
+          path: ${{ runner.temp }}/frozen-contracts-native
+          if-no-files-found: error
+          retention-days: 90

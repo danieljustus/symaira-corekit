@@ -34,15 +34,17 @@ def main():
     env.setdefault("CARGO_HOME", str(home / ".cargo"))
     env.setdefault("RUSTUP_HOME", str(home / ".rustup"))
     env["GOTOOLCHAIN"] = "go1.26.6"
-    caches = json.loads(subprocess.check_output(
-        ["go", "env", "-json", "GOMODCACHE", "GOCACHE", "GOROOT"], cwd=ROOT, env=env, text=True))
-    # Resolve the real compiler before HOME isolation; a version-manager launcher may use HOME/sdk.
-    env["GOROOT"] = caches.pop("GOROOT")
-    env["PATH"] = str(Path(env["GOROOT"]) / "bin") + os.pathsep + env["PATH"]
-    env.update(caches)
+    live = os.environ.get("GO_ORACLE") == "1"
+    if live:
+        caches = json.loads(subprocess.check_output(
+            ["go", "env", "-json", "GOMODCACHE", "GOCACHE", "GOROOT"], cwd=ROOT, env=env, text=True))
+        # Resolve the compiler only for explicitly requested live regeneration.
+        env["GOROOT"] = caches.pop("GOROOT")
+        env["PATH"] = str(Path(env["GOROOT"]) / "bin") + os.pathsep + env["PATH"]
+        env.update(caches)
     report = {"status": "in_progress", "native_os": platform.system(), "native_arch": platform.machine(),
               "head_sha": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip(),
-              "commands": []}
+              "commands": [], "oracle_mode": "live-go" if live else "frozen-native-go"}
     fixture = args.report_dir / "native-apply.json"
     with tempfile.TemporaryDirectory(prefix="corekit-native-update-", dir=args.report_dir) as temporary:
         private = Path(temporary)
@@ -55,7 +57,6 @@ def main():
                     "GOTOOLCHAIN": "go1.26.6", "DEV_EXTERNAL": "", "CARGO_TARGET_DIR": str(ROOT / "target"),
                     "UPDATE_APPLY_FIXTURE": str(fixture)})
         commands = [
-            [sys.executable, "scripts/rust-port/update-apply-differential.py", "--write", "--fixture", str(fixture)],
             ["make", "rust-update-version-contract", "rust-update-contract", "rust-update-signed-contract"],
             ["cargo", "test", "--manifest-path", str(ROOT / "Cargo.toml"), "-p", "symaira-core-update",
              "--lib", "--locked", REAL_COSIGN_TEST,
@@ -63,6 +64,14 @@ def main():
             ["cargo", "nextest", "run", "--manifest-path", str(ROOT / "Cargo.toml"),
              "--locked", "-p", "symaira-core-update"],
         ]
+        if live:
+            commands.insert(0, [sys.executable, "scripts/rust-port/update-apply-differential.py", "--write", "--fixture", str(fixture)])
+        else:
+            from frozen_update_replay import read_capture
+            from frozen_update_anchors import CAPTURE_SOURCE_COMMIT
+            _, observations = read_capture("apply")
+            fixture.write_text(json.dumps(observations, indent=2) + "\n", encoding="utf-8")
+            report["oracle_source_commit"] = CAPTURE_SOURCE_COMMIT
         try:
             for command in commands:
                 print("RUN " + " ".join(command), flush=True)
