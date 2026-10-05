@@ -567,6 +567,14 @@ def main() -> int:
             fail(f"{item['id']}: invalid demand_class")
         if not item.get("acceptance_commands") or not item.get("stop_rule"):
             fail(f"{item['id']}: acceptance_commands and stop_rule are required")
+        if "blocking_issues" in item:
+            blockers = item["blocking_issues"]
+            if status != "blocked" or not isinstance(blockers, list) or not blockers or any(
+                not isinstance(url, str) or not re.fullmatch(
+                    r"https://github\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+/issues/[1-9][0-9]*", url
+                ) for url in blockers
+            ):
+                fail(f"{item['id']}: blocking_issues require blocked status and explicit GitHub issue URLs")
         deps[item["id"]] = item_deps
         statuses[item["id"]] = status
 
@@ -580,7 +588,9 @@ def main() -> int:
         dependencies_complete = all(statuses[dep] == "complete" for dep in item_deps)
         if statuses[item_id] == "ready" and not dependencies_complete:
             fail(f"{item_id}: ready while a dependency is incomplete")
-        if statuses[item_id] == "blocked" and dependencies_complete:
+        if statuses[item_id] == "blocked" and dependencies_complete and not next(
+            candidate for candidate in work if candidate["id"] == item_id
+        ).get("blocking_issues"):
             fail(f"{item_id}: blocked despite all dependencies being complete")
         if statuses[item_id] == "deferred" and next(
             candidate for candidate in work if candidate["id"] == item_id

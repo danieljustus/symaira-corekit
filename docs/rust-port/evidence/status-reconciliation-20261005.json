@@ -1,0 +1,544 @@
+{
+  "schema_version": 1,
+  "execution_head": "1f3a7276500042121fe2d79a545462a15675aadc",
+  "aggregate_run_url": "https://github.com/danieljustus/symaira-corekit/actions/runs/37331109179",
+  "ordinary_run_url": "https://github.com/danieljustus/symaira-corekit/actions/runs/37331109158",
+  "native": [
+    {
+      "target": "darwin-arm64",
+      "job_url": "https://github.com/danieljustus/symaira-corekit/actions/runs/37331109179/job/111834131820",
+      "artifact_id": 11356339840,
+      "artifact_url": "https://github.com/danieljustus/symaira-corekit/actions/runs/37331109179/artifacts/11356339840",
+      "artifact_digest": "sha256:efbb2cf1bdb151c83ffc5728478ecb6af4738243f688546b4b6490ae72747ab9",
+      "job_log_sha256": "fc0e0aa740c949d1b56c882cadc8ca1e143ff3e6e43ac5f25788a3bfabd4fdc2",
+      "result": {
+        "status": "PASS",
+        "execution_head": "1f3a7276500042121fe2d79a545462a15675aadc",
+        "go_absent_from_path": true,
+        "native_go_denial_control": true,
+        "forbidden_go_called": false,
+        "phases": [
+          {
+            "mode": "absent",
+            "exit_code": 0,
+            "update_cases": {
+              "request": 13,
+              "cache": 7,
+              "persistence": 7,
+              "cosign": 13,
+              "apply": 17,
+              "cancellation": 16
+            },
+            "families": [
+              {
+                "contract_groups": 19,
+                "family": "foundation",
+                "files": 65,
+                "fixture_mutation_rejected": true,
+                "rust_tests": 21,
+                "status": "PASS"
+              },
+              {
+                "contract_groups": 12,
+                "family": "llm",
+                "files": 5,
+                "fixture_mutation_rejected": true,
+                "rust_tests": 48,
+                "status": "PASS"
+              }
+            ],
+            "fs_cases": 13,
+            "fs_controls": 9,
+            "mcp_cases": 46,
+            "mcpcfg_cases": 24,
+            "sqlite_cases": 6,
+            "sqlite_checked_fields": 42,
+            "raw_stdout_sha256": "98474d6a82e2976925f7bbe94b63f5a03b7e3939fce0dedc2da9870a9a57a14b"
+          },
+          {
+            "mode": "denied",
+            "exit_code": 0,
+            "update_cases": {
+              "request": 13,
+              "cache": 7,
+              "persistence": 7,
+              "cosign": 13,
+              "apply": 17,
+              "cancellation": 16
+            },
+            "families": [
+              {
+                "contract_groups": 19,
+                "family": "foundation",
+                "files": 65,
+                "fixture_mutation_rejected": true,
+                "rust_tests": 21,
+                "status": "PASS"
+              },
+              {
+                "contract_groups": 12,
+                "family": "llm",
+                "files": 5,
+                "fixture_mutation_rejected": true,
+                "rust_tests": 48,
+                "status": "PASS"
+              }
+            ],
+            "fs_cases": 13,
+            "fs_controls": 9,
+            "mcp_cases": 46,
+            "mcpcfg_cases": 24,
+            "sqlite_cases": 6,
+            "sqlite_checked_fields": 42,
+            "raw_stdout_sha256": "8db045c9010ec79cc4c4db55f95f139c6c6da8f02d7d50f902cb2a5468e4ac20"
+          }
+        ]
+      },
+      "update_reports": [
+        {
+          "status": "PASS",
+          "target": "darwin-arm64",
+          "lane": "request",
+          "case_count": 13,
+          "fixture_sha256": "674861839bf4660ef9551acfc8498e12583ad7096cb3c3f66406e35bb476f8c1",
+          "actual_rust_executed": true,
+          "rust_input_sha256": "ecc8c37d7fb1e17059c9133757adff038da8ecbe543bbc6f0a9bf5c758d79e8c"
+        },
+        {
+          "status": "PASS",
+          "target": "darwin-arm64",
+          "lane": "cache",
+          "case_count": 7,
+          "fixture_sha256": "1e873fab161c41123075de189c125cf73f778fd85e0a98a91e8a95a7a6d16a94",
+          "actual_rust_executed": true,
+          "rust_input_sha256": "ecc8c37d7fb1e17059c9133757adff038da8ecbe543bbc6f0a9bf5c758d79e8c"
+        },
+        {
+          "status": "PASS",
+          "target": "darwin-arm64",
+          "lane": "persistence",
+          "case_count": 7,
+          "fixture_sha256": "f4c3e34c08b95b1abbdeb0588441fa703087b03da42c2c60378765b6ca768f13",
+          "actual_rust_executed": true,
+          "rust_input_sha256": "ecc8c37d7fb1e17059c9133757adff038da8ecbe543bbc6f0a9bf5c758d79e8c"
+        },
+        {
+          "status": "PASS",
+          "target": "darwin-arm64",
+          "lane": "cosign",
+          "case_count": 13,
+          "fixture_sha256": "9906b99ff46cf7a3dc809f36a93e8f45a98ddc9eb1b0c757fe5e7bff06933845",
+          "actual_rust_executed": true,
+          "rust_input_sha256": "ecc8c37d7fb1e17059c9133757adff038da8ecbe543bbc6f0a9bf5c758d79e8c"
+        },
+        {
+          "status": "PASS",
+          "target": "darwin-arm64",
+          "lane": "apply",
+          "case_count": 17,
+          "fixture_sha256": "1bf8cb3ad42624b7a8d0a76421b5f560e2be30bbcffedf50637b000fd58a4541",
+          "actual_rust_executed": true,
+          "rust_input_sha256": "ecc8c37d7fb1e17059c9133757adff038da8ecbe543bbc6f0a9bf5c758d79e8c"
+        },
+        {
+          "status": "PASS",
+          "target": "darwin-arm64",
+          "lane": "cancellation",
+          "case_count": 16,
+          "fixture_sha256": "3095b027bb62535774018f4228cf1048e6f3720e087a43abb7f384b2d3e7aa83",
+          "actual_rust_executed": true,
+          "rust_input_sha256": "ecc8c37d7fb1e17059c9133757adff038da8ecbe543bbc6f0a9bf5c758d79e8c"
+        }
+      ],
+      "checker_observations": 21,
+      "checker_rust_tests": 5,
+      "checker_mutations_rejected": 1
+    },
+    {
+      "target": "windows-amd64",
+      "job_url": "https://github.com/danieljustus/symaira-corekit/actions/runs/37331109179/job/111834131588",
+      "artifact_id": 11355145960,
+      "artifact_url": "https://github.com/danieljustus/symaira-corekit/actions/runs/37331109179/artifacts/11355145960",
+      "artifact_digest": "sha256:c7ee6f7b8c069f98ba120ab426705b588e1c918f0a7827712db84ee8bd9302fd",
+      "job_log_sha256": "953bcf277f66766aaec73c12ab59e77a9d9ddf464118b1f981f4122308f4d358",
+      "result": {
+        "status": "PASS",
+        "execution_head": "1f3a7276500042121fe2d79a545462a15675aadc",
+        "go_absent_from_path": true,
+        "native_go_denial_control": true,
+        "forbidden_go_called": false,
+        "phases": [
+          {
+            "mode": "absent",
+            "exit_code": 0,
+            "update_cases": {
+              "request": 13,
+              "cache": 7,
+              "persistence": 7,
+              "cosign": 13,
+              "apply": 17,
+              "cancellation": 16
+            },
+            "families": [
+              {
+                "contract_groups": 19,
+                "family": "foundation",
+                "files": 65,
+                "fixture_mutation_rejected": true,
+                "rust_tests": 22,
+                "status": "PASS"
+              },
+              {
+                "contract_groups": 12,
+                "family": "llm",
+                "files": 5,
+                "fixture_mutation_rejected": true,
+                "rust_tests": 48,
+                "status": "PASS"
+              }
+            ],
+            "fs_cases": 13,
+            "fs_controls": 9,
+            "mcp_cases": 46,
+            "mcpcfg_cases": 24,
+            "sqlite_cases": 6,
+            "sqlite_checked_fields": 40,
+            "raw_stdout_sha256": "5687ea5c9ba7e51071f3430e568cb4b246fff311c4ccaf3610d19c7750901065"
+          },
+          {
+            "mode": "denied",
+            "exit_code": 0,
+            "update_cases": {
+              "request": 13,
+              "cache": 7,
+              "persistence": 7,
+              "cosign": 13,
+              "apply": 17,
+              "cancellation": 16
+            },
+            "families": [
+              {
+                "contract_groups": 19,
+                "family": "foundation",
+                "files": 65,
+                "fixture_mutation_rejected": true,
+                "rust_tests": 22,
+                "status": "PASS"
+              },
+              {
+                "contract_groups": 12,
+                "family": "llm",
+                "files": 5,
+                "fixture_mutation_rejected": true,
+                "rust_tests": 48,
+                "status": "PASS"
+              }
+            ],
+            "fs_cases": 13,
+            "fs_controls": 9,
+            "mcp_cases": 46,
+            "mcpcfg_cases": 24,
+            "sqlite_cases": 6,
+            "sqlite_checked_fields": 40,
+            "raw_stdout_sha256": "316b650931418ef179cf78854e8188746540f1c645b7d77324a01dfa6f4e3b32"
+          }
+        ]
+      },
+      "update_reports": [
+        {
+          "status": "PASS",
+          "target": "windows-amd64",
+          "lane": "request",
+          "case_count": 13,
+          "fixture_sha256": "a68e8ed42f86a6d355f964bc8c416efcf2a85e269fdef89ac178e81dceea7710",
+          "actual_rust_executed": true,
+          "rust_input_sha256": "ecc8c37d7fb1e17059c9133757adff038da8ecbe543bbc6f0a9bf5c758d79e8c"
+        },
+        {
+          "status": "PASS",
+          "target": "windows-amd64",
+          "lane": "cache",
+          "case_count": 7,
+          "fixture_sha256": "e0df86ff3db802e15b07c838f5126305f70a00bb98be830ce0b8eb478e14738a",
+          "actual_rust_executed": true,
+          "rust_input_sha256": "ecc8c37d7fb1e17059c9133757adff038da8ecbe543bbc6f0a9bf5c758d79e8c"
+        },
+        {
+          "status": "PASS",
+          "target": "windows-amd64",
+          "lane": "persistence",
+          "case_count": 7,
+          "fixture_sha256": "1e32f9b7683a29c5cac130e40141dfb52dc58534f29ef8c1651b665175e25763",
+          "actual_rust_executed": true,
+          "rust_input_sha256": "ecc8c37d7fb1e17059c9133757adff038da8ecbe543bbc6f0a9bf5c758d79e8c"
+        },
+        {
+          "status": "PASS",
+          "target": "windows-amd64",
+          "lane": "cosign",
+          "case_count": 13,
+          "fixture_sha256": "ca19515b2ac21e01f53b049131ad0be2694d55e711eeacb30df7ac03518f2a14",
+          "actual_rust_executed": true,
+          "rust_input_sha256": "ecc8c37d7fb1e17059c9133757adff038da8ecbe543bbc6f0a9bf5c758d79e8c"
+        },
+        {
+          "status": "PASS",
+          "target": "windows-amd64",
+          "lane": "apply",
+          "case_count": 17,
+          "fixture_sha256": "bd92e74e890e148a3e9275dac40057b0534bf8bf00a51504c0802a62726951fd",
+          "actual_rust_executed": true,
+          "rust_input_sha256": "ecc8c37d7fb1e17059c9133757adff038da8ecbe543bbc6f0a9bf5c758d79e8c"
+        },
+        {
+          "status": "PASS",
+          "target": "windows-amd64",
+          "lane": "cancellation",
+          "case_count": 16,
+          "fixture_sha256": "92793df27226cd9ff71db1337bc552ba9d2d5ca4e43beac44e32af83a951f934",
+          "actual_rust_executed": true,
+          "rust_input_sha256": "ecc8c37d7fb1e17059c9133757adff038da8ecbe543bbc6f0a9bf5c758d79e8c"
+        }
+      ],
+      "checker_observations": 21,
+      "checker_rust_tests": 5,
+      "checker_mutations_rejected": 1
+    },
+    {
+      "target": "linux-amd64",
+      "job_url": "https://github.com/danieljustus/symaira-corekit/actions/runs/37331109179/job/111834131289",
+      "artifact_id": 11354916138,
+      "artifact_url": "https://github.com/danieljustus/symaira-corekit/actions/runs/37331109179/artifacts/11354916138",
+      "artifact_digest": "sha256:472d25ef89b86df5e59357d17502d5ddd8fd45fb470f992c147a1a99f3f5bf8b",
+      "job_log_sha256": "9d89d86b8155c2cc5cf6d378bf962e92f4084eda3c50bf3e8a81b1b2a44134b9",
+      "result": {
+        "status": "PASS",
+        "execution_head": "1f3a7276500042121fe2d79a545462a15675aadc",
+        "go_absent_from_path": true,
+        "native_go_denial_control": true,
+        "forbidden_go_called": false,
+        "phases": [
+          {
+            "mode": "absent",
+            "exit_code": 0,
+            "update_cases": {
+              "request": 13,
+              "cache": 7,
+              "persistence": 7,
+              "cosign": 13,
+              "apply": 17,
+              "cancellation": 16
+            },
+            "families": [
+              {
+                "contract_groups": 19,
+                "family": "foundation",
+                "files": 65,
+                "fixture_mutation_rejected": true,
+                "rust_tests": 21,
+                "status": "PASS"
+              },
+              {
+                "contract_groups": 12,
+                "family": "llm",
+                "files": 5,
+                "fixture_mutation_rejected": true,
+                "rust_tests": 48,
+                "status": "PASS"
+              }
+            ],
+            "fs_cases": 13,
+            "fs_controls": 9,
+            "mcp_cases": 46,
+            "mcpcfg_cases": 24,
+            "sqlite_cases": 6,
+            "sqlite_checked_fields": 42,
+            "raw_stdout_sha256": "be6c61beb5fcfc71e686bee9b09b35c44f363d9aa6376cd3a25e42e48b566cb2"
+          },
+          {
+            "mode": "denied",
+            "exit_code": 0,
+            "update_cases": {
+              "request": 13,
+              "cache": 7,
+              "persistence": 7,
+              "cosign": 13,
+              "apply": 17,
+              "cancellation": 16
+            },
+            "families": [
+              {
+                "contract_groups": 19,
+                "family": "foundation",
+                "files": 65,
+                "fixture_mutation_rejected": true,
+                "rust_tests": 21,
+                "status": "PASS"
+              },
+              {
+                "contract_groups": 12,
+                "family": "llm",
+                "files": 5,
+                "fixture_mutation_rejected": true,
+                "rust_tests": 48,
+                "status": "PASS"
+              }
+            ],
+            "fs_cases": 13,
+            "fs_controls": 9,
+            "mcp_cases": 46,
+            "mcpcfg_cases": 24,
+            "sqlite_cases": 6,
+            "sqlite_checked_fields": 42,
+            "raw_stdout_sha256": "fbc707dc2ec6c51f547c658b98827087de68aa0995e788a6b6d165a88e0d168b"
+          }
+        ]
+      },
+      "update_reports": [
+        {
+          "status": "PASS",
+          "target": "linux-amd64",
+          "lane": "request",
+          "case_count": 13,
+          "fixture_sha256": "f017b8b6a233365f51ec0a81b0c9097bc157b570e77a3bcd100b0c4e7c17332d",
+          "actual_rust_executed": true,
+          "rust_input_sha256": "ecc8c37d7fb1e17059c9133757adff038da8ecbe543bbc6f0a9bf5c758d79e8c"
+        },
+        {
+          "status": "PASS",
+          "target": "linux-amd64",
+          "lane": "cache",
+          "case_count": 7,
+          "fixture_sha256": "cc5c185a50c2b262979609d733cb01d51a16149a8c68fcaa4c0a583f40e2f7e3",
+          "actual_rust_executed": true,
+          "rust_input_sha256": "ecc8c37d7fb1e17059c9133757adff038da8ecbe543bbc6f0a9bf5c758d79e8c"
+        },
+        {
+          "status": "PASS",
+          "target": "linux-amd64",
+          "lane": "persistence",
+          "case_count": 7,
+          "fixture_sha256": "cbc95f8835c685c13572aaa32b241895cc7105c18f71d4a3f3a5fe628eacea4e",
+          "actual_rust_executed": true,
+          "rust_input_sha256": "ecc8c37d7fb1e17059c9133757adff038da8ecbe543bbc6f0a9bf5c758d79e8c"
+        },
+        {
+          "status": "PASS",
+          "target": "linux-amd64",
+          "lane": "cosign",
+          "case_count": 13,
+          "fixture_sha256": "c266f7a26adb17c9df1aa347000abbcb4e2346ce252c5b2dab5714025fb0e370",
+          "actual_rust_executed": true,
+          "rust_input_sha256": "ecc8c37d7fb1e17059c9133757adff038da8ecbe543bbc6f0a9bf5c758d79e8c"
+        },
+        {
+          "status": "PASS",
+          "target": "linux-amd64",
+          "lane": "apply",
+          "case_count": 17,
+          "fixture_sha256": "ddd0626731e5bf60dea3e966241f54a3067986360f86fb1cfcd587e8f3eb8b38",
+          "actual_rust_executed": true,
+          "rust_input_sha256": "ecc8c37d7fb1e17059c9133757adff038da8ecbe543bbc6f0a9bf5c758d79e8c"
+        },
+        {
+          "status": "PASS",
+          "target": "linux-amd64",
+          "lane": "cancellation",
+          "case_count": 16,
+          "fixture_sha256": "dbc850b991a6d4ca35abecb599fcd175c1376e134d5fdc3437696be429744a1b",
+          "actual_rust_executed": true,
+          "rust_input_sha256": "ecc8c37d7fb1e17059c9133757adff038da8ecbe543bbc6f0a9bf5c758d79e8c"
+        }
+      ],
+      "checker_observations": 21,
+      "checker_rust_tests": 5,
+      "checker_mutations_rejected": 1
+    }
+  ],
+  "ordinary_jobs": [
+    {
+      "job_url": "https://github.com/danieljustus/symaira-corekit/actions/runs/37331109158/job/111834192789",
+      "name": "Rust RUST-013 hardening",
+      "head_sha": "1f3a7276500042121fe2d79a545462a15675aadc",
+      "conclusion": "success",
+      "raw_log_sha256": "82b18c08481221143378e2d455a88d8a1de31895360ac7ebfd0cc3b1755dba68"
+    },
+    {
+      "job_url": "https://github.com/danieljustus/symaira-corekit/actions/runs/37331109158/job/111834192830",
+      "name": "Rust foundation (macos-26)",
+      "head_sha": "1f3a7276500042121fe2d79a545462a15675aadc",
+      "conclusion": "success",
+      "raw_log_sha256": "74ee6f6a1a1ff9ad96146cd97f604d46b2d4b6e4f422d76027e468b3f38745f2"
+    },
+    {
+      "job_url": "https://github.com/danieljustus/symaira-corekit/actions/runs/37331109158/job/111834192915",
+      "name": "Rust foundation (ubuntu-latest)",
+      "head_sha": "1f3a7276500042121fe2d79a545462a15675aadc",
+      "conclusion": "success",
+      "raw_log_sha256": "ea6440df02e7b41987bc67fdbb3aa99e9c42163ca6d56223ce4bb3627beda4cd"
+    },
+    {
+      "job_url": "https://github.com/danieljustus/symaira-corekit/actions/runs/37331109158/job/111834192922",
+      "name": "Rust foundation (windows-latest)",
+      "head_sha": "1f3a7276500042121fe2d79a545462a15675aadc",
+      "conclusion": "success",
+      "raw_log_sha256": "cefe6c7cfd388c7c304223779a06b75be59fc8a6c78fa81554adf9bd4a95d169"
+    },
+    {
+      "job_url": "https://github.com/danieljustus/symaira-corekit/actions/runs/37331109158/job/111834193016",
+      "name": "Rust update signed-release acceptance (ubuntu-latest)",
+      "head_sha": "1f3a7276500042121fe2d79a545462a15675aadc",
+      "conclusion": "success",
+      "raw_log_sha256": "d6294b3f5705c96cff1f16ed1a0fb75a07f97cffc973e5b97da587fa6ec2c98d"
+    },
+    {
+      "job_url": "https://github.com/danieljustus/symaira-corekit/actions/runs/37331109158/job/111834193152",
+      "name": "Rust RUST-013 native (windows-latest)",
+      "head_sha": "1f3a7276500042121fe2d79a545462a15675aadc",
+      "conclusion": "success",
+      "raw_log_sha256": "d48662ace5d633fab4cd2c1733f19032d072bee42d0d2615542b51b90fcc9b80"
+    },
+    {
+      "job_url": "https://github.com/danieljustus/symaira-corekit/actions/runs/37331109158/job/111834193228",
+      "name": "Rust update signed-release acceptance (macos-26)",
+      "head_sha": "1f3a7276500042121fe2d79a545462a15675aadc",
+      "conclusion": "success",
+      "raw_log_sha256": "7ba2ba18c68653b2ccb076a262669c70d090d13649226195302289ea00f06b7c"
+    },
+    {
+      "job_url": "https://github.com/danieljustus/symaira-corekit/actions/runs/37331109158/job/111834193235",
+      "name": "Rust RUST-013 native (macos-26)",
+      "head_sha": "1f3a7276500042121fe2d79a545462a15675aadc",
+      "conclusion": "success",
+      "raw_log_sha256": "1782e5584f002b2c6760e9f76dc6a3b31bcb9e6b8fa2240a125a540d28927530"
+    },
+    {
+      "job_url": "https://github.com/danieljustus/symaira-corekit/actions/runs/37331109158/job/111834193247",
+      "name": "Rust RUST-013 native (ubuntu-latest)",
+      "head_sha": "1f3a7276500042121fe2d79a545462a15675aadc",
+      "conclusion": "success",
+      "raw_log_sha256": "e1ca976681cd9ab0b7815962d25af8ac82da24921387027d9cf70370c7aa7325"
+    },
+    {
+      "job_url": "https://github.com/danieljustus/symaira-corekit/actions/runs/37331109158/job/111834193250",
+      "name": "Rust update signed-release acceptance (windows-latest)",
+      "head_sha": "1f3a7276500042121fe2d79a545462a15675aadc",
+      "conclusion": "success",
+      "raw_log_sha256": "a45cefd7e35736d6569946a911d838049e9efcf1225096d16ded933a816e32e3"
+    }
+  ],
+  "retained_go": {
+    "RUST-016": "blocked",
+    "RUST-014": "deferred",
+    "RUST-015": "deferred",
+    "issues": [
+      370,
+      373
+    ]
+  },
+  "limitations": [
+    "Acceptance applies to the recorded immutable source revision, not a later head.",
+    "Nextest intentionally skips oracle/signed tests; native differential and signed-release gates execute those cases separately.",
+    "Native contract completion is not released consumer adoption or authorization to delete Go."
+  ]
+}

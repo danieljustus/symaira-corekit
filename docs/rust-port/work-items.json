@@ -228,7 +228,7 @@
       ],
       "stop_rule": "Do not mark complete until UPD-001..012 have executable Go/Rust parity and native evidence on every required target. Stop on redirect/TLS weakening, traversal/symlink writes, checksum-byte drift, broken rollback or replacement of a known-good binary.",
       "frozen_go_evidence": "evidence/update-frozen-registration-20261003.json",
-      "go_free_acceptance": "go-free-contracts.md; aggregate exact-head native acceptance pending"
+      "go_free_acceptance": "evidence/status-reconciliation-20261005.json"
     },
     {
       "id": "RUST-008",
@@ -250,15 +250,16 @@
         "LLM-011",
         "LLM-012"
       ],
-      "status": "in_progress",
+      "status": "complete",
       "demand_class": "demand_driven",
       "demand_evidence": "demand-assessment.md",
       "acceptance_commands": [
         "make rust-llm-contract",
         "python3 scripts/rust-port/llm-differential.py"
       ],
-      "stop_rule": "Do not duplicate provider wire transports in consumers or create a Rust ollamakit clone. Chat/stream cancellation and async transport injection are implemented; keep the item in progress while remaining per-operation cancellation and parity evidence are open. Consumer adapters retain product policy and exact Git pins. Stop on credential leakage, redirect drift, streaming/tool-wire drift or taxonomy changes.",
-      "frozen_replay": "frozen-core-corpora.md"
+      "stop_rule": "Do not duplicate provider wire transports in consumers or create a Rust ollamakit clone. Native evidence covers per-operation cancellation, injected transports and provider/stream parity at the recorded immutable head. Consumer adapters retain product policy and exact Git pins; consumer release and rollback gates remain separate. Stop on credential leakage, redirect drift, streaming/tool-wire drift or taxonomy changes.",
+      "frozen_replay": "frozen-core-corpora.md",
+      "native_evidence": "evidence/status-reconciliation-20261005.json"
     },
     {
       "id": "RUST-009",
@@ -400,6 +401,12 @@
         "PERF-004"
       ],
       "status": "blocked",
+      "blocking_issues": [
+        "https://github.com/danieljustus/symaira-vault/issues/1256",
+        "https://github.com/danieljustus/symaira-desktop/issues/1155",
+        "https://github.com/danieljustus/symaira-brain/issues/782",
+        "https://github.com/danieljustus/symaira-eraseme/issues/1132"
+      ],
       "demand_class": "required",
       "acceptance_commands": [
         "python3 -m unittest discover -s port/consumer -p 'test_*.py'",
@@ -469,7 +476,7 @@
         "FS-001",
         "CON-004"
       ],
-      "status": "in_progress",
+      "status": "complete",
       "demand_class": "required",
       "demand_evidence": "api-coverage.md",
       "acceptance_commands": [
@@ -484,7 +491,7 @@
       ],
       "stop_rule": "Stop on unmapped consumer API, unversioned drift, skipped/zero-case/native-missing evidence, weakened filesystem/TLS policy, unbounded cancellation or missing rollback. Mapping alone does not authorize consumer cutover.",
       "frozen_go_evidence": "evidence/update-frozen-registration-20261003.json",
-      "go_free_acceptance": "go-free-contracts.md; aggregate exact-head native acceptance pending"
+      "go_free_acceptance": "evidence/status-reconciliation-20261005.json"
     }
   ]
 }
