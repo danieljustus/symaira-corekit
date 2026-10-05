@@ -1090,7 +1090,7 @@
       "rust_test": "symaira-core-update/tests/cache.rs",
       "status": "parity",
       "frozen_go_evidence": "evidence/update-frozen-registration-20261003.json",
-      "go_free_acceptance": "go-free-contracts.md; native Rust aggregate pending"
+      "go_free_acceptance": "evidence/status-reconciliation-20261005.json"
     },
     {
       "id": "UPD-004",
@@ -1107,7 +1107,7 @@
       "rust_test": "symaira-core-update/tests/request.rs",
       "status": "parity",
       "frozen_go_evidence": "evidence/update-frozen-registration-20261003.json",
-      "go_free_acceptance": "go-free-contracts.md; native Rust aggregate pending"
+      "go_free_acceptance": "evidence/status-reconciliation-20261005.json"
     },
     {
       "id": "UPD-005",
@@ -1125,7 +1125,7 @@
       "status": "parity",
       "native_evidence": "evidence/update-native-20261002/index.json",
       "frozen_go_evidence": "evidence/update-frozen-registration-20261003.json",
-      "go_free_acceptance": "go-free-contracts.md; native Rust aggregate pending"
+      "go_free_acceptance": "evidence/status-reconciliation-20261005.json"
     },
     {
       "id": "UPD-006",
@@ -1188,7 +1188,7 @@
       "status": "parity",
       "native_evidence": "evidence/update-native-20261002/index.json",
       "frozen_go_evidence": "evidence/update-frozen-registration-20261003.json",
-      "go_free_acceptance": "go-free-contracts.md; native Rust aggregate pending"
+      "go_free_acceptance": "evidence/status-reconciliation-20261005.json"
     },
     {
       "id": "UPD-010",
@@ -1206,7 +1206,7 @@
       "status": "parity",
       "native_evidence": "evidence/update-native-20261002/index.json",
       "frozen_go_evidence": "evidence/update-frozen-registration-20261003.json",
-      "go_free_acceptance": "go-free-contracts.md; native Rust aggregate pending"
+      "go_free_acceptance": "evidence/status-reconciliation-20261005.json"
     },
     {
       "id": "UPD-011",
@@ -1224,7 +1224,7 @@
       "status": "parity",
       "native_evidence": "evidence/update-native-20261002/index.json",
       "frozen_go_evidence": "evidence/update-frozen-registration-20261003.json",
-      "go_free_acceptance": "go-free-contracts.md; native Rust aggregate pending"
+      "go_free_acceptance": "evidence/status-reconciliation-20261005.json"
     },
     {
       "id": "UPD-012",
@@ -1242,7 +1242,7 @@
       "status": "parity",
       "native_evidence": "evidence/update-native-20261002/index.json",
       "frozen_go_evidence": "evidence/update-frozen-registration-20261003.json",
-      "go_free_acceptance": "go-free-contracts.md; native Rust aggregate pending"
+      "go_free_acceptance": "evidence/status-reconciliation-20261005.json"
     },
     {
       "id": "LLM-001",
@@ -1996,7 +1996,8 @@
         "windows"
       ],
       "rust_test": "symaira-core-update/tests/checker.rs",
-      "status": "fixture-ready"
+      "status": "parity",
+      "native_evidence": "evidence/status-reconciliation-20261005.json"
     },
     {
       "id": "UPD-014",
@@ -2011,9 +2012,9 @@
         "windows"
       ],
       "rust_test": "symaira-core-update/tests/cancellation.rs",
-      "status": "fixture-ready",
+      "status": "parity",
       "frozen_go_evidence": "evidence/update-frozen-registration-20261003.json",
-      "go_free_acceptance": "go-free-contracts.md; native Rust aggregate pending"
+      "go_free_acceptance": "evidence/status-reconciliation-20261005.json"
     }
   ]
 }

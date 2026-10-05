@@ -274,7 +274,7 @@ Git-revision consumer support remain unchanged.
 
 **Steps:** After RUST-014's verified registry publication, migrate each consumer from the Git revision to an exact crates.io version and `Cargo.lock` checksum, run its own full suite, publish a **new** consumer release and read back its artifacts and rollback evidence. Track every remaining Go import and retain Go releases while any released consumer imports a package. Any Go removal is a later, separate major-version proposal with rollback evidence.
 
-## RUST-017: Consumer-used API closure and versioned adapters — IN PROGRESS
+## RUST-017: Consumer-used API closure and versioned adapters — COMPLETE
 
 **Objective:** Finish the shared API surface without equating one helper probe, an API mapping or a worker commit with full consumer cutover. Preserve historical RUST-007 evidence for UPD-001..012; track the newly composed checker/cancellation surface here.
 
@@ -282,9 +282,9 @@ Git-revision consumer support remain unchanged.
 
 **Implementation:** Compose current-version checks, eligible persisted/in-memory caching and caller-owned HTTP injection in the Rust checker. Expose cancellable checker, signature/certificate and Applier operations with owned transport/process cleanup and rollback before returning cancellation. Keep typed install-method classification and the existing string API. Preserve `FS-001-RUST-STRICT-v1` DEL/C1 rejection; do not weaken filesystem safety for a parity label. The existing real FS/SEC adapter remains the executable proof for all thirteen rows.
 
-**Acceptance:** Run `make rust-update-contract`, the fresh public Go path-control differential and native FS/SEC differential on Linux/macOS/Windows; run workspace nextest, strict Clippy and fmt at the exact candidate head. New UPD-013/014 rows stay `fixture-ready` until those runs are read back. Retain actual Go recordings, source identities, Rust results and mutation rejection. The ad-hoc C1 capture that lost control characters is not evidence.
+**Acceptance:** Integrated main `1f3a7276500042121fe2d79a545462a15675aadc` passed native Linux/macOS/Windows checker, cancellation/rollback and FS/SEC replay, with intended mutations rejected. Ordinary CI passed native workspace tests, strict Clippy and fmt; Linux hardening passed workspace nextest. The [source-bound evidence index](evidence/status-reconciliation-20261005.json) records the digest-checked native reports and job/log identities. UPD-013/014 are parity. Retain the original Go recordings and immutable source identities. Later source changes need fresh exact-head CI. The ad-hoc C1 capture that lost control characters is not evidence.
 
-**Stop rule:** Stop on an unmapped symbol, unversioned drift, skipped/zero-case tests, missing native OS evidence, weakened TLS/path policy, unbounded cancellation or missing rollback. RUST-016 is blocked until this shared gate completes. Publication, consumer-specific SQL/logger/cancellation adapters and Go removal retain their separate release and rollback gates.
+**Stop rule:** Stop on an unmapped symbol, unversioned drift, skipped/zero-case contract evidence, missing native OS evidence, weakened TLS/path policy, unbounded cancellation or missing rollback. Shared closure does not clear RUST-016: actual consumer releases, standalone/rollback records and observations are still required. Publication, consumer-specific SQL/logger/cancellation adapters and Go removal retain their separate release and rollback gates.
 
 ## Final handoff verification
 

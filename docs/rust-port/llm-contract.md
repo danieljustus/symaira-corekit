@@ -1,5 +1,13 @@
 # Rust LLM transport contract
 
+RUST-008 is complete at integrated main
+`1f3a7276500042121fe2d79a545462a15675aadc`. The
+[native evidence index](evidence/status-reconciliation-20261005.json) binds the
+three-target ordinary/native jobs and Go-absent/Go-denied aggregate reports.
+All 48 LLM tests execute, including every named test in the row table below,
+per-operation cancellation, connection cleanup and injected transports.
+Consumer release/rollback gates and retention of the Go shim remain separate.
+
 `rust/symaira-core-llm` ports the shared HTTP transport boundary represented by
 Go `llmkit`. The Rust crate is a library only; it does not add consumer-specific
 provider code, a Rust `ollamakit` clone, or a process/release surface.

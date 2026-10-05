@@ -1,5 +1,23 @@
 # Native contract verification without a Go toolchain
 
+## Accepted integrated-main execution (2026-10-05)
+
+The complete aggregate passed on Linux, macOS ARM64 and Windows at main
+`1f3a7276500042121fe2d79a545462a15675aadc` in
+[run 37331109179](https://github.com/danieljustus/symaira-corekit/actions/runs/37331109179).
+[The source-bound evidence index](evidence/status-reconciliation-20261005.json)
+records the original reports, archive digests, bounded-output hashes and ordinary
+CI job/log identities. Both Go-absent and native Go-denied phases succeeded;
+the denial control ran and the functional aggregate never called Go.
+All six update lanes, the checker mutation, FS controls/mutations, Foundation,
+LLM, MCP/config and SQLite corpora, and real signed-release acceptance executed.
+The prior candidate/container observations below are historical, not unresolved
+integrated-main gates. A later source head still needs its own exact-head CI.
+This closes native library acceptance, not consumer release, observation,
+standalone/rollback or Go-retirement gates.
+
+## Running the gate
+
 Use `make rust-contracts` for the complete native functional aggregate. It runs
 Foundation/wire, FS/secret references, MCP and MCP configuration (including their
 actual process corpora), LLM, SQLite, all update families and real signed-release

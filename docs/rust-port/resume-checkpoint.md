@@ -1,3 +1,28 @@
+## Accepted shared closure; consumer releases still blocked (2026-10-05)
+
+Integrated main `1f3a7276500042121fe2d79a545462a15675aadc` passed
+[ordinary CI 37331109158](https://github.com/danieljustus/symaira-corekit/actions/runs/37331109158)
+and [complete Go-free native CI 37331109179](https://github.com/danieljustus/symaira-corekit/actions/runs/37331109179).
+The downloaded three-platform artifacts were digest-checked, their bounded raw
+outputs matched the recorded hashes, and their Rust input hashes matched this
+source revision. The case-level index is
+[status-reconciliation-20261005.json](evidence/status-reconciliation-20261005.json).
+
+RUST-008 and RUST-017 are complete; UPD-013/014 are parity. Each native target
+executed the 21-observation composed checker and its mutation, the 16-case
+cancellation/rollback replay, all thirteen FS/SEC rows and nine path controls,
+and all 48 LLM tests. The complete aggregate passed both Go-absent and native
+Go-denied phases. Ordinary CI independently ran native workspace tests,
+strict Clippy and fmt; Linux hardening also ran workspace nextest. Intentionally
+skipped oracle/signed tests are exercised by separate native differential and
+signed-release gates, not treated as passing from the nextest summary.
+
+RUST-016 remains blocked by the four explicitly linked consumer release issues,
+source-bound standalone/rollback records and minimum seven-day observations.
+#370, #373 and #364 remain open. RUST-014/015 remain deferred under ADR 0002.
+No Go package, oracle, pin or consumer release is changed by this status repair.
+Later heads require their own CI. Sections below retain dated historical evidence.
+
 ## Complete Go-free integration candidate (2026-10-05)
 
 PR #401 contains the reviewed changes from #398, #399 and #400, whose exact
