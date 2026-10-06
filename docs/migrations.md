@@ -10,6 +10,22 @@ also preserve historical removals, including `embedkit` in v0.12.0; those
 require migration. Otherwise "check" means a new capability to adopt or a
 behavior change worth confirming.
 
+## v0.18.0
+
+- `configkit`: explicitly present TOML `false`, `0` and `""` values now
+  override earlier sources and defaults, and an explicitly set empty string
+  environment variable clears a string field. An unset variable still leaves
+  the field alone.
+- `mcpserver`: stricter stdio transport. Oversized frames and malformed
+  JSON-RPC envelopes, IDs, params or framing headers are rejected; write
+  failures are propagated.
+- `updatecheck`: redirects to non-HTTPS URLs are refused, and
+  `CheckWithForce(true)` also bypasses the persistent cache.
+- Consumer action: before raising the exact `corekit` pin, review configuration
+  that relied on zero values being skipped (Symaira Desktop's
+  `TestTOMLFalseValueIgnored` asserts the old behavior and must change with
+  the pin). Confirm MCP clients send well-formed JSON-RPC frames.
+
 ## v0.17.0
 
 - `mcpserver`: a failed `tools/call` publishes its structured error under the
