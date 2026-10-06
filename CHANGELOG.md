@@ -2,7 +2,7 @@
 
 The GitHub Releases page is the authoritative source for complete release notes.
 
-## Unreleased
+## v0.18.0 — 2026-10-06
 
 - `configkit`: explicitly present TOML `false`, `0`, and `""` values now override
   earlier sources and defaults. An explicitly set empty string environment
@@ -13,7 +13,19 @@ The GitHub Releases page is the authoritative source for complete release notes.
 - **Consumer migration:** review existing configuration files that relied on
   zero-value skipping before raising the CoreKit pin. In particular, Symaira
   Desktop's `TestTOMLFalseValueIgnored` asserts the former behavior and must
-  change with the consumer pin. This change is not yet a published release.
+  change with the consumer pin.
+- `mcpserver`: the stdio transport bounds `Content-Length` and line-delimited
+  reads before allocating, validates JSON-RPC envelopes, IDs, params, framing
+  headers and notifications strictly, serializes concurrent responses without
+  stalling the read loop, propagates write failures, and keeps in-flight
+  handlers running on a normal EOF.
+- `updatecheck`: the HTTP redirect policy also refuses non-HTTPS redirects;
+  `CheckWithForce(true)` bypasses the persistent cache as well as the
+  in-memory one.
+- `updatecheck/updateapply`: the staged temporary file is removed on every
+  failure path.
+- `fsutil`: `SafeRemove` closes its descriptor exactly once.
+- `domkit`: truncation allocates only the retained suffix.
 
 ## v0.17.0 — 2026-09-03
 
