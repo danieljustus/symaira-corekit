@@ -3,19 +3,9 @@
 
 version: 2
 updates:
-  - package-ecosystem: "gomod"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-    groups:
-      minor-patch:
-        patterns:
-          - "*"
-        update-types:
-          - "minor"
-          - "patch"
-
+  # No gomod version updates: the frozen Go oracle corpus byte-pins go.mod
+  # (#368) and the Go module is being retired (#373). Security alerts still
+  # surface through Dependabot alerts.
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
