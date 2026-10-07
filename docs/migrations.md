@@ -10,6 +10,13 @@ also preserve historical removals, including `embedkit` in v0.12.0; those
 require migration. Otherwise "check" means a new capability to adopt or a
 behavior change worth confirming.
 
+## v0.18.2
+
+- `mcpserver`: restores the v0.17 `ServeIO` result when the caller cancels
+  while in-flight tool calls drain after input EOF (`context.Canceled` instead
+  of `nil`). No API change; consumers on v0.18.0 or v0.18.1 should take this
+  patch.
+
 ## v0.18.1
 
 - `mcpserver`: fixes a v0.18.0 regression where `ServeIO` stopped reading after
