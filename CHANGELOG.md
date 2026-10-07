@@ -2,6 +2,12 @@
 
 The GitHub Releases page is the authoritative source for complete release notes.
 
+## v0.18.1 — 2026-10-07
+
+- `mcpserver`: `ServeIO` keeps serving after a parse or invalid-request error.
+  In v0.18.0 the first malformed frame was answered with an error and every
+  later request on the stream was silently dropped (#410).
+
 ## v0.18.0 — 2026-10-06
 
 - `configkit`: explicitly present TOML `false`, `0`, and `""` values now override

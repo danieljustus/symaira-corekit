@@ -10,6 +10,12 @@ also preserve historical removals, including `embedkit` in v0.12.0; those
 require migration. Otherwise "check" means a new capability to adopt or a
 behavior change worth confirming.
 
+## v0.18.1
+
+- `mcpserver`: fixes a v0.18.0 regression where `ServeIO` stopped reading after
+  the first malformed or invalid JSON-RPC request. No API change; consumers on
+  v0.18.0 should take this patch.
+
 ## v0.18.0
 
 - `configkit`: explicitly present TOML `false`, `0` and `""` values now
