@@ -484,3 +484,27 @@ func TestStreamContinuesAfterParseAndInvalidRequestErrors(t *testing.T) {
 		})
 	}
 }
+
+// Input EOF lets in-flight tool calls finish; a caller cancellation that
+// arrives while they drain must still be reported as the ServeIO result.
+func TestServeIOReportsCancellationDuringEOFDrain(t *testing.T) {
+	srv := New("test", "1.0")
+	srv.RegisterTool(&Tool{
+		Name:        "wait",
+		Description: "Waits for cancellation",
+		Handler: func(ctx context.Context, _ json.RawMessage) (any, error) {
+			<-ctx.Done()
+			return nil, ctx.Err()
+		},
+	})
+	ctx, cancel := context.WithCancel(context.Background())
+	time.AfterFunc(20*time.Millisecond, cancel)
+	req := frameRequest(t, "tools/call", map[string]any{"name": "wait", "arguments": map[string]any{}}, 4)
+	var output bytes.Buffer
+	if err := srv.ServeIO(ctx, bytes.NewReader(req), &output); !errors.Is(err, context.Canceled) {
+		t.Fatalf("ServeIO err = %v, want context.Canceled", err)
+	}
+	if !strings.Contains(output.String(), `"id":4`) {
+		t.Fatalf("in-flight tool response missing: %q", output.String())
+	}
+}

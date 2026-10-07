@@ -274,7 +274,7 @@ type readResult struct {
 // Readers that may block indefinitely should implement io.Closer. On
 // cancellation or write failure, ServeIO cannot forcibly stop a non-closable
 // Reader and therefore returns without waiting for that read operation.
-func (s *Server) ServeIO(ctx context.Context, r io.Reader, w io.Writer) error {
+func (s *Server) ServeIO(ctx context.Context, r io.Reader, w io.Writer) (retErr error) {
 	br := bufio.NewReader(r)
 	serveCtx, cancel := context.WithCancel(ctx)
 	var wg sync.WaitGroup
@@ -350,6 +350,16 @@ func (s *Server) ServeIO(ctx context.Context, r io.Reader, w io.Writer) error {
 		// arbitrary non-closable blocking Reader would deadlock ServeIO.
 		if !aborted || readErr != nil || inputClosable {
 			<-readDone
+		}
+		// The return value was computed before in-flight handlers drained.
+		// A write failure or caller cancellation during that drain must
+		// still be reported.
+		if retErr == nil {
+			if err := getWriteErr(); err != nil {
+				retErr = err
+			} else {
+				retErr = ctx.Err()
+			}
 		}
 	}()
 
