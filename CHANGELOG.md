@@ -2,6 +2,13 @@
 
 The GitHub Releases page is the authoritative source for complete release notes.
 
+## v0.18.2 — 2026-10-07
+
+- `mcpserver`: `ServeIO` reports a caller cancellation (or response write
+  failure) that happens while in-flight tool calls drain after input EOF.
+  Since v0.18.0 it returned `nil` in that case; v0.17 returned
+  `context.Canceled`.
+
 ## v0.18.1 — 2026-10-07
 
 - `mcpserver`: `ServeIO` keeps serving after a parse or invalid-request error.
