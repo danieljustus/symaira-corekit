@@ -449,3 +449,38 @@ type shortWriter struct{}
 func (*shortWriter) Write(p []byte) (int, error) {
 	return len(p) / 2, nil
 }
+
+// A malformed or invalid request is fully consumed before it is rejected, so
+// ServeIO must keep answering the requests that follow it on the same stream.
+func TestStreamContinuesAfterParseAndInvalidRequestErrors(t *testing.T) {
+	for _, framed := range []bool{false, true} {
+		mode := "line"
+		if framed {
+			mode = "framed"
+		}
+		t.Run(mode, func(t *testing.T) {
+			var input strings.Builder
+			for _, body := range []string{
+				`{bad}`,
+				`{"jsonrpc":"1.0","id":1,"method":"ping"}`,
+				`{"jsonrpc":"2.0","id":2,"method":"ping"}`,
+			} {
+				if framed {
+					fmt.Fprintf(&input, "Content-Length: %d\r\n\r\n%s", len(body), body)
+				} else {
+					input.WriteString(body + "\n")
+				}
+			}
+			var output bytes.Buffer
+			if err := New("test", "1.0").ServeIO(context.Background(), strings.NewReader(input.String()), &output); err != nil {
+				t.Fatalf("ServeIO: %v", err)
+			}
+			out := output.String()
+			for _, want := range []string{`"code":-32700`, `"code":-32600`, `"id":2,"result"`} {
+				if !strings.Contains(out, want) {
+					t.Fatalf("output missing %s: %q", want, out)
+				}
+			}
+		})
+	}
+}

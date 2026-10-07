@@ -324,7 +324,10 @@ func (s *Server) ServeIO(ctx context.Context, r io.Reader, w io.Writer) error {
 			case <-serveCtx.Done():
 				return
 			}
-			if err != nil {
+			// A parse or invalid-request error is reported only after the whole
+			// line or Content-Length frame was consumed, so the stream is still
+			// in sync: keep reading. Any other error ends the stream.
+			if err != nil && !isRecoverableReadError(err) {
 				return
 			}
 		}
@@ -440,6 +443,12 @@ func looksLikeJSONLine(line string) bool {
 //	Content-Length: <n>\r\n
 //	\r\n
 //	<json bytes of length n>
+func isRecoverableReadError(err error) bool {
+	var pe *jsonParseError
+	var ire *jsonInvalidRequestError
+	return errors.As(err, &pe) || errors.As(err, &ire)
+}
+
 func readRequest(br *bufio.Reader) (*jsonRPCRequest, responseMode, error) {
 	line, lineBytes, err := readNonEmptyLineWithBytes(br)
 	if err != nil {
