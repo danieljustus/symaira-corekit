@@ -795,9 +795,24 @@ mod cancellation_tests {
         );
         fs::write(&executable, script).unwrap();
         fs::set_permissions(&executable, fs::Permissions::from_mode(0o700)).unwrap();
+        assert_cancellation_reaps(&executable, &ready).await;
+    }
+
+    #[tokio::test]
+    #[should_panic(expected = "verifier completed before cancellation: Err(")]
+    async fn early_verifier_failure_is_not_hidden_by_readiness_timeout() {
+        let temporary = private_dir().unwrap();
+        assert_cancellation_reaps(
+            &temporary.0.join("missing-executable"),
+            &temporary.0.join("not-ready"),
+        )
+        .await;
+    }
+
+    async fn assert_cancellation_reaps(executable: &Path, ready: &Path) {
         let token = crate::CancellationToken::new();
         let verification = verify_cancellable_with_executable(
-            &executable,
+            executable,
             "owner/repo",
             None,
             b"content",
@@ -805,6 +820,15 @@ mod cancellation_tests {
             b"certificate",
             &token,
         );
+        let verification = async {
+            let result = verification.await;
+            // Do not hide an early verifier exit behind join!'s readiness wait.
+            assert!(
+                token.is_cancelled(),
+                "verifier completed before cancellation: {result:?}"
+            );
+            result
+        };
         let cancellation = async {
             tokio::time::timeout(Duration::from_secs(3), async {
                 while !ready.exists() {
@@ -823,7 +847,7 @@ mod cancellation_tests {
         .expect("verification must reap within the bound");
         assert_eq!(result.unwrap_err(), "context canceled");
         assert!(started.elapsed() < Duration::from_secs(5));
-        let pid = fs::read_to_string(&ready).unwrap();
+        let pid = fs::read_to_string(ready).unwrap();
         let dead = tokio::time::timeout(Duration::from_secs(2), async {
             loop {
                 let alive = Command::new("/bin/kill")
