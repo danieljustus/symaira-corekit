@@ -270,7 +270,7 @@ jobs:
       fail-fast: false
       matrix:
         os: ${{ fromJSON(needs.changes.outputs.test_matrix) }}
-        go-version: ["1.26.6"]
+        go-version: ["1.26.9"]
     # matrix.os preserves legacy protected check names; see ADR 0003.
     runs-on: ${{ matrix.os == 'macos-26' && 'macos-15' || matrix.os }}
     steps:
@@ -332,7 +332,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
-          go-version: "1.26.6"
+          go-version: "1.26.9"
       - name: Build
         run: go build ./...
       - name: Vet
@@ -348,7 +348,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
-          go-version: "1.26.6"
+          go-version: "1.26.9"
       - name: Run golangci-lint
         uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
       - name: Validate Rust migration handoff
@@ -416,7 +416,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
-          go-version: "1.26.6"
+          go-version: "1.26.9"
       - name: Install govulncheck
         run: go install golang.org/x/vuln/cmd/govulncheck@v1.4.0
       - name: Run govulncheck
@@ -446,7 +446,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
-          go-version: "1.26.6"
+          go-version: "1.26.9"
 
       - name: Fetch base ref
         run: git fetch origin main
@@ -905,7 +905,7 @@ jobs:
       - name: Set up Go oracle toolchain
         uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
-          go-version: "1.26.6"
+          go-version: "1.26.9"
       - name: Set up Python
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
