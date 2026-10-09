@@ -3,6 +3,7 @@ import copy
 import json
 from pathlib import Path
 import shutil
+import subprocess
 import tempfile
 import unittest
 from unittest import mock
@@ -161,18 +162,32 @@ class FrozenUpdateTests(unittest.TestCase):
                     self.assertEqual(replay.read_capture(lane, path)[1], observations)
 
     def test_original_raw_stream_drift_is_rejected_and_restored(self):
-        target = "-".join(replay.native_goos_arch())
         for lane in replay.COUNTS:
-            with self.subTest(lane=lane):
-                path = replay.FIXTURES / target / f"{lane}.stdout"
-                raw = path.read_bytes()
-                try:
-                    path.write_bytes(raw + b" ")
-                    with self.assertRaisesRegex(ValueError, "raw stream changed"):
+            with self.subTest(lane=lane), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory).resolve()
+                fixture_dir = self._copy_replay_inputs(root, lane)
+                with (
+                    mock.patch.object(replay, "ROOT", root),
+                    mock.patch.object(replay, "FIXTURES", fixture_dir.parent),
+                ):
+                    replay.read_capture(lane)
+                    for stream in ("stdout", "stderr"):
+                        path = fixture_dir / f"{lane}.{stream}"
+                        raw = path.read_bytes()
+                        path.write_bytes(raw + b" ")
+                        with self.assertRaisesRegex(ValueError, "raw stream changed"):
+                            replay.read_capture(lane)
+                        path.write_bytes(raw)
                         replay.read_capture(lane)
-                finally:
-                    path.write_bytes(raw)
-                replay.read_capture(lane)
+
+    def test_receipt_bytes_survive_windows_checkout(self):
+        receipt = "docs/rust-port/evidence/update-module-compat-v1.json"
+        filtered = subprocess.run(
+            ["git", "-c", "core.autocrlf=true", "cat-file", "--filters", f"HEAD:{receipt}"],
+            cwd=replay.ROOT, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=30,
+        ).stdout
+        self.assertEqual(replay.digest(filtered), replay.UPDATE_MODULE_COMPATIBILITY_RECEIPT_SHA256)
+        self.assertEqual(filtered, (replay.ROOT / receipt).read_bytes())
 
 
 if __name__ == "__main__":
