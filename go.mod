@@ -1,6 +1,7 @@
 module github.com/danieljustus/symaira-corekit
 
 go 1.26.4
+toolchain go1.26.9
 
 require (
 	github.com/BurntSushi/toml v1.6.0
