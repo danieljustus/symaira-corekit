@@ -139,6 +139,7 @@ rust-update-version-contract:
 # and can be invoked locally when the verifier and its trust endpoints exist.
 rust-update-contract: rust-update-version-contract
 	python3 -m unittest discover -s scripts/rust-port -p 'test_update_harness.py'
+	python3 -m unittest discover -s scripts/rust-port -p 'test_frozen_update_replay.py'
 	@if [ "$$GO_ORACLE" = 1 ]; then GOTOOLCHAIN=go1.26.6 CGO_ENABLED=0 $(GO_RUN) test -count=1 ./updatecheck/...; fi
 	GOTOOLCHAIN=go1.26.6 CGO_ENABLED=0 python3 scripts/rust-port/update-response-differential.py
 	GOTOOLCHAIN=go1.26.6 CGO_ENABLED=0 python3 scripts/rust-port/update-response-differential.py --negative-control

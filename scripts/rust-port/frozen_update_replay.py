@@ -14,12 +14,17 @@ import sys
 import tempfile
 
 from bounded_oracle_process import run_checked
-from frozen_update_anchors import ANCHORS, CAPTURE_SOURCE_COMMIT
+from frozen_update_anchors import (
+    ANCHORS,
+    CAPTURE_SOURCE_COMMIT,
+    UPDATE_MODULE_COMPATIBILITY_RECEIPT_SHA256,
+)
 from static_update_oracle import canonical_json, native_goos_arch
 from update_fixture_transport import tls_fixture
 
 ROOT = Path(__file__).resolve().parents[2]
 FIXTURES = ROOT / "testdata/rust-port/fixtures/update/native-v1"
+MODULE_INPUT_PATHS = frozenset(("repository/go.mod", "repository/go.sum"))
 COUNTS = {"request": 13, "cache": 7, "persistence": 7, "cosign": 13, "apply": 17, "cancellation": 16}
 
 
@@ -27,10 +32,86 @@ def digest(data):
     return hashlib.sha256(data).hexdigest()
 
 
+def _module_compatibility_inputs():
+    """Return the one reviewed full-byte pair for historical module inputs."""
+    path = ROOT / "docs/rust-port/evidence/update-module-compat-v1.json"
+    if path.is_symlink() or not path.is_file():
+        raise ValueError("frozen-update module compatibility receipt is missing or unsafe")
+    raw = path.read_bytes()
+    if digest(raw) != UPDATE_MODULE_COMPATIBILITY_RECEIPT_SHA256:
+        raise ValueError("frozen-update module compatibility receipt bytes differ")
+    try:
+        receipt = json.loads(raw)
+    except (UnicodeDecodeError, json.JSONDecodeError) as error:
+        raise ValueError("frozen-update module compatibility receipt is invalid JSON") from error
+    if (
+        not isinstance(receipt, dict)
+        or type(receipt.get("schema_version")) is not int
+        or receipt["schema_version"] != 1
+        or receipt.get("profile") != "frozen-update-go-modules-v1"
+        or receipt.get("historical_oracle_source_commit") != CAPTURE_SOURCE_COMMIT
+        or not isinstance(receipt.get("candidate_capture_revision"), str)
+        or re.fullmatch(r"[0-9a-f]{40}", receipt["candidate_capture_revision"]) is None
+    ):
+        raise ValueError("frozen-update module compatibility receipt identity differs")
+
+    def module_pair(field):
+        value = receipt.get(field)
+        if not isinstance(value, dict) or set(value) != MODULE_INPUT_PATHS:
+            raise ValueError("frozen-update module compatibility pair has an unexpected scope")
+        if any(not isinstance(item, str) or re.fullmatch(r"[0-9a-f]{64}", item) is None for item in value.values()):
+            raise ValueError("frozen-update module compatibility pair has an invalid digest")
+        return value
+
+    historical = module_pair("historical_module_inputs")
+    approved = module_pair("approved_module_inputs")
+    if historical == approved:
+        raise ValueError("frozen-update module compatibility profile is not a module update")
+    capture = receipt.get("capture")
+    if (
+        not isinstance(capture, dict)
+        or capture.get("target") != "darwin-arm64"
+        or capture.get("go_version") != "go1.26.6"
+        or capture.get("capture_mode") != "native-go-update-original-v1"
+        or capture.get("external_module_source_paths") != []
+    ):
+        raise ValueError("frozen-update compatibility capture provenance differs")
+    lanes = capture.get("lanes")
+    if not isinstance(lanes, list) or len(lanes) != len(COUNTS):
+        raise ValueError("frozen-update compatibility capture lane inventory differs")
+    by_lane = {row.get("lane"): row for row in lanes if isinstance(row, dict)}
+    if set(by_lane) != set(COUNTS) or len(by_lane) != len(lanes):
+        raise ValueError("frozen-update compatibility capture lane inventory differs")
+    for lane, count in COUNTS.items():
+        row = by_lane[lane]
+        if (
+            row.get("case_count") != count
+            or row.get("observations_equal") is not True
+            or row.get("stdout_bytes_equal") is not True
+            or row.get("external_module_source_paths") != []
+            or type(row.get("stderr_bytes_equal")) is not bool
+            or type(row.get("source_file_count")) is not int
+            or row["source_file_count"] < 100
+            or row.get("historical_capture_sha256") != ANCHORS["darwin-arm64"][lane]
+        ):
+            raise ValueError(f"frozen-update compatibility evidence is incomplete for {lane}")
+        for field in (
+            "candidate_capture_sha256", "candidate_stdout_sha256", "candidate_stderr_sha256",
+            "historical_stdout_sha256", "historical_stderr_sha256", "case_inventory_sha256",
+            "source_inventory_sha256",
+        ):
+            if not isinstance(row.get(field), str) or re.fullmatch(r"[0-9a-f]{64}", row[field]) is None:
+                raise ValueError(f"frozen-update compatibility evidence has invalid {lane}/{field}")
+        if row["candidate_stdout_sha256"] != row["historical_stdout_sha256"]:
+            raise ValueError(f"frozen-update compatibility stdout differs for {lane}")
+    return historical, approved
+
+
 def rust_snapshot():
     paths = set(path for path in (ROOT / "rust").rglob("*") if path.is_file())
     paths.update(ROOT / name for name in ("Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "Makefile"))
     paths.update(path for path in (ROOT / ".cargo").rglob("*") if path.is_file())
+    paths.add(ROOT / "docs/rust-port/evidence/update-module-compat-v1.json")
     paths.update(Path(__file__).with_name(name) for name in (
         "frozen_update_replay.py", "frozen_update_anchors.py", "update_fixture_transport.py",
         "update-owned-verifier.rs", "bounded_oracle_process.py"))
@@ -69,6 +150,7 @@ def read_capture(lane, alternate=None):
         if original.is_symlink() or not original.is_file() or digest(original.read_bytes()) != record["raw"][stream + "_sha256"]:
             raise ValueError("original native Go raw stream changed")
     seen = set()
+    module_records = {}
     files = record["source_files"] + [record["producer"]]
     for item in files:
         name = item["path"]
@@ -76,12 +158,32 @@ def read_capture(lane, alternate=None):
         if name in seen or not parts or parts[0] not in {"repository", "modules", "toolchain", "generated"} or ".." in parts or "\\" in name or not re.fullmatch(r"[0-9a-f]{64}", item["sha256"]):
             raise ValueError("invalid native source inventory")
         seen.add(name)
+        if parts[0] == "modules":
+            raise ValueError("native update closure contains external Go module inputs")
         if parts[0] == "repository":
             source = ROOT.joinpath(*parts[1:])
-            if source.is_symlink() or not source.is_file() or not source.resolve().is_relative_to(ROOT) or digest(source.read_bytes()) != item["sha256"]:
+            if source.is_symlink() or not source.is_file() or not source.resolve().is_relative_to(ROOT):
+                raise ValueError(f"native update repository input changed: {name}")
+            if name in MODULE_INPUT_PATHS:
+                module_records[name] = item["sha256"]
+            elif digest(source.read_bytes()) != item["sha256"]:
                 raise ValueError(f"native update repository input changed: {name}")
     if len(seen) < 100 or record["producer"]["path"] != "repository/scripts/rust-port/native_update_capture.py":
         raise ValueError("incomplete native source inventory")
+    if set(module_records) != MODULE_INPUT_PATHS:
+        raise ValueError("native update historical module input pair is incomplete")
+    historical_modules, approved_modules = _module_compatibility_inputs()
+    if module_records != historical_modules:
+        raise ValueError("native update historical module input pair differs")
+    current_modules = {}
+    for name in MODULE_INPUT_PATHS:
+        source = ROOT.joinpath(*PurePosixPath(name).parts[1:])
+        if source.is_symlink() or not source.is_file() or not source.resolve().is_relative_to(ROOT):
+            raise ValueError(f"native update Go module input is missing or unsafe: {name}")
+        current_modules[name] = digest(source.read_bytes())
+    if current_modules != approved_modules:
+        raise ValueError("current Go module files differ from the approved frozen-update compatibility pair")
+
     observations = payload["observations"]
     cases = observations if isinstance(observations, list) else observations["cases"]
     ids = [case["input"]["id"] if lane == "apply" else case["id"] for case in cases]

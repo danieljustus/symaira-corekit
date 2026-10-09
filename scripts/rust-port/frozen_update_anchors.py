@@ -28,6 +28,10 @@ ANCHORS = {
         "cancellation": "92793df27226cd9ff71db1337bc552ba9d2d5ca4e43beac44e32af83a951f934",
         "cosign": "ca19515b2ac21e01f53b049131ad0be2694d55e711eeacb30df7ac03518f2a14",
         "persistence": "1e32f9b7683a29c5cac130e40141dfb52dc58534f29ef8c1651b665175e25763",
-        "request": "a68e8ed42f86a6d355f964bc8c416efcf2a85e269fdef89ac178e81dceea7710"
-    }
+        "request": "a68e8ed42f86a6d355f964bc8c416efcf2a85e269fdef89ac178e81dceea7710",
+    },
 }
+
+# Exact independently reviewable module-only compatibility receipt; this does
+# not alter the historical native-v1 capture anchors above.
+UPDATE_MODULE_COMPATIBILITY_RECEIPT_SHA256 = "3f968174b40240f895876c6e181b64abfda73fbe2e517455be6c5ff737c2b7a8"
