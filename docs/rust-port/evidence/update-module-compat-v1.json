@@ -1,0 +1,139 @@
+{
+  "approved_module_inputs": {
+    "repository/go.mod": "177504d1fb1b6741c0f16f709a51bebc7c487c06a5a259fe04a7921c1839f433",
+    "repository/go.sum": "b60dbcdaa33e4cd97006ed35ab8dc7c2ff9f8fbd1397a9dd2a0a3e010f228772"
+  },
+  "candidate_capture_revision": "f9f6f2bcab2185cc981990d639bede4685390e6e",
+  "candidate_capture_revision_role": "Descriptive identity of the clean candidate used for these new native observations; not an oracle source pin or ancestry requirement.",
+  "capture": {
+    "capture_log_sha256": "98fa539689db086ac1502d0b8433e852b0318c1b05dac4eb793c7db644b4307e",
+    "capture_mode": "native-go-update-original-v1",
+    "evidence_root": "evidence/symaira-workflow/speed-audit-2026-10-09/security-followup/corekit-provenance/native-darwin-arm64-f9f6f2b-toolchain1269",
+    "external_module_source_paths": [],
+    "go_version": "go1.26.6",
+    "historical_inventory_audit_sha256": "e41e0bb79cd1393c7dbf779b8cb0c4e02140d5d5d68aa4882c3e3f8f3948d93c",
+    "lanes": [
+      {
+        "candidate_capture_sha256": "00100ec9a18bc024b3fee6b133c67f69dbfd1eab4af9d1f8970ebf721da10ce0",
+        "candidate_stderr_sha256": "38a139dcb6160bb8d4656d1eb6fba56c51f663f1796903c4af474afef76bf69b",
+        "candidate_stdout_sha256": "877b1a83e4cdbe65f40ab7c3b90eee7fea8877979b25e8aa7fb648e0976d3a3c",
+        "case_count": 13,
+        "case_inventory_sha256": "8c8bf2164d0bda1650aaa34b2ae6e3a07fff7145a385fa14c69645578288b271",
+        "external_module_source_paths": [],
+        "historical_capture_sha256": "674861839bf4660ef9551acfc8498e12583ad7096cb3c3f66406e35bb476f8c1",
+        "historical_stderr_sha256": "79f72abe9dfde3b3383c985a4f3b2b4bf80bb951504f9e7662552f7a4070cf01",
+        "historical_stdout_sha256": "877b1a83e4cdbe65f40ab7c3b90eee7fea8877979b25e8aa7fb648e0976d3a3c",
+        "lane": "request",
+        "observations_equal": true,
+        "source_file_count": 1848,
+        "source_inventory_sha256": "191cb0bf60095fa3e6675e118b3cbdeba068873860ccb1016df0c9ef321f972c",
+        "stderr_bytes_equal": false,
+        "stdout_bytes_equal": true
+      },
+      {
+        "candidate_capture_sha256": "46f870322e518672383fb528e23265ccc668e8e4af2161a795aff3b351b98e56",
+        "candidate_stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "candidate_stdout_sha256": "93691b30dda4dee144ec9449f50bc8d692bc0838a9e761db2d833a78d93a0e75",
+        "case_count": 7,
+        "case_inventory_sha256": "492d4055b5d623dbb344703189bf0d8e0111d1052af9d6f8c0ee9387279a93df",
+        "external_module_source_paths": [],
+        "historical_capture_sha256": "1e873fab161c41123075de189c125cf73f778fd85e0a98a91e8a95a7a6d16a94",
+        "historical_stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "historical_stdout_sha256": "93691b30dda4dee144ec9449f50bc8d692bc0838a9e761db2d833a78d93a0e75",
+        "lane": "cache",
+        "observations_equal": true,
+        "source_file_count": 1847,
+        "source_inventory_sha256": "4153441fd55614483c3c36e8962cb890f63f0c709736cc1f77ba1715dbca6b6f",
+        "stderr_bytes_equal": true,
+        "stdout_bytes_equal": true
+      },
+      {
+        "candidate_capture_sha256": "43fd03e2bead33edf5d49326a173efb3f7818a4f774bdf10fb34b23e7808a7bb",
+        "candidate_stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "candidate_stdout_sha256": "d512feef78823e52dc67330c6777e8c365701097bba122f7b27a9eea5c7ed5b2",
+        "case_count": 7,
+        "case_inventory_sha256": "484c356f7e781b7b84092279efc9e5726472b393e256a3d61fe8a58cab3f2085",
+        "external_module_source_paths": [],
+        "historical_capture_sha256": "f4c3e34c08b95b1abbdeb0588441fa703087b03da42c2c60378765b6ca768f13",
+        "historical_stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "historical_stdout_sha256": "d512feef78823e52dc67330c6777e8c365701097bba122f7b27a9eea5c7ed5b2",
+        "lane": "persistence",
+        "observations_equal": true,
+        "source_file_count": 1847,
+        "source_inventory_sha256": "af5386c0c50d2279f0cec295339abfc2d29cd9a1501dcc5d36b2ec73d6765a94",
+        "stderr_bytes_equal": true,
+        "stdout_bytes_equal": true
+      },
+      {
+        "candidate_capture_sha256": "8cefe81029e834b20cbc2ad515fa1ce635e324426175a5648da727a035a80f07",
+        "candidate_stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "candidate_stdout_sha256": "a3fd6b6f7f277136cece17f4db8e1abe617707c38b8de140c4b5f232faa6a6e6",
+        "case_count": 13,
+        "case_inventory_sha256": "83d3aed50ffd19c675748bec270755ab2f4c1e6168fa212effb1de990e864549",
+        "external_module_source_paths": [],
+        "historical_capture_sha256": "9906b99ff46cf7a3dc809f36a93e8f45a98ddc9eb1b0c757fe5e7bff06933845",
+        "historical_stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "historical_stdout_sha256": "a3fd6b6f7f277136cece17f4db8e1abe617707c38b8de140c4b5f232faa6a6e6",
+        "lane": "cosign",
+        "observations_equal": true,
+        "source_file_count": 1868,
+        "source_inventory_sha256": "d7c1d4fe47552403f1c1f4d5746869cc1c1455ea4fc3400578c5952db3297164",
+        "stderr_bytes_equal": true,
+        "stdout_bytes_equal": true
+      },
+      {
+        "candidate_capture_sha256": "865c0eb26f61fd9fb06d1cc7349093401bc6591d7f525b7ca40fd91a35d66cf4",
+        "candidate_stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "candidate_stdout_sha256": "6790a3d73e0e80e9976da213d014b5bcd9894a07668f524e4ca110f9187ba3e3",
+        "case_count": 17,
+        "case_inventory_sha256": "0d8e28792a5a423798860eb8bdba9792721dc0095501edb04279fb60ebff7685",
+        "external_module_source_paths": [],
+        "historical_capture_sha256": "1bf8cb3ad42624b7a8d0a76421b5f560e2be30bbcffedf50637b000fd58a4541",
+        "historical_stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "historical_stdout_sha256": "6790a3d73e0e80e9976da213d014b5bcd9894a07668f524e4ca110f9187ba3e3",
+        "lane": "apply",
+        "observations_equal": true,
+        "source_file_count": 1923,
+        "source_inventory_sha256": "98e4610badae945733b654d0d601cdacde812a5e80b45fd4b18e231a925fc1bb",
+        "stderr_bytes_equal": true,
+        "stdout_bytes_equal": true
+      },
+      {
+        "candidate_capture_sha256": "4fab7213a6bfc1e194bd4150233f21eb8810c28a2f8ad8fa2653813eb4f918a1",
+        "candidate_stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "candidate_stdout_sha256": "e90e88b4a86f8bf815908dcc66486993c8632de0ebbb03f06945e34e4926648f",
+        "case_count": 16,
+        "case_inventory_sha256": "bf77f41a14a3c1bb1522ecf6980828122d88e52addd40d86c7ceccbb79b9e89b",
+        "external_module_source_paths": [],
+        "historical_capture_sha256": "3095b027bb62535774018f4228cf1048e6f3720e087a43abb7f384b2d3e7aa83",
+        "historical_stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "historical_stdout_sha256": "e90e88b4a86f8bf815908dcc66486993c8632de0ebbb03f06945e34e4926648f",
+        "lane": "cancellation",
+        "observations_equal": true,
+        "source_file_count": 1923,
+        "source_inventory_sha256": "9d32b24165748cb1f011ff086b8e667e566268eaa80107f469971548a4b2c88b",
+        "stderr_bytes_equal": true,
+        "stdout_bytes_equal": true
+      }
+    ],
+    "oracle_driver": {
+      "path": "scripts/rust-port/static_update_oracle.py",
+      "sha256": "3b7d68a069c016bf02c09dc7af27ff3fbdf9a89e908ba039c32446501028239e"
+    },
+    "runner": {
+      "path": "scripts/rust-port/native_update_capture.py",
+      "sha256": "11f5211461cacffb0cb7a207cad029aadffb0cc3a2be546f7bf2c92df7e352f7"
+    },
+    "target": "darwin-arm64"
+  },
+  "comparison_note": "All six newly executed native Darwin observations and case inventories equal the anchored native-v1 captures; each raw stdout is byte-identical. The fresh request-lane stderr differs from historical stderr only as a separately retained diagnostic log (timestamp, loopback port, and TLS-handshake wording); no stderr normalization was applied and the historical bytes remain untouched.",
+  "historical_module_inputs": {
+    "repository/go.mod": "5e2b0ad309b6db5db7abbaf958ef87bc12c0e81605245b897f1b9305a113e57d",
+    "repository/go.sum": "701d7161d71d4817a59f98bfc6f8ac71d5ee6b7f70cbb8ec96b07a140298929c"
+  },
+  "historical_oracle_source_commit": "8670450fbd3bd4d57a4c737f29abec113dd8eb70",
+  "profile": "frozen-update-go-modules-v1",
+  "schema_version": 1,
+  "scope": "Exact full-byte SHA-256 pair for repository/go.mod and repository/go.sum; all other historical repository/producer inputs remain byte-bound.",
+  "change_policy": "A future module-file change requires a clean source-bound native capture, a new observation/closure review, and a separately versioned exact-digest receipt. No wildcard or normalization is permitted."
+}
