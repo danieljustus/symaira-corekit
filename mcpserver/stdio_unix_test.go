@@ -16,10 +16,12 @@ func TestServeStdioWriteFailureWithOpenInput(t *testing.T) {
 	if root := os.Getenv("MCP_STDIO_FAILURE_HELPER"); root != "" {
 		server := New("stdio-regression", "test")
 		server.RegisterTool(&Tool{Name: "slow", Handler: func(ctx context.Context, _ json.RawMessage) (any, error) {
+			// #nosec G703 -- helper env contains only the parent test's t.TempDir.
 			if err := os.WriteFile(filepath.Join(root, "ready"), nil, 0o600); err != nil {
 				os.Exit(3)
 			}
 			<-ctx.Done()
+			// #nosec G703 -- helper env contains only the parent test's t.TempDir.
 			if err := os.WriteFile(filepath.Join(root, "cancelled"), nil, 0o600); err != nil {
 				os.Exit(3)
 			}
@@ -42,6 +44,7 @@ func TestServeStdioWriteFailureWithOpenInput(t *testing.T) {
 		if err := os.WriteFile(output, nil, 0o600); err != nil {
 			t.Fatal(err)
 		}
+		// #nosec G304 -- output is a fixed file inside this test's t.TempDir.
 		readonly, err := os.Open(output)
 		if err != nil {
 			t.Fatal(err)
@@ -51,6 +54,7 @@ func TestServeStdioWriteFailureWithOpenInput(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+		// #nosec G204 -- binary is os.Executable, the current test executable.
 		command := exec.Command(binary, "-test.run=^TestServeStdioWriteFailureWithOpenInput$")
 		command.Env = []string{"MCP_STDIO_FAILURE_HELPER=" + root, "HOME=" + root, "PATH=" + root}
 		command.Stdout = readonly
