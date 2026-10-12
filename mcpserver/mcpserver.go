@@ -13,7 +13,6 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
-	"os"
 	"strconv"
 	"strings"
 	"sync"
@@ -253,7 +252,7 @@ func (s *Server) RegisterTool(t *Tool) {
 // ServeStdio runs the server on os.Stdin/os.Stdout. All logging goes to
 // os.Stderr to avoid polluting the JSON-RPC transport.
 func (s *Server) ServeStdio(ctx context.Context) error {
-	return s.ServeIO(ctx, os.Stdin, os.Stdout)
+	return s.serveStdio(ctx)
 }
 
 type readResult struct {
