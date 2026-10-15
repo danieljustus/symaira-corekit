@@ -31,7 +31,8 @@ public enum SymingestContractError: Error, LocalizedError, Equatable, Sendable {
 /// - Returns: Decoded value of type `T`.
 public func decodeSchemaChecked<T: Decodable>(_ data: Data, expecting version: Int = 1) throws -> T {
     guard let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-          let schemaVersion = object["schema_version"] as? Int else {
+        let schemaVersion = object["schema_version"] as? Int
+    else {
         throw SymingestContractError.invalidResponse
     }
     guard schemaVersion == version else {

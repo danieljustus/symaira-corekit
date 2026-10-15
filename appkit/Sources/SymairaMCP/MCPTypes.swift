@@ -34,8 +34,8 @@ public enum MCPJSONValue: Sendable, Equatable, Hashable {
     /// tool arguments such as counts.
     public var intValue: Int64? {
         guard case .number(let value) = self,
-              value.rounded() == value,
-              value >= -9_007_199_254_740_992, value <= 9_007_199_254_740_992
+            value.rounded() == value,
+            value >= -9_007_199_254_740_992, value <= 9_007_199_254_740_992
         else { return nil }
         return Int64(value)
     }

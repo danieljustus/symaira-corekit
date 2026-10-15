@@ -1,13 +1,16 @@
-import XCTest
 import Foundation
-@testable import SymairaIngestContract
 import SymairaToolKit
+import XCTest
+
+@testable import SymairaIngestContract
 
 final class SymingestReOCRContractTests: XCTestCase {
     func testCompletedResponseDecodes() throws {
-        let response = try ReOCRContract.decode(from: Data("""
-        {"schema_version":1,"document_id":7,"job_id":42,"status":"completed","output_path":"/vault/note.md"}
-        """.utf8))
+        let response = try ReOCRContract.decode(
+            from: Data(
+                """
+                {"schema_version":1,"document_id":7,"job_id":42,"status":"completed","output_path":"/vault/note.md"}
+                """.utf8))
         XCTAssertEqual(response.schemaVersion, 1)
         XCTAssertEqual(response.documentID, 7)
         XCTAssertEqual(response.jobID, 42)
@@ -17,15 +20,22 @@ final class SymingestReOCRContractTests: XCTestCase {
     }
 
     func testFailedResponseDecodesWithError() throws {
-        let response = try ReOCRContract.decode(from: Data("""
-        {"schema_version":1,"document_id":7,"job_id":0,"status":"failed","output_path":"","error":{"code":"source_missing","message":"archived source is unavailable"}}
-        """.utf8))
+        let response = try ReOCRContract.decode(
+            from: Data(
+                """
+                {"schema_version":1,"document_id":7,"job_id":0,"status":"failed","output_path":"","error":{"code":"source_missing","message":"archived source is unavailable"}}
+                """.utf8))
         XCTAssertEqual(response.status, "failed")
         XCTAssertEqual(response.error, ReOCRError(code: "source_missing", message: "archived source is unavailable"))
     }
 
     func testSchemaVersionCheckRejectsUnknownVersion() {
-        XCTAssertThrowsError(try ReOCRContract.decodeWithSchemaCheck(from: Data("{\"schema_version\":2,\"document_id\":1,\"job_id\":1,\"status\":\"completed\",\"output_path\":\"\"}".utf8))) { error in
+        XCTAssertThrowsError(
+            try ReOCRContract.decodeWithSchemaCheck(
+                from: Data(
+                    "{\"schema_version\":2,\"document_id\":1,\"job_id\":1,\"status\":\"completed\",\"output_path\":\"\"}"
+                        .utf8))
+        ) { error in
             XCTAssertEqual(error as? ReOCRContractError, .unsupportedSchema(2))
         }
     }
@@ -68,7 +78,8 @@ final class SymingestReOCRContractTests: XCTestCase {
         super.tearDown()
     }
 
-    private static let validReOCRResponse = #"{"schema_version":1,"document_id":7,"job_id":42,"status":"completed","output_path":"/vault/note.md"}"#
+    private static let validReOCRResponse =
+        #"{"schema_version":1,"document_id":7,"job_id":42,"status":"completed","output_path":"/vault/note.md"}"#
 
     /// Creates a client whose locator resolves to a fake `symingest` shell
     /// script in a fresh temp directory. The script records its argv to
@@ -79,7 +90,8 @@ final class SymingestReOCRContractTests: XCTestCase {
     private func makeFakeBinaryClient(
         vaultPath: String? = nil,
         configPath: String? = nil,
-        cannedOutput: String = #"{"schema_version":1,"document_id":7,"job_id":42,"status":"completed","output_path":"/vault/note.md"}"#
+        cannedOutput: String =
+            #"{"schema_version":1,"document_id":7,"job_id":42,"status":"completed","output_path":"/vault/note.md"}"#
     ) throws -> (SymingestReOCRClient, URL) {
         let dir = FileManager.default.temporaryDirectory
             .appendingPathComponent("symingest-reocr-fake-\(UUID().uuidString)")
@@ -89,11 +101,11 @@ final class SymingestReOCRContractTests: XCTestCase {
         try Data(cannedOutput.utf8).write(to: dir.appendingPathComponent("canned-response"))
         let binary = dir.appendingPathComponent("symingest")
         let script = """
-        #!/bin/sh
-        DIR="$(cd "$(dirname "$0")" && pwd)"
-        printf '%s\\n' "$@" > "$DIR/last-args"
-        cat "$DIR/canned-response"
-        """
+            #!/bin/sh
+            DIR="$(cd "$(dirname "$0")" && pwd)"
+            printf '%s\\n' "$@" > "$DIR/last-args"
+            cat "$DIR/canned-response"
+            """
         try Data(script.utf8).write(to: binary)
         try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: binary.path)
 
@@ -146,7 +158,8 @@ final class SymingestReOCRContractTests: XCTestCase {
     }
 
     func testReprocessRejectsUnsupportedSchemaFromRunner() async throws {
-        let (client, dir) = try makeFakeBinaryClient(cannedOutput: #"{"schema_version":2,"document_id":1,"job_id":1,"status":"completed","output_path":""}"#)
+        let (client, dir) = try makeFakeBinaryClient(
+            cannedOutput: #"{"schema_version":2,"document_id":1,"job_id":1,"status":"completed","output_path":""}"#)
         do {
             _ = try await client.reprocess(documentID: 1)
             XCTFail("expected unsupported schema error")

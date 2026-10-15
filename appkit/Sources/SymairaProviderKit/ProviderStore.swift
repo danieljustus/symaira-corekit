@@ -116,7 +116,8 @@ public final class SymairaProviderStore {
     public func workspaceConfig() -> SymairaWorkspaceConfig {
         let trimmedBaseURL = baseURLText.trimmingCharacters(in: .whitespacesAndNewlines)
         let enteredBaseURL = trimmedBaseURL.isEmpty ? nil : URL(string: trimmedBaseURL)
-        let baseURLOverride = enteredBaseURL?.absoluteString == descriptor.baseURL?.absoluteString
+        let baseURLOverride =
+            enteredBaseURL?.absoluteString == descriptor.baseURL?.absoluteString
             ? nil
             : enteredBaseURL
         return SymairaWorkspaceConfig(
@@ -146,7 +147,8 @@ public final class SymairaProviderStore {
             connectionState = .connected(result)
             return result
         } catch {
-            let providerError = (error as? SymairaProviderError)
+            let providerError =
+                (error as? SymairaProviderError)
                 ?? SymairaProviderErrorMapper.transport(error)
             connectionState = .failed(providerError.localizedDescription)
             throw providerError
@@ -173,7 +175,8 @@ public final class SymairaProviderStore {
         } else if let url = URL(string: trimmedBaseURL), ["http", "https"].contains(url.scheme?.lowercased()) {
             baseURLOverride = url
         } else {
-            throw SymairaProviderErrorMapper.invalidConfiguration("The provider endpoint is not a valid HTTP or HTTPS URL.")
+            throw SymairaProviderErrorMapper.invalidConfiguration(
+                "The provider endpoint is not a valid HTTP or HTTPS URL.")
         }
         let storedCredential = try? credentialStore.credential(for: providerID)
         return SymairaProviderConfiguration(

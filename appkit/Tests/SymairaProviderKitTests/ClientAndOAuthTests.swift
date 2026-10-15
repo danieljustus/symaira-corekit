@@ -1,5 +1,6 @@
 import Foundation
 import XCTest
+
 @testable import SymairaProviderKit
 
 final class ClientAndOAuthTests: XCTestCase {
@@ -76,9 +77,10 @@ final class ClientAndOAuthTests: XCTestCase {
         let authenticator = makeAuthenticator()
         let request = try authenticator.makeAuthorizationRequest()
         let query = try XCTUnwrap(URLComponents(url: request.url, resolvingAgainstBaseURL: false)?.queryItems)
-        let values = Dictionary(uniqueKeysWithValues: query.compactMap { item in
-            item.value.map { (item.name, $0) }
-        })
+        let values = Dictionary(
+            uniqueKeysWithValues: query.compactMap { item in
+                item.value.map { (item.name, $0) }
+            })
         XCTAssertEqual(values["response_type"], "code")
         XCTAssertEqual(values["client_id"], "client-id")
         XCTAssertEqual(values["code_challenge_method"], "S256")
@@ -91,12 +93,15 @@ final class ClientAndOAuthTests: XCTestCase {
 
     func testOAuthExchangeMapsTokenResponse() async throws {
         let http = RecordingHTTPClient(
-            data: Data(#"{"access_token":"access-token","refresh_token":"refresh-token","token_type":"Bearer","expires_in":3600}"#.utf8),
+            data: Data(
+                #"{"access_token":"access-token","refresh_token":"refresh-token","token_type":"Bearer","expires_in":3600}"#
+                    .utf8),
             statusCode: 200
         )
         let authenticator = makeAuthenticator(httpClient: http)
         let authorization = try authenticator.makeAuthorizationRequest()
-        let token = try await authenticator.exchange(code: "auth-code", state: authorization.state, request: authorization)
+        let token = try await authenticator.exchange(
+            code: "auth-code", state: authorization.state, request: authorization)
 
         XCTAssertEqual(token.accessToken, "access-token")
         XCTAssertEqual(token.refreshToken, "refresh-token")
@@ -104,7 +109,9 @@ final class ClientAndOAuthTests: XCTestCase {
         XCTAssertNotNil(token.expiresAt)
         XCTAssertEqual(http.lastRequest?.httpMethod, "POST")
         XCTAssertEqual(http.lastRequest?.value(forHTTPHeaderField: "Content-Type"), "application/x-www-form-urlencoded")
-        XCTAssertTrue(String(decoding: http.lastRequest?.httpBody ?? Data(), as: UTF8.self).contains("grant_type=authorization_code"))
+        XCTAssertTrue(
+            String(decoding: http.lastRequest?.httpBody ?? Data(), as: UTF8.self).contains(
+                "grant_type=authorization_code"))
     }
 
     func testOAuthStateMismatchFailsBeforeNetwork() async throws {
@@ -121,7 +128,9 @@ final class ClientAndOAuthTests: XCTestCase {
         }
     }
 
-    private func makeAuthenticator(httpClient: any SymairaProviderHTTPClient = RecordingHTTPClient(data: Data(), statusCode: 200)) -> SymairaOAuthAuthenticator {
+    private func makeAuthenticator(
+        httpClient: any SymairaProviderHTTPClient = RecordingHTTPClient(data: Data(), statusCode: 200)
+    ) -> SymairaOAuthAuthenticator {
         SymairaOAuthAuthenticator(
             configuration: SymairaOAuthConfiguration(
                 authorizationURL: URL(string: "https://auth.example.test/authorize")!,

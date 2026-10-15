@@ -1,7 +1,9 @@
-import XCTest
 import SwiftUI
+import XCTest
+
 @testable import SymairaTheme
 
+@MainActor
 final class FormComponentsTests: XCTestCase {
     func testTextFieldStyleShorthandIsAvailable() {
         let plain: SymairaTextFieldStyle = .symaira
@@ -14,22 +16,22 @@ final class FormComponentsTests: XCTestCase {
         let section = SymairaFormSection("Storage", footer: "Kept on this Mac.") {
             Text("row")
         }
-        XCTAssertNotNil(section.body)
+        ThemeRenderHost.render(section)
     }
 
     func testFormSectionWorksWithoutTitleOrFooter() {
         let section = SymairaFormSection { Text("row") }
-        XCTAssertNotNil(section.body)
+        ThemeRenderHost.render(section)
     }
 
     func testFormRowSupportsALabelOnlyVariant() {
         let row = SymairaFormRow("Model", description: "Used for search.")
-        XCTAssertNotNil(row.body)
+        ThemeRenderHost.render(row)
     }
 
     func testFormRowSupportsATrailingControl() {
         let row = SymairaFormRow("Enabled") { Toggle("", isOn: .constant(true)) }
-        XCTAssertNotNil(row.body)
+        ThemeRenderHost.render(row)
     }
 
     func testFormRowClearsTheMinimumControlHeight() {
@@ -38,12 +40,12 @@ final class FormComponentsTests: XCTestCase {
 
     func testStatusDotRequiresAnAccessibilityLabel() {
         let dot = SymairaStatusDot(tone: .positive, accessibilityLabel: "Connected")
-        XCTAssertNotNil(dot.body)
+        ThemeRenderHost.render(dot)
     }
 
     func testStatusLabelPairsToneWithVisibleText() {
         let label = SymairaStatusLabel("Disconnected", tone: .critical)
-        XCTAssertNotNil(label.body)
+        ThemeRenderHost.render(label)
     }
 
     func testStatusTonesResolveToDistinctColours() {

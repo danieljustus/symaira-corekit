@@ -1,5 +1,6 @@
-import XCTest
 import CryptoKit
+import XCTest
+
 @testable import SymairaUpdateCheck
 
 // MARK: - SHA256 helper
@@ -201,7 +202,9 @@ final class UpdateApplierTests: XCTestCase {
             tagName: "v1.2.0",
             htmlURL: "https://github.com/example/releases/tag/v1.2.0",
             assets: [
-                Asset(name: "mytool_darwin_arm64", browserDownloadURL: "https://example.com/asset", size: Int64(assetBody.count)),
+                Asset(
+                    name: "mytool_darwin_arm64", browserDownloadURL: "https://example.com/asset",
+                    size: Int64(assetBody.count)),
                 Asset(name: "checksums.txt", browserDownloadURL: "https://example.com/checksums.txt", size: 0),
             ]
         )
@@ -234,7 +237,9 @@ final class UpdateApplierTests: XCTestCase {
             tagName: "v1.2.0",
             htmlURL: "https://github.com/example/releases/tag/v1.2.0",
             assets: [
-                Asset(name: "mytool_darwin_arm64", browserDownloadURL: "https://example.com/asset", size: Int64(assetBody.count)),
+                Asset(
+                    name: "mytool_darwin_arm64", browserDownloadURL: "https://example.com/asset",
+                    size: Int64(assetBody.count)),
                 Asset(name: "checksums.txt", browserDownloadURL: "https://example.com/checksums.txt", size: 0),
             ]
         )
@@ -273,7 +278,9 @@ final class UpdateApplierTests: XCTestCase {
             tagName: "v1.2.0",
             htmlURL: "https://github.com/example/releases/tag/v1.2.0",
             assets: [
-                Asset(name: "mytool_darwin_arm64", browserDownloadURL: "https://example.com/asset", size: Int64(assetBody.count)),
+                Asset(
+                    name: "mytool_darwin_arm64", browserDownloadURL: "https://example.com/asset",
+                    size: Int64(assetBody.count)),
                 Asset(name: "checksums.txt", browserDownloadURL: "https://example.com/checksums.txt", size: 0),
             ]
         )
@@ -305,7 +312,7 @@ final class UpdateApplierTests: XCTestCase {
             tagName: "v1.2.0",
             htmlURL: "https://github.com/example/releases/tag/v1.2.0",
             assets: [
-                Asset(name: "mytool_darwin_arm64", browserDownloadURL: "https://example.com/asset", size: 0),
+                Asset(name: "mytool_darwin_arm64", browserDownloadURL: "https://example.com/asset", size: 0)
                 // No checksums.txt asset
             ]
         )
@@ -371,7 +378,9 @@ final class UpdateApplierTests: XCTestCase {
             tagName: "v1.2.0",
             htmlURL: "https://github.com/example/releases/tag/v1.2.0",
             assets: [
-                Asset(name: "mytool_darwin_arm64", browserDownloadURL: "https://example.com/asset", size: Int64(assetBody.count)),
+                Asset(
+                    name: "mytool_darwin_arm64", browserDownloadURL: "https://example.com/asset",
+                    size: Int64(assetBody.count)),
                 Asset(name: "checksums.txt", browserDownloadURL: "https://example.com/checksums.txt", size: 0),
             ]
         )
@@ -407,7 +416,9 @@ final class UpdateApplierTests: XCTestCase {
             tagName: "v1.2.0",
             htmlURL: "https://github.com/example/releases/tag/v1.2.0",
             assets: [
-                Asset(name: "mytool_darwin_arm64", browserDownloadURL: "https://example.com/asset", size: Int64(assetBody.count)),
+                Asset(
+                    name: "mytool_darwin_arm64", browserDownloadURL: "https://example.com/asset",
+                    size: Int64(assetBody.count)),
                 Asset(name: "checksums.txt", browserDownloadURL: "https://example.com/checksums.txt", size: 0),
             ]
         )
@@ -479,8 +490,11 @@ final class UpdateApplierTests: XCTestCase {
             tagName: "v1.2.0",
             htmlURL: "https://github.com/example/releases/tag/v1.2.0",
             assets: [
-                Asset(name: "mytool_darwin_arm64_checksums.txt", browserDownloadURL: "https://example.com/other", size: 0),
-                Asset(name: "mytool_darwin_arm64", browserDownloadURL: "https://example.com/binary", size: Int64(assetBody.count)),
+                Asset(
+                    name: "mytool_darwin_arm64_checksums.txt", browserDownloadURL: "https://example.com/other", size: 0),
+                Asset(
+                    name: "mytool_darwin_arm64", browserDownloadURL: "https://example.com/binary",
+                    size: Int64(assetBody.count)),
                 Asset(name: "checksums.txt", browserDownloadURL: "https://example.com/checksums.txt", size: 0),
             ]
         )
@@ -538,17 +552,17 @@ final class UpdateApplierTests: XCTestCase {
         let applier = UpdateApplier()
 
         // On macOS arm64 build machine:
-#if os(macOS)
+        #if os(macOS)
         XCTAssertEqual(applier.os, "darwin")
-#elseif os(Linux)
+        #elseif os(Linux)
         XCTAssertEqual(applier.os, "linux")
-#endif
+        #endif
 
-#if arch(arm64)
+        #if arch(arm64)
         XCTAssertEqual(applier.arch, "arm64")
-#elseif arch(x86_64)
+        #elseif arch(x86_64)
         XCTAssertEqual(applier.arch, "amd64")
-#endif
+        #endif
     }
 
     // MARK: - Asset type detection
@@ -655,10 +669,10 @@ final class UpdateApplierTests: XCTestCase {
         // Add an Info.plist so it's recognized as a valid app bundle.
         let plistPath = contentsDir.appendingPathComponent("Info.plist")
         let plistContent = """
-        <?xml version="1.0" encoding="UTF-8"?>
-        <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-        <plist version="1.0"><dict><key>CFBundleName</key><string>MyApp</string></dict></plist>
-        """
+            <?xml version="1.0" encoding="UTF-8"?>
+            <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+            <plist version="1.0"><dict><key>CFBundleName</key><string>MyApp</string></dict></plist>
+            """
         try Data(plistContent.utf8).write(to: plistPath)
 
         let applier = UpdateApplier()
@@ -698,7 +712,9 @@ final class UpdateApplierTests: XCTestCase {
             tagName: "v1.2.0",
             htmlURL: "https://github.com/example/releases/tag/v1.2.0",
             assets: [
-                Asset(name: "mytool_darwin_arm64", browserDownloadURL: "https://example.com/asset", size: Int64(assetBody.count)),
+                Asset(
+                    name: "mytool_darwin_arm64", browserDownloadURL: "https://example.com/asset",
+                    size: Int64(assetBody.count)),
                 Asset(name: "checksums.txt", browserDownloadURL: "https://example.com/checksums.txt", size: 0),
             ]
         )
@@ -722,8 +738,8 @@ final class UpdateApplierTests: XCTestCase {
         let checksum = sha256Hex(assetBody)
         let client = StubUpdateHTTPClient()
         let payload = """
-        {"tag_name":"v1.2.0","html_url":"https://github.com/example/releases/tag/v1.2.0","assets":[{"name":"mytool_darwin_arm64","browser_download_url":"https://example.com/asset","size":\(assetBody.count)},{"name":"checksums.txt","browser_download_url":"https://example.com/checksums.txt","size":80}]}
-        """
+            {"tag_name":"v1.2.0","html_url":"https://github.com/example/releases/tag/v1.2.0","assets":[{"name":"mytool_darwin_arm64","browser_download_url":"https://example.com/asset","size":\(assetBody.count)},{"name":"checksums.txt","browser_download_url":"https://example.com/checksums.txt","size":80}]}
+            """
         client.setResponse(path: "/repos/example/mytool/releases/latest", body: Data(payload.utf8))
         client.setResponse(path: "/checksums.txt", body: Data("\(checksum)  mytool_darwin_arm64\n".utf8))
         client.setResponse(path: "/asset", body: assetBody)
@@ -770,12 +786,15 @@ final class UpdateApplierTests: XCTestCase {
             tagName: "v1.2.0",
             htmlURL: "https://github.com/example/releases/tag/v1.2.0",
             assets: [
-                Asset(name: "mytool_darwin_arm64", browserDownloadURL: "https://example.com/asset", size: Int64(assetBody.count)),
+                Asset(
+                    name: "mytool_darwin_arm64", browserDownloadURL: "https://example.com/asset",
+                    size: Int64(assetBody.count)),
                 Asset(name: "checksums.txt", browserDownloadURL: "https://example.com/checksums.txt", size: 0),
             ]
         )
 
-        let applier = UpdateApplier(os: "darwin", arch: "arm64", client: client, checkInstallMethod: true, binaryName: "symvault")
+        let applier = UpdateApplier(
+            os: "darwin", arch: "arm64", client: client, checkInstallMethod: true, binaryName: "symvault")
 
         do {
             _ = try await applier.applyBundle(release: release, targetPath: homebrewPath)
@@ -826,7 +845,8 @@ final class UpdateApplierTests: XCTestCase {
             repo: "danieljustus/symaira-vault",
             binaryName: "symvault"
         )
-        XCTAssertEqual(cfg.downloadBaseURLOrDefault(), "https://github.com/danieljustus/symaira-vault/releases/download")
+        XCTAssertEqual(
+            cfg.downloadBaseURLOrDefault(), "https://github.com/danieljustus/symaira-vault/releases/download")
     }
 
     func testCosignConfigCustomURL() {
@@ -934,7 +954,9 @@ final class UpdateApplierTests: XCTestCase {
             tagName: "v1.2.0",
             htmlURL: "https://github.com/example/releases/tag/v1.2.0",
             assets: [
-                Asset(name: "mytool_darwin_arm64", browserDownloadURL: "https://example.com/asset", size: Int64(assetBody.count)),
+                Asset(
+                    name: "mytool_darwin_arm64", browserDownloadURL: "https://example.com/asset",
+                    size: Int64(assetBody.count)),
                 Asset(name: "checksums.txt", browserDownloadURL: "https://example.com/checksums.txt", size: 0),
             ]
         )
@@ -974,7 +996,9 @@ final class UpdateApplierTests: XCTestCase {
             tagName: "v1.2.0",
             htmlURL: "https://github.com/example/releases/tag/v1.2.0",
             assets: [
-                Asset(name: "mytool_darwin_arm64", browserDownloadURL: "https://example.com/asset", size: Int64(assetBody.count)),
+                Asset(
+                    name: "mytool_darwin_arm64", browserDownloadURL: "https://example.com/asset",
+                    size: Int64(assetBody.count)),
                 Asset(name: "checksums.txt", browserDownloadURL: "https://example.com/checksums.txt", size: 0),
             ]
         )
@@ -1015,7 +1039,9 @@ final class UpdateApplierTests: XCTestCase {
             tagName: "v1.2.0",
             htmlURL: "https://github.com/example/releases/tag/v1.2.0",
             assets: [
-                Asset(name: "mytool_darwin_arm64", browserDownloadURL: "https://example.com/asset", size: Int64(assetBody.count)),
+                Asset(
+                    name: "mytool_darwin_arm64", browserDownloadURL: "https://example.com/asset",
+                    size: Int64(assetBody.count)),
                 Asset(name: "checksums.txt", browserDownloadURL: "https://example.com/checksums.txt", size: 0),
             ]
         )
@@ -1074,7 +1100,9 @@ final class UpdateApplierTests: XCTestCase {
             tagName: "v1.2.0",
             htmlURL: "https://github.com/example/releases/tag/v1.2.0",
             assets: [
-                Asset(name: "mytool_darwin_arm64", browserDownloadURL: "https://example.com/asset", size: Int64(assetBody.count)),
+                Asset(
+                    name: "mytool_darwin_arm64", browserDownloadURL: "https://example.com/asset",
+                    size: Int64(assetBody.count)),
                 Asset(name: "checksums.txt", browserDownloadURL: "https://example.com/checksums.txt", size: 0),
             ]
         )
@@ -1243,7 +1271,9 @@ final class UpdateApplierTests: XCTestCase {
             tagName: "v1.2.0",
             htmlURL: "https://github.com/example/releases/tag/v1.2.0",
             assets: [
-                Asset(name: "mytool_darwin_arm64", browserDownloadURL: "https://example.com/asset", size: Int64(assetBody.count)),
+                Asset(
+                    name: "mytool_darwin_arm64", browserDownloadURL: "https://example.com/asset",
+                    size: Int64(assetBody.count)),
                 Asset(name: "checksums.txt", browserDownloadURL: "https://example.com/checksums.txt", size: 0),
             ]
         )
@@ -1278,7 +1308,9 @@ final class UpdateApplierTests: XCTestCase {
             tagName: "v1.2.0",
             htmlURL: "https://github.com/example/releases/tag/v1.2.0",
             assets: [
-                Asset(name: "mytool_darwin_arm64", browserDownloadURL: "https://example.com/asset", size: Int64(assetBody.count)),
+                Asset(
+                    name: "mytool_darwin_arm64", browserDownloadURL: "https://example.com/asset",
+                    size: Int64(assetBody.count)),
                 Asset(name: "checksums.txt", browserDownloadURL: "https://example.com/checksums.txt", size: 0),
             ]
         )
@@ -1308,7 +1340,9 @@ final class UpdateApplierTests: XCTestCase {
             tagName: "v1.2.0",
             htmlURL: "https://github.com/example/releases/tag/v1.2.0",
             assets: [
-                Asset(name: "mytool_darwin_arm64", browserDownloadURL: "https://example.com/asset", size: Int64(assetBody.count)),
+                Asset(
+                    name: "mytool_darwin_arm64", browserDownloadURL: "https://example.com/asset",
+                    size: Int64(assetBody.count)),
                 Asset(name: "checksums.txt", browserDownloadURL: "https://example.com/checksums.txt", size: 0),
             ]
         )
@@ -1340,7 +1374,9 @@ final class UpdateApplierTests: XCTestCase {
             tagName: "v1.2.0",
             htmlURL: "https://github.com/example/releases/tag/v1.2.0",
             assets: [
-                Asset(name: "mytool_darwin_arm64", browserDownloadURL: "https://example.com/asset", size: Int64(assetBody.count)),
+                Asset(
+                    name: "mytool_darwin_arm64", browserDownloadURL: "https://example.com/asset",
+                    size: Int64(assetBody.count)),
                 Asset(name: "checksums.txt", browserDownloadURL: "https://example.com/checksums.txt", size: 0),
             ]
         )
@@ -1519,8 +1555,12 @@ final class UpdateApplierTests: XCTestCase {
 
     func testCosignCLIVerifierFetchSignatureSuccess() async throws {
         let client = StubUpdateHTTPClient()
-        client.setResponse(path: "/danieljustus/symaira-vault/releases/download/v1.2.0/symvault_1.2.0_checksums.txt.sig", body: Data("sig-bytes".utf8))
-        client.setResponse(path: "/danieljustus/symaira-vault/releases/download/v1.2.0/symvault_1.2.0_checksums.txt.pem", body: Data("cert-bytes".utf8))
+        client.setResponse(
+            path: "/danieljustus/symaira-vault/releases/download/v1.2.0/symvault_1.2.0_checksums.txt.sig",
+            body: Data("sig-bytes".utf8))
+        client.setResponse(
+            path: "/danieljustus/symaira-vault/releases/download/v1.2.0/symvault_1.2.0_checksums.txt.pem",
+            body: Data("cert-bytes".utf8))
 
         let verifier = CosignCLIVerifier(
             repo: "danieljustus/symaira-vault",
@@ -1535,7 +1575,7 @@ final class UpdateApplierTests: XCTestCase {
     }
 
     func testCosignCLIVerifierFetchArtifactHTTPError() async throws {
-        let client = StubUpdateHTTPClient() // no response registered → stub returns 404
+        let client = StubUpdateHTTPClient()  // no response registered → stub returns 404
         let verifier = CosignCLIVerifier(repo: "danieljustus/symaira-vault", binaryName: "symvault", httpClient: client)
 
         do {
@@ -1552,7 +1592,7 @@ final class UpdateApplierTests: XCTestCase {
         let verifier = CosignCLIVerifier(repo: "danieljustus/symaira-vault", binaryName: "symvault")
 
         do {
-            _ = try await verifier.fetchSignature(tag: "v") // strips to an empty version
+            _ = try await verifier.fetchSignature(tag: "v")  // strips to an empty version
             XCTFail("expected cosignVerificationFailed for empty version")
         } catch UpdateApplierError.cosignVerificationFailed(let message) {
             XCTAssertTrue(message.contains("Version must not be empty"), "unexpected message: \(message)")
@@ -1685,7 +1725,9 @@ final class UpdateApplierTests: XCTestCase {
             tagName: "v1.2.0",
             htmlURL: "https://github.com/example/releases/tag/v1.2.0",
             assets: [
-                Asset(name: "MyApp_darwin_arm64.dmg", browserDownloadURL: "https://example.com/dmg", size: Int64(dmgBody.count)),
+                Asset(
+                    name: "MyApp_darwin_arm64.dmg", browserDownloadURL: "https://example.com/dmg",
+                    size: Int64(dmgBody.count)),
                 Asset(name: "checksums.txt", browserDownloadURL: "https://example.com/checksums.txt", size: 0),
             ]
         )
@@ -1772,7 +1814,9 @@ final class UpdateApplierTests: XCTestCase {
             tagName: "v1.2.0",
             htmlURL: "https://github.com/example/releases/tag/v1.2.0",
             assets: [
-                Asset(name: "mytool_darwin_arm64", browserDownloadURL: "https://example.com/asset", size: Int64(assetBody.count)),
+                Asset(
+                    name: "mytool_darwin_arm64", browserDownloadURL: "https://example.com/asset",
+                    size: Int64(assetBody.count)),
                 Asset(name: "checksums.txt", browserDownloadURL: "https://example.com/checksums.txt", size: 0),
             ]
         )

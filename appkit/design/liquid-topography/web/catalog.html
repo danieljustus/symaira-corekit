@@ -1,0 +1,807 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Symaira Komponentenkatalog · DEMO</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../dist/tokens.css">
+<style id="sym-font-face">@font-face{font-family:"Google Sans Flex";src:url("../../../Sources/SymairaTheme/Resources/Fonts/GoogleSansFlex.ttf") format("truetype");font-weight:1 1000;font-display:block}</style>
+<style>
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;font:500 13.5px/1.5 var(--sym-font);-webkit-font-smoothing:antialiased;background:var(--sym-canvas);color:var(--sym-ink)}
+h1,h2,h3,h4,p,ul,ol,dl,dd,figure{margin:0}
+h1{font:700 22px/1.2 var(--sym-font);letter-spacing:-0.02em}
+h2{font:700 16px/1.3 var(--sym-font);letter-spacing:-0.01em}
+h3{font:650 14px/1.35 var(--sym-font)}
+h4{font:650 14px/1.35 var(--sym-font)}
+.muted{color:var(--sym-ink-2)}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+:focus-visible{outline:2px solid var(--sym-focus);outline-offset:2px}
+.skip{position:absolute;left:-9999px;top:8px;z-index:20;background:var(--sym-surface);color:var(--sym-ink);padding:8px 12px;border-radius:var(--sym-radius-md)}
+.skip:focus{left:16px}
+
+/* Layout */
+.topo-background{position:fixed;inset:0;pointer-events:none;z-index:0}
+.layout{position:relative;z-index:1;display:grid;grid-template-columns:272px minmax(0,1fr);min-height:100vh}
+.sidebar{background:var(--sym-sidebar);border-right:1px solid var(--sym-line);padding:24px 16px;position:sticky;top:0;height:100vh;overflow:auto}
+.brand{font:650 12px/1.4 var(--sym-font);color:var(--sym-ink-3);text-transform:uppercase;letter-spacing:.06em;padding:0 12px 12px}
+.navlist{list-style:none;padding:0;display:grid;gap:2px}
+.navlist a{display:block;padding:8px 12px;border-radius:var(--sym-radius-md);color:var(--sym-ink-2);text-decoration:none;font-weight:600}
+.navlist a:hover{background:var(--sym-raised);color:var(--sym-ink)}
+main{padding:32px 32px 72px;min-width:0}
+main:focus{outline:none}
+.pagehead{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;max-width:760px}
+.demo-banner{max-width:760px;margin:20px 0 8px;padding:12px 16px;border-radius:var(--sym-radius-md);background:var(--sym-primary-soft);color:var(--sym-ink)}
+.content{max-width:760px;display:grid;gap:44px;margin-top:24px}
+section{display:grid;gap:14px;scroll-margin-top:24px}
+section > p.muted{max-width:62ch}
+.card{background:var(--sym-surface);border:1px solid var(--sym-line);border-radius:var(--sym-radius-lg);padding:20px;display:grid;gap:16px;min-width:0}
+.card--flush{padding:0;overflow:hidden}
+.card--flush > .pad{padding:20px}
+.row{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.actions{display:flex;flex-wrap:wrap;gap:12px;justify-content:flex-end;align-items:center}
+.status{min-height:1.5em;color:var(--sym-ink-2);font:600 12.5px/1.4 var(--sym-font)}
+.caption{font:600 11.5px/1.4 var(--sym-font);color:var(--sym-ink-3);margin-bottom:8px}
+.state-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:18px}
+.code{font:500 12.5px/1.65 var(--sym-font-mono);color:var(--sym-ink-2)}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:40px;padding:8px 16px;border-radius:var(--sym-radius-md);border:1px solid var(--sym-line);background:var(--sym-surface);color:var(--sym-ink);font:600 13px/1.4 var(--sym-font);cursor:pointer;text-decoration:none;white-space:nowrap}
+.btn:hover:not(:disabled):not([aria-disabled="true"]){background:var(--sym-raised)}
+.btn:active:not(:disabled):not([aria-disabled="true"]){transform:translateY(1px)}
+.btn--primary{background:var(--sym-ink);color:var(--sym-surface);border-color:transparent}
+.btn--primary:hover:not(:disabled):not([aria-disabled="true"]){background:var(--sym-ink);filter:brightness(.95)}
+.btn--danger{background:var(--sym-critical);color:var(--sym-on-critical);border-color:transparent}
+.btn--danger:hover:not(:disabled):not([aria-disabled="true"]){background:var(--sym-critical);filter:brightness(1.06)}
+.btn:disabled,.btn[aria-disabled="true"]{background:var(--sym-raised);color:var(--sym-ink-3);border-color:var(--sym-line);cursor:not-allowed}
+.btn--primary:disabled,.btn--primary[aria-disabled="true"],.btn--danger:disabled,.btn--danger[aria-disabled="true"]{background:var(--sym-raised);color:var(--sym-ink-3);border-color:var(--sym-line);filter:none}
+.btn.is-focus{outline:2px solid var(--sym-focus);outline-offset:2px}
+.spinner{display:inline-block;width:14px;height:14px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Fields */
+.field{display:grid;gap:6px;min-width:0}
+label,.label{font:600 12.5px/1.4 var(--sym-font)}
+.hint{font:500 12px/1.45 var(--sym-font);color:var(--sym-ink-2)}
+.error{font:600 12px/1.4 var(--sym-font);color:var(--sym-critical)}
+.input{width:100%;min-height:40px;padding:8px 12px;font:500 13.5px/1.5 var(--sym-font);color:var(--sym-ink);background:var(--sym-canvas);border:1px solid var(--sym-ink-3);border-radius:var(--sym-radius-md)}
+textarea.input{resize:vertical}
+.input[aria-invalid="true"]{border-color:var(--sym-critical);box-shadow:inset 0 0 0 1px var(--sym-critical)}
+.input::placeholder{color:var(--sym-ink-3);opacity:1}
+.toolbar{display:flex;flex-wrap:wrap;gap:12px;padding:16px 20px;border-bottom:1px solid var(--sym-line);align-items:end}
+.toolbar .field{flex:1 1 180px;min-width:0}
+fieldset.group{border:0;padding:0;margin:0;display:grid;gap:12px;min-width:0}
+legend{font:650 13px/1.4 var(--sym-font);padding:0 0 6px}
+.setting{display:flex;justify-content:space-between;align-items:center;gap:16px;min-height:44px}
+.setting > span:first-child{display:grid;gap:2px;min-width:0}
+.choice{display:flex;align-items:center;gap:10px;min-height:40px;cursor:pointer}
+.choice input{width:18px;height:18px;margin:0;accent-color:var(--sym-selected);flex:none}
+.switch{appearance:none;-webkit-appearance:none;position:relative;flex:none;width:40px;height:24px;margin:0;border-radius:var(--sym-radius-pill);background:var(--sym-ink-3);cursor:pointer;transition:background .15s}
+.switch::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:var(--sym-surface);transition:transform .15s}
+.switch:checked{background:var(--sym-selected)}
+.switch:checked::after{transform:translateX(16px)}
+.switch:focus-visible{outline:2px solid var(--sym-focus);outline-offset:2px}
+.switch-wrap{display:flex;align-items:center;gap:10px}
+.switch-state{font:600 12.5px/1.4 var(--sym-font);color:var(--sym-ink-2);min-width:24px}
+
+/* Notices, badges, empty */
+.notice{display:grid;gap:10px;padding:14px 16px;border-radius:var(--sym-radius-lg);background:var(--sym-surface);border:1px solid var(--sym-line)}
+.notice p{margin:0}
+.notice--critical{background:var(--sym-critical-soft);color:var(--sym-critical);border-color:transparent}
+.notice--critical .btn{color:var(--sym-ink);border-color:var(--sym-line)}
+.notice--critical .btn:hover:not(:disabled){background:var(--sym-raised)}
+.notice ul{padding-left:18px}
+.badges{display:flex;flex-wrap:wrap;gap:8px}
+.badge{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:var(--sym-radius-pill);font:600 12px/1.4 var(--sym-font);background:var(--sym-raised);color:var(--sym-ink-2);white-space:nowrap}
+.badge--ok{color:var(--sym-positive);background:var(--sym-surface)}
+.badge--bad{color:var(--sym-critical);background:var(--sym-critical-soft)}
+.badge--accent{background:var(--sym-primary-soft);color:var(--sym-ink)}
+.empty{display:grid;justify-items:center;text-align:center;gap:10px;padding:40px 24px}
+.empty svg{width:40px;height:40px;fill:none;stroke:var(--sym-ink-3);stroke-width:var(--sym-icon-stroke);stroke-linecap:round;stroke-linejoin:round}
+.empty p{max-width:44ch;color:var(--sym-ink-2)}
+
+/* Table */
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.table-wrap:focus-visible{outline-offset:-2px}
+table{width:100%;border-collapse:collapse;font:500 13px/1.5 var(--sym-font);min-width:560px}
+th{font:600 12px/1.4 var(--sym-font);color:var(--sym-ink-2);text-align:left;padding:10px 16px;border-bottom:1px solid var(--sym-line);white-space:nowrap}
+td{padding:12px 16px;border-bottom:1px solid var(--sym-line);white-space:nowrap;color:var(--sym-ink)}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:hover td{background:var(--sym-raised)}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+.is-compact th,.is-compact td{padding-top:7px;padding-bottom:7px}
+.sort{display:inline-flex;align-items:center;gap:6px;min-height:32px;padding:4px 0;background:none;border:0;color:inherit;font:inherit;cursor:pointer}
+.sort:hover{color:var(--sym-ink)}
+.sort-ind{width:10px;font-size:10px;color:var(--sym-ink)}
+td .name{font-weight:600}
+
+/* Menu */
+.menu-wrap{position:relative;display:inline-block}
+.menu{position:absolute;top:calc(100% + 6px);left:0;z-index:5;min-width:250px;margin:0;padding:6px;list-style:none;background:var(--sym-surface);border:1px solid var(--sym-line);border-radius:var(--sym-radius-lg);box-shadow:var(--sym-shadow-float)}
+.menu [role="menuitem"]{display:block;width:100%;min-height:40px;padding:8px 12px;text-align:left;background:transparent;border:0;border-radius:var(--sym-radius-md);color:var(--sym-ink);font:500 13.5px/1.5 var(--sym-font);cursor:pointer}
+.menu [role="menuitem"]:hover:not(:disabled){background:var(--sym-raised)}
+.menu [role="menuitem"]:focus-visible{outline:2px solid var(--sym-focus);outline-offset:-2px}
+.menu [role="menuitem"]:disabled{color:var(--sym-ink-3);cursor:not-allowed}
+.menu [role="menuitem"].danger{color:var(--sym-critical)}
+.menu hr{border:0;border-top:1px solid var(--sym-line);margin:6px 0}
+
+/* Dialog */
+dialog{border:0;border-radius:var(--sym-radius-xl);background:var(--sym-surface);color:var(--sym-ink);padding:24px;width:min(440px,calc(100vw - 32px));box-shadow:var(--sym-shadow-float)}
+dialog::backdrop{background:rgba(0,0,0,.35)}
+.dialog-body{display:grid;gap:14px;margin:0}
+.dialog-body p{color:var(--sym-ink-2)}
+
+/* Swatches */
+.swatches{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.swatch{display:grid;gap:6px;font:600 12px/1.4 var(--sym-font)}
+.swatch i{display:block;height:56px;border-radius:var(--sym-radius-md);border:1px solid var(--sym-line)}
+.swatch span{color:var(--sym-ink-3);font:500 11px/1.4 var(--sym-font-mono)}
+
+/* Demo states */
+.force-reduce *,.force-reduce *::before,.force-reduce *::after{animation:none!important;transition:none!important}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}.spinner{animation:none}}
+
+/* Responsive */
+@media (max-width:899px){
+  .layout{grid-template-columns:1fr}
+  .sidebar{position:static;height:auto;border-right:0;border-bottom:1px solid var(--sym-line);padding:14px 16px}
+  .navlist{display:flex;gap:4px;overflow-x:auto;padding-bottom:2px}
+  .navlist a{white-space:nowrap;display:flex;align-items:center;min-height:44px}
+  main{padding:20px 16px 56px}
+}
+@media (max-width:520px){
+  .card{padding:16px}
+  .actions{justify-content:stretch}
+  .actions .btn{flex:1 1 auto}
+  .toolbar{padding:14px 16px}
+  .pagehead .btn{width:100%}
+}
+@media (pointer:coarse){
+  .btn,.input,.menu [role="menuitem"],.choice,.sort{min-height:44px}
+  .switch{width:48px;height:28px}
+  .switch::after{width:22px;height:22px;top:3px;left:3px}
+  .switch:checked::after{transform:translateX(20px)}
+}
+</style>
+</head>
+<body>
+<div id="topo-background" class="topo-background" aria-hidden="true"></div>
+<a class="skip" href="#inhalt">Zum Inhalt springen</a>
+<div class="layout">
+  <aside class="sidebar" aria-label="Katalog-Navigation">
+    <p class="brand">Symaira · Katalog</p>
+    <nav aria-label="Abschnitte">
+      <ul class="navlist">
+        <li><a href="#farben">Farben &amp; Schrift</a></li>
+        <li><a href="#buttons">Buttons</a></li>
+        <li><a href="#formular">Formular</a></li>
+        <li><a href="#tabelle">Tabelle</a></li>
+        <li><a href="#menue">Menü</a></li>
+        <li><a href="#dialog">Dialog</a></li>
+        <li><a href="#einstellungen">Einstellungen</a></li>
+        <li><a href="#zustaende">Status &amp; Leerzustand</a></li>
+      </ul>
+    </nav>
+  </aside>
+
+  <main id="inhalt" tabindex="-1">
+    <header class="pagehead">
+      <div>
+        <h1>Komponentenkatalog</h1>
+        <p class="muted">Liquid Topography · Web-Referenz aus <span class="code">dist/tokens.css</span></p>
+      </div>
+      <button class="btn" id="theme-toggle" type="button" aria-pressed="false">Dunkelmodus</button>
+    </header>
+
+    <div class="demo-banner" role="note"><strong>DEMO.</strong> Alle Daten sind Beispiele. Keine Schaltfläche speichert, sendet, löscht oder verbindet sich mit einem Dienst. Die Topografie fließt nur in den freien Flächen; Inhalte bleiben geschützt.</div>
+    <p id="topo-status" class="caption" role="status">Topografie wird vorbereitet …</p>
+
+    <div class="content">
+
+      <section id="farben" aria-labelledby="h-farben">
+        <h2 id="h-farben">Farben &amp; Schrift</h2>
+        <p class="muted">Nur Rollen aus <span class="code">--sym-*</span>, hell und dunkel. Champagner nur als Akzent.</p>
+        <div class="card">
+          <div class="swatches" id="swatches"></div>
+          <div style="display:grid;gap:10px">
+            <p class="sym-type-headline">Headline 16/700</p>
+            <p class="sym-type-title">Title 14/650</p>
+            <p class="sym-type-body">Body 13.5/500. Fließtext hat Gewicht 500 und ist auf Canvas und Surface mindestens 4.5:1 lesbar.</p>
+            <p class="sym-type-label">Label 12.5/600</p>
+            <p class="sym-type-caption" style="color:var(--sym-ink-2)">Caption 11.5/600</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="buttons" aria-labelledby="h-buttons">
+        <h2 id="h-buttons">Buttons</h2>
+        <p class="muted">Höchstens eine Primäraktion pro Ansicht. Fokus ist per Tastatur als Ring sichtbar. Ziele mindestens 40 px, auf Touch 44 px.</p>
+        <div class="card">
+          <h3>Varianten</h3>
+          <div class="row">
+            <button class="btn btn--primary" type="button">Primär</button>
+            <button class="btn" type="button">Sekundär</button>
+            <button class="btn btn--danger" type="button">Destruktiv</button>
+          </div>
+          <h3>Zustände</h3>
+          <div class="state-grid">
+            <div><p class="caption">Fokus (erzwungen)</p><button class="btn btn--primary is-focus" type="button">Fokus</button></div>
+            <div><p class="caption">Deaktiviert</p><button class="btn" type="button" disabled>Deaktiviert</button></div>
+            <div><p class="caption">Primär deaktiviert</p><button class="btn btn--primary" type="button" disabled>Primär</button></div>
+            <div><p class="caption">Lädt</p><button class="btn btn--primary" type="button" aria-disabled="true" aria-busy="true"><span class="spinner" aria-hidden="true"></span>Lädt…</button></div>
+          </div>
+          <h3>Interaktiv</h3>
+          <div class="row">
+            <button class="btn btn--primary" id="load-demo" type="button">Speichern (Demo, 1,5 s)</button>
+          </div>
+          <p id="load-status" class="status" role="status"></p>
+        </div>
+      </section>
+
+      <section id="formular" aria-labelledby="h-formular">
+        <h2 id="h-formular">Formular &amp; Validierung</h2>
+        <p class="muted">Prüfung beim Verlassen eines Feldes und beim Absenden. Fehler stehen als Text am Feld; die Zusammenfassung ist ein Alert mit Links zu den Feldern.</p>
+        <form id="demo-form" class="card" novalidate>
+          <div id="form-summary" class="notice notice--critical" role="alert" hidden>
+            <p><strong>Bitte prüfen Sie diese Angaben:</strong></p>
+            <ul id="form-summary-list"></ul>
+          </div>
+          <div class="field">
+            <label for="f-projekt">Projektname</label>
+            <p class="hint" id="f-projekt-hint">2 bis 40 Zeichen</p>
+            <input class="input" id="f-projekt" name="projekt" type="text" autocomplete="off" required aria-describedby="f-projekt-hint">
+            <p class="error" id="f-projekt-err" hidden></p>
+          </div>
+          <div class="field">
+            <label for="f-email">E-Mail</label>
+            <p class="hint" id="f-email-hint">z. B. name@beispiel.de</p>
+            <input class="input" id="f-email" name="email" type="email" autocomplete="email" required aria-describedby="f-email-hint">
+            <p class="error" id="f-email-err" hidden></p>
+          </div>
+          <div class="field">
+            <label for="f-kontingent">Kontingent</label>
+            <p class="hint" id="f-kontingent-hint">Ganze Zahl von 1 bis 100</p>
+            <input class="input" id="f-kontingent" name="kontingent" type="number" inputmode="numeric" min="1" max="100" step="1" required aria-describedby="f-kontingent-hint">
+            <p class="error" id="f-kontingent-err" hidden></p>
+          </div>
+          <div class="field">
+            <label for="f-notiz">Notiz (optional)</label>
+            <textarea class="input" id="f-notiz" name="notiz" rows="3"></textarea>
+          </div>
+          <div class="actions">
+            <button class="btn" type="reset">Zurücksetzen</button>
+            <button class="btn btn--primary" type="submit" id="f-submit">Senden</button>
+          </div>
+          <p id="form-status" class="status" role="status"></p>
+        </form>
+      </section>
+
+      <section id="tabelle" aria-labelledby="h-tabelle">
+        <h2 id="h-tabelle">Tabelle: sortieren &amp; filtern</h2>
+        <p class="muted">Beispieldaten. Spaltenköpfe sind Schaltflächen (Tab, Enter/Leertaste). Die Trefferzahl wird angesagt. Auf schmalen Bildschirmen scrollt die Tabelle horizontal.</p>
+        <div class="card card--flush">
+          <div class="toolbar">
+            <div class="field">
+              <label for="t-q">Suche</label>
+              <input class="input" id="t-q" type="search" placeholder="Name oder Typ" autocomplete="off">
+            </div>
+            <div class="field">
+              <label for="t-status">Status</label>
+              <select class="input" id="t-status">
+                <option value="all">Alle</option>
+                <option value="aktiv">aktiv</option>
+                <option value="wartend">wartend</option>
+                <option value="fehlgeschlagen">fehlgeschlagen</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="t-data">Datenzustand (Demo)</label>
+              <select class="input" id="t-data">
+                <option value="normal">Normal</option>
+                <option value="empty">Leer</option>
+                <option value="error">Fehler</option>
+              </select>
+            </div>
+          </div>
+          <div class="pad">
+            <p id="t-count" class="status" role="status" aria-live="polite"></p>
+            <div id="t-error" class="notice notice--critical" role="alert" hidden>
+              <p>Die Beispieldaten konnten nicht geladen werden (simuliert).</p>
+              <div><button class="btn" id="t-retry" type="button">Erneut versuchen</button></div>
+            </div>
+          </div>
+          <div id="t-wrap" class="table-wrap" role="region" aria-label="Beispielprojekte, horizontal scrollbar" tabindex="0">
+            <table>
+              <caption class="sr-only">Beispielprojekte mit Status, sortierbar und filterbar</caption>
+              <thead>
+                <tr>
+                  <th scope="col" aria-sort="none"><button class="sort" type="button" data-key="name">Name <span class="sort-ind" aria-hidden="true"></span></button></th>
+                  <th scope="col" aria-sort="none"><button class="sort" type="button" data-key="typ">Typ <span class="sort-ind" aria-hidden="true"></span></button></th>
+                  <th scope="col" aria-sort="none"><button class="sort" type="button" data-key="status">Status <span class="sort-ind" aria-hidden="true"></span></button></th>
+                  <th scope="col" aria-sort="none"><button class="sort" type="button" data-key="aktualisiert">Aktualisiert <span class="sort-ind" aria-hidden="true"></span></button></th>
+                  <th scope="col" class="num" aria-sort="none"><button class="sort" type="button" data-key="eintraege">Einträge <span class="sort-ind" aria-hidden="true"></span></button></th>
+                </tr>
+              </thead>
+              <tbody id="t-body"></tbody>
+            </table>
+          </div>
+          <div id="t-empty" class="empty pad" hidden>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4.3-4.3"/></svg>
+            <h4 id="t-empty-title">Keine Treffer</h4>
+            <p id="t-empty-text">Passen Suche oder Filter zu keinem Eintrag.</p>
+            <button class="btn" id="t-reset" type="button">Filter zurücksetzen</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="menue" aria-labelledby="h-menue">
+        <h2 id="h-menue">Menü</h2>
+        <p class="muted">Menüschaltfläche mit Pfeiltasten, Home und Ende. Escape schließt und gibt den Fokus zurück. Tab schließt das Menü.</p>
+        <div class="card">
+          <div class="menu-wrap">
+            <button class="btn" id="menu-btn" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="menu">Aktionen</button>
+            <ul class="menu" id="menu" role="menu" aria-labelledby="menu-btn" hidden>
+              <li role="none"><button role="menuitem" type="button" data-action="rename">Umbenennen</button></li>
+              <li role="none"><button role="menuitem" type="button" data-action="duplicate">Duplizieren</button></li>
+              <li role="none"><button role="menuitem" type="button" disabled>Teilen (nicht verfügbar)</button></li>
+              <li role="separator"><hr></li>
+              <li role="none"><button role="menuitem" type="button" class="danger" data-action="delete">Löschen…</button></li>
+            </ul>
+          </div>
+          <p id="menu-status" class="status" role="status"></p>
+        </div>
+      </section>
+
+      <section id="dialog" aria-labelledby="h-dialog">
+        <h2 id="h-dialog">Dialog &amp; Abbrechen</h2>
+        <p class="muted">Natives <span class="code">&lt;dialog&gt;</span> mit Fokusfalle. Der sichere Knopf „Abbrechen“ hat den Fokus beim Öffnen. Escape und Abbrechen schließen ohne Wirkung; der Fokus kehrt zurück.</p>
+        <div class="card">
+          <div class="row">
+            <button class="btn btn--danger" id="open-dialog" type="button">Projekt löschen…</button>
+          </div>
+          <p id="dialog-status" class="status" role="status"></p>
+        </div>
+        <dialog id="confirm" aria-labelledby="confirm-title" aria-describedby="confirm-desc">
+          <form method="dialog" class="dialog-body">
+            <h3 id="confirm-title">Projekt wirklich löschen?</h3>
+            <p id="confirm-desc">Demo: Die Schaltfläche ist nicht verbunden. Es wird nichts gelöscht.</p>
+            <div class="actions">
+              <button class="btn" type="submit" value="cancel">Abbrechen</button>
+              <button class="btn btn--danger" type="submit" value="confirm">Löschen (Demo)</button>
+            </div>
+          </form>
+        </dialog>
+      </section>
+
+      <section id="einstellungen" aria-labelledby="h-einstellungen">
+        <h2 id="h-einstellungen">Einstellungen</h2>
+        <p class="muted">Schalter, Auswahl, Optionsfelder. Wirkung nur auf diese Vorschau: „Dichte“ wirkt auf die Tabelle, „Bewegung reduzieren“ stoppt die Animationen dieser Seite. Nichts wird gespeichert.</p>
+        <form id="settings" class="card" aria-labelledby="h-einstellungen">
+          <fieldset class="group">
+            <legend>Anzeige</legend>
+            <label class="setting">
+              <span><span id="s-notify-t">Benachrichtigungen anzeigen</span><span class="hint">Nur im Katalog sichtbar.</span></span>
+              <span class="switch-wrap"><input class="switch" type="checkbox" role="switch" id="s-notify" checked><span class="switch-state" id="s-notify-state" aria-hidden="true">Ein</span></span>
+            </label>
+            <label class="setting">
+              <span><span id="s-motion-t">Bewegung reduzieren</span><span class="hint">Vorschau: stoppt Spinner und Übergänge dieser Seite.</span></span>
+              <span class="switch-wrap"><input class="switch" type="checkbox" role="switch" id="s-motion"><span class="switch-state" id="s-motion-state" aria-hidden="true">Aus</span></span>
+            </label>
+          </fieldset>
+          <fieldset class="group">
+            <legend>Dichte der Tabelle</legend>
+            <label class="choice"><input type="radio" name="density" value="komfortabel" checked> Komfortabel</label>
+            <label class="choice"><input type="radio" name="density" value="kompakt"> Kompakt</label>
+          </fieldset>
+          <div class="field">
+            <label for="s-default">Standardstatus für neue Einträge</label>
+            <select class="input" id="s-default">
+              <option value="wartend">wartend</option>
+              <option value="aktiv">aktiv</option>
+            </select>
+            <p class="hint">Nur Anzeige.</p>
+          </div>
+          <div class="actions">
+            <button class="btn" type="reset" id="s-reset">Zurücksetzen</button>
+            <button class="btn btn--primary" type="submit">Speichern</button>
+          </div>
+          <p id="settings-status" class="status" role="status"></p>
+        </form>
+      </section>
+
+      <section id="zustaende" aria-labelledby="h-zustaende">
+        <h2 id="h-zustaende">Status, Leerzustand &amp; Fehler</h2>
+        <p class="muted">Information steht immer als Text; Farbe ist nur Zusatz.</p>
+        <div class="card">
+          <h3>Badges</h3>
+          <div class="badges">
+            <span class="badge badge--ok"><span aria-hidden="true">✓</span> aktiv</span>
+            <span class="badge"><span aria-hidden="true">•</span> wartend</span>
+            <span class="badge badge--bad"><span aria-hidden="true">✕</span> fehlgeschlagen</span>
+            <span class="badge badge--accent">Neu</span>
+          </div>
+
+          <h3>Hinweise</h3>
+          <div class="notice" role="status">
+            <p><strong>Hinweis.</strong> Der Katalog verwendet nur Beispieldaten.</p>
+          </div>
+          <div class="notice notice--critical" role="alert">
+            <p><strong>Fehler.</strong> Die Verbindung zum Dienst ist unterbrochen (simuliert).</p>
+            <div><button class="btn" id="retry-demo" type="button">Erneut versuchen</button></div>
+          </div>
+
+          <h3>Leerzustand</h3>
+          <div class="empty" style="padding:24px;border:1px dashed var(--sym-line);border-radius:var(--sym-radius-lg)">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h6l2 2h10v10H3z"/></svg>
+            <h4>Noch keine Einträge</h4>
+            <p>Lege einen ersten Eintrag an, damit er hier erscheint.</p>
+            <button class="btn btn--primary" id="empty-demo" type="button">Eintrag anlegen (Demo)</button>
+          </div>
+          <p id="states-status" class="status" role="status"></p>
+        </div>
+      </section>
+
+    </div>
+  </main>
+</div>
+
+<script>
+(() => {
+  const $ = (s, r = document) => r.querySelector(s);
+  const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+  const root = document.documentElement;
+  const el = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; };
+
+  /* Theme */
+  const sysDark = matchMedia('(prefers-color-scheme: dark)');
+  let themeOverride = null;
+  const effectiveTheme = () => themeOverride || (sysDark.matches ? 'dark' : 'light');
+  const themeBtn = $('#theme-toggle');
+  const paintTheme = () => themeBtn.setAttribute('aria-pressed', String(effectiveTheme() === 'dark'));
+  themeBtn.addEventListener('click', () => {
+    themeOverride = effectiveTheme() === 'dark' ? 'light' : 'dark';
+    root.dataset.theme = themeOverride;
+    paintTheme();
+  });
+  sysDark.addEventListener('change', () => { if (!themeOverride) paintTheme(); });
+  paintTheme();
+
+  /* Swatches */
+  const ROLES = ['canvas', 'sidebar', 'surface', 'raised', 'selection', 'line', 'ink', 'ink-2', 'ink-3', 'primary', 'primary-soft', 'critical', 'critical-soft', 'positive'];
+  $('#swatches').append(...ROLES.map(r => {
+    const w = el('div', 'swatch');
+    const sw = el('i'); sw.style.background = `var(--sym-${r})`; sw.setAttribute('aria-hidden', 'true');
+    w.append(sw, el('span', null, `--sym-${r}`));
+    return w;
+  }));
+
+  /* Busy helper for demo actions (keeps focus, announces via aria-busy) */
+  function setBusy(btn, busy, label) {
+    if (busy) {
+      btn.dataset.label = btn.textContent.trim();
+      btn.setAttribute('aria-disabled', 'true');
+      btn.setAttribute('aria-busy', 'true');
+      btn.replaceChildren(el('span', 'spinner'), document.createTextNode(label));
+      btn.firstChild.setAttribute('aria-hidden', 'true');
+    } else {
+      btn.removeAttribute('aria-disabled');
+      btn.removeAttribute('aria-busy');
+      btn.textContent = btn.dataset.label;
+    }
+  }
+
+  /* Loading demo */
+  const loadBtn = $('#load-demo');
+  loadBtn.addEventListener('click', () => {
+    if (loadBtn.getAttribute('aria-disabled') === 'true') return;
+    setBusy(loadBtn, true, 'Lädt…');
+    $('#load-status').textContent = '';
+    setTimeout(() => {
+      setBusy(loadBtn, false);
+      $('#load-status').textContent = 'Demo abgeschlossen. Es wurde nichts gespeichert.';
+    }, 1500);
+  });
+
+  /* Form validation */
+  const form = $('#demo-form');
+  const LABEL = { projekt: 'Projektname', email: 'E-Mail', kontingent: 'Kontingent' };
+  const fields = {
+    projekt: { el: $('#f-projekt'), check: v => {
+      const t = v.trim();
+      if (!t) return 'Bitte einen Projektnamen eingeben.';
+      if (t.length < 2) return 'Mindestens 2 Zeichen.';
+      if (t.length > 40) return 'Höchstens 40 Zeichen.';
+      return '';
+    } },
+    email: { el: $('#f-email'), check: v => {
+      const t = v.trim();
+      if (!t) return 'Bitte eine E-Mail-Adresse eingeben.';
+      return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(t) ? '' : 'Bitte im Format name@beispiel.de eingeben.';
+    } },
+    kontingent: { el: $('#f-kontingent'), check: v => {
+      if (v.trim() === '') return 'Bitte ein Kontingent eingeben.';
+      const n = Number(v);
+      return Number.isInteger(n) && n >= 1 && n <= 100 ? '' : 'Ganze Zahl von 1 bis 100.';
+    } },
+  };
+  function showField(key, msg) {
+    const f = fields[key];
+    const err = $('#f-' + key + '-err');
+    const hintId = 'f-' + key + '-hint';
+    err.textContent = msg;
+    err.hidden = !msg;
+    f.el.setAttribute('aria-invalid', String(!!msg));
+    f.el.setAttribute('aria-describedby', msg ? `${hintId} ${err.id}` : hintId);
+    return msg;
+  }
+  Object.keys(fields).forEach(key => {
+    const f = fields[key];
+    f.el.addEventListener('blur', () => showField(key, f.check(f.el.value)));
+    f.el.addEventListener('input', () => { if (f.el.getAttribute('aria-invalid') === 'true') showField(key, f.check(f.el.value)); });
+  });
+  form.addEventListener('submit', e => {
+    e.preventDefault();
+    const errors = Object.keys(fields).map(k => [k, showField(k, fields[k].check(fields[k].el.value))]).filter(([, m]) => m);
+    const sum = $('#form-summary'), list = $('#form-summary-list');
+    $('#form-status').textContent = '';
+    if (errors.length) {
+      list.replaceChildren(...errors.map(([k, m]) => {
+        const li = el('li');
+        const a = el('a', null, `${LABEL[k]}: ${m}`);
+        a.href = '#f-' + k;
+        li.append(a);
+        return li;
+      }));
+      sum.hidden = false;
+      fields[errors[0][0]].el.focus();
+      return;
+    }
+    sum.hidden = true;
+    list.replaceChildren();
+    const btn = $('#f-submit');
+    setBusy(btn, true, 'Prüft…');
+    setTimeout(() => {
+      setBusy(btn, false);
+      $('#form-status').textContent = 'Demo: Eingaben sind gültig. Es wurde nichts gesendet.';
+    }, 1000);
+  });
+  form.addEventListener('reset', () => setTimeout(() => {
+    Object.keys(fields).forEach(k => showField(k, ''));
+    $('#form-summary').hidden = true;
+    $('#form-summary-list').replaceChildren();
+    $('#form-status').textContent = '';
+  }, 0));
+
+  /* Table */
+  const DATA = [
+    { name: 'Brain · Wissensbasis', typ: 'Projekt', status: 'aktiv', aktualisiert: '2026-10-14', eintraege: 482 },
+    { name: 'Vault · Schlüssel-Import', typ: 'Import', status: 'wartend', aktualisiert: '2026-10-13', eintraege: 31 },
+    { name: 'EraseMe · Broker-Anfrage 7', typ: 'Anfrage', status: 'fehlgeschlagen', aktualisiert: '2026-10-12', eintraege: 4 },
+    { name: 'Cockpit · Tagesbericht', typ: 'Bericht', status: 'aktiv', aktualisiert: '2026-10-11', eintraege: 119 },
+    { name: 'Fritz · Geräteliste', typ: 'Export', status: 'aktiv', aktualisiert: '2026-10-09', eintraege: 27 },
+    { name: 'Desktop · Sitzungsprotokoll', typ: 'Protokoll', status: 'wartend', aktualisiert: '2026-10-08', eintraege: 53 },
+    { name: 'symaira.com · Hero-Entwurf', typ: 'Entwurf', status: 'wartend', aktualisiert: '2026-10-05', eintraege: 12 },
+    { name: 'Brain · Importlauf Mai', typ: 'Import', status: 'fehlgeschlagen', aktualisiert: '2026-09-30', eintraege: 908 },
+  ];
+  const COLS = ['name', 'typ', 'status', 'aktualisiert', 'eintraege'];
+  const STATUS = {
+    aktiv: { cls: 'badge badge--ok', glyph: '✓' },
+    wartend: { cls: 'badge', glyph: '•' },
+    fehlgeschlagen: { cls: 'badge badge--bad', glyph: '✕' },
+  };
+  const ts = { key: 'aktualisiert', dir: 'desc', q: '', status: 'all', data: 'normal' };
+  const fmtDate = iso => { const [y, m, d] = iso.split('-'); return `${d}.${m}.${y}`; };
+
+  function currentRows(source) {
+    const q = ts.q.trim().toLowerCase();
+    const sign = ts.dir === 'asc' ? 1 : -1;
+    return source
+      .filter(r => (ts.status === 'all' || r.status === ts.status) &&
+                   (!q || r.name.toLowerCase().includes(q) || r.typ.toLowerCase().includes(q)))
+      .sort((a, b) => {
+        const x = a[ts.key], y = b[ts.key];
+        return typeof x === 'number' ? (x - y) * sign : String(x).localeCompare(String(y), 'de') * sign;
+      });
+  }
+
+  function renderTable() {
+    const wrap = $('#t-wrap'), empty = $('#t-empty'), count = $('#t-count'), body = $('#t-body');
+    const errBox = $('#t-error');
+    $$('.sort').forEach(b => {
+      const active = b.dataset.key === ts.key;
+      b.closest('th').setAttribute('aria-sort', active ? (ts.dir === 'asc' ? 'ascending' : 'descending') : 'none');
+      b.querySelector('.sort-ind').textContent = active ? (ts.dir === 'asc' ? '▲' : '▼') : '';
+    });
+    if (ts.data === 'error') {
+      errBox.hidden = false; wrap.hidden = true; empty.hidden = true; count.textContent = '';
+      return;
+    }
+    errBox.hidden = true;
+    const source = ts.data === 'empty' ? [] : DATA;
+    const rows = currentRows(source);
+    count.textContent = `${rows.length} von ${source.length} Einträgen angezeigt`;
+    if (rows.length === 0) {
+      wrap.hidden = true; empty.hidden = false;
+      $('#t-empty-title').textContent = source.length === 0 ? 'Noch keine Einträge' : 'Keine Treffer';
+      $('#t-empty-text').textContent = source.length === 0
+        ? 'Es gibt noch keine Beispieldaten. Der Datenzustand „Leer“ ist eingestellt.'
+        : 'Passen Suche oder Filter zu keinem Eintrag.';
+      $('#t-reset').hidden = source.length === 0;
+      return;
+    }
+    wrap.hidden = false; empty.hidden = true;
+    body.replaceChildren(...rows.map(r => {
+      const tr = el('tr');
+      const name = el('td', 'name', r.name);
+      const typ = el('td', null, r.typ);
+      const st = el('td');
+      const s = STATUS[r.status];
+      const badge = el('span', s.cls);
+      badge.append(el('span', null, s.glyph), document.createTextNode(' ' + r.status));
+      badge.firstChild.setAttribute('aria-hidden', 'true');
+      st.append(badge);
+      const date = el('td', null, fmtDate(r.aktualisiert));
+      const n = el('td', 'num', r.eintraege.toLocaleString('de-DE'));
+      tr.append(name, typ, st, date, n);
+      return tr;
+    }));
+  }
+
+  $$('.sort').forEach(b => b.addEventListener('click', () => {
+    const key = b.dataset.key;
+    if (ts.key === key) ts.dir = ts.dir === 'asc' ? 'desc' : 'asc';
+    else { ts.key = key; ts.dir = key === 'aktualisiert' || key === 'eintraege' ? 'desc' : 'asc'; }
+    renderTable();
+  }));
+  $('#t-q').addEventListener('input', e => { ts.q = e.target.value; renderTable(); });
+  $('#t-status').addEventListener('change', e => { ts.status = e.target.value; renderTable(); });
+  $('#t-data').addEventListener('change', e => { ts.data = e.target.value; renderTable(); });
+  const resetFilter = () => {
+    ts.q = ''; ts.status = 'all';
+    $('#t-q').value = ''; $('#t-status').value = 'all';
+    renderTable();
+    $('#t-q').focus();
+  };
+  $('#t-reset').addEventListener('click', resetFilter);
+  $('#t-retry').addEventListener('click', e => {
+    const btn = e.currentTarget;
+    setBusy(btn, true, 'Lädt…');
+    setTimeout(() => {
+      setBusy(btn, false);
+      ts.data = 'normal';
+      $('#t-data').value = 'normal';
+      renderTable();
+    }, 1000);
+  });
+  renderTable();
+
+  /* Menu */
+  const mBtn = $('#menu-btn'), menu = $('#menu');
+  const menuItems = () => $$('[role="menuitem"]:not([disabled])', menu);
+  function openMenu(which) {
+    menu.hidden = false;
+    mBtn.setAttribute('aria-expanded', 'true');
+    const items = menuItems();
+    (which === 'last' ? items[items.length - 1] : items[0]).focus();
+  }
+  function closeMenu(restoreFocus) {
+    if (menu.hidden) return;
+    menu.hidden = true;
+    mBtn.setAttribute('aria-expanded', 'false');
+    if (restoreFocus) mBtn.focus();
+  }
+  mBtn.addEventListener('click', () => (menu.hidden ? openMenu('first') : closeMenu(true)));
+  mBtn.addEventListener('keydown', e => {
+    if (e.key === 'ArrowUp') { e.preventDefault(); openMenu('last'); }
+    else if (e.key === 'ArrowDown') { e.preventDefault(); openMenu('first'); }
+  });
+  menu.addEventListener('keydown', e => {
+    const items = menuItems();
+    const i = items.indexOf(document.activeElement);
+    switch (e.key) {
+      case 'ArrowDown': e.preventDefault(); items[(i + 1) % items.length].focus(); break;
+      case 'ArrowUp': e.preventDefault(); items[(i - 1 + items.length) % items.length].focus(); break;
+      case 'Home': e.preventDefault(); items[0].focus(); break;
+      case 'End': e.preventDefault(); items[items.length - 1].focus(); break;
+      case 'Escape': e.preventDefault(); closeMenu(true); break;
+      case 'Tab': closeMenu(false); break;
+    }
+  });
+  menu.addEventListener('click', e => {
+    const item = e.target.closest('[role="menuitem"]');
+    if (!item) return;
+    const action = item.dataset.action;
+    if (action === 'delete') { closeMenu(false); openConfirm(mBtn); return; }
+    closeMenu(true);
+    $('#menu-status').textContent = action === 'rename'
+      ? 'Demo: Umbenennen gewählt. Es wurde nichts geändert.'
+      : 'Demo: Duplizieren gewählt. Es wurde nichts kopiert.';
+  });
+  document.addEventListener('pointerdown', e => {
+    if (!menu.hidden && !e.target.closest('.menu-wrap')) closeMenu(false);
+  });
+
+  /* Dialog */
+  const dlg = $('#confirm');
+  let dlgOpener = null;
+  function openConfirm(opener = $('#open-dialog')) {
+    dlgOpener = opener;
+    dlg.returnValue = '';
+    dlg.showModal();
+  }
+  $('#open-dialog').addEventListener('click', () => openConfirm($('#open-dialog')));
+  // Fokusfalle: Tab und Umschalt+Tab bleiben im Dialog.
+  dlg.addEventListener('keydown', e => {
+    if (e.key !== 'Tab') return;
+    const items = $$('button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled])', dlg);
+    if (!items.length) return;
+    const first = items[0], last = items[items.length - 1];
+    if (e.shiftKey && (document.activeElement === first || !dlg.contains(document.activeElement))) {
+      e.preventDefault(); last.focus();
+    } else if (!e.shiftKey && (document.activeElement === last || !dlg.contains(document.activeElement))) {
+      e.preventDefault(); first.focus();
+    }
+  });
+  dlg.addEventListener('close', () => {
+    $('#dialog-status').textContent = dlg.returnValue === 'confirm'
+      ? 'Demo: Bestätigt. Es wurde nichts gelöscht.'
+      : 'Abgebrochen. Es wurde nichts geändert.';
+    if (dlgOpener) dlgOpener.focus();
+  });
+
+  /* Settings */
+  const sNotify = $('#s-notify'), sMotion = $('#s-motion');
+  function syncSettings() {
+    $('#s-notify-state').textContent = sNotify.checked ? 'Ein' : 'Aus';
+    $('#s-motion-state').textContent = sMotion.checked ? 'Ein' : 'Aus';
+    root.classList.toggle('force-reduce', sMotion.checked);
+    const density = $('input[name="density"]:checked').value;
+    $('#t-wrap').classList.toggle('is-compact', density === 'kompakt');
+  }
+  sNotify.addEventListener('change', syncSettings);
+  sMotion.addEventListener('change', syncSettings);
+  $$('input[name="density"]').forEach(r => r.addEventListener('change', syncSettings));
+  $('#settings').addEventListener('submit', e => {
+    e.preventDefault();
+    $('#settings-status').textContent = 'Demo: Einstellungen nicht gespeichert. Nur Vorschau.';
+  });
+  $('#s-reset').addEventListener('click', () => setTimeout(() => { $('#settings-status').textContent = ''; syncSettings(); }, 0));
+  syncSettings();
+
+  /* Status states */
+  $('#empty-demo').addEventListener('click', () => {
+    $('#states-status').textContent = 'Demo: Keine Aktion verbunden. Es wurde nichts angelegt.';
+  });
+  $('#retry-demo').addEventListener('click', e => {
+    const btn = e.currentTarget;
+    setBusy(btn, true, 'Lädt…');
+    setTimeout(() => {
+      setBusy(btn, false);
+      $('#states-status').textContent = 'Demo: Erneut versucht. Keine Verbindung wurde geprüft.';
+    }, 1000);
+  });
+})();
+</script>
+<script type="module" id="topo-preview">
+import { mountTopo } from './symaira-topo.js';
+const topoParams = await (await fetch('../topo.json')).json();
+const topo = mountTopo(document.getElementById('topo-background'), {
+  params: topoParams, pointerTarget: window, root: document,
+  protect: '.sidebar, .pagehead h1, .pagehead p, .pagehead button, .demo-banner, #topo-status, section > h2, section > p',
+  hill: '.card, .notice, .empty',
+});
+document.documentElement.dataset.topography = topo.supported ? 'ready' : 'unavailable';
+document.getElementById('topo-status').textContent = topo.supported
+  ? 'Liquid Topography · Maus bewegen, klicken oder ziehen. Texte und Bedienelemente bleiben frei.'
+  : 'Topografie ist in diesem Browser nicht verfügbar. Der Katalog bleibt vollständig bedienbar.';
+const motion = document.getElementById('s-motion');
+const syncTopoMotion = () => topo.setMotionEnabled(!motion.checked);
+motion.addEventListener('change', syncTopoMotion);
+document.getElementById('settings').addEventListener('reset', () => setTimeout(syncTopoMotion, 0));
+syncTopoMotion();
+</script>
+</body>
+</html>

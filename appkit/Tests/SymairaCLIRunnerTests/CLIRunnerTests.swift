@@ -1,4 +1,5 @@
 import XCTest
+
 @testable import SymairaCLIRunner
 
 final class CLIRunnerTests: XCTestCase {
@@ -124,11 +125,12 @@ final class CLIRunnerTests: XCTestCase {
     }
 
     func testErrorDescriptionRedactsPEMBlocks() {
+        let pemHeader = "-----BEGIN " + "RSA PRIVATE KEY-----"
         let pemStderr = """
-        -----BEGIN RSA PRIVATE KEY-----
-        MIIEpAIBAAKCAQEA0Z3...
-        -----END RSA PRIVATE KEY-----
-        """
+            \(pemHeader)
+            MIIEpAIBAAKCAQEA0Z3...
+            -----END RSA PRIVATE KEY-----
+            """
         let err = CLIRunnerError.executionFailed(code: 2, fullStderr: pemStderr)
         let desc = err.errorDescription ?? ""
         XCTAssertFalse(desc.contains("BEGIN RSA"), "PEM block not redacted: \(desc)")
@@ -164,7 +166,8 @@ final class CLIRunnerTests: XCTestCase {
         let slack = "xox" + "b-" + String(repeating: "12-", count: 6)
         let stripe = "sk" + "_live_" + String(repeating: "q7", count: 12)
         let aws = "AK" + "IA" + String(repeating: "B7", count: 8)
-        let jwt = "eyJ" + String(repeating: "hB", count: 17)
+        let jwt =
+            "eyJ" + String(repeating: "hB", count: 17)
             + "." + String(repeating: "s1", count: 20)
             + "." + String(repeating: "x9", count: 21)
         for token in [ghToken, fineGrained, slack, stripe, aws, jwt] {
@@ -181,7 +184,8 @@ final class CLIRunnerTests: XCTestCase {
         let akia = "AK" + "IA" + String(repeating: "B7", count: 8)
         let asia = "AS" + "IA" + String(repeating: "C8", count: 8)
         let stripe = "sk" + "_live_" + String(repeating: "q7", count: 12)
-        let pem = "-----BEGIN " + "RSA PRIVATE KEY-----\n"
+        let pem =
+            "-----BEGIN " + "RSA PRIVATE KEY-----\n"
             + String(repeating: "A", count: 64)
             + "\n-----END " + "RSA PRIVATE KEY-----"
 
@@ -215,7 +219,8 @@ final class CLIRunnerTests: XCTestCase {
     }
 
     func testOutputTruncationHandlesBothStreamsConcurrently() async throws {
-        let command = "printf 'stdout-start'; printf 'stderr-start' >&2; "
+        let command =
+            "printf 'stdout-start'; printf 'stderr-start' >&2; "
             + "dd if=/dev/zero bs=65536 count=8 2>/dev/null & "
             + "dd if=/dev/zero bs=65536 count=8 >&2 2>/dev/null & wait"
         let result = try await runner.run(
@@ -280,20 +285,24 @@ final class CLIRunnerTests: XCTestCase {
     func testAugmentedEnvironmentPrependsPATHPrefix() {
         let env = CLIRunner.augmentedEnvironment(["HOME": "/Users/test"])
         let path = env["PATH"] ?? ""
-        XCTAssertTrue(path.hasPrefix(CLIRunner.augmentedPATHPrefix),
-                      "PATH should start with augmented prefix, got: \(path)")
-        XCTAssertTrue(path.contains("/Users/test") == false,
-                      "Augmented environment should not leak non-PATH keys into PATH")
+        XCTAssertTrue(
+            path.hasPrefix(CLIRunner.augmentedPATHPrefix),
+            "PATH should start with augmented prefix, got: \(path)")
+        XCTAssertTrue(
+            path.contains("/Users/test") == false,
+            "Augmented environment should not leak non-PATH keys into PATH")
         XCTAssertEqual(env["HOME"], "/Users/test", "Non-PATH keys must be preserved")
     }
 
     func testAugmentedEnvironmentPreservesExistingPATHSuffix() {
         let env = CLIRunner.augmentedEnvironment(["PATH": "/custom/bin"])
         let path = env["PATH"] ?? ""
-        XCTAssertTrue(path.hasPrefix(CLIRunner.augmentedPATHPrefix),
-                      "PATH must start with augmented prefix")
-        XCTAssertTrue(path.hasSuffix(":/custom/bin"),
-                      "Existing PATH must be appended after the prefix, got: \(path)")
+        XCTAssertTrue(
+            path.hasPrefix(CLIRunner.augmentedPATHPrefix),
+            "PATH must start with augmented prefix")
+        XCTAssertTrue(
+            path.hasSuffix(":/custom/bin"),
+            "Existing PATH must be appended after the prefix, got: \(path)")
     }
 
     func testSpawnPathsYieldIdenticalAugmentation() async throws {
@@ -310,10 +319,12 @@ final class CLIRunnerTests: XCTestCase {
             environment: [:]
         )
         // The subprocess PATH should start with the same prefix.
-        XCTAssertTrue(result.stdoutText.hasPrefix(CLIRunner.augmentedPATHPrefix),
-                      "Subprocess PATH should start with augmented prefix, got: \(result.stdoutText)")
+        XCTAssertTrue(
+            result.stdoutText.hasPrefix(CLIRunner.augmentedPATHPrefix),
+            "Subprocess PATH should start with augmented prefix, got: \(result.stdoutText)")
         // The prefix should match what augmentedEnvironment produces.
-        XCTAssertEqual(String(cliPath.prefix(CLIRunner.augmentedPATHPrefix.count)),
-                       CLIRunner.augmentedPATHPrefix)
+        XCTAssertEqual(
+            String(cliPath.prefix(CLIRunner.augmentedPATHPrefix.count)),
+            CLIRunner.augmentedPATHPrefix)
     }
 }

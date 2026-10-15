@@ -40,6 +40,10 @@ jobs:
           DEVELOPER_DIR="$XCODE" xcodebuild -version
       - name: Regression-test Xcode selection
         run: python3 scripts/test_select_xcode.py
+      - name: Regression-test formatter discovery
+        run: make test-make
+      - name: Check Swift formatting
+        run: make lint
       - name: Swift version
         run: swift --version
       - name: Verify approved icon family

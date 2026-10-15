@@ -41,7 +41,8 @@ enum InstallMethodDetector {
         // Resolve symlinks (throws for nonexistent paths).
         let realPath: String
         if let resolved = try? FileManager.default
-            .destinationOfSymbolicLink(atPath: binaryPath) {
+            .destinationOfSymbolicLink(atPath: binaryPath)
+        {
             realPath = resolved
         } else {
             realPath = binaryPath
@@ -87,16 +88,18 @@ enum InstallMethodDetector {
 
     private static func detectFromEnv(_ absPath: String) -> InstallMethod? {
         if let prefix = ProcessInfo.processInfo.environment["HOMEBREW_PREFIX"] {
-            let resolved = (try? FileManager.default
-                .destinationOfSymbolicLink(atPath: prefix)) ?? prefix
+            let resolved =
+                (try? FileManager.default
+                    .destinationOfSymbolicLink(atPath: prefix)) ?? prefix
             if absPath.hasPrefix(resolved) {
                 return .homebrew
             }
         }
 
         if let gopath = ProcessInfo.processInfo.environment["GOPATH"] {
-            let resolved = (try? FileManager.default
-                .destinationOfSymbolicLink(atPath: gopath)) ?? gopath
+            let resolved =
+                (try? FileManager.default
+                    .destinationOfSymbolicLink(atPath: gopath)) ?? gopath
             let binDir = resolved + "/bin"
             if absPath.hasPrefix(binDir) {
                 return .goInstall
@@ -104,8 +107,9 @@ enum InstallMethodDetector {
         }
 
         if let gomodcache = ProcessInfo.processInfo.environment["GOMODCACHE"] {
-            let resolved = (try? FileManager.default
-                .destinationOfSymbolicLink(atPath: gomodcache)) ?? gomodcache
+            let resolved =
+                (try? FileManager.default
+                    .destinationOfSymbolicLink(atPath: gomodcache)) ?? gomodcache
             if absPath.hasPrefix(resolved) {
                 return .goInstall
             }
@@ -121,16 +125,17 @@ enum InstallMethodDetector {
         if absPath.hasPrefix("/usr/bin/") { return .packageManager }
         if absPath.hasPrefix("/usr/local/bin/") { return .directDownload }
 
-#if !os(iOS) && !os(tvOS) && !os(watchOS)
+        #if !os(iOS) && !os(tvOS) && !os(watchOS)
         let home = FileManager.default.homeDirectoryForCurrentUser.path
-#else
+        #else
         let home = NSHomeDirectory()
-#endif
+        #endif
 
         // GOPATH/bin.
         if let gopath = ProcessInfo.processInfo.environment["GOPATH"] {
-            let resolved = (try? FileManager.default
-                .destinationOfSymbolicLink(atPath: gopath)) ?? gopath
+            let resolved =
+                (try? FileManager.default
+                    .destinationOfSymbolicLink(atPath: gopath)) ?? gopath
             let binDir = resolved + "/"
             if absPath.hasPrefix(binDir) { return .goInstall }
         }
@@ -153,12 +158,13 @@ enum InstallMethodDetector {
     }
 
     private static func detectFromWritability(_ absPath: String) -> InstallMethod {
-#if os(Windows)
+        #if os(Windows)
         return .buildFromSource
-#else
+        #else
         let dir = (absPath as NSString).deletingLastPathComponent
         guard let attrs = try? FileManager.default.attributesOfItem(atPath: dir),
-              let permissions = attrs[.posixPermissions] as? Int else {
+            let permissions = attrs[.posixPermissions] as? Int
+        else {
             return .unknown
         }
 
@@ -173,7 +179,7 @@ enum InstallMethodDetector {
         }
 
         return .buildFromSource
-#endif
+        #endif
     }
 }
 #endif

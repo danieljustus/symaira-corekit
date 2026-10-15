@@ -1,5 +1,6 @@
-import XCTest
 import SwiftUI
+import XCTest
+
 @testable import SymairaTheme
 
 private struct ScaffoldStep: SymairaOnboardingStep {
@@ -50,7 +51,7 @@ final class OnboardingScaffoldTests: XCTestCase {
 
     func testScaffoldEvaluatesBodyAtFirstStep() {
         let (_, scaffold) = makeScaffold()
-        XCTAssertNotNil(scaffold.body)
+        ThemeRenderHost.render(scaffold)
     }
 
     func testScaffoldReEvaluatesTitleAndContentWhenTheStepChanges() {
@@ -86,17 +87,17 @@ final class OnboardingScaffoldTests: XCTestCase {
     func testScaffoldConstructsBackAndFinishNavigationOnTerminalStep() {
         let terminal = ScaffoldStep(id: 1, order: 1, isTerminal: true)
         let (flow, scaffold) = makeScaffold(steps: [ScaffoldStep(id: 0, order: 0), terminal])
-        XCTAssertNotNil(scaffold.body)
+        ThemeRenderHost.render(scaffold)
 
         flow.advance()
         XCTAssertTrue(flow.currentStep.isTerminal)
         // Body re-evaluated on the terminal step: the Back button branch and
         // the Finish label branch of the navigation bar both construct.
-        XCTAssertNotNil(scaffold.body)
+        ThemeRenderHost.render(scaffold)
 
         flow.advance()
         XCTAssertTrue(flow.isFinished)
-        XCTAssertNotNil(scaffold.body)
+        ThemeRenderHost.render(scaffold)
     }
 
     func testScaffoldConstructsSkipButtonOnlyOnSkippableSteps() {
@@ -105,10 +106,10 @@ final class OnboardingScaffoldTests: XCTestCase {
             ScaffoldStep(id: 1, order: 1, isSkippable: false),
         ]
         let (flow, scaffold) = makeScaffold(steps: steps)
-        XCTAssertNotNil(scaffold.body)
+        ThemeRenderHost.render(scaffold)
 
         flow.advance()
-        XCTAssertNotNil(scaffold.body)
+        ThemeRenderHost.render(scaffold)
     }
 
     func testScaffoldInvokesOnFinishWhenTheFlowFinishes() {

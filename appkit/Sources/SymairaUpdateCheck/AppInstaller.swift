@@ -150,15 +150,17 @@ enum AppInstaller {
 
         let plist = try PropertyListSerialization.propertyList(from: result.stdout, options: [], format: nil)
         guard let dict = plist as? [String: Any],
-              let entities = dict["system-entities"] as? [[String: Any]] else {
+            let entities = dict["system-entities"] as? [[String: Any]]
+        else {
             throw UpdateApplierError.dmgMountFailed("Failed to parse hdiutil plist output")
         }
 
         // Find the mount point entity.
         for entity in entities {
             if let mountPoint = entity["mount-point"] as? String,
-               let devEntry = entity["dev-entry"] as? String,
-               !mountPoint.isEmpty {
+                let devEntry = entity["dev-entry"] as? String,
+                !mountPoint.isEmpty
+            {
                 return UpdateApplier.DMGMountResult(
                     mountPoint: URL(fileURLWithPath: mountPoint),
                     device: devEntry

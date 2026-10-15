@@ -7,6 +7,59 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Shared typography now responds to live iOS Dynamic Type changes, including
+  the missing-font fallback, while preserving Google Sans Flex, `opsz` 18,
+  approved weights and tabular digits (#163).
+- `make lint` now resolves `swift-format` through the selected Xcode before
+  trying PATH, and fails on a missing formatter or any lint finding (#161).
+  A shared four-space formatting configuration, `make format`, isolated
+  Makefile regressions and the same strict CI gate prevent silent skips.
+  Swift sources and the design-token generator now follow that configuration.
+- UI smoke tests now render through the native test host on the main actor
+  instead of reading an uninstalled SwiftUI view's body (#162). Decode-error
+  test helpers and README examples also consume their results explicitly.
+
+### Added
+- **Liquid Topography** design system: `design/liquid-topography/` holds the
+  source of truth (`DESIGN.md`, `topo.json`), the token generator
+  (`build.py`, 34 WCAG contrast checks in light and dark), the WebGL2 web
+  component and a native macOS demo.
+- `SymairaTokens`: generated adaptive colors, radii, spacing and topography
+  parameters.
+- `SymairaTopoView` + `SymairaTopoModel`: reactive topography background
+  (Metal shader bundled as `default.metallib`). Reacts to app state
+  (`idle`/`thinking`/`problem`/`input`), pointer hover/click/press/drag, layout
+  changes and sidebar toggles. `.topoProtected(in:)` keeps text and controls
+  line-free. Respects Reduce Motion and Low Power Mode.
+
+### Changed
+- **Breaking (visual):** `SymairaTheme.backgroundPrimary/Secondary`,
+  `surfaceOpaque` and `foreground*` now return the gray Liquid Topography
+  palette instead of the warm champagne/black palette. Fixed legacy constants
+  (`bgDark`, `goldPrimary`, …) are unchanged.
+- **Breaking (API):** typography values and `SymairaFont.font(...)` now return
+  view-resolved `SymairaFontRole` recipes instead of fixed `Font` values.
+  Ordinary `.font(SymairaTypography...)` and `.symairaText(...)` calls remain;
+  explicit `Font` storage and `Text` return types must migrate. See
+  [typography migration and native regression](docs/typography.md).
+- New `SymairaTheme.accent(for:)` for the champagne accent.
+- **Approved palette and typography (Cockpit design pilot, revision 08):**
+  - Google Sans Flex is the brand and UI typeface. The unmodified variable
+    font ships in `SymairaTheme` with its OFL licence and trademark notice;
+    `SymairaFont` registers it per process and fixes the optical size at
+    `opsz` 18, because automatic optical sizing widened small UI text by 5 to
+    8 %. `SymairaTypography` roles now use it (system font fallback).
+  - Light-mode selection uses ink instead of pale champagne (1.2:1 → 15.7:1).
+    New adaptive roles `selected`, `onSelected`, `focus`, `warning`,
+    `onCritical`; light mode has its own `ink-3` and status colours.
+  - New components: `SymairaSegmentedControl`, `.symairaSwitch` toggle style,
+    `.symairaCard()`, `SymairaLockedLabel`. Primary buttons are opaque ink,
+    secondary buttons opaque `raised`; only toolbar buttons use Liquid Glass.
+  - Design kit: 52 contrast checks in `build.py`, Google Sans Flex in
+    `tokens.css` and the catalogue (`opsz` fixed with `!important`, since any
+    `font` shorthand resets it).
+
 ## [0.14.2] - 2026-08-30
 
 ### Added

@@ -10,11 +10,14 @@ enum ChecksumManifest {
     /// name "checksums.txt" (GoReleaser convention), falling back to any
     /// asset containing "checksums" in its name.
     static func locateAsset(in assets: [Asset]) throws -> Asset {
-        guard let checksumAsset = assets.first(where: {
-            $0.name == "checksums.txt"
-        }) ?? assets.first(where: {
-            $0.name.lowercased().contains("checksums")
-        }) else {
+        guard
+            let checksumAsset = assets.first(where: {
+                $0.name == "checksums.txt"
+            })
+                ?? assets.first(where: {
+                    $0.name.lowercased().contains("checksums")
+                })
+        else {
             throw UpdateApplierError.missingChecksumsAsset
         }
         return checksumAsset

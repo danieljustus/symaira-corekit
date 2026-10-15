@@ -1,4 +1,5 @@
 import XCTest
+
 @testable import SymairaUpdateCheck
 
 // MARK: - ChecksumManifestTests
@@ -47,7 +48,7 @@ final class ChecksumManifestTests: XCTestCase {
 
     func testLocateAssetFallsBackToContains() throws {
         let assets = [
-            Asset(name: "tool_checksums.sha256", browserDownloadURL: "https://example.com/sums", size: 0),
+            Asset(name: "tool_checksums.sha256", browserDownloadURL: "https://example.com/sums", size: 0)
         ]
         let located = try ChecksumManifest.locateAsset(in: assets)
         XCTAssertEqual(located.browserDownloadURL, "https://example.com/sums")
@@ -55,7 +56,7 @@ final class ChecksumManifestTests: XCTestCase {
 
     func testLocateAssetThrowsWhenMissing() {
         let assets = [
-            Asset(name: "tool_darwin_arm64", browserDownloadURL: "https://example.com/tool", size: 0),
+            Asset(name: "tool_darwin_arm64", browserDownloadURL: "https://example.com/tool", size: 0)
         ]
         XCTAssertThrowsError(try ChecksumManifest.locateAsset(in: assets)) { error in
             guard case UpdateApplierError.missingChecksumsAsset = error else {

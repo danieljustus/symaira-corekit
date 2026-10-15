@@ -1,4 +1,5 @@
 import XCTest
+
 @testable import SymairaUpdateCheck
 
 private struct StubHTTPClient: UpdateHTTPClient {
@@ -47,14 +48,16 @@ final class AppUpdateCheckerTests: XCTestCase {
         store: SkippedVersionStore = InMemorySkippedVersionStore(),
         autoPrefs: AutoUpdatePreferenceStore? = nil
     ) -> AppUpdateChecker {
-        let body = #"{"tag_name":"\#(latestTag)","html_url":"https://github.com/danieljustus/x/releases/tag/\#(latestTag)"}"#
+        let body =
+            #"{"tag_name":"\#(latestTag)","html_url":"https://github.com/danieljustus/x/releases/tag/\#(latestTag)"}"#
         let updateChecker = UpdateChecker(
             owner: "danieljustus",
             repo: "x",
             client: StubHTTPClient(body: body, status: status),
             cacheDirectory: cacheDir
         )
-        return AppUpdateChecker(checker: updateChecker, store: store, currentVersion: { currentVersion }, autoPrefs: autoPrefs)
+        return AppUpdateChecker(
+            checker: updateChecker, store: store, currentVersion: { currentVersion }, autoPrefs: autoPrefs)
     }
 
     @MainActor

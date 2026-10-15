@@ -1,4 +1,5 @@
 import XCTest
+
 @testable import SymairaMCP
 
 final class MCPTransportTests: XCTestCase {
@@ -38,7 +39,7 @@ final class MCPTransportTests: XCTestCase {
         )
         let stream = transport.start()
 
-        var data = Data(repeating: 0x61, count: 8) // "aaaaaaaa", == limit
+        var data = Data(repeating: 0x61, count: 8)  // "aaaaaaaa", == limit
         data.append(0x0A)
         try input.fileHandleForWriting.write(contentsOf: data)
         input.fileHandleForWriting.closeFile()
@@ -66,7 +67,7 @@ final class MCPTransportTests: XCTestCase {
         try input.fileHandleForWriting.write(contentsOf: Data(repeating: 0x61, count: 6))
         // Let the first chunk be consumed before growing past the limit.
         try await Task.sleep(for: .milliseconds(200))
-        try input.fileHandleForWriting.write(contentsOf: Data(repeating: 0x62, count: 6)) // 12 bytes total, no newline
+        try input.fileHandleForWriting.write(contentsOf: Data(repeating: 0x62, count: 6))  // 12 bytes total, no newline
         input.fileHandleForWriting.closeFile()
 
         var lines: [String] = []

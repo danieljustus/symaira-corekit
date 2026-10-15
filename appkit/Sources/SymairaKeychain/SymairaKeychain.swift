@@ -337,15 +337,18 @@ public struct SymairaKeychain: Sendable {
     ) throws -> SaveMaterial {
         if let flags = accessControl.secAccessControlFlags {
             var accessError: Unmanaged<CFError>?
-            guard let control = SecAccessControlCreateWithFlags(
-                nil,
-                kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly,
-                flags,
-                &accessError
-            ) else {
-                let status = accessError.map {
-                    OSStatus(CFErrorGetCode($0.takeRetainedValue()))
-                } ?? errSecParam
+            guard
+                let control = SecAccessControlCreateWithFlags(
+                    nil,
+                    kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly,
+                    flags,
+                    &accessError
+                )
+            else {
+                let status =
+                    accessError.map {
+                        OSStatus(CFErrorGetCode($0.takeRetainedValue()))
+                    } ?? errSecParam
                 throw SymairaKeychainError.saveFailed(status)
             }
             return SaveMaterial(data: Data(value.utf8), accessControl: control)
@@ -379,8 +382,9 @@ public struct SymairaKeychain: Sendable {
             return nil
         }
         guard status == errSecSuccess,
-              let attributes = item as? [String: Any],
-              let data = attributes[kSecValueData as String] as? Data else {
+            let attributes = item as? [String: Any],
+            let data = attributes[kSecValueData as String] as? Data
+        else {
             throw SymairaKeychainError.saveFailed(status)
         }
         return ExistingItem(data: data, attributes: attributes)

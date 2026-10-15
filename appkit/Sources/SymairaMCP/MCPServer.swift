@@ -283,7 +283,9 @@ public final class MCPServer: @unchecked Sendable {
         await write(data)
     }
 
-    private func sendError(id: MCPJSONRPCID, code: MCPJSONRPCErrorCode, message: String, data: MCPJSONValue? = nil) async {
+    private func sendError(id: MCPJSONRPCID, code: MCPJSONRPCErrorCode, message: String, data: MCPJSONValue? = nil)
+        async
+    {
         let response = MCPJSONRPCErrorResponse(
             id: id,
             error: MCPJSONRPCErrorObject(code: code.rawValue, message: message, data: data)

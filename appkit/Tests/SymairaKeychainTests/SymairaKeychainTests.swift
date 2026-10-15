@@ -1,6 +1,7 @@
 import Foundation
 import Security
 import XCTest
+
 @testable import SymairaKeychain
 
 /// The data-protection keychain (`kSecUseDataProtectionKeychain: true`, used
@@ -27,7 +28,8 @@ final class SymairaKeychainTests: XCTestCase {
         do {
             try body()
         } catch SymairaKeychainError.saveFailed(errSecMissingEntitlement),
-                SymairaKeychainError.readFailed(errSecMissingEntitlement) {
+            SymairaKeychainError.readFailed(errSecMissingEntitlement)
+        {
             throw XCTSkip(
                 "Data-protection keychain entitlement unavailable in this test environment (errSecMissingEntitlement); requires a signed app/test target with keychain-access-groups."
             )
@@ -163,9 +165,11 @@ final class SymairaKeychainTests: XCTestCase {
     // MARK: - Non-destructive saves
 
     func testExistingItemIsUpdatedWithoutDeletingIt() throws {
-        let backend = InMemoryKeychainBackend(value: Data("old".utf8), attributes: [
-            kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
-        ])
+        let backend = InMemoryKeychainBackend(
+            value: Data("old".utf8),
+            attributes: [
+                kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
+            ])
         let kc = SymairaKeychain(service: "test", backend: backend)
 
         let saved = try kc.save("new", key: "token")
@@ -312,7 +316,8 @@ private final class BlockingReadBackend: _SymairaKeychainBackend, @unchecked Sen
     private(set) var maxActiveReads = 0
 
     func copyMatching(_ query: [String: Any]) -> (OSStatus, Any?) {
-        let isBoundedRead = query[kSecUseDataProtectionKeychain as String] != nil
+        let isBoundedRead =
+            query[kSecUseDataProtectionKeychain as String] != nil
             && query[kSecReturnAttributes as String] == nil
         guard isBoundedRead else { return (errSecItemNotFound, nil) }
 

@@ -1,4 +1,5 @@
 import XCTest
+
 @testable import SymairaMCP
 
 /// Asserts `SymairaMCP` against `contracts/json_encoding.json`, vendored from
@@ -20,9 +21,9 @@ final class MCPJSONEncodingContractFixtureTests: XCTestCase {
 
     private func loadFixture() throws -> Fixture {
         let url = URL(fileURLWithPath: #filePath)
-            .deletingLastPathComponent() // ContractFixtureTests.swift
-            .deletingLastPathComponent() // SymairaMCPTests
-            .deletingLastPathComponent() // Tests
+            .deletingLastPathComponent()  // ContractFixtureTests.swift
+            .deletingLastPathComponent()  // SymairaMCPTests
+            .deletingLastPathComponent()  // Tests
             .appendingPathComponent("contracts/json_encoding.json")
         let data = try Data(contentsOf: url)
         return try JSONDecoder().decode(Fixture.self, from: data)
@@ -86,9 +87,9 @@ final class MCPToolAnnotationsContractFixtureTests: XCTestCase {
 
     private func loadFixture() throws -> Fixture {
         let url = URL(fileURLWithPath: #filePath)
-            .deletingLastPathComponent() // ContractFixtureTests.swift
-            .deletingLastPathComponent() // SymairaMCPTests
-            .deletingLastPathComponent() // Tests
+            .deletingLastPathComponent()  // ContractFixtureTests.swift
+            .deletingLastPathComponent()  // SymairaMCPTests
+            .deletingLastPathComponent()  // Tests
             .appendingPathComponent("contracts/mcp_tool_annotations.json")
         let data = try Data(contentsOf: url)
         return try JSONDecoder().decode(Fixture.self, from: data)

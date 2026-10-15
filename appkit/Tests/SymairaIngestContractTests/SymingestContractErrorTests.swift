@@ -1,5 +1,6 @@
-import XCTest
 import Foundation
+import XCTest
+
 @testable import SymairaIngestContract
 
 final class SymingestContractErrorTests: XCTestCase {
@@ -31,7 +32,8 @@ final class SymingestContractErrorTests: XCTestCase {
     }
 
     func testDecodeSchemaCheckedRethrowsNestedSymingestError() {
-        XCTAssertThrowsError(try decodeSchemaChecked(Data(#"{"schema_version":1}"#.utf8)) as NestedThrowingDecodable) { error in
+        XCTAssertThrowsError(try decodeSchemaChecked(Data(#"{"schema_version":1}"#.utf8)) as NestedThrowingDecodable) {
+            error in
             XCTAssertEqual(error as? SymingestContractError, .commandFailed("nested failure"))
         }
     }
@@ -53,7 +55,8 @@ final class SymingestContractErrorTests: XCTestCase {
     }
 
     func testDecodeSchemaCheckedHonorsExpectingVersionOverride() {
-        XCTAssertThrowsError(try decodeSchemaChecked(Data(#"{"schema_version":1}"#.utf8), expecting: 2) as PayloadDummy) { error in
+        XCTAssertThrowsError(try decodeSchemaChecked(Data(#"{"schema_version":1}"#.utf8), expecting: 2) as PayloadDummy)
+        { error in
             XCTAssertEqual(error as? SymingestContractError, .unsupportedSchema(1))
         }
     }

@@ -17,7 +17,9 @@ public enum SymairaCredentialReference: Sendable, Equatable {
 
         switch scheme {
         case "symvault", "vault":
-            let path = ([url.host].compactMap { $0 } + url.path
+            let path =
+                ([url.host].compactMap { $0 }
+                + url.path
                 .split(separator: "/")
                 .map(String.init)).joined(separator: "/")
             guard !path.isEmpty, url.query == nil, url.fragment == nil else {
@@ -165,6 +167,6 @@ public struct SymairaProviderCredentialStore: Sendable {
     }
 }
 
-private extension String {
-    var nilIfEmpty: String? { isEmpty ? nil : self }
+extension String {
+    fileprivate var nilIfEmpty: String? { isEmpty ? nil : self }
 }

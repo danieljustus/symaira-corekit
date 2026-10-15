@@ -1,6 +1,6 @@
 import Foundation
-import SymairaToolKit
 import SymairaCLIRunner
+import SymairaToolKit
 
 // MARK: - Types
 
@@ -400,7 +400,9 @@ public struct SymingestRulesClient: ClassificationRulesClient, Sendable {
     }
 
     public func updateRule(id: Int64, pattern: String, kind: String, value: String) async throws -> ClassificationRule {
-        try await SymingestRulesContract.decodeRule(from: run(ruleArguments("update", String(id), pattern, kind, value))).rule
+        try await SymingestRulesContract.decodeRule(
+            from: run(ruleArguments("update", String(id), pattern, kind, value))
+        ).rule
     }
 
     public func deleteRule(id: Int64) async throws {
@@ -421,12 +423,14 @@ public struct SymingestRulesClient: ClassificationRulesClient, Sendable {
 
     public func createMailRule(_ account: MailAccount) async throws -> MailAccount {
         let payload = try JSONEncoder().encode(account)
-        return try await SymingestRulesContract.decodeMail(from: run(mailArguments("create"), stdin: payload)).accounts.first ?? account
+        return try await SymingestRulesContract.decodeMail(from: run(mailArguments("create"), stdin: payload)).accounts
+            .first ?? account
     }
 
     public func updateMailRule(id: String, account: MailAccount) async throws -> MailAccount {
         let payload = try JSONEncoder().encode(account)
-        return try await SymingestRulesContract.decodeMail(from: run(mailArguments("update", id), stdin: payload)).accounts.first ?? account
+        return try await SymingestRulesContract.decodeMail(from: run(mailArguments("update", id), stdin: payload))
+            .accounts.first ?? account
     }
 
     public func deleteMailRule(id: String) async throws {
@@ -435,8 +439,8 @@ public struct SymingestRulesClient: ClassificationRulesClient, Sendable {
 }
 #endif
 
-public extension SymairaToolRegistry {
-    static var ingestTool: SymairaTool {
+extension SymairaToolRegistry {
+    public static var ingestTool: SymairaTool {
         get throws {
             guard let tool = all.first(where: { $0.id == "symingest" }) else {
                 throw SymingestContractError.missingBinary

@@ -1,4 +1,5 @@
 import XCTest
+
 @testable import SymairaUpdateCheck
 
 final class AutoUpdatePreferenceStoreTests: XCTestCase {

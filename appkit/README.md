@@ -80,6 +80,7 @@ if let desk = await detector.detect(SymairaToolRegistry.tool(id: "symdesk")!) {
         executable: desk.location.url,
         arguments: ["search", "query", "--json"]
     )
+    print(results)
 }
 ```
 
@@ -147,11 +148,17 @@ every content card. `symairaButtonStyle`, `symairaGlassChrome`, and
 material or opaque accessibility fallbacks on earlier systems. See
 [`DESIGN.md`](DESIGN.md) for the design rules and migration guidance.
 
+Typography uses view-resolved roles so existing mounted views respond to iOS
+Dynamic Type changes while keeping Google Sans Flex's fixed optical size.
+See [typography API migration and native regression](docs/typography.md) for
+the `Font`/`Text` source changes and the separate simulator check.
+
 ## Build & Test
 
 ```bash
 make build
 make test
+make lint
 ```
 
 The Makefile resolves a full Xcode toolchain and exports `DEVELOPER_DIR` for
@@ -159,6 +166,14 @@ the build itself, so these work regardless of what `xcode-select` points at.
 A bare `swift build` fails when Command Line Tools are the active developer
 directory, since they ship no XCTest and no SwiftUI macro plugins.
 `make toolchain` shows which toolchain will be used.
+
+`make lint` uses `swift-format` from the selected Xcode, falling back to PATH.
+It fails when the formatter is missing or reports any finding. Set
+`SWIFT_FORMAT=/path/to/swift-format` to use a specific executable.
+`make format` applies the same `.swift-format` rules: four-space indentation,
+120-column wrapping, and the formatter's default lint rules. CI runs the same
+strict gate. `make test-make` checks tool discovery and error propagation in
+isolation; it also runs as part of `make test`.
 
 Requires macOS 14+ or iOS 17+, Swift 6, and a full Xcode installation. Native Liquid Glass is enabled on
 macOS/iOS 26+ when built with a compatible SDK.

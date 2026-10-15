@@ -1,5 +1,6 @@
-import XCTest
 import SymairaCLIRunner
+import XCTest
+
 @testable import SymairaProviderKit
 
 final class CredentialAndErrorTests: XCTestCase {
@@ -55,7 +56,8 @@ final class CredentialAndErrorTests: XCTestCase {
         let akia = "AK" + "IA" + String(repeating: "B7", count: 8)
         let asia = "AS" + "IA" + String(repeating: "C8", count: 8)
         let stripe = "sk" + "_live_" + String(repeating: "q7", count: 12)
-        let pem = "-----BEGIN " + "RSA PRIVATE KEY-----\n"
+        let pem =
+            "-----BEGIN " + "RSA PRIVATE KEY-----\n"
             + String(repeating: "A", count: 64)
             + "\n-----END " + "RSA PRIVATE KEY-----"
 

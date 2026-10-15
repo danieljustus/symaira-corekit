@@ -295,25 +295,25 @@ public struct UpdateApplier: Sendable {
     // MARK: - Platform helpers
 
     private static func currentOS() -> String {
-#if os(macOS)
+        #if os(macOS)
         return "darwin"
-#elseif os(Linux)
+        #elseif os(Linux)
         return "linux"
-#elseif os(Windows)
+        #elseif os(Windows)
         return "windows"
-#else
+        #else
         return "unknown"
-#endif
+        #endif
     }
 
     private static func currentArch() -> String {
-#if arch(arm64)
+        #if arch(arm64)
         return "arm64"
-#elseif arch(x86_64)
+        #elseif arch(x86_64)
         return "amd64"
-#else
+        #else
         return "unknown"
-#endif
+        #endif
     }
 }
 #endif

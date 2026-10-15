@@ -1,4 +1,5 @@
 import XCTest
+
 @testable import SymairaUpdateCheck
 
 final class StableVersionTests: XCTestCase {
@@ -50,7 +51,8 @@ final class UpdateCheckerTests: XCTestCase {
     }
 
     private func checker(latestTag: String, status: Int = 200) -> UpdateChecker {
-        let body = "{\"tag_name\":\"\(latestTag)\",\"html_url\":\"https://github.com/danieljustus/x/releases/tag/\(latestTag)\"}"
+        let body =
+            "{\"tag_name\":\"\(latestTag)\",\"html_url\":\"https://github.com/danieljustus/x/releases/tag/\(latestTag)\"}"
         return UpdateChecker(
             owner: "danieljustus",
             repo: "x",
@@ -92,8 +94,8 @@ final class UpdateCheckerTests: XCTestCase {
 
     func testReleaseAssetsDecodeAndSurviveDiskCache() async throws {
         let payload = """
-        {"tag_name":"v1.1.0","html_url":"https://github.com/danieljustus/x/releases/tag/v1.1.0","assets":[{"name":"x_darwin_arm64.zip","browser_download_url":"https://example.com/x.zip","size":1234},{"name":"checksums.txt","browser_download_url":"https://example.com/checksums.txt","size":56}]}
-        """
+            {"tag_name":"v1.1.0","html_url":"https://github.com/danieljustus/x/releases/tag/v1.1.0","assets":[{"name":"x_darwin_arm64.zip","browser_download_url":"https://example.com/x.zip","size":1234},{"name":"checksums.txt","browser_download_url":"https://example.com/checksums.txt","size":56}]}
+            """
         let fresh = UpdateChecker(
             owner: "danieljustus",
             repo: "x",

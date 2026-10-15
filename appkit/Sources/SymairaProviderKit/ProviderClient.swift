@@ -178,9 +178,11 @@ public struct SymairaProviderClient: Sendable {
         let scheme = configuration.effectiveAuthScheme
         guard scheme != .none else { return request }
 
-        let reference = configuration.credentialReference
+        let reference =
+            configuration.credentialReference
             ?? configuration.descriptor.credentialRefEnvDefault.map { "env://\($0)" }
-        let credential = try await credentialResolver.resolve(reference)?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let credential = try await credentialResolver.resolve(reference)?.trimmingCharacters(
+            in: .whitespacesAndNewlines)
         guard let credential, !credential.isEmpty else {
             let referenceName = reference ?? "the provider credential"
             throw SymairaProviderError(
@@ -195,7 +197,8 @@ public struct SymairaProviderClient: Sendable {
             request.setValue("\(prefix ?? "Bearer") \(credential)", forHTTPHeaderField: "Authorization")
         case .header:
             guard let header = configuration.descriptor.auth.header, !header.isEmpty else {
-                throw SymairaProviderErrorMapper.invalidConfiguration("The provider header authentication is missing its header name.")
+                throw SymairaProviderErrorMapper.invalidConfiguration(
+                    "The provider header authentication is missing its header name.")
             }
             request.setValue(credential, forHTTPHeaderField: header)
         case .none:
@@ -250,9 +253,11 @@ public struct SymairaProviderClient: Sendable {
                 "Provider \(configuration.descriptor.displayName) requires a base URL override."
             )
         }
-        guard configuration.baseURLOverride == nil
-            || configuration.descriptor.baseURLOverridable
-            || configuration.descriptor.baseURLRequiredOverride else {
+        guard
+            configuration.baseURLOverride == nil
+                || configuration.descriptor.baseURLOverridable
+                || configuration.descriptor.baseURLRequiredOverride
+        else {
             throw SymairaProviderErrorMapper.invalidConfiguration(
                 "Provider \(configuration.descriptor.displayName) does not allow a base URL override."
             )
@@ -269,7 +274,9 @@ public struct SymairaProviderClient: Sendable {
         if cleanPath.hasPrefix("/api/") && basePath.hasSuffix("v1") {
             components.path = cleanPath
         } else {
-            components.path = "/" + [basePath, cleanPath.trimmingCharacters(in: CharacterSet(charactersIn: "/"))]
+            components.path =
+                "/"
+                + [basePath, cleanPath.trimmingCharacters(in: CharacterSet(charactersIn: "/"))]
                 .filter { !$0.isEmpty }
                 .joined(separator: "/")
         }

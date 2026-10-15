@@ -1,4 +1,5 @@
 import Foundation
+
 #if canImport(CryptoKit)
 import CryptoKit
 #else
@@ -80,7 +81,8 @@ public struct UpdateChecker: Sendable {
         self.repo = repo
         self.client = client
         self.cacheTTL = cacheTTL
-        let platformCache = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first
+        let platformCache =
+            FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first
             ?? FileManager.default.temporaryDirectory
         let defaultCache = platformCache.appendingPathComponent("symaira/updatecheck", isDirectory: true)
         self.cacheDirectory = cacheDirectory ?? defaultCache
@@ -215,9 +217,9 @@ public struct UpdateChecker: Sendable {
 
     private func readCache() -> LatestRelease? {
         guard let data = try? Data(contentsOf: cacheFile),
-              let entry = try? JSONDecoder().decode(LatestRelease.self, from: data),
-              let fetchedAt = entry.fetchedAt,
-              Date().timeIntervalSince(fetchedAt) < cacheTTL
+            let entry = try? JSONDecoder().decode(LatestRelease.self, from: data),
+            let fetchedAt = entry.fetchedAt,
+            Date().timeIntervalSince(fetchedAt) < cacheTTL
         else { return nil }
         return entry
     }

@@ -18,7 +18,9 @@ public struct SymairaProviderErrorDescriptor: Codable, Sendable, Equatable {
     public let retryable: Bool
 
     private enum CodingKeys: String, CodingKey {
-        case code, meaning, exitCode = "exit_code", retryable
+        case code, meaning
+        case exitCode = "exit_code"
+        case retryable
     }
 }
 
@@ -89,12 +91,14 @@ public struct SymairaProviderErrorCatalog: Codable, Sendable, Equatable {
         let errors: [SymairaProviderErrorDescriptor]
 
         private enum CodingKeys: String, CodingKey {
-            case schemaVersion = "schema_version", errors
+            case schemaVersion = "schema_version"
+            case errors
         }
     }
 
     private enum CodingKeys: String, CodingKey {
-        case schemaVersion = "schema_version", errors
+        case schemaVersion = "schema_version"
+        case errors
     }
 }
 
@@ -149,7 +153,10 @@ public struct SymairaProviderError: Error, LocalizedError, Codable, Sendable, Eq
     }
 
     private enum CodingKeys: String, CodingKey {
-        case code, message, statusCode = "status_code", retryAfter = "retry_after", bodyExcerpt = "body_excerpt"
+        case code, message
+        case statusCode = "status_code"
+        case retryAfter = "retry_after"
+        case bodyExcerpt = "body_excerpt"
     }
 }
 
@@ -162,7 +169,8 @@ public enum SymairaProviderErrorMapper {
     ) -> SymairaProviderError {
         let excerpt = bodyExcerpt(body)
         let lowerBody = excerpt.lowercased()
-        let retryAfter = Double(headers.first { $0.key.caseInsensitiveCompare("retry-after") == .orderedSame }?.value ?? "")
+        let retryAfter = Double(
+            headers.first { $0.key.caseInsensitiveCompare("retry-after") == .orderedSame }?.value ?? "")
 
         if statusCode == 401 || statusCode == 403 {
             return SymairaProviderError(

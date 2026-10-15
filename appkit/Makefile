@@ -26,7 +26,10 @@ ifneq ($(XCODE_DIR),)
 export DEVELOPER_DIR := $(XCODE_DIR)
 endif
 
-.PHONY: help build test lint toolchain
+# Prefer the selected Xcode; a standalone installation on PATH is the fallback.
+SWIFT_FORMAT ?= $(shell DEVELOPER_DIR="$(XCODE_DIR)" xcrun --find swift-format 2>/dev/null || command -v swift-format)
+
+.PHONY: help build test test-make lint format toolchain formatter
 
 ## help: List available targets
 help:
@@ -46,14 +49,24 @@ toolchain:
 build: toolchain
 	$(SWIFT) build
 
-## test: Run the test suite (needs XCTest, hence a full Xcode)
-test: toolchain
+## test: Run Makefile regressions and the Swift suite (needs full Xcode)
+test: toolchain test-make
 	$(SWIFT) test
 
-## lint: Check formatting without writing changes
-lint:
-	@if command -v swift-format >/dev/null 2>&1; then \
-		swift-format lint --recursive Sources Tests; \
-	else \
-		echo "swift-format not installed; skipping"; \
+## test-make: Verify formatter discovery and failure propagation
+test-make:
+	python3 -B scripts/test_make_format.py
+
+formatter:
+	@if ! command -v "$(SWIFT_FORMAT)" >/dev/null 2>&1; then \
+		echo "swift-format not found; install full Xcode or set SWIFT_FORMAT=/path/to/swift-format" >&2; \
+		exit 1; \
 	fi
+
+## lint: Check formatting strictly without writing changes
+lint: formatter
+	"$(SWIFT_FORMAT)" lint --strict --configuration .swift-format --recursive Sources Tests
+
+## format: Apply the same formatting rules checked by lint
+format: formatter
+	"$(SWIFT_FORMAT)" format --in-place --configuration .swift-format --recursive Sources Tests

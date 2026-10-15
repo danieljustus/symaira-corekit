@@ -82,7 +82,8 @@ public struct SymairaProviderAuth: Codable, Sendable, Equatable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         scheme = try container.decode(SymairaProviderAuthScheme.self, forKey: .scheme)
         header = try container.decodeIfPresent(String.self, forKey: .header)
-        configurableScheme = try container.decodeIfPresent(Bool.self, forKey: .configurableScheme)
+        configurableScheme =
+            try container.decodeIfPresent(Bool.self, forKey: .configurableScheme)
             ?? DecodeDefaults.configurableScheme
     }
 }

@@ -73,12 +73,14 @@ public struct CosignConfig: Sendable {
         self.binaryName = binaryName
         self.downloadBaseURL = downloadBaseURL
         self.identityRegexp = identityRegexp
-        self.verifier = verifier ?? CosignCLIVerifier(
-            repo: repo,
-            binaryName: binaryName,
-            downloadBaseURL: downloadBaseURL,
-            identityRegexp: identityRegexp
-        )
+        self.verifier =
+            verifier
+            ?? CosignCLIVerifier(
+                repo: repo,
+                binaryName: binaryName,
+                downloadBaseURL: downloadBaseURL,
+                identityRegexp: identityRegexp
+            )
     }
 
     /// Returns the identity regexp, defaulting to a GitHub Actions release workflow pattern.
@@ -185,7 +187,8 @@ public struct CosignCLIVerifier: CosignVerifier, Sendable {
         let urlString = "\(base)/v\(v)/\(name)"
 
         guard let url = URL(string: urlString),
-              url.scheme == "https" else {
+            url.scheme == "https"
+        else {
             throw UpdateApplierError.cosignVerificationFailed(
                 "Cosign \(label) URL must use HTTPS, got \(urlString)"
             )
@@ -220,9 +223,10 @@ public struct CosignCLIVerifier: CosignVerifier, Sendable {
         // before reaching this point so Homebrew-installed cosign is reachable.
         let envPath = ProcessInfo.processInfo.environment["PATH"] ?? ""
         let searchDirs = envPath.split(separator: ":").map(String.init)
-        guard let cosignURL = searchDirs.lazy
-            .map({ URL(fileURLWithPath: $0).appendingPathComponent("cosign") })
-            .first(where: { FileManager.default.isExecutableFile(atPath: $0.path) })
+        guard
+            let cosignURL = searchDirs.lazy
+                .map({ URL(fileURLWithPath: $0).appendingPathComponent("cosign") })
+                .first(where: { FileManager.default.isExecutableFile(atPath: $0.path) })
         else {
             let searched = searchDirs.isEmpty ? "empty PATH" : searchDirs.joined(separator: ":")
             throw UpdateApplierError.cosignVerificationFailed(
@@ -264,7 +268,8 @@ public struct CosignCLIVerifier: CosignVerifier, Sendable {
             // Full stderr goes to the dedicated diagnostic case so it stays
             // retrievable for logging, while the user-facing
             // `errorDescription` shows only a bounded first-line sample (#47).
-            let stderrStr = String(decoding: processResult.stderr, as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines)
+            let stderrStr = String(decoding: processResult.stderr, as: UTF8.self).trimmingCharacters(
+                in: .whitespacesAndNewlines)
             throw UpdateApplierError.cosignVerificationFailedDiagnostic(stderrStr)
         }
     }

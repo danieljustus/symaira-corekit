@@ -29,54 +29,56 @@ public struct DaemonLogLine: Sendable, Identifiable, Equatable {
 /// environment setup, stdout/stderr pipe streaming, and termination escalation.
 public final class DaemonSupervisor: @unchecked Sendable {
     private let lock = NSRecursiveLock()
-    
+
     private var process: Process?
     private var stdoutFH: FileHandle?
     private var stderrFH: FileHandle?
     private var logContinuation: AsyncStream<DaemonLogLine>.Continuation?
     private var stopRequested = false
-    
+
     private var _state: DaemonState = .stopped
     private var _logs: [DaemonLogLine] = []
-    
+
     /// Monotonically increasing token that lets termination handlers and
     /// scheduled escalations detect that they belong to a stale run.
     private var generation: UInt64 = 0
-    
+
     private let maxLogsLimit = 1000
-    
+
     /// The current operational state of the supervisor.
     public var state: DaemonState {
         lock.lock()
         defer { lock.unlock() }
         return _state
     }
-    
+
     /// Buffered historical log lines. Capped at `maxLogsLimit`.
     public var logs: [DaemonLogLine] {
         lock.lock()
         defer { lock.unlock() }
         return _logs
     }
-    
+
     /// Optional closure called on every new log line.
     public var onLog: (@Sendable (DaemonLogLine) -> Void)?
-    
+
     /// Optional closure called when the daemon state changes.
     public var onStateChange: (@Sendable (DaemonState) -> Void)?
-    
-    public init(onLog: (@Sendable (DaemonLogLine) -> Void)? = nil, onStateChange: (@Sendable (DaemonState) -> Void)? = nil) {
+
+    public init(
+        onLog: (@Sendable (DaemonLogLine) -> Void)? = nil, onStateChange: (@Sendable (DaemonState) -> Void)? = nil
+    ) {
         self.onLog = onLog
         self.onStateChange = onStateChange
     }
-    
+
     deinit {
         lock.lock()
         let proc = process
         lock.unlock()
         proc?.terminate()
     }
-    
+
     /// Starts the specified binary with arguments and environment.
     /// Returns an `AsyncStream` that yields new log lines as they arrive.
     public func start(
@@ -90,21 +92,22 @@ public final class DaemonSupervisor: @unchecked Sendable {
         generation += 1
         let myGen = generation
         lock.unlock()
-        
+
         updateState(.starting)
-        appendLogLine("[daemon] Starting \(executable.lastPathComponent) \(arguments.joined(separator: " "))…", isError: false)
-        
+        appendLogLine(
+            "[daemon] Starting \(executable.lastPathComponent) \(arguments.joined(separator: " "))…", isError: false)
+
         guard FileManager.default.isExecutableFile(atPath: executable.path) else {
             let errMsg = "Binary is not executable at path: \(executable.path)"
             updateState(.failed(errMsg))
             appendLogLine("[daemon] ERROR: \(errMsg)", isError: true)
             return AsyncStream { $0.finish() }
         }
-        
+
         let proc = Process()
         proc.executableURL = executable
         proc.arguments = arguments
-        
+
         var mergedEnv = CLIRunner.augmentedEnvironment(ProcessInfo.processInfo.environment)
         if let environment = environment {
             for (key, val) in environment {
@@ -112,47 +115,47 @@ public final class DaemonSupervisor: @unchecked Sendable {
             }
         }
         proc.environment = mergedEnv
-        
+
         let stdoutPipe = Pipe()
         let stderrPipe = Pipe()
         proc.standardOutput = stdoutPipe
         proc.standardError = stderrPipe
-        
+
         let outFH = stdoutPipe.fileHandleForReading
         let errFH = stderrPipe.fileHandleForReading
-        
+
         lock.lock()
         stdoutFH = outFH
         stderrFH = errFH
         process = proc
         stopRequested = false
         lock.unlock()
-        
+
         return AsyncStream<DaemonLogLine> { continuation in
             lock.lock()
             self.logContinuation = continuation
             lock.unlock()
-            
+
             outFH.readabilityHandler = { [weak self] handle in
                 let data = handle.availableData
                 guard !data.isEmpty, let text = String(data: data, encoding: .utf8) else { return }
                 self?.processIncomingOutput(text, isError: false)
             }
-            
+
             errFH.readabilityHandler = { [weak self] handle in
                 let data = handle.availableData
                 guard !data.isEmpty, let text = String(data: data, encoding: .utf8) else { return }
                 self?.processIncomingOutput(text, isError: true)
             }
-            
+
             proc.terminationHandler = { [weak self] proc in
                 guard let self = self else { return }
                 let exitCode = proc.terminationStatus
-                
+
                 self.lock.lock()
                 guard myGen == self.generation else {
                     self.lock.unlock()
-                    continuation.finish() // finish the stale generation's stream
+                    continuation.finish()  // finish the stale generation's stream
                     return
                 }
                 if exitCode != 0, !self.stopRequested {
@@ -173,7 +176,7 @@ public final class DaemonSupervisor: @unchecked Sendable {
                     changeCallback(stateCopy)
                 }
             }
-            
+
             do {
                 try proc.run()
                 let pid = proc.processIdentifier
@@ -182,7 +185,7 @@ public final class DaemonSupervisor: @unchecked Sendable {
             } catch {
                 updateState(.failed(error.localizedDescription))
                 appendLogLine("[daemon] Failed to start: \(error.localizedDescription)", isError: true)
-                
+
                 lock.lock()
                 cleanup()
                 self.logContinuation?.finish()
@@ -191,12 +194,12 @@ public final class DaemonSupervisor: @unchecked Sendable {
             }
         }
     }
-    
+
     /// Stops the process gracefully. Escalates to force-killing via SIGINT and SIGKILL if the process fails to exit.
     public func stop() {
         stopInternal()
     }
-    
+
     private func stopInternal() {
         lock.lock()
         let currentProcess = process
@@ -215,16 +218,16 @@ public final class DaemonSupervisor: @unchecked Sendable {
             continuation?.finish()
             return
         }
-        
+
         appendLogLine("[daemon] Stopping process...", isError: false)
         lock.lock()
         stopRequested = true
         lock.unlock()
         proc.terminate()
-        
+
         let processToKill = proc
         let pid = proc.processIdentifier
-        
+
         // Schedule fallback escalation — guards against stale generation.
         DispatchQueue.global(qos: .userInitiated).asyncAfter(deadline: .now() + 2.0) { [weak self] in
             guard let self = self else { return }
@@ -248,7 +251,7 @@ public final class DaemonSupervisor: @unchecked Sendable {
             }
         }
     }
-    
+
     private func cleanup() {
         stdoutFH?.readabilityHandler = nil
         stderrFH?.readabilityHandler = nil
@@ -257,7 +260,7 @@ public final class DaemonSupervisor: @unchecked Sendable {
         process = nil
         stopRequested = false
     }
-    
+
     private func processIncomingOutput(_ text: String, isError: Bool) {
         let lines = text.components(separatedBy: .newlines)
         for line in lines {
@@ -266,21 +269,21 @@ public final class DaemonSupervisor: @unchecked Sendable {
             appendLogLine(trimmed, isError: isError)
         }
     }
-    
+
     private func appendLogLine(_ message: String, isError: Bool) {
         lock.lock()
         let line = appendLogLineInternal(message, isError: isError)
         let logCallback = onLog
         let continuation = logContinuation
         lock.unlock()
-        
+
         if let logCallback {
             logCallback(line)
         }
-        
+
         continuation?.yield(line)
     }
-    
+
     @discardableResult
     private func appendLogLineInternal(_ message: String, isError: Bool) -> DaemonLogLine {
         let line = DaemonLogLine(text: message, isError: isError)
@@ -290,13 +293,13 @@ public final class DaemonSupervisor: @unchecked Sendable {
         }
         return line
     }
-    
+
     private func updateState(_ newState: DaemonState) {
         lock.lock()
         _state = newState
         let changeCallback = onStateChange
         lock.unlock()
-        
+
         if let changeCallback {
             changeCallback(newState)
         }

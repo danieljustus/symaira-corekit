@@ -18,10 +18,10 @@ public struct StableVersion: Sendable, Equatable, Comparable, CustomStringConver
 
         let parts = text.split(separator: ".", omittingEmptySubsequences: false)
         guard parts.count == 3,
-              let major = Int(parts[0]),
-              let minor = Int(parts[1]),
-              let patch = Int(parts[2]),
-              major >= 0, minor >= 0, patch >= 0
+            let major = Int(parts[0]),
+            let minor = Int(parts[1]),
+            let patch = Int(parts[2]),
+            major >= 0, minor >= 0, patch >= 0
         else { return nil }
 
         self.major = major

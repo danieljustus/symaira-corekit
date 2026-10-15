@@ -1,5 +1,6 @@
 import Foundation
 import XCTest
+
 @testable import SymairaToolKit
 
 private final class SignatureVerificationRecorder: @unchecked Sendable {
@@ -99,18 +100,18 @@ final class RegistryTests: XCTestCase {
         // (documented in docs/repo-konsolidierung.md). The Homebrew formulae
         // carry `deprecate!` as well, but clients consult this field.
         let deprecated: [(id: String, absorbedInto: String)] = [
-            ("symmemory",   "absorbed into Symaira Brain (symbrain)"),
-            ("symseek",     "absorbed into Symaira Desktop (symdesk)"),
-            ("symfetch",    "absorbed into Symaira Browse (symbrowse)"),
-            ("symscope",    "absorbed into Symaira Cockpit (symcockpit)"),
-            ("symprint",    "absorbed into Symaira Desktop (symdesk)"),
-            ("symskills",   "absorbed into Symaira Brain (symbrain)"),
-            ("symguard",    "absorbed into Symaira Brain (symbrain)"),
-            ("symingest",   "absorbed into Symaira Desktop (symdesk)"),
-            ("symmeet",     "absorbed into Symaira Desktop (symdesk)"),
-            ("symrelate",   "absorbed into Symaira Desktop (symdesk)"),
-            ("symtune",     "absorbed into Symaira Cockpit (symcockpit)"),
-            ("symoperate",  "absorbed into Symaira Cockpit (symcockpit)"),
+            ("symmemory", "absorbed into Symaira Brain (symbrain)"),
+            ("symseek", "absorbed into Symaira Desktop (symdesk)"),
+            ("symfetch", "absorbed into Symaira Browse (symbrowse)"),
+            ("symscope", "absorbed into Symaira Cockpit (symcockpit)"),
+            ("symprint", "absorbed into Symaira Desktop (symdesk)"),
+            ("symskills", "absorbed into Symaira Brain (symbrain)"),
+            ("symguard", "absorbed into Symaira Brain (symbrain)"),
+            ("symingest", "absorbed into Symaira Desktop (symdesk)"),
+            ("symmeet", "absorbed into Symaira Desktop (symdesk)"),
+            ("symrelate", "absorbed into Symaira Desktop (symdesk)"),
+            ("symtune", "absorbed into Symaira Cockpit (symcockpit)"),
+            ("symoperate", "absorbed into Symaira Cockpit (symcockpit)"),
         ]
         for (id, reason) in deprecated {
             let tool = SymairaToolRegistry.tool(id: id)
@@ -122,8 +123,10 @@ final class RegistryTests: XCTestCase {
 
     func testActiveToolsAreNotDeprecated() {
         // These tools still have independent repos and active formulae.
-        let active = ["symvault", "symfritz", "symbrain",
-                      "symdesk", "symbrowse", "symcockpit", "symeraseme", "symroom"]
+        let active = [
+            "symvault", "symfritz", "symbrain",
+            "symdesk", "symbrowse", "symcockpit", "symeraseme", "symroom",
+        ]
         for id in active {
             let tool = SymairaToolRegistry.tool(id: id)
             XCTAssertNotNil(tool, "active tool missing from registry: \(id)")
@@ -136,14 +139,16 @@ final class RegistryTests: XCTestCase {
         let active = SymairaToolRegistry.active
         let activeIDs = Set(active.map(\.id))
         for id in activeIDs {
-            XCTAssertFalse(SymairaToolRegistry.tool(id: id)?.isDeprecated ?? true,
-                           "active filter should not include deprecated tools")
+            XCTAssertFalse(
+                SymairaToolRegistry.tool(id: id)?.isDeprecated ?? true,
+                "active filter should not include deprecated tools")
         }
         // Every deprecated tool must be excluded from active.
         let deprecatedIDs = Set(SymairaToolRegistry.all.filter(\.isDeprecated).map(\.id))
         for id in deprecatedIDs {
-            XCTAssertFalse(activeIDs.contains(id),
-                           "active filter should exclude \(id)")
+            XCTAssertFalse(
+                activeIDs.contains(id),
+                "active filter should exclude \(id)")
         }
         // The active count equals total minus deprecated (12 deprecated).
         XCTAssertEqual(active.count, SymairaToolRegistry.all.count - 12)
@@ -262,7 +267,7 @@ final class BinaryLocatorTests: XCTestCase {
     func testUnverifiedHitRejected() throws {
         let insecureDir = tempDir.appendingPathComponent("insecure-group")
         try FileManager.default.createDirectory(at: insecureDir, withIntermediateDirectories: true)
-        chmod(insecureDir.path, 0o775) // group-writable
+        chmod(insecureDir.path, 0o775)  // group-writable
         defer { try? FileManager.default.removeItem(at: insecureDir) }
         let bin = try makeExecutable(named: "symfake", in: insecureDir)
         // insecureDir is group-writable → directory check fails.
@@ -271,7 +276,7 @@ final class BinaryLocatorTests: XCTestCase {
             searchPATH: insecureDir.path,
             extraDirectories: []
         )
-        let located = locator.locate("symfake") // allowUnverified defaults to false
+        let located = locator.locate("symfake")  // allowUnverified defaults to false
         XCTAssertNil(located, "Unsigned binary in group-writable directory should be rejected by default")
         // Sanity: the binary does exist.
         XCTAssertTrue(FileManager.default.isExecutableFile(atPath: bin.path))
@@ -361,7 +366,9 @@ final class BinaryLocatorTests: XCTestCase {
 
         let bundleURL = contentsDir.deletingLastPathComponent()
         guard let bundle = Bundle(url: bundleURL) else {
-            throw NSError(domain: "BinaryLocatorTests", code: 1, userInfo: [NSLocalizedDescriptionKey: "Failed to load fake bundle at \(bundleURL.path)"])
+            throw NSError(
+                domain: "BinaryLocatorTests", code: 1,
+                userInfo: [NSLocalizedDescriptionKey: "Failed to load fake bundle at \(bundleURL.path)"])
         }
         return bundle
     }
@@ -417,7 +424,8 @@ final class ToolDetectorTests: XCTestCase {
     func testDetectFallsBackToPlainVersionOutput() async throws {
         let tool = try makeFakeTool(
             named: "symplain",
-            script: "#!/bin/sh\nif [ \"$2\" = \"--json\" ]; then exit 2; fi\necho 'symplain version v0.4.1 (darwin/arm64)'\n"
+            script:
+                "#!/bin/sh\nif [ \"$2\" = \"--json\" ]; then exit 2; fi\necho 'symplain version v0.4.1 (darwin/arm64)'\n"
         )
         let detected = await detector.detect(tool)
         XCTAssertEqual(detected?.versionInfo, ToolVersionInfo(version: "v0.4.1", schemaVersion: 0))
@@ -440,8 +448,9 @@ final class ToolDetectorTests: XCTestCase {
         )
 
         let detected = await detector.detectInstalled()
-        XCTAssertEqual(detected.map(\.tool.id), [active.id],
-                       "The default scan must only probe active registry entries")
+        XCTAssertEqual(
+            detected.map(\.tool.id), [active.id],
+            "The default scan must only probe active registry entries")
         XCTAssertFalse(detected.contains { $0.tool.id == deprecated.id })
     }
 
@@ -515,12 +524,15 @@ final class ToolDetectorTests: XCTestCase {
 
         // All tools should be detected (slow one should still have versionInfo).
         XCTAssertEqual(results.count, allTools.count, "All tools should be detected")
-        XCTAssertNotNil(results.first(where: { $0.tool.id == "symslow" })?.versionInfo,
-                         "Slow tool should still return version info")
+        XCTAssertNotNil(
+            results.first(where: { $0.tool.id == "symslow" })?.versionInfo,
+            "Slow tool should still return version info")
 
         // With 4 concurrent handshakes, total time should be dominated by
         // the slowest in each chunk, not by the sum of all.
-        XCTAssertLessThan(elapsed, 5.0, "Concurrent detection should finish well under sequential sum of ~\(2 + fastCount * 1) seconds")
+        XCTAssertLessThan(
+            elapsed, 5.0,
+            "Concurrent detection should finish well under sequential sum of ~\(2 + fastCount * 1) seconds")
     }
 
     func testRepeatedDetectionUsesCache() async throws {
@@ -532,18 +544,19 @@ final class ToolDetectorTests: XCTestCase {
         let tool = try makeFakeTool(
             named: "symcache",
             script: """
-            #!/bin/sh
-            val=$(cat "\(counterFile.path)")
-            echo $((val + 1)) > "\(counterFile.path)"
-            echo '{"version":"1.0.0","schema_version":1}'
-            """
+                #!/bin/sh
+                val=$(cat "\(counterFile.path)")
+                echo $((val + 1)) > "\(counterFile.path)"
+                echo '{"version":"1.0.0","schema_version":1}'
+                """
         )
 
         let det = detector
         _ = await det.detect(tool)
         _ = await det.detect(tool)
 
-        let countStr = try String(contentsOf: counterFile, encoding: .utf8).trimmingCharacters(in: .whitespacesAndNewlines)
+        let countStr = try String(contentsOf: counterFile, encoding: .utf8).trimmingCharacters(
+            in: .whitespacesAndNewlines)
         let count = Int(countStr) ?? -1
         XCTAssertEqual(count, 1, "Handshake should only run once due to caching — got \(count)")
     }
@@ -555,33 +568,33 @@ final class ToolDetectorTests: XCTestCase {
         let slow = try makeFakeTool(
             named: "symsliding-slow",
             script: """
-            #!/bin/sh
-            printf 'slow-start\\n' >> "\(events.path)"
-            sleep 1
-            printf 'slow-end\\n' >> "\(events.path)"
-            echo '{"version":"1.0.0","schema_version":1}'
-            """
+                #!/bin/sh
+                printf 'slow-start\\n' >> "\(events.path)"
+                sleep 1
+                printf 'slow-end\\n' >> "\(events.path)"
+                echo '{"version":"1.0.0","schema_version":1}'
+                """
         )
         let fast = try makeFakeTool(
             named: "symsliding-fast",
             script: """
-            #!/bin/sh
-            printf 'fast-start\\n' >> "\(events.path)"
-            sleep 0.1
-            printf 'fast-end\\n' >> "\(events.path)"
-            touch "\(fastEnded.path)"
-            echo '{"version":"1.0.0","schema_version":1}'
-            """
+                #!/bin/sh
+                printf 'fast-start\\n' >> "\(events.path)"
+                sleep 0.1
+                printf 'fast-end\\n' >> "\(events.path)"
+                touch "\(fastEnded.path)"
+                echo '{"version":"1.0.0","schema_version":1}'
+                """
         )
         let waiting = try makeFakeTool(
             named: "symsliding-waiting",
             script: """
-            #!/bin/sh
-            printf 'waiting-start\\n' >> "\(events.path)"
-            while [ ! -f "\(fastEnded.path)" ]; do sleep 0.02; done
-            printf 'waiting-end\\n' >> "\(events.path)"
-            echo '{"version":"1.0.0","schema_version":1}'
-            """
+                #!/bin/sh
+                printf 'waiting-start\\n' >> "\(events.path)"
+                while [ ! -f "\(fastEnded.path)" ]; do sleep 0.02; done
+                printf 'waiting-end\\n' >> "\(events.path)"
+                echo '{"version":"1.0.0","schema_version":1}'
+                """
         )
 
         let slidingDetector = ToolDetector(
@@ -597,6 +610,7 @@ final class ToolDetectorTests: XCTestCase {
             .map(String.init)
         let waitingStart = try XCTUnwrap(eventLines.firstIndex(of: "waiting-start"))
         let slowEnd = try XCTUnwrap(eventLines.firstIndex(of: "slow-end"))
-        XCTAssertLessThan(waitingStart, slowEnd, "A completed fast task should admit the next task before the slow task ends")
+        XCTAssertLessThan(
+            waitingStart, slowEnd, "A completed fast task should admit the next task before the slow task ends")
     }
 }

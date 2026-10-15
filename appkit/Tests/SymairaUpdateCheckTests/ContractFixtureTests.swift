@@ -1,4 +1,5 @@
 import XCTest
+
 @testable import SymairaUpdateCheck
 
 /// Asserts `SymairaUpdateCheck` against `contracts/update_check_invariants.json`,
@@ -34,9 +35,9 @@ final class UpdateCheckContractFixtureTests: XCTestCase {
 
     private func loadFixture() throws -> Fixture {
         let url = URL(fileURLWithPath: #filePath)
-            .deletingLastPathComponent() // ContractFixtureTests.swift
-            .deletingLastPathComponent() // SymairaUpdateCheckTests
-            .deletingLastPathComponent() // Tests
+            .deletingLastPathComponent()  // ContractFixtureTests.swift
+            .deletingLastPathComponent()  // SymairaUpdateCheckTests
+            .deletingLastPathComponent()  // Tests
             .appendingPathComponent("contracts/update_check_invariants.json")
         let data = try Data(contentsOf: url)
         return try JSONDecoder().decode(Fixture.self, from: data)
@@ -47,7 +48,8 @@ final class UpdateCheckContractFixtureTests: XCTestCase {
         let checker = UpdateChecker(owner: "danieljustus", repo: "x")
         XCTAssertEqual(checker.cacheTTL, TimeInterval(fixture.cacheTTLHours * 60 * 60))
 
-        let platformCache = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first
+        let platformCache =
+            FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first
             ?? FileManager.default.temporaryDirectory
         XCTAssertEqual(
             checker.cacheDirectory,
@@ -201,7 +203,8 @@ final class UpdateCheckContractFixtureTests: XCTestCase {
 
         for marker in fixture.prereleaseAndBuildMetadataMarkers {
             let raw = "1.2.3\(marker)extra"
-            XCTAssertNil(StableVersion(raw), "StableVersion(\"\(raw)\") should be rejected per fixture marker \"\(marker)\"")
+            XCTAssertNil(
+                StableVersion(raw), "StableVersion(\"\(raw)\") should be rejected per fixture marker \"\(marker)\"")
         }
         XCTAssertNotNil(StableVersion("1.2.3"), "a plain stable version should still parse")
     }

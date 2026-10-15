@@ -1,5 +1,6 @@
-import XCTest
 import CryptoKit
+import XCTest
+
 @testable import SymairaUpdateCheck
 
 // MARK: - SHA256 helper

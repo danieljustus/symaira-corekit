@@ -31,7 +31,8 @@ private final class SignatureVerificationCache: @unchecked Sendable {
 
     private func modificationTime(of url: URL) -> TimeInterval {
         guard let values = try? url.resourceValues(forKeys: [.contentModificationDateKey]),
-              let date = values.contentModificationDate else {
+            let date = values.contentModificationDate
+        else {
             return 0
         }
         return date.timeIntervalSinceReferenceDate
@@ -232,7 +233,8 @@ public struct BinaryLocator: Sendable {
     private static func verifySignatureUncached(at url: URL) -> Bool {
         var code: SecStaticCode?
         guard SecStaticCodeCreateWithPath(url as CFURL, [], &code) == errSecSuccess,
-              let code = code else {
+            let code = code
+        else {
             return false
         }
         return SecStaticCodeCheckValidity(code, [], nil) == errSecSuccess

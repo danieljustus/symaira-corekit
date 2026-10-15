@@ -157,10 +157,12 @@ public struct SymairaOAuthAuthenticator: Sendable {
         let state = try Self.randomBase64URL(byteCount: 32)
         let verifier = try Self.randomBase64URL(byteCount: 64)
         let challenge = Self.sha256Base64URL(verifier)
-        guard var components = URLComponents(
-            url: configuration.authorizationURL,
-            resolvingAgainstBaseURL: false
-        ) else {
+        guard
+            var components = URLComponents(
+                url: configuration.authorizationURL,
+                resolvingAgainstBaseURL: false
+            )
+        else {
             throw SymairaOAuthError.invalidState
         }
         var queryItems = components.queryItems ?? []
@@ -189,24 +191,26 @@ public struct SymairaOAuthAuthenticator: Sendable {
         guard !code.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             throw SymairaOAuthError.invalidAuthorizationCode
         }
-        return try await requestToken([
-            "grant_type": "authorization_code",
-            "client_id": configuration.clientID,
-            "code": code,
-            "redirect_uri": configuration.redirectURI,
-            "code_verifier": request.codeVerifier,
-        ], fallbackRefreshToken: nil)
+        return try await requestToken(
+            [
+                "grant_type": "authorization_code",
+                "client_id": configuration.clientID,
+                "code": code,
+                "redirect_uri": configuration.redirectURI,
+                "code_verifier": request.codeVerifier,
+            ], fallbackRefreshToken: nil)
     }
 
     public func refresh(_ token: SymairaOAuthToken) async throws -> SymairaOAuthToken {
         guard let refreshToken = token.refreshToken, !refreshToken.isEmpty else {
             throw SymairaOAuthError.invalidStoredToken
         }
-        return try await requestToken([
-            "grant_type": "refresh_token",
-            "client_id": configuration.clientID,
-            "refresh_token": refreshToken,
-        ], fallbackRefreshToken: refreshToken)
+        return try await requestToken(
+            [
+                "grant_type": "refresh_token",
+                "client_id": configuration.clientID,
+                "refresh_token": refreshToken,
+            ], fallbackRefreshToken: refreshToken)
     }
 
     private func requestToken(

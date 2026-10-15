@@ -1,4 +1,5 @@
 import XCTest
+
 @testable import SymairaMCP
 
 final class MCPServerTests: XCTestCase {
@@ -129,7 +130,9 @@ final class MCPServerTests: XCTestCase {
         }
 
         // 1. initialize → protocol version echo + server info + tools capability
-        try send(#"{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"test-client","version":"1.0"}}}"#, to: harness.clientWrite)
+        try send(
+            #"{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"test-client","version":"1.0"}}}"#,
+            to: harness.clientWrite)
         let initLine = try await nextLine(harness.reader)
         let initEnvelope = try decodeEnvelope(initLine)
         XCTAssertEqual(initEnvelope.id, .number(1))
@@ -156,7 +159,9 @@ final class MCPServerTests: XCTestCase {
         XCTAssertEqual(listResult.tools.first?.inputSchema.properties["text"]?.type, "string")
 
         // 3. tools/call with typed arguments (string + integer access)
-        try send(#"{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"echo","arguments":{"text":"hello","count":3}}}"#, to: harness.clientWrite)
+        try send(
+            #"{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"echo","arguments":{"text":"hello","count":3}}}"#,
+            to: harness.clientWrite)
         let callLine = try await nextLine(harness.reader)
         let callEnvelope = try decodeEnvelope(callLine)
         XCTAssertEqual(callEnvelope.id, .number(3))

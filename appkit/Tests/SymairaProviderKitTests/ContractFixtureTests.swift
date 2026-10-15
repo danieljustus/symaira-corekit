@@ -1,4 +1,5 @@
 import XCTest
+
 @testable import SymairaProviderKit
 
 final class ContractFixtureTests: XCTestCase {
@@ -44,9 +45,11 @@ final class ContractFixtureTests: XCTestCase {
         let fixtureCatalog = try SymairaProviderErrorCatalog(data: Data(contentsOf: fixtureURL))
 
         XCTAssertEqual(fixtureCatalog, .bundled)
-        XCTAssertEqual(fixtureCatalog.errors.map(\.code), [
-            .authFailure, .rateLimited, .contextOverflow, .modelNotFound, .transportError, .providerError,
-        ])
+        XCTAssertEqual(
+            fixtureCatalog.errors.map(\.code),
+            [
+                .authFailure, .rateLimited, .contextOverflow, .modelNotFound, .transportError, .providerError,
+            ])
     }
 
     func testUnknownSchemaIsRejected() {

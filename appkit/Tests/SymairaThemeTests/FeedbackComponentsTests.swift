@@ -1,5 +1,6 @@
-import XCTest
 import SwiftUI
+import XCTest
+
 @testable import SymairaTheme
 
 @MainActor
@@ -25,9 +26,9 @@ final class FeedbackComponentsTests: XCTestCase {
     // MARK: - Badge
 
     func testBadgeEvaluatesBodyWithAndWithoutIcon() {
-        XCTAssertNotNil(SymairaBadge("Beta").body)
-        XCTAssertNotNil(SymairaBadge("Beta", tone: .positive).body)
-        XCTAssertNotNil(SymairaBadge("Beta", systemImage: "flame").body)
+        ThemeRenderHost.render(SymairaBadge("Beta"))
+        ThemeRenderHost.render(SymairaBadge("Beta", tone: .positive))
+        ThemeRenderHost.render(SymairaBadge("Beta", systemImage: "flame"))
     }
 
     func testBadgeRendersAllTonesWithAndWithoutIcon() {
@@ -40,10 +41,10 @@ final class FeedbackComponentsTests: XCTestCase {
     // MARK: - Notice
 
     func testNoticeEvaluatesBodyVariants() {
-        XCTAssertNotNil(SymairaNotice(message: "Plain message").body)
-        XCTAssertNotNil(SymairaNotice(title: "Heads up", message: "Details", tone: .warning).body)
-        XCTAssertNotNil(SymairaNotice(message: "Dismissable", onDismiss: {}).body)
-        XCTAssertNotNil(SymairaNotice(title: "All", message: "Options", tone: .critical, onDismiss: {}).body)
+        ThemeRenderHost.render(SymairaNotice(message: "Plain message"))
+        ThemeRenderHost.render(SymairaNotice(title: "Heads up", message: "Details", tone: .warning))
+        ThemeRenderHost.render(SymairaNotice(message: "Dismissable", onDismiss: {}))
+        ThemeRenderHost.render(SymairaNotice(title: "All", message: "Options", tone: .critical, onDismiss: {}))
     }
 
     func testNoticeRendersAllTonesWithAndWithoutDismiss() {
@@ -92,13 +93,13 @@ final class FeedbackComponentsTests: XCTestCase {
     // MARK: - Empty state
 
     func testEmptyStateEvaluatesBodyWithAndWithoutActions() {
-        XCTAssertNotNil(
-            SymairaEmptyState(systemImage: "tray", title: "No items", message: "Add one.").body
+        ThemeRenderHost.render(
+            SymairaEmptyState(systemImage: "tray", title: "No items", message: "Add one.")
         )
-        XCTAssertNotNil(
+        ThemeRenderHost.render(
             SymairaEmptyState(systemImage: "tray", title: "No items", message: "Add one.") {
                 Button("Add") {}
-            }.body
+            }
         )
     }
 
@@ -117,7 +118,6 @@ final class FeedbackComponentsTests: XCTestCase {
     // MARK: - Loading state
 
     func testLoadingStateEvaluatesBodyAndRenders() {
-        XCTAssertNotNil(SymairaLoadingState("Indexing…").body)
         ThemeRenderHost.render(SymairaLoadingState("Indexing…"))
     }
 }

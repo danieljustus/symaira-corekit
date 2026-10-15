@@ -1,4 +1,5 @@
 import XCTest
+
 @testable import SymairaMCP
 
 final class MCPTypesTests: XCTestCase {
@@ -133,7 +134,7 @@ final class MCPTypesTests: XCTestCase {
             "count": .number(3),
             "enabled": .bool(true),
             "tags": .array([.string("a"), .string("b")]),
-            "nested": .object(["x": .null])
+            "nested": .object(["x": .null]),
         ])
 
         let data = try JSONEncoder().encode(original)
@@ -181,7 +182,9 @@ final class MCPTypesTests: XCTestCase {
 
         let initParams = try decoder.decode(
             MCPInitializeParams.self,
-            from: Data(#"{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"test-client","version":"1.0"}}"#.utf8)
+            from: Data(
+                #"{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"test-client","version":"1.0"}}"#
+                    .utf8)
         )
         XCTAssertEqual(initParams.protocolVersion, "2025-06-18")
         XCTAssertEqual(initParams.capabilities, .object([:]))

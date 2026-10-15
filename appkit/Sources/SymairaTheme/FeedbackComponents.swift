@@ -17,14 +17,16 @@ public enum SymairaTone: Sendable {
         }
     }
 
+    /// Liquid Topography status colours. Light values reach at least 4.5:1 on
+    /// `surface`; dark values at least 8:1. Green is for live measurements only.
     public func foreground(for colorScheme: ColorScheme) -> Color {
-        guard colorScheme == .light else { return foreground }
+        let dark = colorScheme == .dark
         switch self {
-        case .neutral: return Color(hex: "5F584F")
-        case .positive: return Color(hex: "2E7D4C")
-        case .warning: return Color(hex: "8A5B12")
-        case .critical: return Color(hex: "B3261E")
-        case .informative: return Color(hex: "245C86")
+        case .neutral: return SymairaTheme.foregroundSecondary(for: colorScheme)
+        case .positive: return Color(hex: dark ? "93C49F" : "34694A")
+        case .warning: return Color(hex: dark ? "E9BC73" : "7E5310")
+        case .critical: return Color(hex: dark ? "E39C8A" : "9A4634")
+        case .informative: return Color(hex: dark ? "8CC8F2" : "245C86")
         }
     }
 
@@ -129,7 +131,9 @@ public struct SymairaNotice: View {
             }
         }
         .padding(SymairaSpacing.medium)
-        .background(toneColor.opacity(0.10), in: RoundedRectangle(cornerRadius: SymairaRadius.control, style: .continuous))
+        .background(
+            toneColor.opacity(0.10), in: RoundedRectangle(cornerRadius: SymairaRadius.control, style: .continuous)
+        )
         .overlay(
             RoundedRectangle(cornerRadius: SymairaRadius.control, style: .continuous)
                 .stroke(toneColor.opacity(0.30), lineWidth: 1)
@@ -163,7 +167,7 @@ public struct SymairaEmptyState<Actions: View>: View {
             Image(systemName: systemImage)
                 .font(.system(size: SymairaMetrics.emptyStateSymbolSize, weight: .medium))
                 .symbolRenderingMode(.hierarchical)
-                .foregroundStyle(SymairaTheme.goldPrimary)
+                .foregroundStyle(SymairaTheme.foregroundMuted(for: colorScheme))
                 .accessibilityHidden(true)
             Text(title)
                 .font(SymairaTypography.heading)
@@ -202,7 +206,7 @@ public struct SymairaLoadingState: View {
     public var body: some View {
         VStack(spacing: SymairaSpacing.medium) {
             ProgressView()
-                .tint(SymairaTheme.goldPrimary)
+                .tint(SymairaTheme.selected(for: colorScheme))
                 .controlSize(.regular)
             Text(message)
                 .font(SymairaTypography.callout)

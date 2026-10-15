@@ -196,7 +196,5 @@ public struct SymairaOnboardingScaffold<Step: SymairaOnboardingStep, Content: Vi
     }
 }
 
-/*
- Migration sketch: symaira-desktop's `OnboardingView` (enum-based `Step`)
- adopting this scaffold — see docs/onboarding-scaffold-migration-sketch.md.
- */
+// Migration sketch: symaira-desktop's `OnboardingView` (enum-based `Step`)
+// adopting this scaffold — see docs/onboarding-scaffold-migration-sketch.md.

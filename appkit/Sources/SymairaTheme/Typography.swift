@@ -1,52 +1,59 @@
 import SwiftUI
 
-/// Canonical Symaira type scale.
+/// Canonical Symaira type scale, set in Google Sans Flex (see ``SymairaFont``).
 ///
-/// Every entry is built with `Font.system(_:design:weight:)` so it stays tied to
-/// a Dynamic Type text style — a fixed point size would freeze the layout for
-/// users who scale text up. The scale is deliberately short: nine text roles and
-/// two monospaced roles cover the clients we have, and a short scale is what
-/// keeps them looking like one product.
+/// Sizes and weights follow `design/liquid-topography/DESIGN.md`. Every role
+/// uses the fixed optical size `opsz` 18, so small text is not widened. On iOS
+/// each role scales with Dynamic Type relative to its text style; macOS has no
+/// Dynamic Type. If the bundled font cannot be registered, the system font with
+/// the same size and weight is used. Monospaced roles stay on SF Mono.
+/// Values are `SymairaFontRole` recipes; `.font(role)` resolves them in the view.
 public enum SymairaTypography {
-    /// Hero copy on empty states and onboarding. One per screen at most.
-    public static let display = Font.system(.largeTitle, design: .default, weight: .semibold)
+    /// Hero copy on empty states and onboarding. One per screen at most. 26 / 700.
+    public static let display = SymairaFont.font(size: 26, weight: 700, relativeTo: .largeTitle)
 
-    /// Primary screen title.
-    public static let title = Font.system(.title, design: .default, weight: .semibold)
+    /// Primary screen title. 20 / 700.
+    public static let title = SymairaFont.font(size: 20, weight: 700, relativeTo: .title)
 
-    /// Section or card heading.
-    public static let heading = Font.system(.title3, design: .default, weight: .semibold)
+    /// Section or card heading. 16 / 700.
+    public static let heading = SymairaFont.font(size: 16, weight: 700, relativeTo: .title3)
 
-    /// Sub-heading above a group of rows.
-    public static let subheading = Font.system(.headline, design: .default, weight: .semibold)
+    /// Sub-heading above a group of rows. 14 / 650.
+    public static let subheading = SymairaFont.font(size: 14, weight: 650, relativeTo: .headline)
 
-    /// Default running text.
-    public static let body = Font.system(.body, design: .default, weight: .regular)
+    /// Default running text. 13.5 / 500.
+    public static let body = SymairaFont.font(size: 13.5, weight: 500, relativeTo: .body)
 
-    /// Running text that carries the weight of a decision (selected row, active value).
-    public static let bodyEmphasized = Font.system(.body, design: .default, weight: .semibold)
+    /// Running text that carries the weight of a decision (selected row, active value). 13.5 / 700.
+    public static let bodyEmphasized = SymairaFont.font(size: 13.5, weight: 700, relativeTo: .body)
 
-    /// Running text on a secondary control — lighter than ``bodyEmphasized``,
-    /// still heavier than ``body``.
-    public static let bodyMedium = Font.system(.body, design: .default, weight: .medium)
+    /// Running text on a secondary control. 13.5 / 600.
+    public static let bodyMedium = SymairaFont.font(size: 13.5, weight: 600, relativeTo: .body)
 
-    /// Badge and pill text.
-    public static let label = Font.system(.caption, design: .default, weight: .semibold)
+    /// Badge, pill, button and control label text. 12.5 / 600.
+    public static let label = SymairaFont.font(size: 12.5, weight: 600, relativeTo: .caption)
 
-    /// Secondary text next to a control or inside a row.
-    public static let callout = Font.system(.callout, design: .default, weight: .regular)
+    /// Secondary text next to a control or inside a row. 12.5 / 500.
+    public static let callout = SymairaFont.font(size: 12.5, weight: 500, relativeTo: .callout)
 
-    /// Helper text, timestamps, counts.
-    public static let caption = Font.system(.caption, design: .default, weight: .regular)
+    /// Helper text, timestamps, counts, scale labels. 11.5 / 500.
+    public static let caption = SymairaFont.font(size: 11.5, weight: 500, relativeTo: .caption)
 
-    /// Uppercase group labels and badges. The smallest role that still has to stay legible.
-    public static let micro = Font.system(.caption2, design: .default, weight: .semibold)
+    /// Uppercase group labels. The smallest role that still has to stay legible. 11.5 / 650.
+    public static let micro = SymairaFont.font(size: 11.5, weight: 650, relativeTo: .caption2)
+
+    /// Live value next to a control (brightness, fan speed). 18 / 700, tabular digits.
+    public static let readout = SymairaFont.font(size: 18, weight: 700, relativeTo: .title3).monospacedDigit()
+
+    /// Summary metric in a stat card. 27 / 700, tabular digits.
+    public static let stat = SymairaFont.font(size: 27, weight: 700, relativeTo: .largeTitle).monospacedDigit()
 
     /// Command output, paths, hashes, identifiers.
-    public static let mono = Font.system(.body, design: .monospaced, weight: .regular)
+    public static let mono = SymairaFontRole(source: .system(.system(.body, design: .monospaced, weight: .regular)))
 
     /// Monospaced detail inside a dense row.
-    public static let monoSmall = Font.system(.caption, design: .monospaced, weight: .regular)
+    public static let monoSmall = SymairaFontRole(
+        source: .system(.system(.caption, design: .monospaced, weight: .regular)))
 }
 
 /// A text role pairs a font with the foreground colour it is meant to carry.
@@ -71,7 +78,7 @@ public enum SymairaTextRole: Sendable {
     case mono
     case monoSmall
 
-    public var font: Font {
+    public var font: SymairaFontRole {
         switch self {
         case .display: SymairaTypography.display
         case .title: SymairaTypography.title
@@ -101,9 +108,16 @@ public enum SymairaTextRole: Sendable {
         }
     }
 
-    /// Extra letter spacing. Only the uppercase section label needs it.
+    /// Letter spacing in points. Large roles are tightened as specified in
+    /// DESIGN.md; only the uppercase section label is opened up.
     public var tracking: CGFloat {
-        self == .sectionLabel ? 0.6 : 0
+        switch self {
+        case .display: -0.65  // -0.025em at 26 pt
+        case .title: -0.3  // -0.015em at 20 pt
+        case .heading: -0.16  // -0.01em at 16 pt
+        case .sectionLabel: 0.6
+        default: 0
+        }
     }
 }
 
@@ -114,7 +128,8 @@ private struct SymairaTextRoleModifier: ViewModifier {
     let respectsForeground: Bool
 
     func body(content: Content) -> some View {
-        let styled = content
+        let styled =
+            content
             .font(role.font)
             .tracking(role.tracking)
         if respectsForeground {

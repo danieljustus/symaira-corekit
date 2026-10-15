@@ -42,31 +42,76 @@ public enum SymairaTheme {
     public static let critical = Color(hex: "FF8A80")
     public static let informative = Color(hex: "8CC8F2")
 
-    // MARK: Adaptive semantic colors
+    // MARK: Adaptive semantic colors (Liquid Topography)
+    //
+    // These map to the Liquid Topography palette approved in the Cockpit design
+    // pilot (mirrors `SymairaTokens`, generated from the design kit). The fixed
+    // brand constants above stay as legacy API for clients that have not
+    // migrated yet; new code uses only these adaptive roles.
 
-    /// Warm Symaira canvas that follows the system appearance.
+    /// Page canvas. Liquid Topography `canvas`.
     public static func backgroundPrimary(for colorScheme: ColorScheme) -> Color {
-        colorScheme == .dark ? bgDark : Color(hex: "F7F3EC")
+        colorScheme == .dark ? Color(hex: "1C1C1B") : Color(hex: "EEEDEA")
     }
 
+    /// Sidebar. Liquid Topography `sidebar`.
     public static func backgroundSecondary(for colorScheme: ColorScheme) -> Color {
-        colorScheme == .dark ? bgDarker : Color(hex: "EEE7DC")
+        colorScheme == .dark ? Color(hex: "171716") : Color(hex: "E1E0DA")
     }
 
+    /// Cards and panels. Liquid Topography `surface`.
     public static func surfaceOpaque(for colorScheme: ColorScheme) -> Color {
-        colorScheme == .dark ? Color(hex: "171510") : Color(hex: "FFFCF7")
+        colorScheme == .dark ? Color(hex: "141413") : Color(hex: "E1E0DA")
+    }
+
+    /// Segment rails, secondary buttons, hover. Liquid Topography `raised`.
+    public static func surfaceRaised(for colorScheme: ColorScheme) -> Color {
+        colorScheme == .dark ? Color(hex: "2B2B2A") : Color(hex: "EEEDEA")
+    }
+
+    /// 1 px separators and card outlines. Liquid Topography `line`.
+    public static func line(for colorScheme: ColorScheme) -> Color {
+        colorScheme == .dark ? Color(hex: "30302E") : Color(hex: "B0AEA9")
+    }
+
+    /// Selected navigation row. Liquid Topography `selection`. Pair it with bold text:
+    /// the fill alone is below 3:1 and is not a state cue.
+    public static func navigationSelection(for colorScheme: ColorScheme) -> Color {
+        colorScheme == .dark ? Color(hex: "2D2D2C") : Color(hex: "B0AEA9")
     }
 
     public static func foregroundPrimary(for colorScheme: ColorScheme) -> Color {
-        colorScheme == .dark ? textPrimary : Color(hex: "211D17")
+        colorScheme == .dark ? Color(hex: "EEEDEA") : Color(hex: "141413")
     }
 
     public static func foregroundSecondary(for colorScheme: ColorScheme) -> Color {
-        colorScheme == .dark ? textSecondary : Color(hex: "5F584F")
+        colorScheme == .dark ? Color(hex: "B0AEA9") : Color(hex: "2B2B2A")
     }
 
     public static func foregroundMuted(for colorScheme: ColorScheme) -> Color {
-        colorScheme == .dark ? textMuted : Color(hex: "756D63")
+        colorScheme == .dark ? Color(hex: "97958F") : Color(hex: "62615D")
+    }
+
+    /// Champagne brand accent, identical in both appearances. Never a state cue on
+    /// light surfaces (about 1.2:1); use ``selected(for:)`` for selection.
+    public static func accent(for colorScheme: ColorScheme) -> Color {
+        Color(hex: "E0D2BA")
+    }
+
+    /// Selected state: segments, switch on, checkmarks, slider thumbs.
+    /// Dark: champagne. Light: ink (design decision A, 15.7:1 against the rail).
+    public static func selected(for colorScheme: ColorScheme) -> Color {
+        colorScheme == .dark ? Color(hex: "E0D2BA") : Color(hex: "141413")
+    }
+
+    /// Text and glyphs on ``selected(for:)``.
+    public static func onSelected(for colorScheme: ColorScheme) -> Color {
+        colorScheme == .dark ? Color(hex: "1A1814") : Color(hex: "E1E0DA")
+    }
+
+    /// 2 px keyboard focus ring.
+    public static func focus(for colorScheme: ColorScheme) -> Color {
+        selected(for: colorScheme)
     }
 
     // Motion
@@ -114,13 +159,16 @@ extension Color {
         let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
         var int: UInt64 = 0
         Scanner(string: hex).scanHexInt64(&int)
-        let a, r, g, b: UInt64
+        let a: UInt64
+        let r: UInt64
+        let g: UInt64
+        let b: UInt64
         switch hex.count {
-        case 3: // RGB (12-bit)
+        case 3:  // RGB (12-bit)
             (a, r, g, b) = (255, (int >> 8) * 17, (int >> 4 & 0xF) * 17, (int & 0xF) * 17)
-        case 6: // RGB (24-bit)
+        case 6:  // RGB (24-bit)
             (a, r, g, b) = (255, int >> 16, int >> 8 & 0xFF, int & 0xFF)
-        case 8: // ARGB (32-bit)
+        case 8:  // ARGB (32-bit)
             (a, r, g, b) = (int >> 24, int >> 16 & 0xFF, int >> 8 & 0xFF, int & 0xFF)
         default:
             (a, r, g, b) = (255, 0, 0, 0)

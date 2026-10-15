@@ -19,7 +19,7 @@ let package = Package(
         .library(name: "SymairaProviderKit", targets: ["SymairaProviderKit"]),
     ],
     targets: [
-        .target(name: "SymairaTheme"),
+        .target(name: "SymairaTheme", resources: [.process("Resources")]),
         .target(name: "SymairaCLIRunner"),
         .target(name: "SymairaToolKit", dependencies: ["SymairaCLIRunner"]),
         .target(name: "SymairaKeychain"),

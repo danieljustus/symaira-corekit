@@ -108,7 +108,7 @@ public struct ToolDetector: Sendable {
     /// Results are returned in the same order as the input `tools` array.
     public func detectInstalled(from tools: [SymairaTool] = SymairaToolRegistry.active) async -> [DetectedTool] {
         let concurrency = max(1, maxConcurrentHandshakes)
-        var detected = Array<DetectedTool?>(repeating: nil, count: tools.count)
+        var detected = [DetectedTool?](repeating: nil, count: tools.count)
 
         await withTaskGroup(of: (Int, DetectedTool?).self) { group in
             var nextIndex = 0
@@ -154,7 +154,8 @@ public struct ToolDetector: Sendable {
         let path = url.path
         let mtime: TimeInterval
         if let values = try? url.resourceValues(forKeys: [.contentModificationDateKey]),
-           let date = values.contentModificationDate {
+            let date = values.contentModificationDate
+        {
             mtime = date.timeIntervalSinceReferenceDate
         } else {
             mtime = 0
@@ -183,8 +184,9 @@ public struct ToolDetector: Sendable {
         // Fallbacks for cores without `version --json`.
         for args in [["version"], ["--version"]] {
             if let result = try? await runner.run(url, arguments: args, timeout: handshakeTimeout),
-               result.exitCode == 0,
-               let version = Self.extractVersionToken(from: result.stdoutText) {
+                result.exitCode == 0,
+                let version = Self.extractVersionToken(from: result.stdoutText)
+            {
                 return ToolVersionInfo(version: version, schemaVersion: 0)
             }
         }

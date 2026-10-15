@@ -1,0 +1,92 @@
+// !$*UTF8*$!
+// Native macOS keyboard-focus regression host. The runner supplies the package path.
+{
+    archiveVersion = 1;
+    classes = {};
+    objectVersion = 56;
+    rootObject = A00000000000000000000001;
+    objects = {
+        A00000000000000000000001 = {
+            isa = PBXProject;
+            buildConfigurationList = A00000000000000000000002;
+            compatibilityVersion = "Xcode 14.0";
+            developmentRegion = en;
+            knownRegions = (en, Base);
+            mainGroup = A00000000000000000000004;
+            productRefGroup = A00000000000000000000005;
+            projectDirPath = "";
+            projectRoot = "";
+            packageReferences = (A00000000000000000000012);
+            targets = (A00000000000000000000006);
+        };
+        A00000000000000000000002 = {
+            isa = XCConfigurationList;
+            buildConfigurations = (A00000000000000000000003);
+            defaultConfigurationIsVisible = 0;
+            defaultConfigurationName = Debug;
+        };
+        A00000000000000000000003 = {
+            isa = XCBuildConfiguration;
+            name = Debug;
+            buildSettings = {
+                CLANG_ENABLE_MODULES = YES;
+                CODE_SIGNING_ALLOWED = NO;
+                GENERATE_INFOPLIST_FILE = YES;
+                MACOSX_DEPLOYMENT_TARGET = 14.0;
+                SDKROOT = macosx;
+                SWIFT_VERSION = 6.0;
+            };
+        };
+        A00000000000000000000004 = {
+            isa = PBXGroup;
+            children = (A0000000000000000000000B, A00000000000000000000005);
+            sourceTree = "<group>";
+        };
+        A00000000000000000000005 = {
+            isa = PBXGroup;
+            name = Products;
+            children = (A0000000000000000000000A);
+            sourceTree = "<group>";
+        };
+        A00000000000000000000006 = {
+            isa = PBXNativeTarget;
+            name = NativeFocusProbe;
+            productName = NativeFocusProbe;
+            productType = "com.apple.product-type.application";
+            productReference = A0000000000000000000000A;
+            buildConfigurationList = A00000000000000000000007;
+            buildPhases = (A0000000000000000000000C, A0000000000000000000000E);
+            buildRules = ();
+            dependencies = ();
+            packageProductDependencies = (A00000000000000000000011);
+        };
+        A00000000000000000000007 = {
+            isa = XCConfigurationList;
+            buildConfigurations = (A00000000000000000000008);
+            defaultConfigurationIsVisible = 0;
+            defaultConfigurationName = Debug;
+        };
+        A00000000000000000000008 = {
+            isa = XCBuildConfiguration;
+            name = Debug;
+            buildSettings = {
+                CODE_SIGNING_ALLOWED = NO;
+                GENERATE_INFOPLIST_FILE = YES;
+                MACOSX_DEPLOYMENT_TARGET = 14.0;
+                PRODUCT_BUNDLE_IDENTIFIER = com.symaira.verification.native-focus;
+                PRODUCT_NAME = "$(TARGET_NAME)";
+                SDKROOT = macosx;
+                SWIFT_VERSION = 6.0;
+                SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+            };
+        };
+        A0000000000000000000000A = {isa = PBXFileReference; lastKnownFileType = wrapper.application; path = NativeFocusProbe.app; sourceTree = BUILT_PRODUCTS_DIR; };
+        A0000000000000000000000B = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Probe.swift; sourceTree = "<group>"; };
+        A0000000000000000000000C = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A0000000000000000000000D); runOnlyForDeploymentPostprocessing = 0; };
+        A0000000000000000000000D = {isa = PBXBuildFile; fileRef = A0000000000000000000000B; };
+        A0000000000000000000000E = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (A0000000000000000000000F); runOnlyForDeploymentPostprocessing = 0; };
+        A0000000000000000000000F = {isa = PBXBuildFile; productRef = A00000000000000000000011; };
+        A00000000000000000000011 = {isa = XCSwiftPackageProductDependency; productName = SymairaTheme; };
+        A00000000000000000000012 = {isa = XCLocalSwiftPackageReference; relativePath = __PACKAGE_PATH__; };
+    };
+}

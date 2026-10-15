@@ -356,14 +356,16 @@ public struct SymairaGlassChromeModifier: ViewModifier {
 
     private func opaqueFallback(_ content: Content) -> some View {
         let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-        return content
+        return
+            content
             .background(SymairaTheme.surfaceOpaque(for: colorScheme), in: shape)
             .overlay(shape.stroke(fallbackBorder, lineWidth: contrast == .increased ? 1.5 : 1))
     }
 
     private func materialFallback(_ content: Content) -> some View {
         let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-        return content
+        return
+            content
             .background(.ultraThinMaterial, in: shape)
             .background((tint ?? .clear).opacity(0.10), in: shape)
             .overlay(shape.stroke(fallbackBorder, lineWidth: contrast == .increased ? 1.5 : 1))
@@ -371,8 +373,8 @@ public struct SymairaGlassChromeModifier: ViewModifier {
 
     private var fallbackBorder: Color {
         contrast == .increased
-            ? SymairaTheme.goldPrimary.opacity(0.45)
-            : SymairaTheme.borderGlass
+            ? SymairaTheme.foregroundMuted(for: colorScheme)
+            : SymairaTheme.line(for: colorScheme)
     }
 }
 
@@ -432,8 +434,12 @@ public enum SymairaButtonRole: Sendable {
     case toolbar
 }
 
-/// Preferred button API. It adopts Apple's native Liquid Glass button styles
-/// on macOS/iOS 26 and preserves the Symaira appearance on older systems.
+/// Preferred button API.
+///
+/// Content buttons (`primary`, `secondary`) are opaque, as approved in the
+/// Cockpit design pilot: Liquid Glass belongs to chrome, not to actions that
+/// carry text inside content. `toolbar` adopts the native glass style on
+/// macOS/iOS 26.
 public struct SymairaAdaptiveButtonModifier: ViewModifier {
     private let role: SymairaButtonRole
 
@@ -443,36 +449,27 @@ public struct SymairaAdaptiveButtonModifier: ViewModifier {
 
     @ViewBuilder
     public func body(content: Content) -> some View {
-        #if compiler(>=6.2)
-        if #available(macOS 26.0, iOS 26.0, *) {
-            switch role {
-            case .primary:
-                content
-                    .buttonStyle(.glassProminent)
-                    .tint(SymairaTheme.goldPrimary)
-            case .secondary, .toolbar:
-                content
-                    .buttonStyle(.glass)
-                    .tint(role == .secondary ? SymairaTheme.goldPrimary : nil)
-            }
-        } else {
-            legacyButton(content)
-        }
-        #else
-        legacyButton(content)
-        #endif
-    }
-
-    @ViewBuilder
-    private func legacyButton(_ content: Content) -> some View {
         switch role {
         case .primary:
             content.buttonStyle(SymairaPrimaryButtonStyle())
         case .secondary:
             content.buttonStyle(SymairaSecondaryButtonStyle())
         case .toolbar:
+            toolbarButton(content)
+        }
+    }
+
+    @ViewBuilder
+    private func toolbarButton(_ content: Content) -> some View {
+        #if compiler(>=6.2)
+        if #available(macOS 26.0, iOS 26.0, *) {
+            content.buttonStyle(.glass)
+        } else {
             content.buttonStyle(.borderless)
         }
+        #else
+        content.buttonStyle(.borderless)
+        #endif
     }
 }
 
@@ -482,68 +479,54 @@ extension View {
     }
 }
 
+/// Primary action: filled `ink` with `surface` text, 14 pt radius, bold label.
+/// At most one per view.
 public struct SymairaPrimaryButtonStyle: ButtonStyle {
+    @Environment(\.colorScheme) private var colorScheme
     @Environment(\.isEnabled) private var isEnabled
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     public init() {}
 
     public func makeBody(configuration: Configuration) -> some View {
+        let shape = RoundedRectangle(cornerRadius: SymairaTokens.Radius.lg, style: .continuous)
         configuration.label
             .font(SymairaTypography.bodyEmphasized)
-            .foregroundStyle(Color.black.opacity(isEnabled ? 0.88 : 0.55))
-            .padding(.horizontal, SymairaSpacing.large)
-            .frame(minHeight: SymairaMetrics.minimumControlHeight)
-            .background(
-                LinearGradient(
-                    colors: [SymairaTheme.goldPrimary, SymairaTheme.goldSecondary],
-                    startPoint: .leading,
-                    endPoint: .trailing
-                ),
-                in: RoundedRectangle(cornerRadius: SymairaRadius.control, style: .continuous)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: SymairaRadius.control, style: .continuous)
-                    .stroke(Color.white.opacity(0.18), lineWidth: 1)
-            )
-            .contentShape(RoundedRectangle(cornerRadius: SymairaRadius.control, style: .continuous))
-            .scaleEffect(configuration.isPressed && !reduceMotion ? 0.97 : 1)
+            .foregroundStyle(SymairaTheme.surfaceOpaque(for: colorScheme))
+            .padding(.horizontal, SymairaSpacing.large + 4)
+            .frame(minHeight: max(SymairaMetrics.minimumControlHeight, 40))
+            .background(SymairaTheme.foregroundPrimary(for: colorScheme), in: shape)
+            .contentShape(shape)
+            .brightness(configuration.isPressed ? -0.05 : 0)
+            .scaleEffect(configuration.isPressed && !reduceMotion ? 0.98 : 1)
             .opacity(isEnabled ? 1 : 0.55)
             .animation(reduceMotion ? nil : .easeOut(duration: 0.15), value: configuration.isPressed)
-            .shadow(
-                color: SymairaTheme.goldPrimary.opacity(isEnabled ? 0.20 : 0),
-                radius: configuration.isPressed ? 4 : 8,
-                x: 0,
-                y: 2
-            )
     }
 }
 
+/// Secondary action: filled `raised`, no outline, 14 pt radius.
 public struct SymairaSecondaryButtonStyle: ButtonStyle {
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.isEnabled) private var isEnabled
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
 
     public init() {}
 
     public func makeBody(configuration: Configuration) -> some View {
-        let shape = RoundedRectangle(cornerRadius: SymairaRadius.control, style: .continuous)
+        let shape = RoundedRectangle(cornerRadius: SymairaTokens.Radius.lg, style: .continuous)
         configuration.label
             .font(SymairaTypography.bodyMedium)
             .foregroundStyle(SymairaTheme.foregroundPrimary(for: colorScheme))
             .padding(.horizontal, SymairaSpacing.large)
             .frame(minHeight: SymairaMetrics.minimumControlHeight)
-            .background {
-                if reduceTransparency {
-                    shape.fill(SymairaTheme.surfaceOpaque(for: colorScheme))
-                } else {
-                    shape.fill(.ultraThinMaterial)
-                }
-            }
-            .overlay(shape.stroke(SymairaTheme.borderGlass, lineWidth: 1))
+            .background(
+                configuration.isPressed
+                    ? SymairaTheme.navigationSelection(for: colorScheme)
+                    : SymairaTheme.surfaceRaised(for: colorScheme),
+                in: shape
+            )
             .contentShape(shape)
-            .scaleEffect(configuration.isPressed && !reduceMotion ? 0.97 : 1)
+            .scaleEffect(configuration.isPressed && !reduceMotion ? 0.98 : 1)
             .opacity(isEnabled ? 1 : 0.5)
             .animation(reduceMotion ? nil : .easeOut(duration: 0.15), value: configuration.isPressed)
     }

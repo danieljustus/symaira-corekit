@@ -1,5 +1,6 @@
-import XCTest
 import SwiftUI
+import XCTest
+
 @testable import SymairaTheme
 
 @MainActor
@@ -12,8 +13,8 @@ final class ComponentsTests: XCTestCase {
     }
 
     func testBlueprintGridEvaluatesBodyForDefaultsAndCustomParameters() {
-        XCTAssertNotNil(BlueprintGrid().body)
-        XCTAssertNotNil(BlueprintGrid(spacing: 12, style: .dots, color: .white).body)
+        ThemeRenderHost.render(BlueprintGrid())
+        ThemeRenderHost.render(BlueprintGrid(spacing: 12, style: .dots, color: .white))
     }
 
     func testBlueprintGridRendersBothStyles() {
@@ -22,9 +23,9 @@ final class ComponentsTests: XCTestCase {
     }
 
     func testAmbientGlowsEvaluatesBodyAcrossIntensityRange() {
-        XCTAssertNotNil(AmbientGlows().body)
-        XCTAssertNotNil(AmbientGlows(intensity: 0).body)
-        XCTAssertNotNil(AmbientGlows(intensity: 2).body)
+        ThemeRenderHost.render(AmbientGlows())
+        ThemeRenderHost.render(AmbientGlows(intensity: 0))
+        ThemeRenderHost.render(AmbientGlows(intensity: 2))
     }
 
     func testAmbientGlowsRenders() {
@@ -32,8 +33,8 @@ final class ComponentsTests: XCTestCase {
     }
 
     func testBackdropEvaluatesBodyForGridStylesAndVisibility() {
-        XCTAssertNotNil(SymairaBackdrop().body)
-        XCTAssertNotNil(SymairaBackdrop(gridStyle: .dots, showsGrid: false).body)
+        ThemeRenderHost.render(SymairaBackdrop())
+        ThemeRenderHost.render(SymairaBackdrop(gridStyle: .dots, showsGrid: false))
     }
 
     func testBackdropRendersAcrossAppearances() {
@@ -42,8 +43,7 @@ final class ComponentsTests: XCTestCase {
     }
 
     func testTelemetryCornersEvaluatesBodyAndRenders() {
-        XCTAssertNotNil(TelemetryCorners().body)
-        XCTAssertNotNil(TelemetryCorners(color: .red, length: 12, lineWidth: 2).body)
+        ThemeRenderHost.render(TelemetryCorners(color: .red, length: 12, lineWidth: 2))
         ThemeRenderHost.render(TelemetryCorners())
     }
 
@@ -85,7 +85,6 @@ final class ComponentsTests: XCTestCase {
             Button("Refresh") {}
                 .symairaButtonStyle(.toolbar)
         }
-        XCTAssertNotNil(container.body)
         ThemeRenderHost.render(container)
     }
 
@@ -122,5 +121,32 @@ final class ComponentsTests: XCTestCase {
             Button("Cancel") {}.buttonStyle(SymairaSecondaryButtonStyle())
                 .environment(\.isEnabled, false)
         )
+    }
+}
+
+@MainActor
+final class SelectionControlsTests: XCTestCase {
+    private enum Profile: Hashable { case system, cool, max }
+
+    func testSelectionControlsRenderInBothAppearances() {
+        var profile = Profile.system
+        let binding = Binding(get: { profile }, set: { profile = $0 })
+        var isOn = true
+        let toggle = Binding(get: { isOn }, set: { isOn = $0 })
+        for scheme in [ColorScheme.light, .dark] {
+            ThemeRenderHost.render(
+                VStack {
+                    SymairaSegmentedControl(
+                        "Lüfterprofil", selection: binding,
+                        options: [(.system, "Standard"), (.cool, "Cool"), (.max, "Max")])
+                    Toggle("Wachhalten", isOn: toggle).toggleStyle(.symairaSwitch)
+                    Text("Karte").symairaCard()
+                    SymairaLockedLabel()
+                    Button("Anwenden") {}.symairaButtonStyle(.primary)
+                    Button("Abbrechen") {}.symairaButtonStyle(.secondary)
+                }
+                .environment(\.colorScheme, scheme)
+            )
+        }
     }
 }

@@ -282,7 +282,7 @@ public struct CLIRunner: Sendable {
         box.process.arguments = arguments
 
         var env = CLIRunner.augmentedEnvironment(ProcessInfo.processInfo.environment)
-        environment.forEach { env[$0.key] = $0.value }
+        for (key, value) in environment { env[key] = value }
         box.process.environment = env
 
         let stdoutPipe = Pipe()
@@ -362,7 +362,7 @@ public struct CLIRunner: Sendable {
 
                 while true {
                     guard let chunk = try? handle.read(upToCount: chunkSize),
-                          !chunk.isEmpty
+                        !chunk.isEmpty
                     else { break }
 
                     if data.count + chunk.count > maxBytes {
