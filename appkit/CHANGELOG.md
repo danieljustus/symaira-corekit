@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `SymairaIcon`: 135 in-house icons for the whole ecosystem, rounded with a
+  2 pt stroke and licensed for every platform. Parts animate on hover and click
+  in `SymairaIconView`, `SymairaIconButton` and `Label(_:symairaIcon:)`. Static
+  SVGs, web CSS and a JSON motion spec are generated from
+  `Brand/Icons/icons.svg`.
+
 ### Fixed
 - Shared typography now responds to live iOS Dynamic Type changes, including
   the missing-font fallback, while preserving Google Sans Flex, `opsz` 18,

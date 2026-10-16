@@ -71,3 +71,15 @@ The intended mappings are:
 
 Legacy token aliases and button styles remain source-compatible so each client
 can migrate deliberately after a tagged AppKit release.
+
+## Icons
+
+Use `SymairaIcon` instead of raw SF Symbol strings. It has one semantic case per
+meaning, such as `.delete`, `.refresh` or `.productVault`. The glyphs are drawn
+in-house: rounded, with a 2 pt stroke, and licensed for every platform. Hovering
+over an icon moves its parts into a small preview pose, and clicking plays a
+motion that matches its meaning. For example, the trash lid lifts, the bell
+rings, the check mark draws itself and the vault dial turns. When Reduce Motion
+is on, the icons are drawn static. To add or change an icon, edit
+[`Brand/Icons/icons.svg`](Brand/Icons/README.md) and regenerate. Never add icons
+inside an app.
