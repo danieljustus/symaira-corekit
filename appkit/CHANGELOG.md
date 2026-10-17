@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.15.1] - 2026-10-17
+
+### Fixed
+- SymairaTheme compiles again with Swift 6.0/6.1 (Xcode 16) toolchains:
+  `Label(_:symairaIcon:)` is `@MainActor` and the topography hover velocity
+  uses explicit `Double` arithmetic.
+
 ## [0.15.0] - 2026-10-17
 
 ### Added
@@ -461,7 +468,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [0.9.2]: https://github.com/danieljustus/symaira-appkit/compare/0.9.1...0.9.2
 [0.10.0]: https://github.com/danieljustus/symaira-appkit/compare/0.9.2...0.10.0
 [0.11.0]: https://github.com/danieljustus/symaira-appkit/compare/0.10.0...0.11.0
-[Unreleased]: https://github.com/danieljustus/symaira-appkit/compare/0.15.0...HEAD
+[Unreleased]: https://github.com/danieljustus/symaira-appkit/compare/0.15.1...HEAD
+[0.15.1]: https://github.com/danieljustus/symaira-appkit/compare/0.15.0...0.15.1
 [0.15.0]: https://github.com/danieljustus/symaira-appkit/compare/0.14.2...0.15.0
 [0.8.1]: https://github.com/danieljustus/symaira-appkit/compare/0.8.0...0.8.1
 [0.8.0]: https://github.com/danieljustus/symaira-appkit/compare/0.7.0...0.8.0

@@ -88,6 +88,7 @@ public struct SymairaIconButton: View {
 
 extension Label where Title == Text, Icon == SymairaIconView<Int> {
     /// `Label("Delete", symairaIcon: .delete)`
+    @MainActor
     public init(_ title: LocalizedStringKey, symairaIcon icon: SymairaIcon) {
         self.init {
             Text(title)

@@ -213,7 +213,8 @@ public struct SymairaTopoView: View {
             case .active(let p):
                 if model.pressed { return }  // während Ziehen gilt die Delta-Fortschreibung
                 if let old = model.pointer {
-                    model.pointerVelocity = min(1, model.pointerVelocity + hypot(p.x - old.x, p.y - old.y) / 120)
+                    let step = Double(hypot(p.x - old.x, p.y - old.y))
+                    model.pointerVelocity = min(1, model.pointerVelocity + step / 120)
                 }
                 model.pointer = p
             case .ended: if !model.pressed { model.pointer = nil }
