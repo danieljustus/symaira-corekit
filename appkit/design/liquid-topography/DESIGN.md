@@ -132,7 +132,7 @@ components:
     textColor: "{colors.ink}"
     typography: "{typography.label}"
     rounded: "{rounded.lg}"
-    padding: 9px 16px
+    padding: 12px 20px
   button-secondary-dark:
     backgroundColor: "{colors.raised-dark}"
     textColor: "{colors.ink-dark}"
@@ -309,6 +309,13 @@ Symaira Liquid Topography ist das gemeinsame Designsystem für alle Symaira-Prod
 
 Die Wirkung soll ruhig, präzise und hochwertig sein, wie eine Landkarte in einem stillen Raum. Werkzeug geht vor Show.
 
+**Gemeinsame Quelle:** Wiederverwendbare Design- und Interaktionsregeln, die in
+einem Symaira-Produkt abgestimmt werden, werden hier und in `SymairaTheme`
+implementiert und getestet. Produkte konsumieren diese Grundlage, statt lokale
+Kopien zu pflegen. Fachlogik, Navigation und bestehende Einstellungs-Schlüssel
+bleiben im Produkt. Native Zuordnung und Migrationsgrenzen stehen in
+[`docs/workspace-foundation.md`](../../docs/workspace-foundation.md).
+
 ## Colors
 
 Jede Rolle gibt es hell (Standardwert) und dunkel (Suffix `-dark`). Code nutzt immer die Rolle, nie den Hexwert.
@@ -336,10 +343,13 @@ Jede Rolle gibt es hell (Standardwert) und dunkel (Suffix `-dark`). Code nutzt i
 
 ## Layout
 
-- App-Fenster: Sidebar mit 272px, Hauptbereich mit Kopfzeile von 56px, Inhaltsspalte maximal 640 bis 720px, zentriert.
-- Großzügige Innenabstände: Buttons 7–8px × 15–16px, Pills 6×14px, Sidebar-Einträge 8×12px, Eingabebox 14/12/10/18px.
+- Desktop-Arbeitsfenster: ein eigenständiges Hauptpanel mit 20pt Rundung und 8pt Abstand rechts/unten. Seitenleiste und native Toolbar bilden eine gemeinsame Chromfläche; keine zusätzliche harte Trennlinie neben der Panelkante. Scrollleiste und Topografie bleiben im Panel.
+- Sidebar: Standardbreite 272pt, per Trennkante auf 224–360pt verstellbar, eingeklappt eine 64pt-Iconleiste. Die 10pt breite Ziehfläche zeigt beim Hover den horizontalen Größenänderungs-Cursor. Unter 144pt vorgeschlagener Breite klappt die Leiste ein; Ziehen nach rechts öffnet sie wieder. Der Toolbar-Button mit ⌃⌘S bleibt erhalten und merkt sich die gewählte Breite.
+- Bei ausgeklappter Sidebar bleiben mindestens 568pt für den Inhalt. Engere Fenster verwenden vorübergehend die Iconleiste. Breitenänderungen dürfen Inhalt, Entwürfe, Scrollposition und laufende Bedienung nicht neu erzeugen; Schutzzonen folgen dem tatsächlichen Layout.
+- Prosa bleibt in einer lesbaren, zentrierten Spalte; Tabellen, Grids und Dashboards dürfen einen breiteren produktspezifischen Inhaltsrahmen nutzen. Native Toolbar-Höhen werden nicht durch eine zweite feste Kopfzeile verdoppelt.
+- Großzügige Innenabstände: Inhaltsaktionen 20pt horizontal, Pills 6×14px, Sidebar-Einträge 8×12px, Eingabebox 14/12/10/18px.
 - Abstandsraster in 4px-Schritten, gängig sind 8, 12, 16, 20 und 24px.
-- Touch-Ziele mindestens 44pt auf iOS und 32px bei Mausbedienung.
+- Touch-Ziele mindestens 44pt auf iOS. Primär-/Sekundäraktionen mindestens 40pt auf macOS, mit identischer Geometrie und Schrift in beiden Rollen. Ein Zustandswechsel darf den Button nicht schmaler oder flacher machen; für wechselnde Beschriftungen eine stabile Label-Fläche reservieren.
 
 ## Elevation & Depth
 
@@ -366,6 +376,8 @@ Siehe `components:` oben. Varianten sind eigene Einträge (`button-primary-dark`
 - **Navigation:** Auswahl über `selection`-Fläche und Gewicht 700 in beiden Modi; die Fläche allein ist kein Zustandsmerkmal.
 - **Schalter:** 56 × 32px Spur, 24px Knopf, an = `selected`. Trefferfläche mindestens 44px auf Touch-Geräten.
 - **Messwerte** in `ink`, unabhängig davon, ob sie sich ändern. Champagner gehört zu Auswahl, aktiven Bedienelementen und Fokus.
+- **Balken und Regler:** gemeinsame neutrale Schiene `ink-3` und Füllung `ink` in beiden Modi. Speicher-, Nutzungs- und Prozessbalken verwenden dieselben Rollen wie native Regler. Warnungen bleiben als Text/Symbol sichtbar.
+- **Darstellung:** `System / Light / Dark` ist über denselben Auswahltyp in Toolbar und Einstellungen erreichbar. „System“ entfernt die Vorgabe und folgt macOS weiter live, statt dessen aktuellen Zustand einzufrieren. Produkte behalten ihre bisherigen Speicherschlüssel; passive Vorschauen schreiben keine Einstellungen.
 - **Karten:** `surface` mit 1px `line`, 14px Radius. Die Fläche hebt sich nur schwach vom Hintergrund ab (1,1:1); die Linie trägt die Abgrenzung.
 
 ## Liquid Topography (Topografie-Ebene)
@@ -394,7 +406,7 @@ Die Hintergrundebene ist ein Shader. Im Web läuft er über WebGL2 (`web/symaira
 2. Die Deckkraft der Linien ist hart auf 0.26 begrenzt. Zustände, Wellen und Zeiger können sie nicht überschreiten.
 3. Zustände ändern Tempo, Form und Tönung, aber keine Information. Die Information steht immer im Text (`role="status"` / `role="alert"`).
 4. Bei `prefers-reduced-motion` bzw. „Bewegung reduzieren“ bleibt das Bild statisch, ohne Wellen und ohne Zeigerreaktion. Gleiches gilt für den Stromsparmodus unter iOS.
-5. Höchstens 30 fps, auf Apple-Geräten 20 fps. Native Fenster-Sichtbarkeit und Scene-Phase pausieren die Timeline; im Web pausiert ein verstecktes Dokument. Bei reduzierter Bewegung zeichnet das Web nur nach Zustands-, Layout- oder Theme-Änderungen neu, nicht per Dauertimer. Bei mehr als 20 sichtbaren Schutzzonen wird deren gemeinsame Umhüllung geschützt: Dekoration darf entfallen, Textschutz niemals.
+5. Höchstens 30 fps, auf Apple-Geräten 20 fps. Auf macOS pausiert die Sichtbarkeit des zugehörigen Fensters die Timeline, auf iOS die Scene-Phase; ein AppKit-Hostingfenster darf nicht durch eine dauerhaft als `background` gemeldete SwiftUI-Phase eingefroren werden. Im Web pausiert ein verstecktes Dokument. Wellenalter bleiben nichtnegativ, auch bei Layoutänderungen während einer Pause. Bei reduzierter Bewegung zeichnet das Web nur nach Zustands-, Layout- oder Theme-Änderungen neu, nicht per Dauertimer. Bei mehr als 20 sichtbaren Schutzzonen wird deren gemeinsame Umhüllung geschützt: Dekoration darf entfallen, Textschutz niemals.
 
 **Einsatz:** In Apps liegt die Ebene hinter der Hauptansicht, nicht hinter Einstellungen, Tabellen oder dichten Listen. Auf symaira.com liegt sie hinter dem Hero und den Leerflächen.
 

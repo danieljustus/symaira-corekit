@@ -15,6 +15,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `Brand/Icons/icons.svg`.
 
 ### Fixed
+- Topography protection redraws on layout changes while paused. AppKit-hosted
+  macOS windows use native visibility rather than a permanently-background
+  scene phase; ripple ages stay nonnegative after scrolling (#165).
 - Shared typography now responds to live iOS Dynamic Type changes, including
   the missing-font fallback, while preserving Google Sans Flex, `opsz` 18,
   approved weights and tabular digits (#163).
@@ -28,6 +31,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   test helpers and README examples also consume their results explicitly.
 
 ### Added
+- Shared workspace foundation (#166): `SymairaWorkspace`, `SymairaSidebarState`
+  and `SymairaSidebarToggle` own rounded inset macOS chrome, native drag resizing
+  and a collapsible icon rail without remounting content. `.topoProtected()`
+  consumes the workspace model without app-local environment plumbing.
+- Shared `SymairaNavigationButtonStyle`, `SymairaBarColors`,
+  `SymairaProgressStyle`, `SymairaAppearance` and `SymairaAppearanceMenu`.
+  Appearance persistence keys and product/domain actions stay in the host.
+- [Workspace usage and rule inventory](docs/workspace-foundation.md), including
+  library-first ownership of future design rules and explicit consumer adoption.
 - **Liquid Topography** design system: `design/liquid-topography/` holds the
   source of truth (`DESIGN.md`, `topo.json`), the token generator
   (`build.py`, 34 WCAG contrast checks in light and dark), the WebGL2 web
@@ -41,6 +53,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   line-free. Respects Reduce Motion and Low Power Mode.
 
 ### Changed
+- **Visual:** primary/secondary content actions now share font, horizontal
+  padding and minimum height (40 pt macOS, 44 pt iOS). Switching action roles
+  retains geometry and still changes colors. Stateful titles reserve their
+  label area in the host. Compact native toolbar buttons are unchanged.
 - **Breaking (visual):** `SymairaTheme.backgroundPrimary/Secondary`,
   `surfaceOpaque` and `foreground*` now return the gray Liquid Topography
   palette instead of the warm champagne/black palette. Fixed legacy constants

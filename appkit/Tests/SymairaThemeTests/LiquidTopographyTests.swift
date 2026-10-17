@@ -114,6 +114,34 @@ final class LiquidTopographyTests: XCTestCase {
         }
         XCTAssertGreaterThan(outside, 500, "keine Höhenlinien gerendert")
         XCTAssertEqual(inside, 0, "Linien in der Schutzzone")
+        // Lines are thin: a uniformly tinted field (zero fragment derivatives)
+        // would deviate almost everywhere and turn protected zones into halos.
+        let outsideTotal = cg.width * cg.height - Int(zone.width * zone.height)
+        XCTAssertLessThan(Double(outside) / Double(outsideTotal), 0.5, "flächige Tönung statt Höhenlinien")
+    }
+
+    /// Scrolling and clicks add ripples. Behind the wave front the ripple term
+    /// must stay finite: a NaN height saturates every pixel to the alpha cap,
+    /// turning the whole surface flat grey with "halo" protection cut-outs.
+    func testRippleKeepsContourLinesThin() throws {
+        let model = SymairaTopoModel()
+        let size = CGSize(width: 480, height: 320)
+        model.ripple(at: CGPoint(x: 240, y: 160), strength: 1)
+        model.ripples = model.ripples.map { ($0.0, Date.now.addingTimeInterval(-0.8), $0.2) }
+        let view = SymairaTopoView(model: model)
+            .frame(width: size.width, height: size.height)
+            .coordinateSpace(name: SymairaTopo.space)
+            .environment(\.colorScheme, .dark)
+        let renderer = ImageRenderer(content: view)
+        renderer.scale = 1
+        let cg = try XCTUnwrap(renderer.cgImage)
+        let px = try pixels(cg)
+        var deviating = 0
+        for i in stride(from: 0, to: px.count, by: 4)
+        where abs(Int(px[i]) - 0x1C) + abs(Int(px[i + 1]) - 0x1C) + abs(Int(px[i + 2]) - 0x1B) > 6 {
+            deviating += 1
+        }
+        XCTAssertLessThan(Double(deviating) / Double(cg.width * cg.height), 0.5, "Ripple sättigt die Fläche (NaN)")
     }
 
     private func pixels(_ cg: CGImage) throws -> [UInt8] {

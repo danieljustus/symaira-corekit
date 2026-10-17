@@ -132,13 +132,15 @@ public struct SymairaNotice: View {
         }
         .padding(SymairaSpacing.medium)
         .background(
-            toneColor.opacity(0.10), in: RoundedRectangle(cornerRadius: SymairaRadius.control, style: .continuous)
+            SymairaTheme.surfaceOpaque(for: colorScheme),
+            in: RoundedRectangle(cornerRadius: SymairaRadius.control, style: .continuous)
         )
         .overlay(
             RoundedRectangle(cornerRadius: SymairaRadius.control, style: .continuous)
                 .stroke(toneColor.opacity(0.30), lineWidth: 1)
         )
         .accessibilityElement(children: onDismiss == nil ? .combine : .contain)
+        .topoProtected(hill: true)
     }
 }
 
@@ -169,15 +171,19 @@ public struct SymairaEmptyState<Actions: View>: View {
                 .symbolRenderingMode(.hierarchical)
                 .foregroundStyle(SymairaTheme.foregroundMuted(for: colorScheme))
                 .accessibilityHidden(true)
+                .topoProtected()
             Text(title)
                 .font(SymairaTypography.heading)
                 .foregroundStyle(SymairaTheme.foregroundPrimary(for: colorScheme))
+                .topoProtected()
             Text(message)
                 .font(SymairaTypography.body)
                 .foregroundStyle(SymairaTheme.foregroundSecondary(for: colorScheme))
                 .multilineTextAlignment(.center)
+                .topoProtected()
                 .frame(maxWidth: 440)
             actions
+                .topoProtected()
                 .padding(.top, SymairaSpacing.xSmall)
         }
         .padding(SymairaSpacing.xLarge)
@@ -212,6 +218,7 @@ public struct SymairaLoadingState: View {
                 .font(SymairaTypography.callout)
                 .foregroundStyle(SymairaTheme.foregroundSecondary(for: colorScheme))
         }
+        .topoProtected()
         .padding(SymairaSpacing.xLarge)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .accessibilityElement(children: .combine)

@@ -493,8 +493,8 @@ public struct SymairaPrimaryButtonStyle: ButtonStyle {
         configuration.label
             .font(SymairaTypography.bodyEmphasized)
             .foregroundStyle(SymairaTheme.surfaceOpaque(for: colorScheme))
-            .padding(.horizontal, SymairaSpacing.large + 4)
-            .frame(minHeight: max(SymairaMetrics.minimumControlHeight, 40))
+            .padding(.horizontal, SymairaMetrics.contentActionHorizontalPadding)
+            .frame(minHeight: SymairaMetrics.contentActionHeight)
             .background(SymairaTheme.foregroundPrimary(for: colorScheme), in: shape)
             .contentShape(shape)
             .brightness(configuration.isPressed ? -0.05 : 0)
@@ -515,10 +515,10 @@ public struct SymairaSecondaryButtonStyle: ButtonStyle {
     public func makeBody(configuration: Configuration) -> some View {
         let shape = RoundedRectangle(cornerRadius: SymairaTokens.Radius.lg, style: .continuous)
         configuration.label
-            .font(SymairaTypography.bodyMedium)
+            .font(SymairaTypography.bodyEmphasized)
             .foregroundStyle(SymairaTheme.foregroundPrimary(for: colorScheme))
-            .padding(.horizontal, SymairaSpacing.large)
-            .frame(minHeight: SymairaMetrics.minimumControlHeight)
+            .padding(.horizontal, SymairaMetrics.contentActionHorizontalPadding)
+            .frame(minHeight: SymairaMetrics.contentActionHeight)
             .background(
                 configuration.isPressed
                     ? SymairaTheme.navigationSelection(for: colorScheme)

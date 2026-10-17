@@ -84,6 +84,20 @@ final class TypographyTests: XCTestCase {
         }
     }
 
+    func testPackagedResourcesResolveWithoutTheBuildCache() throws {
+        let resources = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: resources, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: resources) }
+        let shipped = resources.appendingPathComponent("symaira-appkit_SymairaTheme.bundle")
+        try FileManager.default.copyItem(at: Bundle.module.bundleURL, to: shipped)
+        let resolved = try XCTUnwrap(SymairaThemeResources.packagedBundle(in: resources))
+        XCTAssertEqual(resolved.bundleURL.standardizedFileURL, shipped.standardizedFileURL)
+        let font = try XCTUnwrap(resolved.url(forResource: "GoogleSansFlex", withExtension: "ttf"))
+        XCTAssertTrue(font.path.hasPrefix(shipped.path + "/"))
+        XCTAssertNotNil(resolved.url(forResource: "GoogleSansFlex-OFL", withExtension: "txt"))
+        XCTAssertNil(SymairaThemeResources.packagedBundle(in: nil))
+    }
+
     /// Automatic optical sizing widened 13.5 pt text by about 6 %; the fixed size must not.
     func testFixedOpticalSizeKeepsSmallTextNarrow() {
         SymairaFont.register()

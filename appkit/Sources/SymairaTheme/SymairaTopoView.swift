@@ -14,6 +14,18 @@ import AppKit
 
 public enum SymairaTopo { public static let space = "symaira.topo" }
 
+private struct SymairaTopographyKey: EnvironmentKey {
+    static let defaultValue: SymairaTopoModel? = nil
+}
+
+extension EnvironmentValues {
+    /// Set by SymairaWorkspace, or by a custom host sharing SymairaTopo.space.
+    public var symairaTopography: SymairaTopoModel? {
+        get { self[SymairaTopographyKey.self] }
+        set { self[SymairaTopographyKey.self] = newValue }
+    }
+}
+
 public enum SymairaTopoState: String, CaseIterable, Sendable {
     case idle, thinking, problem, input
     struct Target {
@@ -38,9 +50,10 @@ public final class SymairaTopoModel {
     public var state: SymairaTopoState = .idle { didSet { if let s = statusPoint { ripple(at: s, strength: 0.9) } } }
     public var askPoint: CGPoint?
     public var statusPoint: CGPoint?
-    // Render-Eingänge: bewusst NICHT beobachtet. Die TimelineView zeichnet ohnehin jeden Frame neu;
-    // beobachtete Schreibzugriffe aus dem Render-Pfad würden eine Endlos-Invalidierung auslösen.
-    @ObservationIgnored var rects: [String: (CGRect, Bool)] = [:]
+    // Geometry is written only by layout callbacks, not by the shader. Observe it
+    // so paused/reduced-motion surfaces redraw after scrolling or a sidebar change.
+    var rects: [String: (CGRect, Bool)] = [:]
+    // Per-frame accumulators remain unobserved: the shader mutates them itself.
     @ObservationIgnored var ripples: [(CGPoint, Date, Double)] = []
     @ObservationIgnored var pointer: CGPoint?
     @ObservationIgnored var pointerVelocity: Double = 0
@@ -137,7 +150,7 @@ private struct Animated {
 public struct SymairaTopoView: View {
     /// SPM: Shader liegt im Modul-Bundle. Direkter swiftc-Build (Demo): App-Bundle.
     #if SWIFT_PACKAGE
-    private static let library = ShaderLibrary.bundle(.module)
+    private static let library = ShaderLibrary.bundle(SymairaThemeResources.bundle)
     #else
     private static let library = ShaderLibrary.default
     #endif
@@ -156,14 +169,27 @@ public struct SymairaTopoView: View {
 
     private var lowPower: Bool { ProcessInfo.processInfo.isLowPowerModeEnabled }
     private var still: Bool { reduceMotion || lowPower || !animationEnabled }
-    private var paused: Bool { still || !windowVisible || scenePhase == .background }
+    // AppKit-hosted windows (NSHostingView/Controller) report `.background`
+    // permanently, which froze the timeline. macOS uses the owning window's
+    // occlusion instead; scenePhase stays the signal on iOS.
+    private var paused: Bool {
+        #if os(macOS)
+        still || !windowVisible
+        #else
+        still || !windowVisible || scenePhase == .background
+        #endif
+    }
 
     public var body: some View {
         GeometryReader { geo in
             TimelineView(.animation(minimumInterval: 1 / SymairaTokens.Topo.fps, paused: paused)) { ctx in
                 Rectangle().fill(SymairaTokens.canvas)  // Shader zeichnet die Linien über die Canvas-Farbe
                     .colorEffect(
-                        shader(size: geo.size, origin: geo.frame(in: .named(SymairaTopo.space)).origin, now: ctx.date))
+                        // A paused timeline keeps its last date while layout still redraws;
+                        // never let ripple ages run negative (they then grow unbounded).
+                        shader(
+                            size: geo.size, origin: geo.frame(in: .named(SymairaTopo.space)).origin,
+                            now: max(ctx.date, .now)))
             }
         }
         .allowsHitTesting(false)
@@ -269,7 +295,7 @@ public struct SymairaTopoView: View {
             still
             ? []
             : model.ripples.flatMap { r -> [Float] in
-                [Float(r.0.x - o.x), Float(r.0.y - o.y), Float(now.timeIntervalSince(r.1)), Float(r.2)]
+                [Float(r.0.x - o.x), Float(r.0.y - o.y), Float(max(0, now.timeIntervalSince(r.1))), Float(r.2)]
             }
         let dark = scheme == .dark
         let ask =
@@ -294,11 +320,30 @@ public struct SymairaTopoView: View {
 }
 
 extension View {
+    /// Protect within the enclosing workspace; inert without a topography model
+    /// (for example in popovers and settings). No app-local environment needed.
+    public func topoProtected(hill: Bool = false) -> some View {
+        modifier(WorkspaceTopoProtect(hill: hill))
+    }
+
     /// Schutzzone: keine Höhenlinien unter diesem Element. `hill`: Linien legen sich drumherum.
     public func topoProtected(in model: SymairaTopoModel, hill: Bool = false, id: String = UUID().uuidString)
         -> some View
     {
         modifier(TopoProtect(model: model, hill: hill, id: id))
+    }
+}
+
+private struct WorkspaceTopoProtect: ViewModifier {
+    @Environment(\.symairaTopography) private var model
+    let hill: Bool
+
+    @ViewBuilder func body(content: Content) -> some View {
+        if let model {
+            content.topoProtected(in: model, hill: hill)
+        } else {
+            content
+        }
     }
 }
 

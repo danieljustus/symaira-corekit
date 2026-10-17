@@ -32,7 +32,7 @@ public enum SymairaFont {
     public static var isAvailable: Bool { registration }
 
     private static let registration: Bool = {
-        if let url = Bundle.module.url(forResource: "GoogleSansFlex", withExtension: "ttf") {
+        if let url = SymairaThemeResources.bundle.url(forResource: "GoogleSansFlex", withExtension: "ttf") {
             // Fails harmlessly when the file is already registered in this process.
             CTFontManagerRegisterFontsForURL(url as CFURL, .process, nil)
         }

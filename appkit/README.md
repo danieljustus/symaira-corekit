@@ -49,7 +49,7 @@ compile error, not a silently empty API.
 
 | Product | iOS | Notes |
 | :--- | :--- | :--- |
-| `SymairaTheme` | Full | Has explicit `os(iOS)` branches. |
+| `SymairaTheme` | Mixed | Tokens, typography, controls, meters and topography support iOS; the resizable desktop workspace and native NSAppearance application API are macOS-only. |
 | `SymairaKeychain` | Full | Security framework APIs behave the same on both platforms. |
 | `SymairaMCP` | Full | No macOS-specific APIs; stdio transport works but is unusual for an iOS app to use. |
 | `SymairaProviderKit` | Full | Provider HTTP and SwiftUI surfaces use Foundation/SwiftUI; credentials use the cross-platform Security keychain. |
@@ -114,7 +114,7 @@ import SymairaTheme
 struct Dashboard: View {
     var body: some View {
         ZStack {
-            SymairaBackdrop(gridStyle: .dots)
+            SymairaTokens.canvas
 
             VStack(spacing: SymairaSpacing.xLarge) {
                 SymairaNotice(
@@ -123,9 +123,9 @@ struct Dashboard: View {
                     tone: .positive
                 )
 
-                Text("Content uses a standard Apple material.")
+                Text("Reading surfaces remain opaque.")
                     .padding(SymairaSpacing.xLarge)
-                    .glassCard()
+                    .symairaCard()
 
                 SymairaGlassEffectContainer {
                     HStack {
@@ -142,11 +142,26 @@ struct Dashboard: View {
 }
 ```
 
-Use Liquid Glass for controls and navigation chrome, not as the background of
-every content card. `symairaButtonStyle`, `symairaGlassChrome`, and
-`SymairaGlassEffectContainer` adopt the native macOS/iOS 26 effects and provide
-material or opaque accessibility fallbacks on earlier systems. See
+Use Liquid Glass for navigation chrome and toolbar controls, not behind reading
+surfaces. Content buttons stay opaque and share stable primary/secondary geometry.
+`symairaGlassChrome` and `SymairaGlassEffectContainer` use native macOS/iOS 26
+effects with material or opaque accessibility fallbacks on earlier systems. See
 [`DESIGN.md`](DESIGN.md) for the design rules and migration guidance.
+
+The approved desktop shell is `SymairaWorkspace` with `SymairaSidebarState`:
+rounded inset content, continuous chrome, drag resizing and a collapsible icon
+rail. `SymairaWorkspaceToolbar` opens settings directly through its shared gear
+button, without an intermediate menu. Place `SymairaAppearancePicker` inside the
+settings window alongside other preferences. `SymairaSidebarToggle`,
+`SymairaNavigationButton` and `SymairaProgressStyle` keep interaction rules in the library. See
+[workspace usage and the shared rule inventory](docs/workspace-foundation.md).
+Product-specific screens and settings keys remain product-owned; release pins
+must be upgraded explicitly before other installed apps acquire these changes.
+
+Packaged apps must embed `symaira-appkit_SymairaTheme.bundle` in their Resources
+directory. The shared font/shader resolver prefers that shipped bundle before
+SwiftPM's development fallback. Validate the actual app without the build-cache
+resource bundle; a file-presence check alone does not prove self-contained loading.
 
 Typography uses view-resolved roles so existing mounted views respond to iOS
 Dynamic Type changes while keeping Google Sans Flex's fixed optical size.

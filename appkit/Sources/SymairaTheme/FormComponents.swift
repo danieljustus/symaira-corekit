@@ -2,7 +2,7 @@ import SwiftUI
 
 // MARK: - Text fields
 
-/// Symaira text field chrome: warm surface, glass border, gold focus ring.
+/// Opaque Liquid Topography input surface and appearance-aware focus ring.
 ///
 /// Six of the client apps style their text fields inline today, each with its own
 /// padding and border. This is the one place that decision should live.
@@ -35,23 +35,21 @@ public struct SymairaTextFieldStyle: TextFieldStyle {
     }
 
     private var fill: Color {
-        colorScheme == .dark
-            ? Color.white.opacity(0.04)
-            : Color.white.opacity(0.75)
+        SymairaTheme.surfaceRaised(for: colorScheme)
     }
 
     private var border: Color {
         if isFocused {
-            return SymairaTheme.goldPrimary.opacity(0.65)
+            return SymairaTokens.focus
         }
         if contrast == .increased {
-            return colorScheme == .dark ? Color.white.opacity(0.28) : Color.black.opacity(0.24)
+            return SymairaTheme.foregroundMuted(for: colorScheme)
         }
-        return colorScheme == .dark ? SymairaTheme.borderGlass : Color.black.opacity(0.12)
+        return SymairaTheme.line(for: colorScheme)
     }
 
     private var borderWidth: CGFloat {
-        if isFocused { return 1.5 }
+        if isFocused { return 2 }
         return contrast == .increased ? 1.5 : 1
     }
 }
@@ -68,7 +66,7 @@ extension TextFieldStyle where Self == SymairaTextFieldStyle {
 
 // MARK: - Section scaffold
 
-/// A titled group of rows on a glass card.
+/// A titled group of rows on an opaque shared content card.
 ///
 /// Five client apps build their own settings scaffold. The differences between
 /// them are accidental — heading size, gap above the card, whether a footer is
@@ -94,19 +92,21 @@ public struct SymairaFormSection<Content: View>: View {
                 Text(title)
                     .symairaText(.sectionLabel)
                     .accessibilityAddTraits(.isHeader)
+                    .topoProtected()
             }
 
             VStack(alignment: .leading, spacing: 0) {
                 content
             }
-            .padding(SymairaSpacing.large)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .glassCard()
+            .symairaCard()
+            .topoProtected(hill: true)
 
             if let footer {
                 Text(footer)
                     .symairaText(.caption)
                     .fixedSize(horizontal: false, vertical: true)
+                    .topoProtected()
             }
         }
     }
@@ -166,7 +166,7 @@ public struct SymairaFormDivider: View {
 
     public var body: some View {
         Rectangle()
-            .fill(colorScheme == .dark ? SymairaTheme.borderGlass : Color.black.opacity(0.08))
+            .fill(SymairaTheme.line(for: colorScheme))
             .frame(height: 1)
             .accessibilityHidden(true)
     }

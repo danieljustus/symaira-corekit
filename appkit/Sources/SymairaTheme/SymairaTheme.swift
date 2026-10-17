@@ -144,6 +144,10 @@ public enum SymairaMetrics {
     public static let minimumControlHeight: CGFloat = 34
     #endif
 
+    /// Content-action roles share geometry, including when an action changes state.
+    public static let contentActionHeight: CGFloat = max(minimumControlHeight, 40)
+    public static let contentActionHorizontalPadding: CGFloat = 20
+
     public static let readableContentWidth: CGFloat = 760
     public static let glassGroupSpacing: CGFloat = 12
 
