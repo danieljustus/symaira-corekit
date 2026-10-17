@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.15.0] - 2026-10-17
+
 ### Added
 - `SymairaIcon`: 135 in-house icons for the whole ecosystem, rounded with a
   2 pt stroke and licensed for every platform. Parts animate on hover and click
@@ -15,6 +17,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `Brand/Icons/icons.svg`.
 
 ### Fixed
+- Packaged apps resolve the SymairaTheme bundle under `Bundle.main.resourceURL`
+  before `Bundle.module`, so fonts and the Metal library never load from the
+  SwiftPM build cache (#169).
 - Topography protection redraws on layout changes while paused. AppKit-hosted
   macOS windows use native visibility rather than a permanently-background
   scene phase; ripple ages stay nonnegative after scrolling (#165).
@@ -456,7 +461,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [0.9.2]: https://github.com/danieljustus/symaira-appkit/compare/0.9.1...0.9.2
 [0.10.0]: https://github.com/danieljustus/symaira-appkit/compare/0.9.2...0.10.0
 [0.11.0]: https://github.com/danieljustus/symaira-appkit/compare/0.10.0...0.11.0
-[Unreleased]: https://github.com/danieljustus/symaira-appkit/compare/0.10.0...HEAD
+[Unreleased]: https://github.com/danieljustus/symaira-appkit/compare/0.15.0...HEAD
+[0.15.0]: https://github.com/danieljustus/symaira-appkit/compare/0.14.2...0.15.0
 [0.8.1]: https://github.com/danieljustus/symaira-appkit/compare/0.8.0...0.8.1
 [0.8.0]: https://github.com/danieljustus/symaira-appkit/compare/0.7.0...0.8.0
 [0.7.0]: https://github.com/danieljustus/symaira-appkit/compare/0.6.1...0.7.0
