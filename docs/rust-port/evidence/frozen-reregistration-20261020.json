@@ -1,0 +1,169 @@
+{
+ "date": "2026-10-20",
+ "fs_sec": {
+  "anchors": {
+   "darwin-arm64": "522de6658d35b27779acbf87a11bb642cdcdeb726acc5d740ddea1a9679966ed",
+   "linux-amd64": "ad23a0d0b0248913ba87d02a3eedc56efdd729d85f2b34d6688f7f4a07ee74d3",
+   "windows-amd64": "753a27641554dfac67ebfdf19e46dc7405476b6e0c84451564533d8315f6b3af"
+  },
+  "capture_run": 39308889944,
+  "previous_anchors": {
+   "darwin-arm64": "802fb2e1f85d07be948ef81361953196e117ad74ef4e66749acf4cdc70deda5a",
+   "linux-amd64": "6bb7b00fe62a957c9710ebb0dd0642c4e94000597f4fc7ad6714188ff948930a",
+   "windows-amd64": "b6219a2cd8c83d6fddbd4b3c0956e8c7ee306012c4092f7e1e8a859f50a55cb7"
+  },
+  "review": {
+   "darwin-arm64": {
+    "case_inventory_identical": true,
+    "changed": [
+     "/capture/candidate/files[candidate/Cargo.lock]/sha256",
+     "/capture/candidate/files[candidate/rust/symaira-core-fs/src/lib.rs]/sha256",
+     "/capture/candidate/head_after",
+     "/capture/candidate/head_before",
+     "/capture/commands[git-head-after]/stdout_sha256",
+     "/capture/commands[git-head-before]/stdout_sha256",
+     "/capture/commands[go-env-001]/stdout_bytes",
+     "/capture/commands[go-env-001]/stdout_sha256",
+     "/capture/commands[go-env-002]/stdout_bytes",
+     "/capture/commands[go-env-002]/stdout_sha256",
+     "/capture/commands[go-list-after]/stdout_sha256",
+     "/capture/commands[go-list-before]/stdout_sha256",
+     "/capture/go/modules_sha256",
+     "/capture/go/probe_binary_sha256",
+     "/capture/inputs/after_sha256",
+     "/capture/inputs/before_sha256",
+     "/capture/inputs/files[candidate/Cargo.lock]/sha256",
+     "/capture/inputs/files[candidate/rust/symaira-core-fs/src/lib.rs]/sha256",
+     "/capture/inputs/files[modules/current-helper/effective.mod]/sha256",
+     "/capture/inputs/groups/candidate",
+     "/capture/inputs/groups/modules"
+    ],
+    "explained": "candidate Cargo.lock and symaira-core-fs/src/lib.rs hashes; commit heads; effective.mod embeds the private capture path; go env outputs are hosted-toolcache paths; Go SDK sha256 and Go binary sha256 unchanged",
+    "go_identical": false,
+    "observations_identical": true,
+    "only_in_new": [],
+    "only_in_old": [],
+    "oracle_identical": true,
+    "raw_observations_identical": true
+   },
+   "linux-amd64": {
+    "case_inventory_identical": true,
+    "changed": [
+     "/capture/candidate/files[candidate/Cargo.lock]/sha256",
+     "/capture/candidate/files[candidate/rust/symaira-core-fs/src/lib.rs]/sha256",
+     "/capture/candidate/head_after",
+     "/capture/candidate/head_before",
+     "/capture/commands[git-head-after]/stdout_sha256",
+     "/capture/commands[git-head-before]/stdout_sha256",
+     "/capture/commands[go-env-000]/stdout_bytes",
+     "/capture/commands[go-env-000]/stdout_sha256",
+     "/capture/commands[go-env-001]/stdout_bytes",
+     "/capture/commands[go-env-001]/stdout_sha256",
+     "/capture/commands[go-env-002]/stdout_bytes",
+     "/capture/commands[go-env-002]/stdout_sha256",
+     "/capture/commands[go-env-004]/stdout_bytes",
+     "/capture/commands[go-env-004]/stdout_sha256",
+     "/capture/commands[go-list-after]/stdout_sha256",
+     "/capture/commands[go-list-before]/stdout_sha256",
+     "/capture/go/modules_sha256",
+     "/capture/go/probe_binary_sha256",
+     "/capture/inputs/after_sha256",
+     "/capture/inputs/before_sha256",
+     "/capture/inputs/files[candidate/Cargo.lock]/sha256",
+     "/capture/inputs/files[candidate/rust/symaira-core-fs/src/lib.rs]/sha256",
+     "/capture/inputs/files[modules/current-helper/effective.mod]/sha256",
+     "/capture/inputs/groups/candidate",
+     "/capture/inputs/groups/modules"
+    ],
+    "explained": "candidate Cargo.lock and symaira-core-fs/src/lib.rs hashes; commit heads; effective.mod embeds the private capture path; go env outputs are hosted-toolcache paths; Go SDK sha256 and Go binary sha256 unchanged",
+    "go_identical": false,
+    "observations_identical": true,
+    "only_in_new": [],
+    "only_in_old": [],
+    "oracle_identical": true,
+    "raw_observations_identical": true
+   },
+   "windows-amd64": {
+    "case_inventory_identical": true,
+    "changed": [
+     "/capture/candidate/files[candidate/Cargo.lock]/sha256",
+     "/capture/candidate/files[candidate/rust/symaira-core-fs/src/lib.rs]/sha256",
+     "/capture/candidate/head_after",
+     "/capture/candidate/head_before",
+     "/capture/commands[git-head-after]/stdout_sha256",
+     "/capture/commands[git-head-before]/stdout_sha256",
+     "/capture/commands[go-env-000]/stdout_bytes",
+     "/capture/commands[go-env-000]/stdout_sha256",
+     "/capture/commands[go-env-001]/stdout_bytes",
+     "/capture/commands[go-env-001]/stdout_sha256",
+     "/capture/commands[go-env-002]/stdout_bytes",
+     "/capture/commands[go-env-002]/stdout_sha256",
+     "/capture/commands[go-env-003]/stdout_bytes",
+     "/capture/commands[go-env-003]/stdout_sha256",
+     "/capture/commands[go-env-004]/stdout_sha256",
+     "/capture/commands[go-list-after]/stdout_sha256",
+     "/capture/commands[go-list-before]/stdout_sha256",
+     "/capture/go/modules_sha256",
+     "/capture/go/probe_binary_sha256",
+     "/capture/inputs/after_sha256",
+     "/capture/inputs/before_sha256",
+     "/capture/inputs/files[candidate/Cargo.lock]/sha256",
+     "/capture/inputs/files[candidate/rust/symaira-core-fs/src/lib.rs]/sha256",
+     "/capture/inputs/files[modules/current-helper/effective.mod]/sha256",
+     "/capture/inputs/groups/candidate",
+     "/capture/inputs/groups/modules"
+    ],
+    "explained": "candidate Cargo.lock and symaira-core-fs/src/lib.rs hashes; commit heads; effective.mod embeds the private capture path; go env outputs are hosted-toolcache paths; Go SDK sha256 and Go binary sha256 unchanged",
+    "go_identical": false,
+    "observations_identical": true,
+    "only_in_new": [],
+    "only_in_old": [],
+    "oracle_identical": true,
+    "raw_observations_identical": true
+   }
+  }
+ },
+ "maintainer_decision": "Maintainer approved re-registering FS/SEC and SQLite frozen-v1 evidence with proof that Go observations are unchanged (2026-10-19).",
+ "reason": "rustls 0.23.45 -> 0.23.46 (RUSTSEC-2026-0346..0349) changes Cargo.lock, and the symaira-core-fs diagnostic change (#432) changes a bound crate; both are enforced FS/SEC and SQLite candidate inputs. The SQLite acceptance pointer change is a bound harness file.",
+ "source_commit": "e445d30695bebfc4b88b5457af2da70ca910a639",
+ "sqlite": {
+  "captures": {
+   "darwin-arm64": {
+    "artifact_id": 12228721216,
+    "manifest": "testdata/rust-port/sqlite/frozen-v1/darwin-arm64/sqlite-native-candidate-source.json",
+    "manifest_sha256": "54e58d7a931ea6f477d3b52edfbcb0d0561b83abaeab09d1e3be8e41903e2c4e",
+    "report": "testdata/rust-port/sqlite/frozen-v1/darwin-arm64/sqlite-native-report.json",
+    "report_sha256": "2fac0b753b2694a3e33ae070f58ae145f2e959edef5df7c4d747a97c4383e7c8",
+    "source_commit": "e445d30695bebfc4b88b5457af2da70ca910a639",
+    "workflow_run": 39308889944
+   },
+   "linux-amd64": {
+    "artifact_id": 12214703294,
+    "manifest": "testdata/rust-port/sqlite/frozen-v1/linux-amd64/sqlite-native-candidate-source.json",
+    "manifest_sha256": "54e58d7a931ea6f477d3b52edfbcb0d0561b83abaeab09d1e3be8e41903e2c4e",
+    "report": "testdata/rust-port/sqlite/frozen-v1/linux-amd64/sqlite-native-report.json",
+    "report_sha256": "4c1fec0016cc524ba4452ba6645aef53fdac5d0936bef036b9a947b6d73a0374",
+    "source_commit": "e445d30695bebfc4b88b5457af2da70ca910a639",
+    "workflow_run": 39308896259
+   },
+   "windows-amd64": {
+    "artifact_id": 12214534136,
+    "manifest": "testdata/rust-port/sqlite/frozen-v1/windows-amd64/sqlite-native-candidate-source.json",
+    "manifest_sha256": "7dfc924b696c8925b509a0cc4fc8f99f3de2c1c14c0a37eaf684241f047f7620",
+    "report": "testdata/rust-port/sqlite/frozen-v1/windows-amd64/sqlite-native-report.json",
+    "report_sha256": "a92a2be1aa8e51d2172492d5708efcc8b64fb48f6fa42db61a6dec53194bb8c4",
+    "source_commit": "e445d30695bebfc4b88b5457af2da70ca910a639",
+    "workflow_run": 39308896259
+   }
+  },
+  "review": {
+   "oracle_side_differences": [
+    "capture_interval",
+    "applied_at/created_at timestamps",
+    "artifact_hashes of scripts/rust-port/sqlite/test_acceptance.py (acceptance pointer)"
+   ],
+   "previous_registration_run": 37110559130,
+   "verdict": "passed on all targets; 6 cases; checked fields 42/42/40 (darwin/linux/windows) unchanged; 0 differences; identical 9 accepted-difference paths"
+  }
+ }
+}
