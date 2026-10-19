@@ -203,7 +203,7 @@ pub fn safe_mkdir_all(path: impl AsRef<Path>, mode: u32) -> Result<(), FsError> 
                     let metadata = File::from(next.try_clone().map_err(|e| FsError::Io(e.into()))?)
                         .metadata()?;
                     if !metadata.is_dir() || !is_secure_handle(&metadata, &current) {
-                        return Err(FsError::InsecureDirectory(absolute.clone()));
+                        return Err(FsError::InsecureDirectory(current));
                     }
                     dir = next;
                 }
@@ -220,7 +220,7 @@ pub fn safe_mkdir_all(path: impl AsRef<Path>, mode: u32) -> Result<(), FsError> 
                     let metadata = File::from(next.try_clone().map_err(|e| FsError::Io(e.into()))?)
                         .metadata()?;
                     if !metadata.is_dir() || !is_secure_handle(&metadata, &current) {
-                        return Err(FsError::InsecureDirectory(absolute.clone()));
+                        return Err(FsError::InsecureDirectory(current));
                     }
                     dir = next;
                 }
@@ -1492,6 +1492,27 @@ mod tests {
                 0o666
             );
         }
+    }
+
+    #[cfg(unix)]
+    #[cfg_attr(miri, ignore = "Miri does not support capability filesystem syscalls")]
+    #[test]
+    fn insecure_mkdir_error_names_rejected_ancestor() {
+        use std::os::unix::fs::PermissionsExt;
+        let root = tempdir().unwrap();
+        let shared = root.path().join("shared");
+        fs::create_dir(&shared).unwrap();
+        fs::set_permissions(&shared, fs::Permissions::from_mode(0o775)).unwrap();
+        let shared = fs::canonicalize(shared).unwrap();
+        let Err(FsError::InsecureDirectory(rejected)) =
+            safe_mkdir_all(shared.join("private/leaf"), 0o700)
+        else {
+            panic!("group-writable ancestor must be rejected");
+        };
+        // The temp root itself may already be insecure on some hosts; either
+        // way the error names an existing ancestor, not the requested leaf.
+        assert!(shared.starts_with(&rejected), "{rejected:?}");
+        assert!(!shared.join("private").exists());
     }
 
     #[test]
