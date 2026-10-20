@@ -4,18 +4,32 @@ import SwiftUI
 /// The product owns destination identity, selected state and activation.
 public struct SymairaNavigationButton: View {
     private let title: String
-    private let systemImage: String
+    private let glyph: SymairaGlyph
     private let isSelected: Bool
     private let showsLabel: Bool
     private let action: () -> Void
     @FocusState private var isFocused: Bool
 
+    /// Symaira icon; it plays its click motion when the destination becomes selected.
+    public init(
+        _ title: String, icon: SymairaIcon, isSelected: Bool,
+        showsLabel: Bool = true, action: @escaping () -> Void
+    ) {
+        self.init(title, glyph: .symaira(icon), isSelected: isSelected, showsLabel: showsLabel, action: action)
+    }
+
     public init(
         _ title: String, systemImage: String, isSelected: Bool,
         showsLabel: Bool = true, action: @escaping () -> Void
     ) {
+        self.init(title, glyph: .system(systemImage), isSelected: isSelected, showsLabel: showsLabel, action: action)
+    }
+
+    private init(
+        _ title: String, glyph: SymairaGlyph, isSelected: Bool, showsLabel: Bool, action: @escaping () -> Void
+    ) {
         self.title = title
-        self.systemImage = systemImage
+        self.glyph = glyph
         self.isSelected = isSelected
         self.showsLabel = showsLabel
         self.action = action
@@ -25,8 +39,7 @@ public struct SymairaNavigationButton: View {
         let shape = RoundedRectangle(cornerRadius: SymairaRadius.control)
         Button(action: action) {
             HStack(spacing: SymairaSpacing.medium) {
-                Image(systemName: systemImage)
-                    .font(.system(size: 16, weight: SymairaTokens.iconWeight))
+                SymairaGlyphView(glyph: glyph, size: 20, trigger: isSelected)
                     .frame(width: 24)
                     .accessibilityHidden(true)
                 if showsLabel {

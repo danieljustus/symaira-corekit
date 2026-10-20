@@ -30,6 +30,16 @@ public enum SymairaTone: Sendable {
         }
     }
 
+    /// Symaira icon for this tone (Notice, Badge `icon: tone.symairaIcon`).
+    public var symairaIcon: SymairaIcon {
+        switch self {
+        case .neutral, .informative: .info
+        case .positive: .success
+        case .warning: .warning
+        case .critical: .error
+        }
+    }
+
     public var systemImage: String {
         switch self {
         case .neutral: "info.circle"
@@ -46,19 +56,29 @@ public struct SymairaBadge: View {
 
     private let label: String
     private let tone: SymairaTone
-    private let systemImage: String?
+    private let glyph: SymairaGlyph?
 
     public init(_ label: String, tone: SymairaTone = .neutral, systemImage: String? = nil) {
         self.label = label
         self.tone = tone
-        self.systemImage = systemImage
+        self.glyph = systemImage.map(SymairaGlyph.system)
+    }
+
+    public init(_ label: String, tone: SymairaTone = .neutral, icon: SymairaIcon) {
+        self.label = label
+        self.tone = tone
+        self.glyph = .symaira(icon)
     }
 
     public var body: some View {
         let toneColor = tone.foreground(for: colorScheme)
         Group {
-            if let systemImage {
-                Label(label, systemImage: systemImage)
+            if let glyph {
+                Label {
+                    Text(label)
+                } icon: {
+                    SymairaGlyphView(glyph, size: 12)
+                }
             } else {
                 Text(label)
             }
@@ -96,10 +116,8 @@ public struct SymairaNotice: View {
     public var body: some View {
         let toneColor = tone.foreground(for: colorScheme)
         HStack(alignment: .top, spacing: SymairaSpacing.medium) {
-            Image(systemName: tone.systemImage)
+            SymairaIconView(tone.symairaIcon, size: 20)
                 .foregroundStyle(toneColor)
-                .imageScale(.large)
-                .accessibilityHidden(true)
 
             // The message must take its width from the container rather than
             // from `.fixedSize(horizontal: false, vertical: true)` next to a
@@ -121,13 +139,9 @@ public struct SymairaNotice: View {
             }
 
             if let onDismiss {
-                Button(action: onDismiss) {
-                    Image(systemName: "xmark")
-                        .frame(minWidth: 24, minHeight: 24)
-                }
-                .buttonStyle(.plain)
-                .foregroundStyle(SymairaTheme.foregroundMuted(for: colorScheme))
-                .accessibilityLabel("Dismiss")
+                SymairaIconButton("Dismiss", icon: .close, size: 16, action: onDismiss)
+                    .frame(minWidth: 24, minHeight: 24)
+                    .foregroundStyle(SymairaTheme.foregroundMuted(for: colorScheme))
             }
         }
         .padding(SymairaSpacing.medium)
@@ -147,10 +161,19 @@ public struct SymairaNotice: View {
 public struct SymairaEmptyState<Actions: View>: View {
     @Environment(\.colorScheme) private var colorScheme
 
-    private let systemImage: String
+    private let glyph: SymairaGlyph
     private let title: String
     private let message: String
     private let actions: Actions
+
+    public init(
+        icon: SymairaIcon,
+        title: String,
+        message: String,
+        @ViewBuilder actions: () -> Actions
+    ) {
+        self.init(glyph: .symaira(icon), title: title, message: message, actions: actions)
+    }
 
     public init(
         systemImage: String,
@@ -158,7 +181,11 @@ public struct SymairaEmptyState<Actions: View>: View {
         message: String,
         @ViewBuilder actions: () -> Actions
     ) {
-        self.systemImage = systemImage
+        self.init(glyph: .system(systemImage), title: title, message: message, actions: actions)
+    }
+
+    private init(glyph: SymairaGlyph, title: String, message: String, @ViewBuilder actions: () -> Actions) {
+        self.glyph = glyph
         self.title = title
         self.message = message
         self.actions = actions()
@@ -166,9 +193,7 @@ public struct SymairaEmptyState<Actions: View>: View {
 
     public var body: some View {
         VStack(spacing: SymairaSpacing.medium) {
-            Image(systemName: systemImage)
-                .font(.system(size: SymairaMetrics.emptyStateSymbolSize, weight: .medium))
-                .symbolRenderingMode(.hierarchical)
+            SymairaGlyphView(glyph, size: SymairaMetrics.emptyStateSymbolSize)
                 .foregroundStyle(SymairaTheme.foregroundMuted(for: colorScheme))
                 .accessibilityHidden(true)
                 .topoProtected()
@@ -193,6 +218,12 @@ public struct SymairaEmptyState<Actions: View>: View {
 }
 
 extension SymairaEmptyState where Actions == EmptyView {
+    public init(icon: SymairaIcon, title: String, message: String) {
+        self.init(icon: icon, title: title, message: message) {
+            EmptyView()
+        }
+    }
+
     public init(systemImage: String, title: String, message: String) {
         self.init(systemImage: systemImage, title: title, message: message) {
             EmptyView()

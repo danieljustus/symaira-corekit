@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.16.0] - 2026-10-20
+
+### Added
+- `SymairaNavigationButton(_:icon:isSelected:showsLabel:action:)`,
+  `SymairaEmptyState(icon:title:message:)` and `SymairaBadge(_:tone:icon:)`
+  take a `SymairaIcon`, so sidebars, empty states and badges use the animated
+  in-house set instead of SF Symbols. Navigation icons play their click motion
+  when the destination becomes selected. The `systemImage:` initializers stay.
+- `SymairaTone.symairaIcon` maps each tone to its Symaira icon.
+- `SymairaFilterMenu`: a filter dropdown with the `SymairaTextFieldStyle`
+  silhouette (height, fill, radius, border) and an animated chevron. A
+  non-default choice is marked with the `selected` border.
+
+### Changed
+- `SymairaNotice` shows its tone and dismiss button with Symaira icons.
+
 ## [0.15.2] - 2026-10-20
 
 ### Fixed
@@ -484,7 +500,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [0.9.2]: https://github.com/danieljustus/symaira-appkit/compare/0.9.1...0.9.2
 [0.10.0]: https://github.com/danieljustus/symaira-appkit/compare/0.9.2...0.10.0
 [0.11.0]: https://github.com/danieljustus/symaira-appkit/compare/0.10.0...0.11.0
-[Unreleased]: https://github.com/danieljustus/symaira-appkit/compare/0.15.2...HEAD
+[Unreleased]: https://github.com/danieljustus/symaira-appkit/compare/0.16.0...HEAD
+[0.16.0]: https://github.com/danieljustus/symaira-appkit/compare/0.15.2...0.16.0
 [0.15.2]: https://github.com/danieljustus/symaira-appkit/compare/0.15.1...0.15.2
 [0.15.1]: https://github.com/danieljustus/symaira-appkit/compare/0.15.0...0.15.1
 [0.15.0]: https://github.com/danieljustus/symaira-appkit/compare/0.14.2...0.15.0

@@ -79,6 +79,73 @@ public struct SymairaSegmentedControl<Value: Hashable>: View {
     }
 }
 
+/// Filter dropdown with the text-field silhouette: same height, fill, radius and
+/// border as `SymairaTextFieldStyle`, so a row of search fields and filters reads
+/// as one control set. The native popup button brings its own chrome instead.
+/// The first option is the unfiltered default; any other choice is active and
+/// carries the `selected` border, like every other active control.
+public struct SymairaFilterMenu<Value: Hashable>: View {
+    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.colorSchemeContrast) private var contrast
+    @Environment(\.isEnabled) private var isEnabled
+
+    private let title: String
+    @Binding private var selection: Value
+    private let options: [(value: Value, label: String)]
+
+    /// - Parameters:
+    ///   - title: Accessible name, for example "Status".
+    ///   - options: First entry is the unfiltered default ("All statuses").
+    public init(_ title: String, selection: Binding<Value>, options: [(value: Value, label: String)]) {
+        self.title = title
+        _selection = selection
+        self.options = options
+    }
+
+    var isActive: Bool { options.first.map { $0.value != selection } ?? false }
+    var currentLabel: String { options.first { $0.value == selection }?.label ?? title }
+
+    public var body: some View {
+        let shape = RoundedRectangle(cornerRadius: SymairaRadius.control, style: .continuous)
+        Menu {
+            Picker(title, selection: $selection) {
+                ForEach(options.indices, id: \.self) { index in
+                    Text(options[index].label).tag(options[index].value)
+                }
+            }
+            .pickerStyle(.inline)
+            .labelsHidden()
+        } label: {
+            HStack(spacing: SymairaSpacing.small) {
+                Text(currentLabel)
+                    .font(isActive ? SymairaTypography.bodyEmphasized : SymairaTypography.body)
+                    .lineLimit(1)
+                Spacer(minLength: 0)
+                SymairaIconView(.expand, size: 16)
+                    .foregroundStyle(SymairaTheme.foregroundMuted(for: colorScheme))
+            }
+            .foregroundStyle(SymairaTheme.foregroundPrimary(for: colorScheme))
+            .padding(.horizontal, SymairaSpacing.medium)
+            .frame(minHeight: SymairaMetrics.minimumControlHeight)
+            .background(shape.fill(SymairaTheme.surfaceRaised(for: colorScheme)))
+            .overlay(shape.stroke(border, lineWidth: isActive ? 1.5 : (contrast == .increased ? 1.5 : 1)))
+            .contentShape(shape)
+        }
+        .menuStyle(.button)
+        .buttonStyle(.plain)
+        .menuIndicator(.hidden)
+        .opacity(isEnabled ? 1 : 0.55)
+        .accessibilityLabel(title)
+        .accessibilityValue(currentLabel)
+    }
+
+    private var border: Color {
+        if isActive { return SymairaTheme.selected(for: colorScheme) }
+        if contrast == .increased { return SymairaTheme.foregroundMuted(for: colorScheme) }
+        return SymairaTheme.line(for: colorScheme)
+    }
+}
+
 private struct SymairaSegmentButton: View {
     let label: String
     let isSelected: Bool

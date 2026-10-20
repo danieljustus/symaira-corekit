@@ -98,6 +98,34 @@ extension Label where Title == Text, Icon == SymairaIconView<Int> {
     }
 }
 
+/// Icon slot of shared components: a Symaira icon (animated) or a legacy SF Symbol name.
+enum SymairaGlyph: Equatable {
+    case symaira(SymairaIcon)
+    case system(String)
+}
+
+struct SymairaGlyphView<Trigger: Equatable>: View {
+    let glyph: SymairaGlyph
+    let size: CGFloat
+    let trigger: Trigger
+
+    var body: some View {
+        switch glyph {
+        case .symaira(let icon):
+            SymairaIconView(icon, size: size, trigger: trigger)
+        case .system(let name):
+            Image(systemName: name)
+                .font(.system(size: size * 0.8, weight: SymairaTokens.iconWeight))
+                .frame(width: size, height: size)
+                .accessibilityHidden(true)
+        }
+    }
+}
+
+extension SymairaGlyphView where Trigger == Int {
+    init(_ glyph: SymairaGlyph, size: CGFloat) { self.init(glyph: glyph, size: size, trigger: 0) }
+}
+
 // MARK: - Engine
 
 struct IconPose: Sendable {
