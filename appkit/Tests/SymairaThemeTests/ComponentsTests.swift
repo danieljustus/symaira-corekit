@@ -126,6 +126,37 @@ final class ComponentsTests: XCTestCase {
 
 @MainActor
 final class SelectionControlsTests: XCTestCase {
+    /// Light `raised` equals `canvas`; without an outline secondary controls vanish on the page.
+    func testRaisedControlsAreOutlinedOnlyWhereRaisedMatchesCanvas() {
+        XCTAssertEqual(SymairaTheme.surfaceRaised(for: .light), Color(hex: "EEEDEA"))
+        XCTAssertEqual(SymairaTheme.raisedOutline(for: .light), SymairaTheme.line(for: .light))
+        XCTAssertEqual(SymairaTheme.raisedOutline(for: .dark), .clear)
+    }
+
+    func testSecondaryButtonOnLightCanvasDrawsItsOutline() throws {
+        let host = ThemeRenderHost.render(
+            // No label: anti-aliased glyph edges would otherwise pass for an outline.
+            Button {
+            } label: {
+                Color.clear.frame(width: 120, height: 20)
+            }.symairaButtonStyle(.secondary)
+                .padding(24)
+                .background(Color(hex: "EEEDEA"))
+                .environment(\.colorScheme, .light),
+            size: CGSize(width: 200, height: 100))
+        let bitmap = try XCTUnwrap(host.bitmapImageRepForCachingDisplay(in: host.bounds))
+        host.cacheDisplay(in: host.bounds, to: bitmap)
+        var outlined = 0
+        for x in 0..<bitmap.pixelsWide {
+            for y in 0..<bitmap.pixelsHigh {
+                guard let c = bitmap.colorAt(x: x, y: y)?.usingColorSpace(.sRGB) else { continue }
+                // Without a label, only the outline is darker than the canvas.
+                if c.brightnessComponent < 0.85 && c.brightnessComponent > 0.6 { outlined += 1 }
+            }
+        }
+        XCTAssertGreaterThan(outlined, 100, "secondary button has no visible edge on the light canvas")
+    }
+
     private enum Profile: Hashable { case system, cool, max }
 
     func testSelectionControlsRenderInBothAppearances() {

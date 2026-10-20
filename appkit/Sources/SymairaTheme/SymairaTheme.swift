@@ -69,6 +69,12 @@ public enum SymairaTheme {
         colorScheme == .dark ? Color(hex: "2B2B2A") : Color(hex: "EEEDEA")
     }
 
+    /// Outline for `raised` controls. Light `raised` equals `canvas`, so secondary buttons
+    /// and segment rails placed straight on the canvas would vanish; dark needs none.
+    public static func raisedOutline(for colorScheme: ColorScheme) -> Color {
+        colorScheme == .dark ? .clear : line(for: colorScheme)
+    }
+
     /// 1 px separators and card outlines. Liquid Topography `line`.
     public static func line(for colorScheme: ColorScheme) -> Color {
         colorScheme == .dark ? Color(hex: "30302E") : Color(hex: "B0AEA9")

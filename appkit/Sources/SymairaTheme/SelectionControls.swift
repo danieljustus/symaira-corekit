@@ -64,6 +64,10 @@ public struct SymairaSegmentedControl<Value: Hashable>: View {
             SymairaTheme.surfaceRaised(for: colorScheme),
             in: RoundedRectangle(cornerRadius: SymairaTokens.Radius.lg, style: .continuous)
         )
+        .overlay(
+            RoundedRectangle(cornerRadius: SymairaTokens.Radius.lg, style: .continuous)
+                .stroke(SymairaTheme.raisedOutline(for: colorScheme), lineWidth: 1)
+        )
         .opacity(isEnabled ? 1 : 0.55)
         .accessibilityElement(children: .contain)
         .accessibilityLabel(title)

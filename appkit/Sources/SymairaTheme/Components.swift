@@ -528,6 +528,7 @@ public struct SymairaSecondaryButtonStyle: ButtonStyle {
                         : SymairaTheme.surfaceRaised(for: colorScheme),
                     in: shape
                 )
+                .overlay(shape.stroke(SymairaTheme.raisedOutline(for: colorScheme), lineWidth: 1))
                 .contentShape(shape)
                 .scaleEffect(configuration.isPressed && !reduceMotion ? 0.98 : 1)
                 .opacity(isEnabled ? 1 : 0.5)

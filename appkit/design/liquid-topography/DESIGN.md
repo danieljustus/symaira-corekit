@@ -129,6 +129,7 @@ components:
     rounded: "{rounded.lg}"
   button-secondary:
     backgroundColor: "{colors.raised}"
+    borderColor: "{colors.line}"
     textColor: "{colors.ink}"
     typography: "{typography.label}"
     rounded: "{rounded.lg}"
@@ -146,6 +147,7 @@ components:
     textColor: "{colors.on-selected-dark}"
   segment-rail:
     backgroundColor: "{colors.raised}"
+    borderColor: "{colors.line}"
     textColor: "{colors.ink-2}"
     rounded: "{rounded.lg}"
     padding: 4px
@@ -320,7 +322,7 @@ bleiben im Produkt. Native Zuordnung und Migrationsgrenzen stehen in
 
 Jede Rolle gibt es hell (Standardwert) und dunkel (Suffix `-dark`). Code nutzt immer die Rolle, nie den Hexwert.
 
-- **canvas / sidebar / surface / raised:** Graustufen mit minimaler Wärme. Von hinten nach vorne: canvas, sidebar, surface (Karten, Eingabebox), raised (Nutzer-Blase, Hover).
+- **canvas / sidebar / surface / raised:** Graustufen mit minimaler Wärme. Von hinten nach vorne: canvas, sidebar, surface (Karten, Eingabebox), raised (Nutzer-Blase, Hover). Hell ist `raised` gleich `canvas`: Sekundär-Buttons und Segmentschienen tragen dort eine 1px-Kontur in `line`, sonst verschwinden sie direkt auf der Fläche. Dunkel entfällt die Kontur.
 - **ink / ink-2 / ink-3:** Haupttext, Sekundärtext, Metadaten. Selbst `ink-3` erreicht auf canvas mindestens 4.5:1. Noch blasseren Text gibt es nicht.
 - **primary (Champagner `#E0D2BA`):** Markenakzent, in beiden Modi derselbe Wert. Auf hellen Flächen erreicht er nur 1,1 bis 1,3:1 und ist dort **nie** ein Zustandsmerkmal.
 - **selected / on-selected:** Auswahlzustand für Segmente, Schalter (an), Häkchen und Reglergriffe. Dunkel: Champagner mit dunkler Schrift. Hell: Tinte `#141413` mit heller Schrift (Variante A, 15,7:1 gegen die Schiene). Code nutzt immer `selected`, nie `primary`, für Zustände.
