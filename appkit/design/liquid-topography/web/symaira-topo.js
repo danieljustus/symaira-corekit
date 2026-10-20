@@ -95,7 +95,7 @@ export function mountTopo(host, {
   let tintCur = tintFor(params.states.idle);
   const rip = [], mouse = { x: -1e4, y: -1e4, tx: -1e4, ty: -1e4, amt: 0, tAmt: 0, vel: 0, down: false, press: 0, travel: 0 };
   const anchors = new WeakMap(), keyed = new Map(); let lastHost = null;
-  let flowT = 0, rt = 0, last = 0, nextThink = 0, raf = null, alive = true;
+  let flowT = Math.random() * 100, rt = 0, last = 0, nextThink = 0, raf = null, alive = true;
   const RB = new Float32Array(80), KB = new Float32Array(20), PB = new Float32Array(32);
 
   const local = (x, y) => { const r = host.getBoundingClientRect(); return [x - r.left, y - r.top]; };

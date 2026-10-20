@@ -53,6 +53,9 @@ public final class SymairaTopoModel {
     // Geometry is written only by layout callbacks, not by the shader. Observe it
     // so paused/reduced-motion surfaces redraw after scrolling or a sidebar change.
     var rects: [String: (CGRect, Bool)] = [:]
+    // Pointer over the surface: render at display rate instead of the idle cap.
+    // Observed, but only flips on enter/exit, never per mouse move.
+    var interactive = false
     // Per-frame accumulators remain unobserved: the shader mutates them itself.
     @ObservationIgnored var ripples: [(CGPoint, Date, Double)] = []
     @ObservationIgnored var pointer: CGPoint?
@@ -107,6 +110,15 @@ public final class SymairaTopoModel {
         }
     }
     #if os(macOS)
+    /// Pointer im Raum `SymairaTopo.space`; `nil` = außerhalb. Beim Ziehen gelten die Deltas aus `handle`.
+    func move(to p: CGPoint?) {
+        guard !pressed else { return }
+        if let p, let old = pointer {
+            pointerVelocity = min(1, pointerVelocity + Double(hypot(p.x - old.x, p.y - old.y)) / 120)
+        }
+        pointer = p
+        if interactive != (p != nil) { interactive = p != nil }
+    }
     /// Klick, Halten und Ziehen. Beim Ziehen pausiert Hover, daher Position über Deltas fortschreiben.
     func handle(_ e: NSEvent) {
         guard var p = pointer else { return }
@@ -137,17 +149,19 @@ public final class SymairaTopoModel {
 
 private final class Clock {  // Referenztyp: Mutation im Render-Pfad invalidiert keine View
     var a = Animated()
-    var monitor: Any?
 }
 
 private struct Animated {
-    var flowT = 0.0, rt = 0.0, last: Date?, nextThink = 0.0
+    // Random start slice of the noise field: every mount (window, page) shows new terrain.
+    var flowT = SymairaTopoView.startPhase(), rt = 0.0, last: Date?, nextThink = 0.0
     var cur = SymairaTopoState.idle.target, tintMix = 0.0
     var mouse = CGPoint(x: -1e4, y: -1e4), mouseAmt = 0.0, press = 0.0
     var lastOrigin: CGPoint?, lastSize: CGSize?
 }
 
 public struct SymairaTopoView: View {
+    /// Start slice per mount; tests pin it to compare renders pixel for pixel.
+    nonisolated(unsafe) static var startPhase: () -> Double = { .random(in: 0..<100) }
     /// SPM: Shader liegt im Modul-Bundle. Direkter swiftc-Build (Demo): App-Bundle.
     #if SWIFT_PACKAGE
     private static let library = ShaderLibrary.bundle(SymairaThemeResources.bundle)
@@ -182,7 +196,9 @@ public struct SymairaTopoView: View {
 
     public var body: some View {
         GeometryReader { geo in
-            TimelineView(.animation(minimumInterval: 1 / SymairaTokens.Topo.fps, paused: paused)) { ctx in
+            TimelineView(
+                .animation(minimumInterval: model.interactive ? nil : 1 / SymairaTokens.Topo.fps, paused: paused)
+            ) { ctx in
                 Rectangle().fill(SymairaTokens.canvas)  // Shader zeichnet die Linien über die Canvas-Farbe
                     .colorEffect(
                         // A paused timeline keeps its last date while layout still redraws;
@@ -191,10 +207,12 @@ public struct SymairaTopoView: View {
                             size: geo.size, origin: geo.frame(in: .named(SymairaTopo.space)).origin,
                             now: max(ctx.date, .now)))
             }
+            #if os(macOS)
+            .background(TopoPointerTracker(model: model, origin: geo.frame(in: .named(SymairaTopo.space)).origin))
+            #endif
         }
         .allowsHitTesting(false)
         .accessibilityHidden(true)
-        .background(pointerTracker)
         #if os(macOS)
         .background(TopoWindowVisibility(visible: $windowVisible))
         #endif
@@ -202,48 +220,10 @@ public struct SymairaTopoView: View {
             clock.a.last = nil
             model.pressed = false
             model.pointer = nil
+            model.interactive = false
             model.ripples.removeAll()
         }
     }
-
-    @ViewBuilder private var pointerTracker: some View {
-        #if os(macOS)
-        Color.clear.onContinuousHover(coordinateSpace: .named(SymairaTopo.space)) { phase in
-            switch phase {
-            case .active(let p):
-                if model.pressed { return }  // während Ziehen gilt die Delta-Fortschreibung
-                if let old = model.pointer {
-                    let step = Double(hypot(p.x - old.x, p.y - old.y))
-                    model.pointerVelocity = min(1, model.pointerVelocity + step / 120)
-                }
-                model.pointer = p
-            case .ended: if !model.pressed { model.pointer = nil }
-            }
-        }
-        .onAppear(perform: installMouseMonitor)
-        .onDisappear {
-            if let m = clock.monitor {
-                NSEvent.removeMonitor(m)
-                clock.monitor = nil
-            }
-        }
-        #else
-        Color.clear
-        #endif
-    }
-
-    #if os(macOS)
-    private func installMouseMonitor() {
-        guard clock.monitor == nil else { return }
-        let model = self.model
-        // Lokaler Monitor beobachtet nur, Events laufen unverändert weiter an Buttons usw.
-        clock.monitor = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseDown, .leftMouseDragged, .leftMouseUp]) {
-            e in
-            MainActor.assumeIsolated { model.handle(e) }
-            return e
-        }
-    }
-    #endif
 
     /// Alle Eingänge kommen im Koordinatenraum `SymairaTopo.space`; der Shader rechnet im lokalen Raum der View.
     /// Die View kann davon abweichen (z. B. `ignoresSafeArea` unter einer eingeblendeten Sidebar) → Ursprung abziehen.
@@ -420,6 +400,70 @@ private struct TopoWindowVisibility: NSViewRepresentable {
         }
         private func publish() {
             changed?(window.map { $0.isVisible && !$0.isMiniaturized && $0.occlusionState.contains(.visible) } ?? false)
+        }
+    }
+}
+#endif
+
+#if os(macOS)
+/// Observes this window's pointer events without consuming them, so content layered
+/// over the topography (scroll views, lists, cards) never hides the pointer from it.
+/// SwiftUI hover on a background view only fires where nothing above is hit-testable.
+private struct TopoPointerTracker: NSViewRepresentable {
+    let model: SymairaTopoModel
+    let origin: CGPoint
+    func makeNSView(context: Context) -> Probe { Probe(model: model) }
+    func updateNSView(_ view: Probe, context: Context) {
+        view.model = model
+        view.origin = origin
+    }
+    static func dismantleNSView(_ view: Probe, coordinator: ()) { view.stop() }
+
+    final class Probe: NSView {
+        var model: SymairaTopoModel
+        var origin = CGPoint.zero
+        private var monitor: Any?
+        init(model: SymairaTopoModel) {
+            self.model = model
+            super.init(frame: .zero)
+        }
+        required init?(coder: NSCoder) { nil }
+        override var isFlipped: Bool { true }  // SwiftUI coordinates: origin top-left
+        override func hitTest(_ point: NSPoint) -> NSView? { nil }
+        func stop() {
+            if let monitor { NSEvent.removeMonitor(monitor) }
+            monitor = nil
+        }
+        override func viewDidMoveToWindow() {
+            super.viewDidMoveToWindow()
+            stop()
+            guard let window else { return }
+            window.acceptsMouseMovedEvents = true
+            // Lokaler Monitor beobachtet nur, Events laufen unverändert weiter an Buttons usw.
+            monitor = NSEvent.addLocalMonitorForEvents(
+                matching: [.mouseMoved, .leftMouseDown, .leftMouseDragged, .leftMouseUp]
+            ) { [weak self] e in
+                MainActor.assumeIsolated { self?.observe(e) }
+                return e
+            }
+        }
+        // Leaving the window sends no further mouseMoved; a tracking area reports the exit.
+        override func updateTrackingAreas() {
+            super.updateTrackingAreas()
+            trackingAreas.forEach(removeTrackingArea)
+            addTrackingArea(
+                NSTrackingArea(
+                    rect: .zero, options: [.mouseEnteredAndExited, .activeInKeyWindow, .inVisibleRect], owner: self))
+        }
+        override func mouseExited(with event: NSEvent) { model.move(to: nil) }
+        func observe(_ e: NSEvent) {
+            guard e.window === window else { return }
+            if e.type == .mouseMoved {
+                let p = convert(e.locationInWindow, from: nil)
+                model.move(to: bounds.contains(p) ? CGPoint(x: p.x + origin.x, y: p.y + origin.y) : nil)
+            } else {
+                model.handle(e)
+            }
         }
     }
 }

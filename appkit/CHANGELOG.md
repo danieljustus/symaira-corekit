@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.15.2] - 2026-10-20
+
+### Fixed
+- The topography follows the pointer again when host content covers the whole
+  workspace panel. SwiftUI hover on the background view never fired under
+  scroll views, so the pointer response was dead in real apps. A
+  non-consuming window event monitor now tracks movement and clicks, and a
+  tracking area clears the pointer when it leaves the panel.
+- Pointer interaction is smooth: while the pointer is over the surface the
+  topography renders at the display's frame rate instead of the 20 fps idle
+  cap, which returns as soon as the pointer leaves.
+
+### Changed
+- Every topography mount (new window, returning to a page) starts at a random
+  slice of the noise field, so the terrain differs each time (Apple and web).
+
 ## [0.15.1] - 2026-10-17
 
 ### Fixed
@@ -468,7 +484,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [0.9.2]: https://github.com/danieljustus/symaira-appkit/compare/0.9.1...0.9.2
 [0.10.0]: https://github.com/danieljustus/symaira-appkit/compare/0.9.2...0.10.0
 [0.11.0]: https://github.com/danieljustus/symaira-appkit/compare/0.10.0...0.11.0
-[Unreleased]: https://github.com/danieljustus/symaira-appkit/compare/0.15.1...HEAD
+[Unreleased]: https://github.com/danieljustus/symaira-appkit/compare/0.15.2...HEAD
+[0.15.2]: https://github.com/danieljustus/symaira-appkit/compare/0.15.1...0.15.2
 [0.15.1]: https://github.com/danieljustus/symaira-appkit/compare/0.15.0...0.15.1
 [0.15.0]: https://github.com/danieljustus/symaira-appkit/compare/0.14.2...0.15.0
 [0.8.1]: https://github.com/danieljustus/symaira-appkit/compare/0.8.0...0.8.1

@@ -69,6 +69,9 @@ final class LiquidTopographyTests: XCTestCase {
 
     #if os(macOS)
     func testOverlappingProtectionDoesNotAccumulateShadowOrHill() throws {
+        let startPhase = SymairaTopoView.startPhase
+        SymairaTopoView.startPhase = { 0 }
+        defer { SymairaTopoView.startPhase = startPhase }
         func render(_ count: Int) throws -> [UInt8] {
             let model = SymairaTopoModel()
             for index in 0..<count {
