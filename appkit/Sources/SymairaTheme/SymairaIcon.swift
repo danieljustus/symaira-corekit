@@ -14,6 +14,7 @@ public struct SymairaIconView<Trigger: Equatable>: View {
     @State private var hoverChange = Date.distantPast
     @State private var clickStart = Date.distantPast
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.symairaIconInteraction) private var host
 
     public init(_ icon: SymairaIcon, size: CGFloat = 20, trigger: Trigger) {
         self.icon = icon
@@ -33,7 +34,7 @@ public struct SymairaIconView<Trigger: Equatable>: View {
                     reduceMotion
                     ? 0
                     : IconPart.hoverProgress(
-                        isHovered: isHovered, since: now.timeIntervalSince(hoverChange))
+                        isHovered: host?.hovered ?? isHovered, since: now.timeIntervalSince(hoverChange))
                 let elapsed = reduceMotion ? .infinity : now.timeIntervalSince(clickStart)
                 for part in parts {
                     part.draw(in: &context, size: canvasSize, hover: hover, elapsed: elapsed)
@@ -42,9 +43,12 @@ public struct SymairaIconView<Trigger: Equatable>: View {
         }
         .frame(width: size, height: size)
         .onHover { hovering in
+            guard host == nil else { return }  // inside a Symaira control the whole control drives hover
             isHovered = hovering
             hoverChange = Date()
         }
+        .onChange(of: host?.hovered) { hoverChange = Date() }
+        .onChange(of: host?.presses) { clickStart = Date() }
         .onChange(of: trigger) { clickStart = Date() }
         .accessibilityHidden(true)
     }
@@ -95,6 +99,46 @@ extension Label where Title == Text, Icon == SymairaIconView<Int> {
         } icon: {
             SymairaIconView(icon)
         }
+    }
+}
+
+/// Hover and presses of the enclosing Symaira control. Icons inside it preview their
+/// motion while the pointer is anywhere over the control and play the full motion
+/// only when that control is pressed, never when another control changes selection.
+struct SymairaIconInteraction: Equatable {
+    var hovered = false
+    var presses = 0
+}
+
+private struct SymairaIconInteractionKey: EnvironmentKey {
+    static let defaultValue: SymairaIconInteraction? = nil
+}
+
+extension EnvironmentValues {
+    var symairaIconInteraction: SymairaIconInteraction? {
+        get { self[SymairaIconInteractionKey.self] }
+        set { self[SymairaIconInteractionKey.self] = newValue }
+    }
+}
+
+/// Publishes a control's hover and presses to the icons in its label.
+struct SymairaIconHost<Content: View>: View {
+    let isPressed: Bool
+    let content: Content
+    @State private var interaction = SymairaIconInteraction()
+
+    init(isPressed: Bool, @ViewBuilder content: () -> Content) {
+        self.isPressed = isPressed
+        self.content = content()
+    }
+
+    var body: some View {
+        content
+            .environment(\.symairaIconInteraction, interaction)
+            .onHover { interaction.hovered = $0 }
+            .onChange(of: isPressed) { _, pressed in
+                if pressed { interaction.presses += 1 }
+            }
     }
 }
 

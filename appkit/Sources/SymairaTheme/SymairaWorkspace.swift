@@ -94,6 +94,12 @@ private struct NavigationLabel: View {
     @State private var hovered = false
 
     var body: some View {
+        SymairaIconHost(isPressed: configuration.isPressed) {
+            styledLabel
+        }
+    }
+
+    private var styledLabel: some View {
         configuration.label
             .foregroundStyle(isSelected ? SymairaTokens.ink : SymairaTokens.ink2)
             .background(

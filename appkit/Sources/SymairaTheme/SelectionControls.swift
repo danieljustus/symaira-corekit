@@ -116,20 +116,7 @@ public struct SymairaFilterMenu<Value: Hashable>: View {
             .pickerStyle(.inline)
             .labelsHidden()
         } label: {
-            HStack(spacing: SymairaSpacing.small) {
-                Text(currentLabel)
-                    .font(isActive ? SymairaTypography.bodyEmphasized : SymairaTypography.body)
-                    .lineLimit(1)
-                Spacer(minLength: 0)
-                SymairaIconView(.expand, size: 16)
-                    .foregroundStyle(SymairaTheme.foregroundMuted(for: colorScheme))
-            }
-            .foregroundStyle(SymairaTheme.foregroundPrimary(for: colorScheme))
-            .padding(.horizontal, SymairaSpacing.medium)
-            .frame(minHeight: SymairaMetrics.minimumControlHeight)
-            .background(shape.fill(SymairaTheme.surfaceRaised(for: colorScheme)))
-            .overlay(shape.stroke(border, lineWidth: isActive ? 1.5 : (contrast == .increased ? 1.5 : 1)))
-            .contentShape(shape)
+            SymairaIconHost(isPressed: false) { menuLabel(shape) }
         }
         .menuStyle(.button)
         .buttonStyle(.plain)
@@ -137,6 +124,23 @@ public struct SymairaFilterMenu<Value: Hashable>: View {
         .opacity(isEnabled ? 1 : 0.55)
         .accessibilityLabel(title)
         .accessibilityValue(currentLabel)
+    }
+
+    private func menuLabel(_ shape: RoundedRectangle) -> some View {
+        HStack(spacing: SymairaSpacing.small) {
+            Text(currentLabel)
+                .font(isActive ? SymairaTypography.bodyEmphasized : SymairaTypography.body)
+                .lineLimit(1)
+            Spacer(minLength: 0)
+            SymairaIconView(.expand, size: 16)
+                .foregroundStyle(SymairaTheme.foregroundMuted(for: colorScheme))
+        }
+        .foregroundStyle(SymairaTheme.foregroundPrimary(for: colorScheme))
+        .padding(.horizontal, SymairaSpacing.medium)
+        .frame(minHeight: SymairaMetrics.minimumControlHeight)
+        .background(shape.fill(SymairaTheme.surfaceRaised(for: colorScheme)))
+        .overlay(shape.stroke(border, lineWidth: isActive ? 1.5 : (contrast == .increased ? 1.5 : 1)))
+        .contentShape(shape)
     }
 
     private var border: Color {

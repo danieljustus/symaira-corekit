@@ -24,26 +24,18 @@ final class SettingsMenuTests: XCTestCase {
         XCTAssertEqual(settingsOpened, 1)
     }
 
-    func testAppearancePickerChangesTheHostBinding() async throws {
+    func testAppearancePickerUsesSharedSegmentsInsteadOfNativeControl() async throws {
         _ = NSApplication.shared
-        var selection = SymairaAppearance.system
-        let host = NSHostingView(
-            rootView: SymairaAppearancePicker(
-                selection: Binding(get: { selection }, set: { selection = $0 })))
-        host.frame = NSRect(x: 0, y: 0, width: 300, height: 44)
+        XCTAssertEqual(SymairaAppearancePicker.options.map(\.value), SymairaAppearance.allCases)
+        XCTAssertEqual(SymairaAppearancePicker.options.map(\.label), SymairaAppearance.allCases.map(\.title))
+        let host = NSHostingView(rootView: SymairaAppearancePicker(selection: .constant(.system)))
+        host.frame = NSRect(x: 0, y: 0, width: 360, height: 52)
         host.layoutSubtreeIfNeeded()
         try await Task.sleep(for: .milliseconds(150))
         func controls(_ view: NSView) -> [NSSegmentedControl] {
             (view as? NSSegmentedControl).map { [$0] } ?? view.subviews.flatMap(controls)
         }
-        let control = try XCTUnwrap(controls(host).first)
-        XCTAssertEqual(control.segmentCount, SymairaAppearance.allCases.count)
-        for (index, choice) in SymairaAppearance.allCases.enumerated() {
-            XCTAssertEqual(control.label(forSegment: index), choice.title)
-            control.selectedSegment = index
-            control.sendAction(control.action, to: control.target)
-            XCTAssertEqual(selection, choice)
-        }
+        XCTAssertTrue(controls(host).isEmpty, "The native segmented control brings the system accent colour")
     }
 }
 #endif

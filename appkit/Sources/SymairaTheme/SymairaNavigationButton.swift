@@ -39,7 +39,7 @@ public struct SymairaNavigationButton: View {
         let shape = RoundedRectangle(cornerRadius: SymairaRadius.control)
         Button(action: action) {
             HStack(spacing: SymairaSpacing.medium) {
-                SymairaGlyphView(glyph: glyph, size: 20, trigger: isSelected)
+                SymairaGlyphView(glyph, size: 20)
                     .frame(width: 24)
                     .accessibilityHidden(true)
                 if showsLabel {

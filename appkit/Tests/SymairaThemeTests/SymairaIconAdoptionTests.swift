@@ -51,3 +51,50 @@ final class SymairaIconAdoptionTests: XCTestCase {
         XCTAssertGreaterThanOrEqual(menu.height, SymairaMetrics.minimumControlHeight)
     }
 }
+
+/// The enclosing control, not the icon's own frame, drives icon motion.
+@MainActor
+final class SymairaIconInteractionTests: XCTestCase {
+    final class Recorder { var values: [SymairaIconInteraction?] = [] }
+
+    struct Probe: View {
+        let recorder: Recorder
+        @Environment(\.symairaIconInteraction) private var interaction
+        var body: some View {
+            recorder.values.append(interaction)
+            return Color.clear.frame(width: 10, height: 10)
+        }
+    }
+
+    @Observable final class Press { var isPressed = false }
+
+    struct Hosted: View {
+        let press: Press
+        let recorder: Recorder
+        var body: some View {
+            SymairaIconHost(isPressed: press.isPressed) { Probe(recorder: recorder) }
+        }
+    }
+
+    func testHostCountsOnlyPressStartsOfItsOwnControl() async throws {
+        let recorder = Recorder()
+        let press = Press()
+        let host = ThemeRenderHost.render(Hosted(press: press, recorder: recorder))
+        func settle() async throws {
+            host.layoutSubtreeIfNeeded()
+            try await Task.sleep(for: .milliseconds(50))
+            host.layoutSubtreeIfNeeded()
+        }
+        try await settle()
+        XCTAssertEqual(recorder.values.last??.presses, 0)
+        press.isPressed = true
+        try await settle()
+        press.isPressed = false
+        try await settle()
+        XCTAssertEqual(recorder.values.last??.presses, 1, "One press plays the full motion once")
+
+        let standalone = Recorder()
+        ThemeRenderHost.render(Probe(recorder: standalone))
+        XCTAssertNil(standalone.values.last ?? nil, "Icons outside a Symaira control keep their own hover")
+    }
+}

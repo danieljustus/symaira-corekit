@@ -77,13 +77,15 @@ public struct SymairaAppearancePicker: View {
 
     public init(selection: Binding<SymairaAppearance>) { _selection = selection }
 
+    static let options = SymairaAppearance.allCases.map { (value: $0, label: $0.title) }
+
     public var body: some View {
-        Picker("Appearance", selection: $selection) {
-            ForEach(SymairaAppearance.allCases, id: \.self) { option in
-                Text(option.title).tag(option)
-            }
-        }
-        .pickerStyle(.segmented)
+        // Shared segments, not the native segmented picker with its system accent.
+        SymairaSegmentedControl(
+            "Appearance", selection: $selection,
+            options: Self.options
+        )
+        .frame(maxWidth: 360)
         .accessibilityIdentifier("symaira-appearance-picker")
     }
 }

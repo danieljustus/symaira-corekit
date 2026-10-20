@@ -490,17 +490,19 @@ public struct SymairaPrimaryButtonStyle: ButtonStyle {
 
     public func makeBody(configuration: Configuration) -> some View {
         let shape = RoundedRectangle(cornerRadius: SymairaTokens.Radius.lg, style: .continuous)
-        configuration.label
-            .font(SymairaTypography.bodyEmphasized)
-            .foregroundStyle(SymairaTheme.surfaceOpaque(for: colorScheme))
-            .padding(.horizontal, SymairaMetrics.contentActionHorizontalPadding)
-            .frame(minHeight: SymairaMetrics.contentActionHeight)
-            .background(SymairaTheme.foregroundPrimary(for: colorScheme), in: shape)
-            .contentShape(shape)
-            .brightness(configuration.isPressed ? -0.05 : 0)
-            .scaleEffect(configuration.isPressed && !reduceMotion ? 0.98 : 1)
-            .opacity(isEnabled ? 1 : 0.55)
-            .animation(reduceMotion ? nil : .easeOut(duration: 0.15), value: configuration.isPressed)
+        SymairaIconHost(isPressed: configuration.isPressed) {
+            configuration.label
+                .font(SymairaTypography.bodyEmphasized)
+                .foregroundStyle(SymairaTheme.surfaceOpaque(for: colorScheme))
+                .padding(.horizontal, SymairaMetrics.contentActionHorizontalPadding)
+                .frame(minHeight: SymairaMetrics.contentActionHeight)
+                .background(SymairaTheme.foregroundPrimary(for: colorScheme), in: shape)
+                .contentShape(shape)
+                .brightness(configuration.isPressed ? -0.05 : 0)
+                .scaleEffect(configuration.isPressed && !reduceMotion ? 0.98 : 1)
+                .opacity(isEnabled ? 1 : 0.55)
+                .animation(reduceMotion ? nil : .easeOut(duration: 0.15), value: configuration.isPressed)
+        }
     }
 }
 
@@ -514,20 +516,22 @@ public struct SymairaSecondaryButtonStyle: ButtonStyle {
 
     public func makeBody(configuration: Configuration) -> some View {
         let shape = RoundedRectangle(cornerRadius: SymairaTokens.Radius.lg, style: .continuous)
-        configuration.label
-            .font(SymairaTypography.bodyEmphasized)
-            .foregroundStyle(SymairaTheme.foregroundPrimary(for: colorScheme))
-            .padding(.horizontal, SymairaMetrics.contentActionHorizontalPadding)
-            .frame(minHeight: SymairaMetrics.contentActionHeight)
-            .background(
-                configuration.isPressed
-                    ? SymairaTheme.navigationSelection(for: colorScheme)
-                    : SymairaTheme.surfaceRaised(for: colorScheme),
-                in: shape
-            )
-            .contentShape(shape)
-            .scaleEffect(configuration.isPressed && !reduceMotion ? 0.98 : 1)
-            .opacity(isEnabled ? 1 : 0.5)
-            .animation(reduceMotion ? nil : .easeOut(duration: 0.15), value: configuration.isPressed)
+        SymairaIconHost(isPressed: configuration.isPressed) {
+            configuration.label
+                .font(SymairaTypography.bodyEmphasized)
+                .foregroundStyle(SymairaTheme.foregroundPrimary(for: colorScheme))
+                .padding(.horizontal, SymairaMetrics.contentActionHorizontalPadding)
+                .frame(minHeight: SymairaMetrics.contentActionHeight)
+                .background(
+                    configuration.isPressed
+                        ? SymairaTheme.navigationSelection(for: colorScheme)
+                        : SymairaTheme.surfaceRaised(for: colorScheme),
+                    in: shape
+                )
+                .contentShape(shape)
+                .scaleEffect(configuration.isPressed && !reduceMotion ? 0.98 : 1)
+                .opacity(isEnabled ? 1 : 0.5)
+                .animation(reduceMotion ? nil : .easeOut(duration: 0.15), value: configuration.isPressed)
+        }
     }
 }

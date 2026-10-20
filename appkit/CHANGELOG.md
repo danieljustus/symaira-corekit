@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.16.1] - 2026-10-20
+
+### Changed
+- Icons in Symaira buttons, navigation buttons and filter menus react to the
+  whole control: hovering anywhere over it previews the motion, pressing it
+  plays the full motion. Navigation icons no longer animate on selection
+  changes, so only the destination being clicked moves, not the one being
+  deselected.
+- `SymairaAppearancePicker` uses `SymairaSegmentedControl` instead of the native
+  segmented picker, which showed the system accent colour and a duplicate label.
+
 ## [0.16.0] - 2026-10-20
 
 ### Added
@@ -500,7 +511,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [0.9.2]: https://github.com/danieljustus/symaira-appkit/compare/0.9.1...0.9.2
 [0.10.0]: https://github.com/danieljustus/symaira-appkit/compare/0.9.2...0.10.0
 [0.11.0]: https://github.com/danieljustus/symaira-appkit/compare/0.10.0...0.11.0
-[Unreleased]: https://github.com/danieljustus/symaira-appkit/compare/0.16.0...HEAD
+[Unreleased]: https://github.com/danieljustus/symaira-appkit/compare/0.16.1...HEAD
+[0.16.1]: https://github.com/danieljustus/symaira-appkit/compare/0.16.0...0.16.1
 [0.16.0]: https://github.com/danieljustus/symaira-appkit/compare/0.15.2...0.16.0
 [0.15.2]: https://github.com/danieljustus/symaira-appkit/compare/0.15.1...0.15.2
 [0.15.1]: https://github.com/danieljustus/symaira-appkit/compare/0.15.0...0.15.1
