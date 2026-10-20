@@ -17,7 +17,7 @@ in vec2 p;void main(){gl_Position=vec4(p,0.,1.);}`;
 
 const FS = `#version 300 es
 precision highp float;
-uniform vec2 res,mouse,askP;uniform float t,rt,dpr,k,mAmt,warp,think,prob,ask,tintA,scale,levels,lineA,idxA,bandA,maxA,basin,pR,pS,press,pD;
+uniform vec2 res,mouse,askP;uniform float t,rt,dpr,k,mAmt,warp,think,prob,ask,tintA,scale,levels,lineA,idxA,maxA,basin,pR,pS,press,pD;
 uniform vec3 col,tint;uniform vec4 R[20];uniform float K[20];uniform int NR;uniform vec4 RP[8];
 out vec4 o;
 float hash(vec3 p){p=fract(p*.3183099+.1);p*=17.;return fract(p.x*p.y*p.z*(p.x+p.y+p.z));}
@@ -45,11 +45,11 @@ void main(){
   h+=r.w*.03*exp(-pow((d-front)/40.,2.))*exp(-r.z*1.2);}
  if(ask>0.){float d=length(px-askP);h+=ask*.025*sin(d/30.+rt*1.2)*exp(-d/380.);}
  float v=h*levels;
- float line=iso(v,.65*dpr,.5),idx=iso(v/5.,1.*dpr,1.6),band=floor(v)/levels;
+ float line=iso(v,.65*dpr,.5),idx=iso(v/5.,1.*dpr,1.6);
  vec2 e=(px-vec2(res.x*.6,res.y*.55))/vec2(res.x*.36,res.y*.5);
  float vis=mix(1.,clamp((length(e)-.78)/.42,0.,1.),basin);
  float pulse=1.+think*.08*sin(rt*1.5);
- float a=min((max(line*lineA,idx*idxA)+band*bandA)*vis*pulse,maxA)*mask*k;
+ float a=min(max(line*lineA,idx*idxA)*vis*pulse,maxA)*mask*k;
  vec3 c=mix(col,tint,tintA);
  o=vec4(c*a,a);
 }`;
@@ -83,7 +83,7 @@ export function mountTopo(host, {
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
   const loc = gl.getAttribLocation(prog, "p"); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
   const U = {};
-  for (const n of ["res","mouse","askP","t","rt","dpr","k","mAmt","warp","think","prob","ask","tintA","scale","levels","lineA","idxA","bandA","maxA","basin","pR","pS","press","pD","col","tint","R","K","NR","RP"])
+  for (const n of ["res","mouse","askP","t","rt","dpr","k","mAmt","warp","think","prob","ask","tintA","scale","levels","lineA","idxA","maxA","basin","pR","pS","press","pD","col","tint","R","K","NR","RP"])
     U[n] = gl.getUniformLocation(prog, n);
 
   const css = (n) => getComputedStyle(host).getPropertyValue(n).trim();
@@ -198,7 +198,7 @@ export function mountTopo(host, {
     gl.uniform1f(U.mAmt, mouse.amt); gl.uniform1f(U.warp, cur.warp); gl.uniform1f(U.think, cur.think);
     gl.uniform1f(U.prob, cur.problem); gl.uniform1f(U.ask, cur.ask); gl.uniform1f(U.tintA, cur.tintAmount);
     gl.uniform1f(U.scale, params.scale); gl.uniform1f(U.levels, params.levels); gl.uniform1f(U.lineA, params.lineAlpha);
-    gl.uniform1f(U.idxA, params.indexAlpha); gl.uniform1f(U.bandA, params.bandAlpha); gl.uniform1f(U.maxA, params.maxAlpha);
+    gl.uniform1f(U.idxA, params.indexAlpha); gl.uniform1f(U.maxA, params.maxAlpha);
     gl.uniform1f(U.basin, params.basinOpen); gl.uniform1f(U.pR, params.pointer.radius); gl.uniform1f(U.pS, params.pointer.strength); gl.uniform1f(U.press, mouse.press); gl.uniform1f(U.pD, params.pointer.pressDepth);
     gl.uniform3f(U.col, ...hexRGB(css("--sym-topo"))); gl.uniform3f(U.tint, ...tintCur);
     gl.uniform4fv(U.R, RB); gl.uniform1fv(U.K, KB); gl.uniform1i(U.NR, n); gl.uniform4fv(U.RP, PB);

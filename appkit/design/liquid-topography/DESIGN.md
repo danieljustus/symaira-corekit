@@ -384,7 +384,7 @@ Siehe `components:` oben. Varianten sind eigene Einträge (`button-primary-dark`
 
 Die Hintergrundebene ist ein Shader. Im Web läuft er über WebGL2 (`web/symaira-topo.js`), auf macOS und iOS über Metal (`apple/SymairaTopo.metal`). Beide nutzen denselben Algorithmus. Parameter stehen in `topo.json`.
 
-**Bild:** 16 Höhenstufen aus Rauschen mit Domain-Warp. Jede fünfte Linie ist eine weiche Zähllinie. Die Zwischenflächen sind minimal abgestuft, der Talkessel um den Inhalt wird zu 70 % freigestellt.
+**Bild:** 16 Höhenstufen aus Rauschen mit Domain-Warp. Jede fünfte Linie ist eine weiche Zähllinie. Zwischen den Linien bleibt die Fläche reines `canvas`, ohne Tönung pro Höhenstufe und ohne Abdunklung; der Talkessel um den Inhalt wird zu 70 % freigestellt.
 
 **Reaktionen:**
 
@@ -402,7 +402,7 @@ Die Hintergrundebene ist ein Shader. Im Web läuft er über WebGL2 (`web/symaira
 
 **Lesbarkeitsgarantien (nicht verhandelbar):**
 
-1. Jedes Element mit Text oder Bedienfunktion ist eine Schutzzone. Dort wird keine Linie gezeichnet. Ein schmaler 2–8px-Übergang ersetzt den früheren breiten Halo. Überlappende Masken und Konturverformungen werden nicht aufsummiert; sie dürfen keine künstlichen Schatten bilden. Die Flächentönung der Höhenstufen beträgt nur 0.018.
+1. Jedes Element mit Text oder Bedienfunktion ist eine Schutzzone. Dort wird keine Linie gezeichnet. Ein schmaler 2–8px-Übergang ersetzt den früheren breiten Halo. Überlappende Masken und Konturverformungen werden nicht aufsummiert; sie dürfen keine künstlichen Schatten bilden. Eine Tönung pro Höhenstufe ist ausgeschlossen: Sie zeichnet sichtbare Kanten entlang einzelner Höhenlinien.
 2. Die Deckkraft der Linien ist hart auf 0.26 begrenzt. Zustände, Wellen und Zeiger können sie nicht überschreiten.
 3. Zustände ändern Tempo, Form und Tönung, aber keine Information. Die Information steht immer im Text (`role="status"` / `role="alert"`).
 4. Bei `prefers-reduced-motion` bzw. „Bewegung reduzieren“ bleibt das Bild statisch, ohne Wellen und ohne Zeigerreaktion. Gleiches gilt für den Stromsparmodus unter iOS.

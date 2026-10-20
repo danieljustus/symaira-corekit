@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.17.0] - 2026-10-20
+
+### Breaking
+- `SymairaTokens.Topo.bandAlpha` is removed.
+
+### Fixed
+- The topography no longer draws faint shading edges along single contour
+  lines. A per-level tint (`floor(height) * bandAlpha`) brightened the surface
+  in steps, also cut by the protection mask and basin ellipse. Between the
+  lines the surface is now plain `canvas` (Apple and web).
+
 ## [0.16.1] - 2026-10-20
 
 ### Changed
@@ -511,7 +522,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [0.9.2]: https://github.com/danieljustus/symaira-appkit/compare/0.9.1...0.9.2
 [0.10.0]: https://github.com/danieljustus/symaira-appkit/compare/0.9.2...0.10.0
 [0.11.0]: https://github.com/danieljustus/symaira-appkit/compare/0.10.0...0.11.0
-[Unreleased]: https://github.com/danieljustus/symaira-appkit/compare/0.16.1...HEAD
+[Unreleased]: https://github.com/danieljustus/symaira-appkit/compare/0.17.0...HEAD
+[0.17.0]: https://github.com/danieljustus/symaira-appkit/compare/0.16.1...0.17.0
 [0.16.1]: https://github.com/danieljustus/symaira-appkit/compare/0.16.0...0.16.1
 [0.16.0]: https://github.com/danieljustus/symaira-appkit/compare/0.15.2...0.16.0
 [0.15.2]: https://github.com/danieljustus/symaira-appkit/compare/0.15.1...0.15.2

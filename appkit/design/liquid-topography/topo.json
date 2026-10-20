@@ -4,7 +4,6 @@
   "indexEvery": 5,
   "lineAlpha": 0.13,
   "indexAlpha": 0.165,
-  "bandAlpha": 0.018,
   "maxAlpha": 0.26,
   "basinOpen": 0.7,
   "lightModeFactor": 0.9,

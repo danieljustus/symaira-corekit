@@ -69,7 +69,6 @@ public enum SymairaTokens {
         public static let scale: Double = 340.0
         public static let lineAlpha: Double = 0.13
         public static let indexAlpha: Double = 0.165
-        public static let bandAlpha: Double = 0.018
         public static let maxAlpha: Double = 0.26
         public static let basinOpen: Double = 0.7
         public static let lightModeFactor: Double = 0.9

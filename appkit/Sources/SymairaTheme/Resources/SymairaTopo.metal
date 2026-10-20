@@ -28,7 +28,7 @@ static float sdBox(float2 p, float4 r, float rad){
 // rects: je 5 floats (x, y, w, h, hill) ; ripples: je 4 floats (x, y, age, strength)
 // p0: size.x, size.y, t, rt     p1: mouse.x, mouse.y, mouseAmt, k
 // p2: warp, think, problem, ask p3: tintAmount, askX, askY, displayScale
-// p4: scale, levels, lineA, idxA p5: bandA, maxA, basinOpen, press
+// p4: scale, levels, lineA, idxA p5: unused, maxA, basinOpen, press
 // p6: pointerRadius, pointerStrength, pressDepth, unused
 struct TopoIn {
     float2 mouse; float mAmt; float t, rt, warp, prob, ask, press;
@@ -66,7 +66,7 @@ static float topoHeight(float2 pos, thread const TopoIn &in){
 // rects: je 5 floats (x, y, w, h, hill) ; ripples: je 4 floats (x, y, age, strength)
 // p0: size.x, size.y, t, rt     p1: mouse.x, mouse.y, mouseAmt, k
 // p2: warp, think, problem, ask p3: tintAmount, askX, askY, displayScale
-// p4: scale, levels, lineA, idxA p5: bandA, maxA, basinOpen, press
+// p4: scale, levels, lineA, idxA p5: unused, maxA, basinOpen, press
 // p6: pointerRadius, pointerStrength, pressDepth, unused
 [[ stitchable ]] half4 symairaTopo(float2 pos, half4 color,
     float4 p0, float4 p1, float4 p2, float4 p3, float4 p4, float4 p5, float4 p6,
@@ -92,11 +92,13 @@ static float topoHeight(float2 pos, thread const TopoIn &in){
     float vy = topoHeight(pos + float2(0., px), in) * p4.y;
     float a1 = abs(vx - v) + abs(vy - v);
 
-    float line = iso(v, a1, .65 * ds, .5), idx = iso(v / 5., a1 / 5., 1. * ds, 1.6), band = floor(v) / p4.y;
+    float line = iso(v, a1, .65 * ds, .5), idx = iso(v / 5., a1 / 5., 1. * ds, 1.6);
     float2 e = (pos - float2(res.x * .6, res.y * .55)) / float2(res.x * .36, res.y * .5);
     float vis = mix(1., clamp((length(e) - .78) / .42, 0., 1.), p5.z);
     float pulse = 1. + think * .08 * sin(rt * 1.5);
-    float a = min((max(line * p4.z, idx * p4.w) + band * p5.x) * vis * pulse, p5.y) * mask * k;
+    // Only lines: a per-level tint (floor(height)) brightened the surface in steps and drew
+    // faint shading edges along single contours.
+    float a = min(max(line * p4.z, idx * p4.w) * vis * pulse, p5.y) * mask * k;
     half3 c = mix(col4.rgb, tint4.rgb, half(tintA));
     // über die Eingangsfarbe (Canvas) komponieren: SwiftUI überspringt vollständig transparente Layer
     return half4(mix(color.rgb, c, half(a)), color.a);

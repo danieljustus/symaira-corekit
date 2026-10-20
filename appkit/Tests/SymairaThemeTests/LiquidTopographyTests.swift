@@ -147,6 +147,29 @@ final class LiquidTopographyTests: XCTestCase {
         XCTAssertLessThan(Double(deviating) / Double(cg.width * cg.height), 0.5, "Ripple sättigt die Fläche (NaN)")
     }
 
+    /// Between the lines the surface is plain canvas. A per-level tint lifted whole
+    /// bands by a few levels and drew faint shading edges along single contours.
+    func testSurfaceBetweenLinesIsPlainCanvas() throws {
+        let startPhase = SymairaTopoView.startPhase
+        SymairaTopoView.startPhase = { 0 }
+        defer { SymairaTopoView.startPhase = startPhase }
+        let view = SymairaTopoView(model: SymairaTopoModel(), animationEnabled: false)
+            .frame(width: 480, height: 320)
+            .coordinateSpace(name: SymairaTopo.space)
+            .environment(\.colorScheme, .dark)
+        let renderer = ImageRenderer(content: view)
+        renderer.scale = 1
+        let cg = try XCTUnwrap(renderer.cgImage)
+        let px = try pixels(cg)
+        let canvas = [0x1C, 0x1C, 0x1B]
+        var plain = 0
+        for i in stride(from: 0, to: px.count, by: 4)
+        where (0..<3).map({ abs(Int(px[i + $0]) - canvas[$0]) }).reduce(0, +) <= 1 {
+            plain += 1
+        }
+        XCTAssertGreaterThan(Double(plain) / Double(cg.width * cg.height), 0.45, "surface between lines is tinted")
+    }
+
     private func pixels(_ cg: CGImage) throws -> [UInt8] {
         var buf = [UInt8](repeating: 0, count: cg.width * cg.height * 4)
         let ctx = try XCTUnwrap(
