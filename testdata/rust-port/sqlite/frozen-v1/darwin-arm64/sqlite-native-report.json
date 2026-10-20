@@ -1,8 +1,8 @@
 {
   "go": {
     "capture_interval": [
-      1792451956,
-      1792451961
+      1792479008,
+      1792479013
     ],
     "cases": [
       {
@@ -83,13 +83,13 @@
         "id": "SQL-003",
         "state": {
           "applied_at": [
-            "2026-10-19T23:19:21Z",
-            "2026-10-19T23:19:21Z"
+            "2026-10-20T06:50:13Z",
+            "2026-10-20T06:50:13Z"
           ],
           "applied_at_utc": true,
           "data": [
             {
-              "created_at": "2026-10-19T23:19:21Z",
+              "created_at": "2026-10-20T06:50:13Z",
               "id": "item-1",
               "name": "alpha"
             }
@@ -126,14 +126,14 @@
         "id": "SQL-004",
         "state": {
           "applied_at": [
-            "2026-10-19T23:19:21Z",
-            "2026-10-19T23:19:21Z"
+            "2026-10-20T06:50:13Z",
+            "2026-10-20T06:50:13Z"
           ],
           "applied_at_unchanged": true,
           "applied_at_utc": true,
           "data": [
             {
-              "created_at": "2026-10-19T23:19:21Z",
+              "created_at": "2026-10-20T06:50:13Z",
               "id": "item-1",
               "name": "alpha"
             }
@@ -471,13 +471,13 @@
     }
   },
   "rust": {
-    "binary_sha256": "03e8d929c5780aab03a9a4dac1290c690a57ec0dd94a30fdd14bd0960ed637ad",
+    "binary_sha256": "9dc6e5735d4ed01c48b230533a6ff31827d71e970b60b1399182b94a4903d3fe",
     "candidate_base": "82968b4fc9537daf62c2008331f5e5ce5d32b6c6",
     "candidate_manifest_sha256": "54e58d7a931ea6f477d3b52edfbcb0d0561b83abaeab09d1e3be8e41903e2c4e",
-    "candidate_revision": "e445d30695bebfc4b88b5457af2da70ca910a639",
+    "candidate_revision": "ce70cffd436dc6fb4efa05e1f61b7997aeb9e4db",
     "capture_interval": [
-      1792451964,
-      1792451969
+      1792479015,
+      1792479020
     ],
     "cases": [
       {
@@ -511,7 +511,7 @@
       },
       {
         "id": "SQL-002",
-        "observed_busy_seconds": 5.013316959,
+        "observed_busy_seconds": 5.012363333,
         "state": {
           "connections": [
             {
@@ -561,12 +561,12 @@
         "id": "SQL-003",
         "state": {
           "applied_at": [
-            "2026-10-19T23:19:29Z",
-            "2026-10-19T23:19:29Z"
+            "2026-10-20T06:50:20Z",
+            "2026-10-20T06:50:20Z"
           ],
           "data": [
             {
-              "created_at": "2026-10-19T23:19:29Z",
+              "created_at": "2026-10-20T06:50:20Z",
               "id": "item-1",
               "name": "alpha"
             }
@@ -603,13 +603,13 @@
         "id": "SQL-004",
         "state": {
           "applied_at": [
-            "2026-10-19T23:19:29Z",
-            "2026-10-19T23:19:29Z"
+            "2026-10-20T06:50:20Z",
+            "2026-10-20T06:50:20Z"
           ],
           "applied_at_unchanged": true,
           "data": [
             {
-              "created_at": "2026-10-19T23:19:29Z",
+              "created_at": "2026-10-20T06:50:20Z",
               "id": "item-1",
               "name": "alpha"
             }

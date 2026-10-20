@@ -129,13 +129,13 @@
  "sqlite": {
   "captures": {
    "darwin-arm64": {
-    "artifact_id": 12228721216,
+    "artifact_id": 12245752257,
     "manifest": "testdata/rust-port/sqlite/frozen-v1/darwin-arm64/sqlite-native-candidate-source.json",
     "manifest_sha256": "54e58d7a931ea6f477d3b52edfbcb0d0561b83abaeab09d1e3be8e41903e2c4e",
     "report": "testdata/rust-port/sqlite/frozen-v1/darwin-arm64/sqlite-native-report.json",
-    "report_sha256": "2fac0b753b2694a3e33ae070f58ae145f2e959edef5df7c4d747a97c4383e7c8",
-    "source_commit": "e445d30695bebfc4b88b5457af2da70ca910a639",
-    "workflow_run": 39308889944
+    "report_sha256": "7b8dca2570e36b0fef4f959bf81c7d89cb90c2cb233b81228eea8c439e3b8362",
+    "source_commit": "ce70cffd436dc6fb4efa05e1f61b7997aeb9e4db",
+    "workflow_run": 39381864447
    },
    "linux-amd64": {
     "artifact_id": 12214703294,
@@ -155,6 +155,11 @@
     "source_commit": "e445d30695bebfc4b88b5457af2da70ca910a639",
     "workflow_run": 39308896259
    }
+  },
+  "darwin_correction": {
+   "reason": "The first darwin-arm64 record came from workflow_dispatch run 39308889944, which records candidate_revision e445d30 (a feature-branch commit). After the squash merge it is not an ancestor of main, so frozen SQLite replay rejected it on macOS.",
+   "replacement": "main push run 39381864447 artifact 12245752257 (sha256 47fc73e9489238610a1422662bdae8f0ffd6c9c7b41b8ae8bee95bc077fcc058), candidate_revision ce70cff on main",
+   "review": "verdict passed, 42 checked fields, 0 differences, same 9 accepted differences; Go observations identical except timestamps; manifest byte-identical; Rust side differs only in binary hash, candidate revision and a busy-time measurement (5.013 -> 5.012 s)"
   },
   "review": {
    "oracle_side_differences": [
