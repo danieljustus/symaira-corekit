@@ -41,7 +41,7 @@
 
 | Class | Files | Enforced | Consequence of a change |
 |---|---|---|---|
-| Build inputs | `Cargo.toml`, `Cargo.lock`, `rust-toolchain.toml`, `.cargo/**` | yes | Recapture required (changes the built artifact) |
+| Build inputs | `Cargo.toml`, `Cargo.lock` (bound through its dependency closure since [ADR RUST-004](adr-rust-004-lockfile-dependency-closure.md)), `rust-toolchain.toml`, `.cargo/**` | yes | Recapture required (changes the built artifact) |
 | Port under test | `rust/symaira-core-sqlite/**`, `rust/symaira-core-fs/**` | yes | Recapture required |
 | Oracle and harness | `scripts/rust-port/sqlite/**` | yes | Recapture required |
 | CI orchestration | `.github/workflows/ci.yml` | no | No invalidation; recorded for forensics |

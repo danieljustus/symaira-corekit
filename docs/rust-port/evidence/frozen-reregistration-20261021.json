@@ -1,0 +1,189 @@
+{
+ "date": "2026-10-21",
+ "fs_sec": {
+  "anchors": {
+   "darwin-arm64": "144b3b1ae84042117e6c8dcb675baf1ca2dfd4d30d8b1fdf7825cd84ad77b1f3",
+   "linux-amd64": "4a780c61a7bbe1e80af7555b359bd8a4156c8072ef1447dd78e84642be69d8ed",
+   "windows-amd64": "9cd98c130b84fba3eec1e5817fa9c9ba3b51b735145dbe324932decf9a1e4565"
+  },
+  "capture_run": 39559205544,
+  "previous_anchors": {
+   "darwin-arm64": "522de6658d35b27779acbf87a11bb642cdcdeb726acc5d740ddea1a9679966ed",
+   "linux-amd64": "ad23a0d0b0248913ba87d02a3eedc56efdd729d85f2b34d6688f7f4a07ee74d3",
+   "windows-amd64": "753a27641554dfac67ebfdf19e46dc7405476b6e0c84451564533d8315f6b3af"
+  },
+  "review": {
+   "darwin-arm64": {
+    "case_inventory_identical": true,
+    "changed": [
+     "/capture/candidate/files[candidate/scripts/rust-port/fs_secret_oracle.py]/sha256",
+     "/capture/candidate/files[candidate/scripts/rust-port/test_fs_secret_oracle.py]/sha256",
+     "/capture/candidate/head_after",
+     "/capture/candidate/head_before",
+     "/capture/commands[git-head-after]/stdout_sha256",
+     "/capture/commands[git-head-before]/stdout_sha256",
+     "/capture/commands[go-list-after]/stdout_sha256",
+     "/capture/commands[go-list-before]/stdout_sha256",
+     "/capture/go/modules_sha256",
+     "/capture/go/probe_binary_sha256",
+     "/capture/inputs/after_sha256",
+     "/capture/inputs/before_sha256",
+     "/capture/inputs/files[candidate/scripts/rust-port/fs_secret_oracle.py]/sha256",
+     "/capture/inputs/files[candidate/scripts/rust-port/test_fs_secret_oracle.py]/sha256",
+     "/capture/inputs/files[modules/current-helper/effective.mod]/sha256",
+     "/capture/inputs/groups/candidate",
+     "/capture/inputs/groups/modules"
+    ],
+    "explained": "raw Cargo.lock record replaced by the Cargo.lock#dependency-closure record; scripts/rust-port/lock_closure.py added; fs_secret_oracle.py and test harness hashes; commit heads and per-run identities; go env outputs are hosted-toolcache paths; Go observations, raw observations, case inventory and oracle byte-identical",
+    "go_identical": false,
+    "observations_identical": true,
+    "only_in_new": [
+     "/capture/candidate/files[candidate/Cargo.lock#dependency-closure]/sha256",
+     "/capture/candidate/files[candidate/scripts/rust-port/lock_closure.py]/sha256",
+     "/capture/inputs/files[candidate/Cargo.lock#dependency-closure]/sha256",
+     "/capture/inputs/files[candidate/scripts/rust-port/lock_closure.py]/sha256"
+    ],
+    "only_in_old": [
+     "/capture/candidate/files[candidate/Cargo.lock]/sha256",
+     "/capture/inputs/files[candidate/Cargo.lock]/sha256"
+    ],
+    "oracle_identical": true,
+    "raw_observations_identical": true
+   },
+   "linux-amd64": {
+    "case_inventory_identical": true,
+    "changed": [
+     "/capture/candidate/files[candidate/scripts/rust-port/fs_secret_oracle.py]/sha256",
+     "/capture/candidate/files[candidate/scripts/rust-port/test_fs_secret_oracle.py]/sha256",
+     "/capture/candidate/head_after",
+     "/capture/candidate/head_before",
+     "/capture/commands[git-head-after]/stdout_sha256",
+     "/capture/commands[git-head-before]/stdout_sha256",
+     "/capture/commands[go-env-000]/stdout_bytes",
+     "/capture/commands[go-env-000]/stdout_sha256",
+     "/capture/commands[go-env-001]/stdout_bytes",
+     "/capture/commands[go-env-001]/stdout_sha256",
+     "/capture/commands[go-env-002]/stdout_bytes",
+     "/capture/commands[go-env-002]/stdout_sha256",
+     "/capture/commands[go-env-003]/stdout_bytes",
+     "/capture/commands[go-env-003]/stdout_sha256",
+     "/capture/commands[go-env-004]/stdout_bytes",
+     "/capture/commands[go-env-004]/stdout_sha256",
+     "/capture/commands[go-list-after]/stdout_sha256",
+     "/capture/commands[go-list-before]/stdout_sha256",
+     "/capture/go/modules_sha256",
+     "/capture/go/probe_binary_sha256",
+     "/capture/inputs/after_sha256",
+     "/capture/inputs/before_sha256",
+     "/capture/inputs/files[candidate/scripts/rust-port/fs_secret_oracle.py]/sha256",
+     "/capture/inputs/files[candidate/scripts/rust-port/test_fs_secret_oracle.py]/sha256",
+     "/capture/inputs/files[modules/current-helper/effective.mod]/sha256",
+     "/capture/inputs/groups/candidate",
+     "/capture/inputs/groups/modules"
+    ],
+    "explained": "raw Cargo.lock record replaced by the Cargo.lock#dependency-closure record; scripts/rust-port/lock_closure.py added; fs_secret_oracle.py and test harness hashes; commit heads and per-run identities; go env outputs are hosted-toolcache paths; Go observations, raw observations, case inventory and oracle byte-identical",
+    "go_identical": false,
+    "observations_identical": true,
+    "only_in_new": [
+     "/capture/candidate/files[candidate/Cargo.lock#dependency-closure]/sha256",
+     "/capture/candidate/files[candidate/scripts/rust-port/lock_closure.py]/sha256",
+     "/capture/inputs/files[candidate/Cargo.lock#dependency-closure]/sha256",
+     "/capture/inputs/files[candidate/scripts/rust-port/lock_closure.py]/sha256"
+    ],
+    "only_in_old": [
+     "/capture/candidate/files[candidate/Cargo.lock]/sha256",
+     "/capture/inputs/files[candidate/Cargo.lock]/sha256"
+    ],
+    "oracle_identical": true,
+    "raw_observations_identical": true
+   },
+   "windows-amd64": {
+    "case_inventory_identical": true,
+    "changed": [
+     "/capture/candidate/files[candidate/scripts/rust-port/fs_secret_oracle.py]/sha256",
+     "/capture/candidate/files[candidate/scripts/rust-port/test_fs_secret_oracle.py]/sha256",
+     "/capture/candidate/head_after",
+     "/capture/candidate/head_before",
+     "/capture/commands[git-head-after]/stdout_sha256",
+     "/capture/commands[git-head-before]/stdout_sha256",
+     "/capture/commands[go-env-000]/stdout_bytes",
+     "/capture/commands[go-env-000]/stdout_sha256",
+     "/capture/commands[go-env-001]/stdout_bytes",
+     "/capture/commands[go-env-001]/stdout_sha256",
+     "/capture/commands[go-env-003]/stdout_sha256",
+     "/capture/commands[go-env-004]/stdout_sha256",
+     "/capture/commands[go-list-after]/stdout_sha256",
+     "/capture/commands[go-list-before]/stdout_sha256",
+     "/capture/go/modules_sha256",
+     "/capture/go/probe_binary_sha256",
+     "/capture/inputs/after_sha256",
+     "/capture/inputs/before_sha256",
+     "/capture/inputs/files[candidate/scripts/rust-port/fs_secret_oracle.py]/sha256",
+     "/capture/inputs/files[candidate/scripts/rust-port/test_fs_secret_oracle.py]/sha256",
+     "/capture/inputs/files[modules/current-helper/effective.mod]/sha256",
+     "/capture/inputs/groups/candidate",
+     "/capture/inputs/groups/modules"
+    ],
+    "explained": "raw Cargo.lock record replaced by the Cargo.lock#dependency-closure record; scripts/rust-port/lock_closure.py added; fs_secret_oracle.py and test harness hashes; commit heads and per-run identities; go env outputs are hosted-toolcache paths; Go observations, raw observations, case inventory and oracle byte-identical",
+    "go_identical": false,
+    "observations_identical": true,
+    "only_in_new": [
+     "/capture/candidate/files[candidate/Cargo.lock#dependency-closure]/sha256",
+     "/capture/candidate/files[candidate/scripts/rust-port/lock_closure.py]/sha256",
+     "/capture/inputs/files[candidate/Cargo.lock#dependency-closure]/sha256",
+     "/capture/inputs/files[candidate/scripts/rust-port/lock_closure.py]/sha256"
+    ],
+    "only_in_old": [
+     "/capture/candidate/files[candidate/Cargo.lock]/sha256",
+     "/capture/inputs/files[candidate/Cargo.lock]/sha256"
+    ],
+    "oracle_identical": true,
+    "raw_observations_identical": true
+   }
+  }
+ },
+ "maintainer_decision": "Maintainer approved re-registering FS/SEC and SQLite frozen-v1 evidence with proof that Go observations are unchanged (2026-10-21).",
+ "reason": "ADR RUST-004 changes the frozen FS/SEC and SQLite lockfile binding from the raw Cargo.lock bytes to Cargo.lock#dependency-closure (scripts/rust-port/lock_closure.py); the binding format change and the edited harness files invalidate the 2026-10-20 records. The rustls-webpki, webpki-roots and webpki-root-certs updates (RUSTSEC-2026-0381..0383) leave both closures unchanged.",
+ "source_commit": "71e3c280e51c76afb45ba46d972cd0dc8bb3d44e",
+ "sqlite": {
+  "captures": {
+   "darwin-arm64": {
+    "artifact_id": 12343598020,
+    "manifest": "testdata/rust-port/sqlite/frozen-v1/darwin-arm64/sqlite-native-candidate-source.json",
+    "manifest_sha256": "62c1fa5425500fc587300019d82f95895d6ed09d2e2dfff15999a4e85a485b78",
+    "report": "testdata/rust-port/sqlite/frozen-v1/darwin-arm64/sqlite-native-report.json",
+    "report_sha256": "f3e2932ada9214f02bc361b71a68bafa624ddd3fec8d991e3e5572b01e918e1e",
+    "source_commit": "71e3c280e51c76afb45ba46d972cd0dc8bb3d44e",
+    "workflow_run": 39560151712
+   },
+   "linux-amd64": {
+    "artifact_id": 12329255761,
+    "manifest": "testdata/rust-port/sqlite/frozen-v1/linux-amd64/sqlite-native-candidate-source.json",
+    "manifest_sha256": "62c1fa5425500fc587300019d82f95895d6ed09d2e2dfff15999a4e85a485b78",
+    "report": "testdata/rust-port/sqlite/frozen-v1/linux-amd64/sqlite-native-report.json",
+    "report_sha256": "b70fa10a2d4e14712faec3b5d07f2ce90eaf90bbac2fdf83d416c34c8ed933a8",
+    "source_commit": "71e3c280e51c76afb45ba46d972cd0dc8bb3d44e",
+    "workflow_run": 39560151712
+   },
+   "windows-amd64": {
+    "artifact_id": 12328925122,
+    "manifest": "testdata/rust-port/sqlite/frozen-v1/windows-amd64/sqlite-native-candidate-source.json",
+    "manifest_sha256": "9d5f9e4fc3e96b96efa811dd91edff161528c9efed59f5a88592d2eb9a799896",
+    "report": "testdata/rust-port/sqlite/frozen-v1/windows-amd64/sqlite-native-report.json",
+    "report_sha256": "23d0e2145549e67e74731aef64f747ec431b1e7fc1a7386691b2a25e5698e61f",
+    "source_commit": "71e3c280e51c76afb45ba46d972cd0dc8bb3d44e",
+    "workflow_run": 39560151712
+   }
+  },
+  "review": {
+   "candidate_revision": "408cd01b8d8e4bbf4a088da3e6b396e52aa68af2",
+   "oracle_side_differences": [
+    "capture_interval",
+    "applied_at/created_at timestamps",
+    "artifact_hashes of scripts/rust-port/sqlite/candidate.py and scripts/rust-port/sqlite/test_acceptance.py"
+   ],
+   "previous_registration": "docs/rust-port/evidence/frozen-reregistration-20261020.json",
+   "verdict": "passed on all targets; 6 cases; checked fields 42/42/40 (darwin/linux/windows); 0 differences; identical 9 accepted-difference paths"
+  }
+ }
+}

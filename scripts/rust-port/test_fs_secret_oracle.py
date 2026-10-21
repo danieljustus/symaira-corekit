@@ -381,7 +381,8 @@ class FrozenOracleGuardTests(unittest.TestCase):
 
     def test_preflight_rejects_changed_out_of_crate_embedded_inputs(self):
         recorded = oracle._candidate_file_records(oracle.ROOT)
-        paths = {item["path"].removeprefix("candidate/") for item in recorded}
+        paths = {path.relative_to(oracle.ROOT).as_posix() for path in oracle._candidate_file_paths(oracle.ROOT)}
+        paths.add("Cargo.lock")
         embedded = ("testdata/rust-port/fixtures/fs-secret/corpus.json", "contracts/secret_refs.json")
         self.assertTrue(set(embedded).issubset(paths))
         with tempfile.TemporaryDirectory(prefix="fs-secret-embedded-inputs-") as directory:
@@ -403,6 +404,33 @@ class FrozenOracleGuardTests(unittest.TestCase):
                     finally:
                         target.write_bytes(original)
             oracle._verify_candidate_files(capture, root)
+
+    def test_lockfile_is_bound_through_the_bound_crate_closure(self):
+        # ADR RUST-004: TLS-only lockfile entries cannot invalidate FS/SEC
+        # evidence; an entry the bound crates resolve to still does.
+        recorded = oracle._candidate_file_records(oracle.ROOT)
+        self.assertIn(oracle.LOCK_CLOSURE_LABEL, [item["path"] for item in recorded])
+        self.assertNotIn("candidate/Cargo.lock", [item["path"] for item in recorded])
+        paths = {path.relative_to(oracle.ROOT).as_posix() for path in oracle._candidate_file_paths(oracle.ROOT)}
+        paths.add("Cargo.lock")
+        lock = (oracle.ROOT / "Cargo.lock").read_text(encoding="utf-8")
+        closure = oracle.lock_closure.closure_packages(oracle.ROOT / "Cargo.lock", oracle._closure_roots(oracle.ROOT))
+        inside = next(item for item in closure["packages"] if "source" in item)
+        marker = f'name = "{inside["name"]}"\nversion = "{inside["version"]}"'
+        outside = 'name = "rustls-webpki"\nversion = "'
+        self.assertNotIn("rustls-webpki", {item["name"] for item in closure["packages"]})
+        with tempfile.TemporaryDirectory(prefix="fs-secret-lock-closure-") as directory:
+            root = Path(directory)
+            for relative in paths:
+                target = root / relative
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_bytes((oracle.ROOT / relative).read_bytes())
+            capture = {"candidate": {"files": recorded}}
+            (root / "Cargo.lock").write_text(lock.replace(outside, outside + "9", 1), encoding="utf-8")
+            oracle._verify_candidate_files(capture, root)
+            (root / "Cargo.lock").write_text(lock.replace(marker, marker + '\nchecksum-drift = "1"', 1), encoding="utf-8")
+            with self.assertRaisesRegex(oracle.OracleError, "source differs"):
+                oracle._verify_candidate_files(capture, root)
 
     def test_cargo_metadata_guard_binds_workspace_package_target_and_source(self):
         root = Path("/candidate").resolve()

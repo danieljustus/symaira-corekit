@@ -28,15 +28,15 @@
       ]
     },
     "candidate": {
-      "head_before": "e445d30695bebfc4b88b5457af2da70ca910a639",
-      "head_after": "e445d30695bebfc4b88b5457af2da70ca910a639",
+      "head_before": "54aae53c29d63c096235d6966679c31c8b1832d3",
+      "head_after": "54aae53c29d63c096235d6966679c31c8b1832d3",
       "clean_before": true,
       "clean_after": true,
       "go_helper_sha256": "c4f72bf9ad241759aae097756103baa820e7ed8210a956e2efa4b645ac97734d",
       "files": [
         {
-          "path": "candidate/Cargo.lock",
-          "sha256": "ba4200d6bd7b6a30d18c807c70f5a0e35fc8e216f3606e08bdd067c85cbf9a77"
+          "path": "candidate/Cargo.lock#dependency-closure",
+          "sha256": "4de2a7372b2f419458281570f867f9a467faf45bcb1e1d7141f4ecf83cc4ad27"
         },
         {
           "path": "candidate/Cargo.toml",
@@ -292,7 +292,7 @@
         },
         {
           "path": "candidate/scripts/rust-port/fs_secret_oracle.py",
-          "sha256": "d1afd720e83e35338bc3f191d8fdb6b4baa7cbf5309437c335a335b3c60fa661"
+          "sha256": "b1eb7bc4fb0ee792d2635d8b0ca2a7699fb374bd406ab45f7d41dccbfce3aa26"
         },
         {
           "path": "candidate/scripts/rust-port/generate_fs_secret.py",
@@ -311,6 +311,10 @@
           "sha256": "248d402f7da030776bc70a6cb8a1183e7f06893b2485f52bc083a0be0c159d9c"
         },
         {
+          "path": "candidate/scripts/rust-port/lock_closure.py",
+          "sha256": "1d0128c335c89a0a958b49aa00b23a03c5530a2007ef53106803eadc271de2d6"
+        },
+        {
           "path": "candidate/scripts/rust-port/static_update_anchors.py",
           "sha256": "82d4a536f934d3ff6128ac59fea4f7343a30bbf27c08934f87b3a187dd75cf85"
         },
@@ -320,7 +324,7 @@
         },
         {
           "path": "candidate/scripts/rust-port/test_fs_secret_oracle.py",
-          "sha256": "48561cd136d8f1a27a678f45902292d87983ccf3e9015f2d010ba6a87d33c6c4"
+          "sha256": "26eec2318a8417822e9ddad8420c1f0070693cc01770dc6ba28044ba0905ad1d"
         },
         {
           "path": "candidate/scripts/rust-port/validate_fs_secret.py",
@@ -343,18 +347,18 @@
       "goarch": "arm64",
       "binary_sha256": "a1c83801d1756c3eca78366c6b585f2c21c20694fb1c7eb92c446a0580420412",
       "goroot_label": "installed-go-sdk",
-      "probe_binary_sha256": "060c4f66cf9415f2ce7c3c1edcf3d185a8a90434f4864357113c8e796e429e02",
+      "probe_binary_sha256": "c01fa3751a109e8c6c1c21e669dc69901ade620c7aa1874f65e5db2788f42dc4",
       "gomodcache_policy": "existing-cache-offline-read-only",
       "sdk_sha256": "928c840eaa0bd68aa3230675ebdc0d5816b9ffac3308ccd5bb90aa1f70225cc7",
-      "modules_sha256": "c2dafb1c621c176d7fd3794a8e7d667b83a89c675d4f39a11bb5a803859927b7"
+      "modules_sha256": "576d86789ea9b57b9773ed2b0c3407c6cf2fe502b3a7cc629d5985b41ef49884"
     },
     "inputs": {
-      "before_sha256": "6fdcdb813f4de8f221cc73efdaa203e331d5fd2384e2d555e1de54f4ce7f9f72",
-      "after_sha256": "6fdcdb813f4de8f221cc73efdaa203e331d5fd2384e2d555e1de54f4ce7f9f72",
+      "before_sha256": "88943973a1b08a469759fda3a5621b5ed5df33e74c1fcc75c51b950c41848d2c",
+      "after_sha256": "88943973a1b08a469759fda3a5621b5ed5df33e74c1fcc75c51b950c41848d2c",
       "files": [
         {
-          "path": "candidate/Cargo.lock",
-          "sha256": "ba4200d6bd7b6a30d18c807c70f5a0e35fc8e216f3606e08bdd067c85cbf9a77"
+          "path": "candidate/Cargo.lock#dependency-closure",
+          "sha256": "4de2a7372b2f419458281570f867f9a467faf45bcb1e1d7141f4ecf83cc4ad27"
         },
         {
           "path": "candidate/Cargo.toml",
@@ -610,7 +614,7 @@
         },
         {
           "path": "candidate/scripts/rust-port/fs_secret_oracle.py",
-          "sha256": "d1afd720e83e35338bc3f191d8fdb6b4baa7cbf5309437c335a335b3c60fa661"
+          "sha256": "b1eb7bc4fb0ee792d2635d8b0ca2a7699fb374bd406ab45f7d41dccbfce3aa26"
         },
         {
           "path": "candidate/scripts/rust-port/generate_fs_secret.py",
@@ -629,6 +633,10 @@
           "sha256": "248d402f7da030776bc70a6cb8a1183e7f06893b2485f52bc083a0be0c159d9c"
         },
         {
+          "path": "candidate/scripts/rust-port/lock_closure.py",
+          "sha256": "1d0128c335c89a0a958b49aa00b23a03c5530a2007ef53106803eadc271de2d6"
+        },
+        {
           "path": "candidate/scripts/rust-port/static_update_anchors.py",
           "sha256": "82d4a536f934d3ff6128ac59fea4f7343a30bbf27c08934f87b3a187dd75cf85"
         },
@@ -638,7 +646,7 @@
         },
         {
           "path": "candidate/scripts/rust-port/test_fs_secret_oracle.py",
-          "sha256": "48561cd136d8f1a27a678f45902292d87983ccf3e9015f2d010ba6a87d33c6c4"
+          "sha256": "26eec2318a8417822e9ddad8420c1f0070693cc01770dc6ba28044ba0905ad1d"
         },
         {
           "path": "candidate/scripts/rust-port/validate_fs_secret.py",
@@ -650,7 +658,7 @@
         },
         {
           "path": "modules/current-helper/effective.mod",
-          "sha256": "20646d0b7936ddff12d80d75d84f4f39b7237cb920f8c99ed38a1937992d370e"
+          "sha256": "f29df86cb165c0ef56f96407bbf396dac1c61436aa542ade3cfa674a47c6942c"
         },
         {
           "path": "modules/current-helper/effective.sum",
@@ -5262,9 +5270,9 @@
         }
       ],
       "groups": {
-        "candidate": "ec4209a1f8cdbba233eedc2c374883c11b93c4c5c3e81d632b7671a7147ad052",
+        "candidate": "0463e948955bdd64151de357a248388596766b6fc652a0392129e0af9bc1bd0d",
         "oracle": "273e75cbde11d942819412b1ecd94498e4903bf154f2825e907d5eb7e4b6484b",
-        "modules": "c2dafb1c621c176d7fd3794a8e7d667b83a89c675d4f39a11bb5a803859927b7",
+        "modules": "576d86789ea9b57b9773ed2b0c3407c6cf2fe502b3a7cc629d5985b41ef49884",
         "sdk": "928c840eaa0bd68aa3230675ebdc0d5816b9ffac3308ccd5bb90aa1f70225cc7"
       }
     },
@@ -5277,7 +5285,7 @@
         "cleanup_verified": true,
         "stdout_bytes": 41,
         "stderr_bytes": 0,
-        "stdout_sha256": "024f91de762251345834fca64123e0f58315d39e4f9aaa067c69017dea8d6cd6",
+        "stdout_sha256": "86ab5806cd3525fecf3fad2389b2ad76b0b9ccd4e7122fe8984377040932e2bc",
         "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
       },
       {
@@ -5387,7 +5395,7 @@
         "cleanup_verified": true,
         "stdout_bytes": 35651,
         "stderr_bytes": 0,
-        "stdout_sha256": "3f0dd235d5a1b3ef9796d7fa33abcc3432a70906b05e794e24c472e319e573c9",
+        "stdout_sha256": "18a17d7c423dc11b6bd8285a09fb9c096bab48af811040f5e6cc0946238f178a",
         "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
       },
       {
@@ -5442,7 +5450,7 @@
         "cleanup_verified": true,
         "stdout_bytes": 35651,
         "stderr_bytes": 0,
-        "stdout_sha256": "3f0dd235d5a1b3ef9796d7fa33abcc3432a70906b05e794e24c472e319e573c9",
+        "stdout_sha256": "18a17d7c423dc11b6bd8285a09fb9c096bab48af811040f5e6cc0946238f178a",
         "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
       },
       {
@@ -5464,7 +5472,7 @@
         "cleanup_verified": true,
         "stdout_bytes": 41,
         "stderr_bytes": 0,
-        "stdout_sha256": "024f91de762251345834fca64123e0f58315d39e4f9aaa067c69017dea8d6cd6",
+        "stdout_sha256": "86ab5806cd3525fecf3fad2389b2ad76b0b9ccd4e7122fe8984377040932e2bc",
         "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
       },
       {
