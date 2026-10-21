@@ -20,6 +20,7 @@ import shutil
 import stat
 import subprocess
 import sys
+import tomllib
 import tarfile
 import tempfile
 from typing import Any, Mapping
@@ -65,6 +66,7 @@ CANDIDATE_SCRIPT_FILES = (
     "scripts/rust-port/static_update_anchors.py",
     "scripts/rust-port/fs_secret_oracle.py",
     "scripts/rust-port/test_fs_secret_oracle.py",
+    "scripts/rust-port/lock_closure.py",
     "scripts/rust-port/go-oracle/go.mod",
     "scripts/rust-port/go-oracle/go.sum",
     "scripts/rust-port/go-oracle/cmd/fssecret/main.go",
@@ -87,6 +89,7 @@ RUST_INPUT_DIRS = (
 sys.path.insert(0, str(SCRIPT_DIR))
 import static_update_oracle as _static_oracle  # noqa: E402
 from bounded_oracle_process import run_checked  # noqa: E402
+import lock_closure  # noqa: E402
 from fs_secret_anchors import TRUSTED_CAPTURE_SHA256  # noqa: E402
 
 
@@ -478,8 +481,18 @@ def _assert_named_test_result(result: subprocess.CompletedProcess, *, passed: bo
         raise OracleError("Rust mutation control failed during compilation, not at the assertion")
 
 
+# Cargo.lock is bound through the packages the bound crates can resolve to, not
+# its raw bytes (docs/rust-port/adr-rust-004-lockfile-dependency-closure.md).
+LOCK_CLOSURE_LABEL = "candidate/Cargo.lock#dependency-closure"
+
+
+def _closure_roots(root: Path) -> list[str]:
+    return sorted(tomllib.loads((root / relative / "Cargo.toml").read_text(encoding="utf-8"))["package"]["name"]
+                  for relative in RUST_INPUT_DIRS)
+
+
 def _candidate_file_paths(root: Path) -> list[Path]:
-    paths = {root / "Cargo.toml", root / "Cargo.lock"}
+    paths = {root / "Cargo.toml"}
     for name in CANDIDATE_SCRIPT_FILES:
         paths.add(root / name)
     for name in ("rust-toolchain.toml", "rust-toolchain", ".cargo/config.toml"):
@@ -508,7 +521,12 @@ def _candidate_file_records(root: Path) -> list[dict[str, str]]:
     for path in _candidate_file_paths(root):
         relative = path.relative_to(root).as_posix()
         records.append({"path": "candidate/" + relative, "sha256": sha256(path.read_bytes())})
-    return records
+    try:
+        digest = lock_closure.closure_digest(root / "Cargo.lock", _closure_roots(root))
+    except (OSError, ValueError, KeyError) as error:
+        raise OracleError(f"Cargo.lock dependency closure cannot be derived: {error}") from error
+    records.append({"path": LOCK_CLOSURE_LABEL, "sha256": digest})
+    return sorted(records, key=lambda item: item["path"])
 
 
 def _verify_candidate_files(capture: dict[str, Any], root: Path) -> None:
@@ -796,6 +814,9 @@ def _discover_input_inventory(
     # Candidate capture harness and Rust inputs are frozen alongside every
     # transitive Go dependency, not inferred from generator membership.
     for item in candidate_records:
+        if item["path"] == LOCK_CLOSURE_LABEL:
+            records[item["path"]] = item["sha256"]
+            continue
         _add_record(records, item["path"], ROOT / item["path"][len("candidate/"):], root=ROOT)
     for name, label in (("go.mod", "modules/current-helper/source-go.mod"), ("go.sum", "modules/current-helper/source-go.sum")):
         _add_record(records, label, helper_root / name, root=helper_root)

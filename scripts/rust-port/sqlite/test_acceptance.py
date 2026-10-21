@@ -1,15 +1,18 @@
 """Acceptance regression tests use the real source-bound capture."""
 import copy
 import json
+import tempfile
 import unittest
+from pathlib import Path
 from unittest.mock import patch
 import candidate
+import lock_closure
 import diff
 import typed_contract
 
 
 class AcceptanceControls(unittest.TestCase):
-    CURRENT_CAPTURE = 'testdata/rust-port/sqlite/differential-linux-rustls-refreeze-20261019.json'
+    CURRENT_CAPTURE = 'testdata/rust-port/sqlite/differential-linux-lock-closure-20261021.json'
     # A file that genuinely determines the built artifact and its observations.
     ENFORCED_KEY = 'rust/symaira-core-sqlite/src/lib.rs'
 
@@ -33,12 +36,13 @@ class AcceptanceControls(unittest.TestCase):
         # recorded forensics only, so routine maintenance cannot invalidate
         # retained evidence (docs/rust-port/adr-rust-003-candidate-source-scope.md).
         for path in (self.ENFORCED_KEY, 'rust/symaira-core-sqlite/Cargo.toml',
-                     'rust/symaira-core-fs/src/lib.rs', 'Cargo.toml', 'Cargo.lock',
+                     'rust/symaira-core-fs/src/lib.rs', 'Cargo.toml', candidate.LOCK_CLOSURE,
+                     'scripts/rust-port/lock_closure.py',
                      'rust-toolchain.toml', 'scripts/rust-port/sqlite/main.go',
                      'scripts/rust-port/sqlite/test_acceptance.py'):
             with self.subTest(enforced=path):
                 self.assertTrue(candidate.is_enforced(path))
-        for path in ('.gitattributes', '.github/workflows/ci.yml',
+        for path in ('.gitattributes', '.github/workflows/ci.yml', 'Cargo.lock',
                      'rust/symaira-core-config/src/lib.rs',
                      'rust/symaira-core-log/src/lib.rs',
                      'rust/test-support/symaira-contract-fixtures/src/lib.rs'):
@@ -46,6 +50,38 @@ class AcceptanceControls(unittest.TestCase):
                 self.assertFalse(candidate.is_enforced(path))
         recorded = set(self.manifest['source_hashes'])
         self.assertTrue(recorded - set(candidate.enforced(self.manifest['source_hashes'])))
+
+    def test_lockfile_binding_is_the_dependency_closure(self):
+        # ADR RUST-004: lockfile entries the crate cannot resolve to (for
+        # example TLS crates used only by update/LLM) do not invalidate
+        # evidence; any entry inside the closure does.
+        lock = (diff.ROOT / 'Cargo.lock').read_text(encoding='utf-8')
+        closure = lock_closure.closure_packages(diff.ROOT / 'Cargo.lock', candidate.CLOSURE_ROOTS)
+        reachable = {p['name'] for p in closure['packages']}
+        self.assertIn('symaira-core-fs', reachable)
+        self.assertNotIn('rustls-webpki', reachable)
+        baseline = lock_closure.closure_digest(diff.ROOT / 'Cargo.lock', candidate.CLOSURE_ROOTS)
+        with tempfile.TemporaryDirectory() as scratch:
+            path = Path(scratch) / 'Cargo.lock'
+            path.write_text(lock.replace('name = "rustls-webpki"\nversion = "',
+                                         'name = "rustls-webpki"\nversion = "9', 1), encoding='utf-8')
+            self.assertEqual(lock_closure.closure_digest(path, candidate.CLOSURE_ROOTS), baseline)
+            inside = next(p for p in closure['packages'] if 'source' in p)
+            marker = f'name = "{inside["name"]}"\nversion = "{inside["version"]}"'
+            self.assertIn(marker, lock)
+            path.write_text(lock.replace(marker, marker + '\nchecksum-drift = "1"', 1), encoding='utf-8')
+            self.assertNotEqual(lock_closure.closure_digest(path, candidate.CLOSURE_ROOTS), baseline)
+
+    def test_lockfile_closure_fails_closed(self):
+        with tempfile.TemporaryDirectory() as scratch:
+            path = Path(scratch) / 'Cargo.lock'
+            path.write_text('version = 4\n\n[[package]]\nname = "symaira-core-sqlite"\nversion = "0.0.0"\n'
+                            'dependencies = ["missing"]\n', encoding='utf-8')
+            with self.assertRaisesRegex(ValueError, 'does not resolve to exactly one package'):
+                lock_closure.closure_digest(path, candidate.CLOSURE_ROOTS)
+            path.write_text('version = 4\n', encoding='utf-8')
+            with self.assertRaisesRegex(ValueError, 'no package list'):
+                lock_closure.closure_digest(path, candidate.CLOSURE_ROOTS)
 
     def test_scope_covers_the_crate_dependency_closure(self):
         self.assertEqual(candidate.port_path_dependencies(), ['rust/symaira-core-fs'])

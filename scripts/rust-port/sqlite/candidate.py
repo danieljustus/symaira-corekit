@@ -12,16 +12,26 @@ import argparse
 import hashlib
 import json
 import re
+import sys
 import tomllib
 from pathlib import Path, PurePosixPath
 import generate
+
+sys.path.append(str(Path(__file__).resolve().parents[1]))
+import lock_closure  # noqa: E402
 
 ROOT = generate.ROOT
 DEFAULT = ROOT / 'testdata/rust-port/sqlite/candidate-source.json'
 EXPECTED_BASE = '82968b4fc9537daf62c2008331f5e5ce5d32b6c6'
 
-# Workspace build inputs: the resolved dependency graph and the compiler pin.
-ENFORCED_FILES = ('Cargo.toml', 'Cargo.lock', 'rust-toolchain.toml')
+# The lockfile is bound through the packages the crate under test can resolve
+# to, not its raw bytes (docs/rust-port/adr-rust-004-lockfile-dependency-closure.md).
+LOCK_CLOSURE = 'Cargo.lock#dependency-closure'
+CLOSURE_ROOTS = ('symaira-core-sqlite',)
+# Workspace build inputs: the resolved dependency closure, the compiler pin and
+# the closure derivation itself.
+ENFORCED_FILES = ('Cargo.toml', LOCK_CLOSURE, 'rust-toolchain.toml',
+                  'scripts/rust-port/lock_closure.py')
 # The crate under test, its workspace path dependencies, and the Go oracle,
 # migration corpus and harness that produce the compared observations.
 ENFORCED_TREES = ('rust/symaira-core-sqlite', 'rust/symaira-core-fs',
@@ -33,6 +43,7 @@ SQLITE_MANIFEST = ROOT / 'rust/symaira-core-sqlite/Cargo.toml'
 
 def snapshot():
     paths = {ROOT / 'Cargo.toml', ROOT / 'Cargo.lock', ROOT / 'rust-toolchain.toml',
+             ROOT / 'scripts/rust-port/lock_closure.py',
              ROOT / 'scripts/rust-port/sqlite/go.mod', ROOT / 'scripts/rust-port/sqlite/go.sum'}
     for optional in ('.gitattributes', '.cargo/config', '.github/workflows/ci.yml'):
         if (ROOT / optional).is_file():
@@ -47,6 +58,7 @@ def snapshot():
         if path.is_symlink() or not path.resolve().is_relative_to(ROOT.resolve()):
             raise ValueError('candidate source escapes repository')
         result[path.relative_to(ROOT).as_posix()] = hashlib.sha256(path.read_bytes()).hexdigest()
+    result[LOCK_CLOSURE] = lock_closure.closure_digest(ROOT / 'Cargo.lock', CLOSURE_ROOTS)
     return result
 
 
