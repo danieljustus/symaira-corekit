@@ -1,33 +1,31 @@
 """Reviewed native SQLite reports; capture never changes this map.
 
-Re-registered on 2026-10-20 from native CI on candidate e445d30695bebfc4b88b5457af2da70ca910a639
-after the rustls lockfile update and an acceptance-harness pointer change
-invalidated the original registration (CI run 37110559130). Typed verdicts,
-checked fields and accepted differences are unchanged; Go observations differ
-only in capture timestamps and the harness file hash. The darwin-arm64 record
-was replaced on 2026-10-20 from the main push run on ce70cff because the first
-one came from a manual dispatch run whose candidate revision did not survive
-the squash merge. See docs/rust-port/evidence/frozen-reregistration-20261020.json.
+Re-registered on 2026-10-21 from pull-request CI run 39560151712 (candidate
+revision 408cd01b8d8e4bbf4a088da3e6b396e52aa68af2, an ancestor of main) after
+ADR RUST-004 changed the lockfile binding to the dependency closure. Typed
+verdicts, checked fields and accepted differences are unchanged; Go observations
+differ only in capture timestamps and two harness file hashes.
+See docs/rust-port/evidence/frozen-reregistration-20261021.json (previous: docs/rust-port/evidence/frozen-reregistration-20261020.json).
 """
 
-CAPTURES = {'darwin-arm64': {'artifact_id': 12245752257,
+CAPTURES = {'darwin-arm64': {'artifact_id': 12343598020,
                   'manifest': 'testdata/rust-port/sqlite/frozen-v1/darwin-arm64/sqlite-native-candidate-source.json',
-                  'manifest_sha256': '54e58d7a931ea6f477d3b52edfbcb0d0561b83abaeab09d1e3be8e41903e2c4e',
+                  'manifest_sha256': '62c1fa5425500fc587300019d82f95895d6ed09d2e2dfff15999a4e85a485b78',
                   'report': 'testdata/rust-port/sqlite/frozen-v1/darwin-arm64/sqlite-native-report.json',
-                  'report_sha256': '7b8dca2570e36b0fef4f959bf81c7d89cb90c2cb233b81228eea8c439e3b8362',
-                  'source_commit': 'ce70cffd436dc6fb4efa05e1f61b7997aeb9e4db',
-                  'workflow_run': 39381864447},
- 'linux-amd64': {'artifact_id': 12214703294,
+                  'report_sha256': 'f3e2932ada9214f02bc361b71a68bafa624ddd3fec8d991e3e5572b01e918e1e',
+                  'source_commit': '71e3c280e51c76afb45ba46d972cd0dc8bb3d44e',
+                  'workflow_run': 39560151712},
+ 'linux-amd64': {'artifact_id': 12329255761,
                  'manifest': 'testdata/rust-port/sqlite/frozen-v1/linux-amd64/sqlite-native-candidate-source.json',
-                 'manifest_sha256': '54e58d7a931ea6f477d3b52edfbcb0d0561b83abaeab09d1e3be8e41903e2c4e',
+                 'manifest_sha256': '62c1fa5425500fc587300019d82f95895d6ed09d2e2dfff15999a4e85a485b78',
                  'report': 'testdata/rust-port/sqlite/frozen-v1/linux-amd64/sqlite-native-report.json',
-                 'report_sha256': '4c1fec0016cc524ba4452ba6645aef53fdac5d0936bef036b9a947b6d73a0374',
-                 'source_commit': 'e445d30695bebfc4b88b5457af2da70ca910a639',
-                 'workflow_run': 39308896259},
- 'windows-amd64': {'artifact_id': 12214534136,
+                 'report_sha256': 'b70fa10a2d4e14712faec3b5d07f2ce90eaf90bbac2fdf83d416c34c8ed933a8',
+                 'source_commit': '71e3c280e51c76afb45ba46d972cd0dc8bb3d44e',
+                 'workflow_run': 39560151712},
+ 'windows-amd64': {'artifact_id': 12328925122,
                    'manifest': 'testdata/rust-port/sqlite/frozen-v1/windows-amd64/sqlite-native-candidate-source.json',
-                   'manifest_sha256': '7dfc924b696c8925b509a0cc4fc8f99f3de2c1c14c0a37eaf684241f047f7620',
+                   'manifest_sha256': '9d5f9e4fc3e96b96efa811dd91edff161528c9efed59f5a88592d2eb9a799896',
                    'report': 'testdata/rust-port/sqlite/frozen-v1/windows-amd64/sqlite-native-report.json',
-                   'report_sha256': 'a92a2be1aa8e51d2172492d5708efcc8b64fb48f6fa42db61a6dec53194bb8c4',
-                   'source_commit': 'e445d30695bebfc4b88b5457af2da70ca910a639',
-                   'workflow_run': 39308896259}}
+                   'report_sha256': '23d0e2145549e67e74731aef64f747ec431b1e7fc1a7386691b2a25e5698e61f',
+                   'source_commit': '71e3c280e51c76afb45ba46d972cd0dc8bb3d44e',
+                   'workflow_run': 39560151712}}
