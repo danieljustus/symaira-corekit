@@ -11,3 +11,9 @@ updates:
     schedule:
       interval: "weekly"
       day: "monday"
+    # One pull request per week instead of one per action: every workflow
+    # change runs the full native matrix, including the scarce macOS runners.
+    groups:
+      github-actions:
+        patterns:
+          - "*"

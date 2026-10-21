@@ -80,7 +80,7 @@ jobs:
             --artifacts-dir "$RUNNER_TEMP/fs-native-evidence/raw"
       - name: Retain original native bytes and failure evidence
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: fs-secret-evidence-${{ matrix.target }}-${{ github.sha }}
           path: |
@@ -127,7 +127,7 @@ jobs:
           python scripts/rust-port/mcpcfg-differential.py --capture "$RUNNER_TEMP/process-oracles/mcpcfg.json"
           git rev-parse HEAD > "$RUNNER_TEMP/process-oracles/source-head.txt"
       - name: Retain diagnostic captures for explicit source and output review
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: process-oracles-${{ matrix.os }}-${{ github.sha }}
           path: ${{ runner.temp }}/process-oracles
@@ -218,7 +218,7 @@ jobs:
           PY
       - name: Retain native raw bytes and candidate comparisons
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: static-native-evidence-${{ matrix.target }}-${{ github.sha }}
           path: |
@@ -535,7 +535,7 @@ jobs:
           cargo deny check
       - name: Retain bounded frozen contract output
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: frozen-contract-raw-${{ matrix.os }}-${{ github.event.pull_request.head.sha || github.sha }}
           path: target/frozen-core-replay/
@@ -587,7 +587,7 @@ jobs:
         run: python scripts/rust-port/update-native-acceptance.py --report-dir "$RUNNER_TEMP/corekit-native-update"
       - name: Retain source-bound native update evidence
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: update-native-${{ matrix.os }}-${{ github.event.pull_request.head.sha || github.sha }}
           path: |
@@ -722,7 +722,7 @@ jobs:
           python -m unittest discover -s scripts/rust-port/sqlite -p 'test_*.py'
       - name: Retain native differential evidence
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: sqlite-native-${{ matrix.os }}-${{ github.event.pull_request.head.sha || github.sha }}
           path: |
@@ -821,7 +821,7 @@ jobs:
           PY
       - name: Retain frozen replay and executable denial evidence
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: fs-frozen-native-${{ matrix.os }}-${{ github.event.pull_request.head.sha || github.sha }}
           path: ${{ runner.temp }}/fs-frozen-native
