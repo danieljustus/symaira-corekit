@@ -347,6 +347,8 @@ jobs:
           fetch-depth: 0
       - name: Verify pinned Rust tool cache controls
         run: python3 -B -W error -m unittest discover -s scripts/rust-port -p test_rust_ci_tool_cache.py -v
+      - name: Verify fail-closed merge gate
+        run: python3 -B -W error -m unittest discover -s scripts/rust-port -p test_ci_merge_gate.py -v
       - name: Set up Go
         uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
@@ -966,3 +968,37 @@ jobs:
           python3 -m unittest discover -s port/consumer -p 'test_*.py'
       - name: Verify release manifest, packages, provenance and SBOM
         run: python3 port/release/verify.py --dry-run
+
+  merge-gate:
+    name: merge gate
+    # Single fail-closed context over every pull-request CI job; see
+    # scripts/rust-port/ci_merge_gate.py for the accepted job results.
+    # Manual evidence-capture dispatches deliberately skip some full-scope jobs.
+    if: always() && github.event_name != 'workflow_dispatch'
+    needs:
+      - changes
+      - test
+      - cross-platform
+      - lint
+      - port-contract
+      - govulncheck
+      - apidiff
+      - rust-foundation
+      - rust-update-signed
+      - rust-mcp
+      - rust-mcpcfg
+      - rust-sqlite-native
+      - rust-rust003-native
+      - rust-rust003-miri
+      - rust-rust013-miri
+      - rust-rust013-native
+      - rust-rust013-hardening
+      - rust-release-manifest
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
+      - name: Require every CI job to have passed or been scoped out
+        env:
+          NEEDS_JSON: ${{ toJSON(needs) }}
+          CI_FULL_SCOPE: ${{ needs.changes.outputs.full }}
+        run: python3 -B scripts/rust-port/ci_merge_gate.py
