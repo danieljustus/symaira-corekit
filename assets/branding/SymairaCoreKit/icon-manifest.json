@@ -2,29 +2,32 @@
   "product": "symaira-corekit",
   "name": "Symaira CoreKit",
   "role": "brand-only",
-  "source": "symaira-icons-release/manifest.json",
+  "source": "icon-k1v2-20261023 (approved Icon Composer master)",
   "files": {
-    "AppIcon.icon/Assets/S.png": "5f9a5e7d8d1c30349769ebfd34c8e157019cda7fc663e261b3a553856ce67b49",
-    "AppIcon.icon/Assets/signet.png": "2b92a653528537491a369d627c9a56536419ac71f638075ff9b22ac7e65cd686",
-    "AppIcon.icon/icon.json": "1684650eb6e72605df2f1836615669f565c45bbb83b5ba84044c569d9f32a6c4",
-    "AppIcon.iconset/icon_128x128.png": "a781d94a6dfa15faf543325a0891254252d1db9029a225a26b1ebdba3989f437",
-    "AppIcon.iconset/icon_128x128@2x.png": "f070a99fbb4975f6b57046e53c8a42ef550e35c1c01328eafc8adc6b97263219",
-    "AppIcon.iconset/icon_16x16.png": "d6f6e3578ae61bcb33853fd9456f0713f10d19907ec10ba178868268fbc9ff34",
-    "AppIcon.iconset/icon_16x16@2x.png": "84997d6d6c130f9fcd4d0a03f3b4b351c5bdf088c579541c5def1f13a6b3ed2d",
-    "AppIcon.iconset/icon_256x256.png": "f070a99fbb4975f6b57046e53c8a42ef550e35c1c01328eafc8adc6b97263219",
-    "AppIcon.iconset/icon_256x256@2x.png": "a03604cf46dd3736566da530e83cb722aa5789c575c21eed17aa0f2ef186a84f",
-    "AppIcon.iconset/icon_32x32.png": "84997d6d6c130f9fcd4d0a03f3b4b351c5bdf088c579541c5def1f13a6b3ed2d",
-    "AppIcon.iconset/icon_32x32@2x.png": "7ec492e03fefa7c8ff516cfa5be4ffe17caf10387cd59bd19a35c947eb5eebb7",
-    "AppIcon.iconset/icon_512x512.png": "a03604cf46dd3736566da530e83cb722aa5789c575c21eed17aa0f2ef186a84f",
-    "AppIcon.iconset/icon_512x512@2x.png": "3a0bbc10175cf828028baacd39707ea3fc4aad25f6ee6443932d87d926eb5d44",
-    "exports/AppIcon.icns": "67a45f9eebf90238898f6f650a7742c1c8cd43166654134e1dc2ab672a58b2aa",
-    "exports/iOS-Dark.png": "9e49532681a585de1f677edba716673029a5c94fe0bc4ee1a51f1428fdfb4a65",
-    "exports/iOS-Default.png": "687639c6663c9d8be47e29030d80d1d3d8ec3804c8597bde259d8f5dd84568b3",
-    "exports/iOS-TintedDark.png": "d6420a83ce5fd53a676bf43ec3c53134489ae450e40d043f762fa7cb279cc3e9",
-    "exports/ios-1024-opaque.png": "e20245f223a3d0034b938a5ef96f32ac97f9f6b8508f5e7100e957e606d3d72b",
-    "exports/macOS-Dark.png": "9e49532681a585de1f677edba716673029a5c94fe0bc4ee1a51f1428fdfb4a65",
-    "exports/macOS-Default.png": "687639c6663c9d8be47e29030d80d1d3d8ec3804c8597bde259d8f5dd84568b3",
-    "exports/macOS-TintedDark.png": "d6420a83ce5fd53a676bf43ec3c53134489ae450e40d043f762fa7cb279cc3e9",
+    "AppIcon.icon/Assets/bot.png": "1612114035bb2769414df29ad02a3c7416b180d801240bcf20b0a3caf900a672",
+    "AppIcon.icon/Assets/index.png": "244ab066a14e961c15907dd95ad0f6b00a487c26e2e23c6d5ff558cc4f0bb44a",
+    "AppIcon.icon/Assets/lines.png": "4aae5378f72567379a46086fc6a7fa45fd34171cbe6e53965cd4626dffa77277",
+    "AppIcon.icon/Assets/signet.png": "50360c8f874b5de90e63453d64f5cf55999edab4f4ece08b34cc3eaa6edeeae2",
+    "AppIcon.icon/Assets/top.png": "31acbee4bc3a714885bc0fc0394349f519c6326dad98e65fa7ade28bcd21d279",
+    "AppIcon.icon/icon.json": "78e20ac547696967f6b16f3ce11a3db6652735171ebcffd0202653521ffdd1ff",
+    "AppIcon.iconset/icon_128x128.png": "5e23301fd2a67138da8fed2be4c410ebea6708a08941363a9be97203406e56ff",
+    "AppIcon.iconset/icon_128x128@2x.png": "5adf27e16bdf6ccbbbe24b3a2e501cfbb6bd5dc4d031b06d36a0e914b3b2e487",
+    "AppIcon.iconset/icon_16x16.png": "89392dd14a60e469e33ec8b2bd970dece7fc94796478b248072497c3b8db5b5f",
+    "AppIcon.iconset/icon_16x16@2x.png": "fb4e67e6ab1bdd569136c64490d85ffc32b149e7871f749bc61bc6aa6b1c51bd",
+    "AppIcon.iconset/icon_256x256.png": "5adf27e16bdf6ccbbbe24b3a2e501cfbb6bd5dc4d031b06d36a0e914b3b2e487",
+    "AppIcon.iconset/icon_256x256@2x.png": "362b95b9dcf8d1427b63b2976e64cf3959a7687729dc40c2b127606028d5f6bf",
+    "AppIcon.iconset/icon_32x32.png": "fb4e67e6ab1bdd569136c64490d85ffc32b149e7871f749bc61bc6aa6b1c51bd",
+    "AppIcon.iconset/icon_32x32@2x.png": "5f98dfc02a80d8690d26575eebce88ff1162c0201654c47af91c8aec27727442",
+    "AppIcon.iconset/icon_512x512.png": "362b95b9dcf8d1427b63b2976e64cf3959a7687729dc40c2b127606028d5f6bf",
+    "AppIcon.iconset/icon_512x512@2x.png": "c074d9ccffde38767dcc74ae9549c21b4bfd43e7a33d9986455509af00813dd6",
+    "exports/AppIcon.icns": "9d53197364e79bc119ef070625ba8e091a0c9893b1b9bc15b7132ffd17ada411",
+    "exports/iOS-Dark.png": "6bd2a896592400bdf10b42a3a6dfee1e5427b2e3cfcdbcf4135f69ce1595adb9",
+    "exports/iOS-Default.png": "473546dcdcb93b8e6768b2eb6a23c61f296a0b6ae60bb5152c33697181569b71",
+    "exports/iOS-TintedDark.png": "ef0d2792ccef3d641b2fa5755ac97c7f31f68e7db10c8dceb7322e4048c4b05e",
+    "exports/ios-1024-opaque.png": "8f9200ca78a39138ea7a80ce54744584b218956cd35c89e2cf624446701a01aa",
+    "exports/macOS-Dark.png": "6bd2a896592400bdf10b42a3a6dfee1e5427b2e3cfcdbcf4135f69ce1595adb9",
+    "exports/macOS-Default.png": "473546dcdcb93b8e6768b2eb6a23c61f296a0b6ae60bb5152c33697181569b71",
+    "exports/macOS-TintedDark.png": "ef0d2792ccef3d641b2fa5755ac97c7f31f68e7db10c8dceb7322e4048c4b05e",
     "source/S-original-A3.png": "55fc4288d340f972acbbd22f2a11c4ba1c1c19f7faf16891b478f06b2ab26ab3",
     "source/Symaira-original.png": "829b29edbb38cfec7448bd08c2d54e64de2b49b760773affddb457e2857de987",
     "source/occlusion-mask.png": "c2c71318cf814f8a2fc1db2b7339c344c8938e3d38e9465d1d932fd955fe11cd",
@@ -34,44 +37,46 @@
     {
       "platform": "macOS",
       "mode": "Default",
-      "sha256": "687639c6663c9d8be47e29030d80d1d3d8ec3804c8597bde259d8f5dd84568b3",
+      "sha256": "473546dcdcb93b8e6768b2eb6a23c61f296a0b6ae60bb5152c33697181569b71",
       "path": "exports/macOS-Default.png"
     },
     {
       "platform": "macOS",
       "mode": "Dark",
-      "sha256": "9e49532681a585de1f677edba716673029a5c94fe0bc4ee1a51f1428fdfb4a65",
+      "sha256": "6bd2a896592400bdf10b42a3a6dfee1e5427b2e3cfcdbcf4135f69ce1595adb9",
       "path": "exports/macOS-Dark.png"
     },
     {
       "platform": "macOS",
       "mode": "TintedDark",
-      "sha256": "d6420a83ce5fd53a676bf43ec3c53134489ae450e40d043f762fa7cb279cc3e9",
+      "sha256": "ef0d2792ccef3d641b2fa5755ac97c7f31f68e7db10c8dceb7322e4048c4b05e",
       "path": "exports/macOS-TintedDark.png"
     },
     {
       "platform": "iOS",
       "mode": "Default",
-      "sha256": "687639c6663c9d8be47e29030d80d1d3d8ec3804c8597bde259d8f5dd84568b3",
+      "sha256": "473546dcdcb93b8e6768b2eb6a23c61f296a0b6ae60bb5152c33697181569b71",
       "path": "exports/iOS-Default.png"
     },
     {
       "platform": "iOS",
       "mode": "Dark",
-      "sha256": "9e49532681a585de1f677edba716673029a5c94fe0bc4ee1a51f1428fdfb4a65",
+      "sha256": "6bd2a896592400bdf10b42a3a6dfee1e5427b2e3cfcdbcf4135f69ce1595adb9",
       "path": "exports/iOS-Dark.png"
     },
     {
       "platform": "iOS",
       "mode": "TintedDark",
-      "sha256": "d6420a83ce5fd53a676bf43ec3c53134489ae450e40d043f762fa7cb279cc3e9",
+      "sha256": "ef0d2792ccef3d641b2fa5755ac97c7f31f68e7db10c8dceb7322e4048c4b05e",
       "path": "exports/iOS-TintedDark.png"
     }
   ],
-  "refresh": {
-    "design": "Liquid Topography",
-    "background_only": true,
-    "foreground_hashes_preserved": true,
-    "source_design_sha256": "03f5e47f3903e5311c9f4a7f4287f619a0472d589af0f13bf492a73606730f26"
+  "design": {
+    "name": "K1v2",
+    "description": "K1v2 (R1 relief S + champagne glass glyph)",
+    "approved": "2026-10-23",
+    "design_system": "Liquid Topography",
+    "source_design_sha256": "03f5e47f3903e5311c9f4a7f4287f619a0472d589af0f13bf492a73606730f26",
+    "clear_system_appearance": "rendered, not device-verified"
   }
 }
