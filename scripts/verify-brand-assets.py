@@ -47,8 +47,8 @@ def main() -> int:
 
     icon = json.loads((FAMILY / "AppIcon.icon" / "icon.json").read_text(encoding="utf-8"))
     groups = icon.get("groups")
-    if not isinstance(groups, list) or len(groups) != 2:
-        fail("CoreKit's brand icon must retain both approved layer groups")
+    if not isinstance(groups, list) or len(groups) != 3:
+        fail("CoreKit's brand icon must retain its three approved K1v2 layer groups")
     if len(metadata.get("renders", [])) != 6:
         fail("CoreKit's brand export matrix must contain six approved renders")
     if not (FAMILY / "exports" / "AppIcon.icns").is_file():

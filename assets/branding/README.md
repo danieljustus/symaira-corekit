@@ -9,7 +9,7 @@ consumer depend on an AppKit checkout.
 package. The matching six appearance exports and `exports/AppIcon.icns` remain
 next to it. `icon-manifest.json` records the approved release checksums.
 
-The high-contrast approved A3 artwork is authoritative. Do not redraw or
+The approved K1v2 artwork (2026-10-23) is authoritative. Do not redraw or
 recolor these files. Run the repository guard after changing branding assets:
 
 ```bash
