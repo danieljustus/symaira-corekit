@@ -1,0 +1,18 @@
+{
+  "description": "Plate-less Symaira S in the approved K1v2 R1 relief (graphite, contour lines, one champagne index line), cut out of real ictool renders and cropped to its alpha bounding box. No Scoop-specific icon is approved; used provisionally for scoop-bucket.",
+  "upstream_package": "umbrella/Symaira-S-R1.icon",
+  "files": {
+    "S-R1-light.png": {
+      "sha256": "d9ece1b602465b425b49adae38f15e3b4d7355faed24a967e26e1a6de333d93c",
+      "for_surface": "light",
+      "upstream": "umbrella/S-R1-light.png",
+      "from_rendition": "Default"
+    },
+    "S-R1-dark.png": {
+      "sha256": "9c40448a7dd3735841ffe87c9211e1b065bf125274ce0c9e8ffd5521d055c040",
+      "for_surface": "dark",
+      "upstream": "umbrella/S-R1-dark.png",
+      "from_rendition": "Dark"
+    }
+  }
+}

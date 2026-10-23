@@ -1,0 +1,33 @@
+{
+  "_comment": "Single source for public marketing identities. `source` is a directory under Brand/Marketing/source/identities (approved K1v2 icon renders) or `umbrella` (plate-less K1v2 Symaira S). Roles are factual, short, and never claim a product is a native app unless it is one.",
+  "defaults": {
+    "eyebrow": "Symaira",
+    "formats": ["social-preview", "og"]
+  },
+  "identities": [
+    {"id": "appkit", "kind": "library", "source": "appkit", "name": ["AppKit"], "role": "Swift UI foundations"},
+    {"id": "corekit", "kind": "library", "source": "corekit", "name": ["CoreKit"], "role": "Shared backend foundations"},
+    {"id": "brain", "kind": "product", "source": "brain", "name": ["Brain"], "role": "Agent context and control"},
+    {"id": "desktop", "kind": "product", "source": "desktop", "name": ["Desktop"], "role": "Document and knowledge workspace"},
+    {"id": "vault", "kind": "product", "source": "vault", "name": ["Vault"], "role": "Credential service"},
+    {"id": "cockpit", "kind": "product", "source": "cockpit", "name": ["Cockpit"], "role": "Mac system control"},
+    {"id": "eraseme", "kind": "product", "source": "eraseme", "name": ["EraseMe"], "role": "Data-broker removal"},
+    {"id": "fritz", "kind": "product", "source": "fritz", "name": ["Fritz"], "role": "FRITZ!Box tools",
+     "formats": ["social-preview", "og", "square-1080", "portrait-1080x1350", "story-1080x1920", "release-1600x900"]},
+    {"id": "router", "kind": "product-alias", "source": "fritz", "name": ["Router"], "role": "Independent FRITZ!Box tools",
+     "note": "Separate family for the documented public-kit wordmark 'Symaira Router'; reuses the Fritz signet. Does not replace Symaira Fritz.",
+     "formats": ["social-preview", "og", "square-1080", "portrait-1080x1350", "story-1080x1920", "release-1600x900"]},
+    {"id": "homebrew-tap", "kind": "distribution", "source": "homebrew-tap", "name": ["Homebrew", "Tap"], "role": "Homebrew tap for Symaira tools"},
+    {"id": "scoop-bucket", "kind": "distribution", "source": "umbrella", "name": ["Scoop", "Bucket"], "role": "Scoop bucket for Symaira tools",
+     "provisional": true, "note": "No approved icon exists for the Scoop bucket; uses the plate-less Symaira S only."},
+    {"id": "symaira-com", "kind": "website", "source": "symaira-com", "eyebrow": "", "name": ["symaira.com"], "role": "The Symaira product family"}
+  ],
+  "formats": {
+    "social-preview": {"size": [1280, 640], "role": "GitHub social preview (upload in repository settings)"},
+    "og": {"size": [1200, 630], "role": "OpenGraph / Twitter large card"},
+    "square-1080": {"size": [1080, 1080], "role": "Square social post"},
+    "portrait-1080x1350": {"size": [1080, 1350], "role": "Portrait social post"},
+    "story-1080x1920": {"size": [1080, 1920], "role": "Story / vertical (top and bottom 14% kept free)"},
+    "release-1600x900": {"size": [1600, 900], "role": "Release / README hero, 16:9"}
+  }
+}

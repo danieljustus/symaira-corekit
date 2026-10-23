@@ -49,8 +49,9 @@ def main() -> int:
 
     icon = json.loads((FAMILY / "AppIcon.icon" / "icon.json").read_text(encoding="utf-8"))
     groups = icon.get("groups")
-    if not isinstance(groups, list) or len(groups) != 2:
-        fail("the approved icon must retain its two Icon Composer layer groups")
+    # K1v2: product glyph, contour lines, two-part S. actool rejects more than four groups.
+    if not isinstance(groups, list) or len(groups) != 3:
+        fail("the approved K1v2 icon must retain its three Icon Composer layer groups")
     for group in groups:
         for layer in group.get("layers", []):
             image_name = layer.get("image-name")

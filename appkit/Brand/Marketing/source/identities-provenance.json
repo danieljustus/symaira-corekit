@@ -1,0 +1,272 @@
+{
+  "appkit": {
+    "background_only": false,
+    "design_sha256": "03f5e47f3903e5311c9f4a7f4287f619a0472d589af0f13bf492a73606730f26",
+    "files": {
+      "macOS-Dark-512.png": {
+        "sha256": "b4e48a0f9eebee3f030e948b8dd3b8460aef6cb610e8e2f53a0e196ae8b8119f",
+        "upstream_render": "appkit/exports/macOS-Dark.png",
+        "upstream_render_sha256": "c7d1310fa2bd5a9a2ebb18b5a38ba547fce5ed3a5504ba8a3848d859b2650772"
+      },
+      "macOS-Default-512.png": {
+        "sha256": "56030b00d34e334c82b0076e1f1b9014bbc26309b07a0cf5aedc0c9878a13ed4",
+        "upstream_render": "appkit/exports/macOS-Default.png",
+        "upstream_render_sha256": "6233121b5fbd375a2ae2ee86c5f619571c1369e06a8181fc0cdbc39441379704"
+      }
+    },
+    "source_files": {
+      "Assets/bot.png": "ba9e63c4d2b8182f32adb454ab15ad83ee7bc9486cad1c5ba97271499e2b3488",
+      "Assets/index.png": "7f28a12a7dba4cd30fdca258967fdd0d6ad7723a530910f456dfa0803ed6726e",
+      "Assets/lines.png": "31e8077078c09667891c7095d7c9d562fd0e48c9a34c873aeb28c1cb56934497",
+      "Assets/signet.png": "d0bf9f649133c8b16d2ecd9866994c95cce17204bb91f50f78e34ab364bf2275",
+      "Assets/top.png": "31acbee4bc3a714885bc0fc0394349f519c6326dad98e65fa7ade28bcd21d279",
+      "icon.json": "f97c6615091002d85bdea8c67c640931acfafa60cdc75de54e719ef549746ebc"
+    },
+    "source_head": "44782b903d9eb5f50484075f3a188a3d94dfca9a",
+    "source_package": "Brand/AppIcon/SymairaAppKit/AppIcon.icon",
+    "source_repo": "symaira-appkit"
+  },
+  "brain": {
+    "background_only": false,
+    "design_sha256": "03f5e47f3903e5311c9f4a7f4287f619a0472d589af0f13bf492a73606730f26",
+    "files": {
+      "macOS-Dark-512.png": {
+        "sha256": "3a2b929dd5688a3e6c2218289ed613148bac08b062371f17fb46a4e4e084708c",
+        "upstream_render": "brain/exports/macOS-Dark.png",
+        "upstream_render_sha256": "d4661f4b782d6c972fb70cea10bee7925f2c500b8f83020bdd63951197ff22e0"
+      },
+      "macOS-Default-512.png": {
+        "sha256": "b03ad1f1800edbe198403686d004d43118349510ee8086aab8aef711341b228e",
+        "upstream_render": "brain/exports/macOS-Default.png",
+        "upstream_render_sha256": "a8c1b95121125286f241521fe75b0b8ef1615a9c223c901b4d7f9f15ab4e159e"
+      }
+    },
+    "source_files": {
+      "Assets/bot.png": "1607cb2e42e2ed4d27ca87750b8565c66ff2700d56b8af89fac02af5aba7dfb0",
+      "Assets/index.png": "69412f750aeadbed4b4bc62c149b44d1e120ddd08e465acc3c9ff6cd4ddd412b",
+      "Assets/lines.png": "983ff4851191854ebcce46d3679469c3f9db2e3262216993d6fbf3fa0feb5751",
+      "Assets/signet.png": "9f35ffea268685ca789d80b481a0b223520a0afd0c3b3ea165fd85c74a696b92",
+      "Assets/top.png": "31acbee4bc3a714885bc0fc0394349f519c6326dad98e65fa7ade28bcd21d279",
+      "icon.json": "5e4237db418b293e7f5ab6d36548f5f814fad4d3a1d16b42b82b4692429dc3b1"
+    },
+    "source_head": "f98af9c8a6a1d7b64e2649842091604face82347",
+    "source_package": "assets/app-icon/AppIcon.icon",
+    "source_repo": "symaira-brain"
+  },
+  "cockpit": {
+    "background_only": false,
+    "design_sha256": "03f5e47f3903e5311c9f4a7f4287f619a0472d589af0f13bf492a73606730f26",
+    "files": {
+      "macOS-Dark-512.png": {
+        "sha256": "b2cd09cb46a00b2f2e1913f27edcdc4428e1fbfc6b5349c40537bfcef24b2f1b",
+        "upstream_render": "cockpit/exports/macOS-Dark.png",
+        "upstream_render_sha256": "ad36e8bb5f4b60c0f5e429143a6118f7c2a57f2e095e7da4a49d676634eed1f2"
+      },
+      "macOS-Default-512.png": {
+        "sha256": "5d33b5a104f887f26640cd8baaf1ab07f08284028e265b57e92533abfe22b3a5",
+        "upstream_render": "cockpit/exports/macOS-Default.png",
+        "upstream_render_sha256": "76063065a7ca75ac7842ff1e5f32fa06cb77f3208262552ed21d9841965dc59d"
+      }
+    },
+    "source_files": {
+      "Assets/bot.png": "19425d8108702c019c1c879b37643be02e47e8a582b73e672575cfcea81582b7",
+      "Assets/index.png": "88947024b632899a80bd4346ad4152db493a61fe44bc95e548af74e9f28b6404",
+      "Assets/lines.png": "7df122d448515b43cbd9b2e85124c9afa7c5ae90eb046f7c0f1b0da9c17463ed",
+      "Assets/signet.png": "429aabdf0f3a7b0f1ecd27d88646d81bb75b3f4a8a7489e6e88e1cf63500cd43",
+      "Assets/top.png": "31acbee4bc3a714885bc0fc0394349f519c6326dad98e65fa7ade28bcd21d279",
+      "icon.json": "5208f103b764a320ba99e0e9c22a6787ba0d4c713812a1c103cec4a73956a168"
+    },
+    "source_head": "fc08975968d713e285fb5ea0b0f4150e6d481099",
+    "source_package": "assets/branding/AppIcon.icon",
+    "source_repo": "symaira-cockpit"
+  },
+  "corekit": {
+    "background_only": false,
+    "design_sha256": "03f5e47f3903e5311c9f4a7f4287f619a0472d589af0f13bf492a73606730f26",
+    "files": {
+      "macOS-Dark-512.png": {
+        "sha256": "0a6510bbc955dd827f57c0c16dd8fff5ebc5b9afa48f15fd347aee2fddee0b71",
+        "upstream_render": "corekit/exports/macOS-Dark.png",
+        "upstream_render_sha256": "6bd2a896592400bdf10b42a3a6dfee1e5427b2e3cfcdbcf4135f69ce1595adb9"
+      },
+      "macOS-Default-512.png": {
+        "sha256": "51d2b1edfe8041282727f35409680ae3184fb5dd868bb876c3c6e55e7d88496e",
+        "upstream_render": "corekit/exports/macOS-Default.png",
+        "upstream_render_sha256": "473546dcdcb93b8e6768b2eb6a23c61f296a0b6ae60bb5152c33697181569b71"
+      }
+    },
+    "source_files": {
+      "Assets/bot.png": "1612114035bb2769414df29ad02a3c7416b180d801240bcf20b0a3caf900a672",
+      "Assets/index.png": "244ab066a14e961c15907dd95ad0f6b00a487c26e2e23c6d5ff558cc4f0bb44a",
+      "Assets/lines.png": "4aae5378f72567379a46086fc6a7fa45fd34171cbe6e53965cd4626dffa77277",
+      "Assets/signet.png": "50360c8f874b5de90e63453d64f5cf55999edab4f4ece08b34cc3eaa6edeeae2",
+      "Assets/top.png": "31acbee4bc3a714885bc0fc0394349f519c6326dad98e65fa7ade28bcd21d279",
+      "icon.json": "78e20ac547696967f6b16f3ce11a3db6652735171ebcffd0202653521ffdd1ff"
+    },
+    "source_head": "a794597d1f13fc5f09e9fee800c2f7a70969eb9b",
+    "source_package": "assets/branding/SymairaCoreKit/AppIcon.icon",
+    "source_repo": "symaira-corekit"
+  },
+  "desktop": {
+    "background_only": false,
+    "design_sha256": "03f5e47f3903e5311c9f4a7f4287f619a0472d589af0f13bf492a73606730f26",
+    "files": {
+      "macOS-Dark-512.png": {
+        "sha256": "08f21e42978da2eede403e307501ff9825982fa10e8fdd0d0c517fc5423dd246",
+        "upstream_render": "desktop/exports/macOS-Dark.png",
+        "upstream_render_sha256": "3d821d2d29f23158010d7e515df9eed25573eee75dec5b866bc2a449a3c6335e"
+      },
+      "macOS-Default-512.png": {
+        "sha256": "84be26967ffc3a8aff2be0428dfc60669d2572a1bae21143f2cc03d9e29b0c69",
+        "upstream_render": "desktop/exports/macOS-Default.png",
+        "upstream_render_sha256": "dade637c81b83b257d9472e1dda8999c301f948609b0fc006da451b94d6964cc"
+      }
+    },
+    "source_files": {
+      "Assets/bot.png": "4988c34034dbf967fdd14b3d25f3ed6363813466d453bbbd22e84a80874fd52e",
+      "Assets/index.png": "24dd45d72789c582cf00ceeec867de7e0d71446693b08cedd927ba93881254d8",
+      "Assets/lines.png": "173e3ea28381711184c286b697a751483b4f2927fae6b0aed40d3cf2a0b117f0",
+      "Assets/signet.png": "24501ce885438d2c4ed81f851aca4664c0dc51d5c53922cca33fc00bcc1651ca",
+      "Assets/top.png": "31acbee4bc3a714885bc0fc0394349f519c6326dad98e65fa7ade28bcd21d279",
+      "icon.json": "9ada8217f13535ef44ec3b5a4f9e2ec8b43b54efcbbd7565803203d22d4f4dcd"
+    },
+    "source_head": "27a9e0a0d1c1cd12dcc951d99be00ab5bab61bc0",
+    "source_package": "assets/app-icon/AppIcon.icon",
+    "source_repo": "symaira-desktop"
+  },
+  "eraseme": {
+    "background_only": false,
+    "design_sha256": "03f5e47f3903e5311c9f4a7f4287f619a0472d589af0f13bf492a73606730f26",
+    "files": {
+      "macOS-Dark-512.png": {
+        "sha256": "d7dc826f57bf2aa8ff3b82068478cbc6af62ce13a80fc3fc7d46ccfc304f252f",
+        "upstream_render": "eraseme/exports/macOS-Dark.png",
+        "upstream_render_sha256": "2a3725f641c900b747067609c2251d62e494e31ceafd90702083d08ed674c6d6"
+      },
+      "macOS-Default-512.png": {
+        "sha256": "b44b1bf6890b85bb7a5aafa51e5b4c8c79a03388c029c073d0e89998c144e991",
+        "upstream_render": "eraseme/exports/macOS-Default.png",
+        "upstream_render_sha256": "1e6b764d5b4f10bac5668a60e73a5f0d32fd537993f8d1ef1504a43347faf1ae"
+      }
+    },
+    "source_files": {
+      "Assets/bot.png": "4b2952bba90e3a11b5d79a25bc6e313b4002f163d5b058ca419efcaf3656e81d",
+      "Assets/index.png": "d53b84c76c0c6115dbd2d673ad27251049240c7bea03fd1279fc1fa98e97a04f",
+      "Assets/lines.png": "ae3f4a196a6b2e6d3b040bf43f15bb1050d3eaa0a4a9dec6fc3ff363befa4d9e",
+      "Assets/signet.png": "4161c4293d003cf174a65d9a11068b652596b13669fe83b228ffc1521b1c2bdf",
+      "Assets/top.png": "31acbee4bc3a714885bc0fc0394349f519c6326dad98e65fa7ade28bcd21d279",
+      "icon.json": "f89dd47a18e43f6ad5125e37c700f0fdfa146fc714cad1d783db5f96b3fe3466"
+    },
+    "source_head": "71a8deae20ae12fda5811bcd902d3c67866d48f0",
+    "source_package": "assets/branding/AppIcon.icon",
+    "source_repo": "symaira-eraseme"
+  },
+  "fritz": {
+    "background_only": false,
+    "design_sha256": "03f5e47f3903e5311c9f4a7f4287f619a0472d589af0f13bf492a73606730f26",
+    "files": {
+      "macOS-Dark-512.png": {
+        "sha256": "12ee46adc71ff9a8cf4438b6b57359fda7c22e849740e26c7f9e9a821f0fff60",
+        "upstream_render": "fritz/exports/macOS-Dark.png",
+        "upstream_render_sha256": "99f885009240b5253e111a1a92f68275417792b68e41f1b2521c1162ca4e019c"
+      },
+      "macOS-Default-512.png": {
+        "sha256": "88521a948af2749493dae136dfc3c94e9da390e6282b69345f09c109ac7ae238",
+        "upstream_render": "fritz/exports/macOS-Default.png",
+        "upstream_render_sha256": "780943d610e5c06cad235ec5aec6ebb7b13f8a518fd6fee2afdf36d927cfebef"
+      }
+    },
+    "source_files": {
+      "Assets/bot.png": "6656243331f20bcd852a4454f8d75098afcdc1e254f9ecca0ada2d8ce0a54e7d",
+      "Assets/index.png": "ae6c8b0207ca92ed21dd56d2a68ec0f6aaf48a4339dae02ca817f323d0e2d00f",
+      "Assets/lines.png": "ec9318f11043df2a4489984c8686971efafe7313e6a9976c6c84b48ceb063a28",
+      "Assets/signet.png": "4e17fc084340087c5b56765bb5a5eb20be98d2d381e4a946e837702f776f7892",
+      "Assets/top.png": "31acbee4bc3a714885bc0fc0394349f519c6326dad98e65fa7ade28bcd21d279",
+      "icon.json": "7f538673a010b358d038ae3507862a64021ea8d140499725c08ef43daead3bc2"
+    },
+    "source_head": "301f45bc2205914f60cf79d593ee5fdccbc18e1d",
+    "source_package": "assets/branding/a3/AppIcon.icon",
+    "source_repo": "symaira-fritz"
+  },
+  "homebrew-tap": {
+    "background_only": false,
+    "design_sha256": "03f5e47f3903e5311c9f4a7f4287f619a0472d589af0f13bf492a73606730f26",
+    "files": {
+      "macOS-Dark-512.png": {
+        "sha256": "6900553a49aa56869f4a4e4533f925351de2e334a279e8215f8cabbc0833333d",
+        "upstream_render": "homebrew-tap/exports/macOS-Dark.png",
+        "upstream_render_sha256": "bf009cbfc09fa431db57881172d2080af0d001e54bead52abb675846d16a0ac8"
+      },
+      "macOS-Default-512.png": {
+        "sha256": "a4718295e1d51f02a5fa474a28c8a90c3e6db0e5fd1905dbefc98d67c674e990",
+        "upstream_render": "homebrew-tap/exports/macOS-Default.png",
+        "upstream_render_sha256": "2fa1f849526a396785dbe1efe7c4ac5347d45bfbb51cfcc28c4f8c841c495473"
+      }
+    },
+    "source_files": {
+      "Assets/bot.png": "641c6c054661a769615ca0c058b0ab2eff6e821d4d8a1e93572f91315608c86f",
+      "Assets/index.png": "4992b6f9f68ef3aefb4e0f249d92fd9c03826c4a32711469231a985309efa83a",
+      "Assets/lines.png": "c66a4b49219d5207850d9f655ec4ced8cfb201a2d9f6f69f34f813b4376bc70a",
+      "Assets/signet.png": "8dfceaaf1f659cbc018b702c3f27f3479ad07e50e8140f9ffd30e61ab74e3a78",
+      "Assets/top.png": "31acbee4bc3a714885bc0fc0394349f519c6326dad98e65fa7ade28bcd21d279",
+      "icon.json": "f4d579f7a8166fda6a3df823fe19d6f6227e540ffbb21f65f9ddf19166bbb6b3"
+    },
+    "source_head": "78266b0326a0e304384bba60a01be7bec1753ba8",
+    "source_package": "brand-assets/symaira-homebrew-tap/AppIcon.icon",
+    "source_repo": "homebrew-tap"
+  },
+  "symaira-com": {
+    "background_only": false,
+    "design_sha256": "03f5e47f3903e5311c9f4a7f4287f619a0472d589af0f13bf492a73606730f26",
+    "files": {
+      "macOS-Dark-512.png": {
+        "sha256": "adbe3d0ea21c3c6e6cf450bc6e2801b597d10e665cacf338470f83723bac8876",
+        "upstream_render": "symaira-com/exports/macOS-Dark.png",
+        "upstream_render_sha256": "33ba01cea2eebd25dd295415634824ac9e84c56daec8570633eea2c823ff773c"
+      },
+      "macOS-Default-512.png": {
+        "sha256": "330e56487ec8689bb5cd2b3333b4ab3fcab582b08b3373aceba5c152dd20b11f",
+        "upstream_render": "symaira-com/exports/macOS-Default.png",
+        "upstream_render_sha256": "c4fb195f697731ec0e03e5efa2a22c345d0869a228ab778ad13aa46c1bb7bad0"
+      }
+    },
+    "source_files": {
+      "Assets/bot.png": "91029db6a32488b2567860e578782315f533c78f853028a83a60274d57ab2301",
+      "Assets/index.png": "3024b9f3d324a3311026690dcdad4d01a775bdefe00b459a7ffcff4eb7482cab",
+      "Assets/lines.png": "eae19ce6002187d9dd67ea1dfdff5b934090609d3f556b6116dcb57910dbab58",
+      "Assets/signet.png": "701afd3bb02bc53762884622b877f932747042c54a356b11bcdbd0996486cdcc",
+      "Assets/top.png": "31acbee4bc3a714885bc0fc0394349f519c6326dad98e65fa7ade28bcd21d279",
+      "icon.json": "6d7276971492d4db73ff4ed0569d78d4d2cda4e4f96d4744c723caf5dfa55f3b"
+    },
+    "source_head": "f7cc332cf1a597be650d4925338b517f10a9cd0c",
+    "source_package": "brand-assets/symaira-com/AppIcon.icon",
+    "source_repo": "symaira.com"
+  },
+  "vault": {
+    "background_only": false,
+    "design_sha256": "03f5e47f3903e5311c9f4a7f4287f619a0472d589af0f13bf492a73606730f26",
+    "files": {
+      "macOS-Dark-512.png": {
+        "sha256": "c11ff863f3e449255f88c08e304700107910e1db11c38ee8391eb9716b366be2",
+        "upstream_render": "vault/exports/macOS-Dark.png",
+        "upstream_render_sha256": "f819f64cd859a14b78a0152c456d72355d674aec807c9eb130add09ef58655dd"
+      },
+      "macOS-Default-512.png": {
+        "sha256": "5a45c3948830cd45c2a1d77d6566468a1e777e438730aa6a3bfb8248e381e02c",
+        "upstream_render": "vault/exports/macOS-Default.png",
+        "upstream_render_sha256": "89263b43b400f72026560ac3ea1d752d521790919f7f530d05bf793c8f31a3c3"
+      }
+    },
+    "source_files": {
+      "Assets/bot.png": "151c783d1962c20a5140218ddeb7ec92e6ed47a992534abd136dee1a56dabbd3",
+      "Assets/index.png": "c328039e79d2fd68f8f31ddbc8c7ed2aca5b6f9645bc5c15e1d9976f1683b675",
+      "Assets/lines.png": "f6d54660cf5b3620c5084d9d1647f3c9844cbd207d8b948cf46950a14c3689dd",
+      "Assets/signet.png": "4c9382cb89daafbc5abe1daccf5c677cea32de251cd121dca14d3fdd40ff2458",
+      "Assets/top.png": "31acbee4bc3a714885bc0fc0394349f519c6326dad98e65fa7ade28bcd21d279",
+      "icon.json": "64f3e52914a05e1159012df31d9d850d6ac622fadd248134d0ce5b5b2f232ebf"
+    },
+    "source_head": "96106d970024a0b6c1f2c07706887b45534d12bb",
+    "source_package": "client/AppIcon.icon",
+    "source_repo": "symaira-vault"
+  }
+}
