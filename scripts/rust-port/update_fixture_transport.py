@@ -25,6 +25,26 @@ from urllib.parse import urlsplit
 from bounded_oracle_process import BoundedProcessError, run_bounded
 
 
+# Test-only untrusted RSA-2048 loopback identity (self-signed CA:TRUE, 100-year
+# validity). It guards no secret: it exists solely so the original untrusted
+# RSA httptest-certificate failure is reproduced without running RSA key
+# generation or an OpenSSL subprocess on the runner (issue #404).
+UNTRUSTED_RSA_IDENTITY = Path(__file__).with_name("fixtures") / "tls-untrusted-rsa"
+
+
+def install_untrusted_rsa_identity(directory):
+    """Copy the committed test-only RSA identity into the disposable directory."""
+    for name in ("key.pem", "cert.pem"):
+        source = UNTRUSTED_RSA_IDENTITY / name
+        if source.is_symlink() or not source.is_file():
+            raise RuntimeError(f"committed untrusted RSA fixture is missing: {name}")
+        target = directory / name
+        target.write_bytes(source.read_bytes())
+        target.chmod(0o600)
+    print(json.dumps({"event": "tls_identity_setup", "mode": "tls", "algorithm": "rsa:2048",
+                      "source": "committed-test-fixture", "openssl_executable": None}, sort_keys=True), flush=True)
+
+
 def create_identity(command, directory, mode, *, timeout: float = 45):
     """Retain safe setup diagnostics, never a private key or child output."""
     started = time.monotonic()
@@ -86,17 +106,20 @@ def write_ready(name, private_tmp):
 def tls_fixture(mode, private_tmp):
     if mode not in ("tls", "tls12", "tls13", "cancellation"):
         raise ValueError("unknown fixture transport")
-    openssl = shutil.which("openssl")
-    if platform.system() == "Darwin":
-        # Apple's legacy LibreSSL CLI may lack req -addext. The supported
-        # hosted image already provides modern Homebrew OpenSSL; use that pin
-        # without installing a new runtime or changing production TLS.
-        for candidate in ("/opt/homebrew/opt/openssl@3/bin/openssl", "/usr/local/opt/openssl@3/bin/openssl"):
-            if Path(candidate).is_file():
-                openssl = candidate
-                break
-    if openssl is None:
-        raise RuntimeError("native TLS fixture requires the existing OpenSSL CLI")
+    untrusted = mode == "tls"
+    openssl = None
+    if not untrusted:
+        openssl = shutil.which("openssl")
+        if platform.system() == "Darwin":
+            # Apple's legacy LibreSSL CLI may lack req -addext. The supported
+            # hosted image already provides modern Homebrew OpenSSL; use that pin
+            # without installing a new runtime or changing production TLS.
+            for candidate in ("/opt/homebrew/opt/openssl@3/bin/openssl", "/usr/local/opt/openssl@3/bin/openssl"):
+                if Path(candidate).is_file():
+                    openssl = candidate
+                    break
+        if openssl is None:
+            raise RuntimeError("native TLS fixture requires the existing OpenSSL CLI")
     with tempfile.TemporaryDirectory(prefix="corekit-test-tls-", dir=private_tmp) as directory:
         directory = Path(directory)
         key = directory / "key.pem"
@@ -104,22 +127,23 @@ def tls_fixture(mode, private_tmp):
         # The original untrusted httptest certificate uses RSA. Its explicitly
         # trusted TLS-version fixtures use Ed25519. Match that distinction so
         # Windows' system verifier reports the original trust-chain failure,
-        # rather than an unsupported untrusted signing algorithm.
-        untrusted = mode == "tls"
-        create_identity(
-            [openssl, "req", "-new", "-x509", "-newkey", "rsa:2048" if untrusted else "ed25519", "-nodes",
-             "-keyout", str(key), "-out", str(certificate), "-days", "1",
-             "-subj", "/CN=corekit-disposable-loopback",
-             "-addext", "subjectAltName=IP:127.0.0.1",
-             "-addext", "basicConstraints=critical,CA:TRUE" if untrusted else "basicConstraints=critical,CA:FALSE",
-             "-addext", "keyUsage=critical,digitalSignature,keyCertSign" if untrusted else "keyUsage=critical,digitalSignature",
-             "-addext", "extendedKeyUsage=serverAuth"],
-            # Bound identity setup separately from the unchanged HTTP and
-            # cancellation deadlines; native Windows RSA generation has
-            # exceeded 15 seconds on a loaded hosted runner.
-            directory, mode, timeout=45,
-        )
-        key.chmod(0o600)
+        # rather than an unsupported untrusted signing algorithm. The RSA
+        # identity is committed (no runtime RSA keygen); Ed25519 is cheap and
+        # stays freshly generated under the bounded, diagnosed subprocess.
+        if untrusted:
+            install_untrusted_rsa_identity(directory)
+        else:
+            create_identity(
+                [openssl, "req", "-new", "-x509", "-newkey", "ed25519", "-nodes",
+                 "-keyout", str(key), "-out", str(certificate), "-days", "1",
+                 "-subj", "/CN=corekit-disposable-loopback",
+                 "-addext", "subjectAltName=IP:127.0.0.1",
+                 "-addext", "basicConstraints=critical,CA:FALSE",
+                 "-addext", "keyUsage=critical,digitalSignature",
+                 "-addext", "extendedKeyUsage=serverAuth"],
+                directory, mode, timeout=45,
+            )
+            key.chmod(0o600)
         der = directory / "cert.der"
         der.write_bytes(ssl.PEM_cert_to_DER_cert(certificate.read_text(encoding="ascii")))
         stopped = threading.Event()

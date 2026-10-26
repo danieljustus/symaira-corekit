@@ -85,6 +85,34 @@ class NativeTransportTests(unittest.TestCase):
                             body.extend(chunk)
                         self.assertIn(b'{"tag_name":"v1.2.4"}', body)
 
+    def test_untrusted_rsa_endpoint_never_generates_a_key_or_spawns_openssl(self):
+        # Issue #404: runtime RSA provisioning via an OpenSSL subprocess is
+        # removed; any attempt to run a child here is a regression.
+        with tempfile.TemporaryDirectory() as name, \
+                mock.patch.object(transport, "run_bounded", side_effect=AssertionError("spawned a child")), \
+                mock.patch.object(transport.shutil, "which", side_effect=AssertionError("looked up openssl")), \
+                redirect_stdout(io.StringIO()) as output:
+            with tls_fixture("tls", Path(name).resolve(strict=True)) as connection:
+                self.assertTrue(Path(connection["cert"]).is_file())
+        record = json.loads(output.getvalue())
+        self.assertEqual((record["algorithm"], record["source"]), ("rsa:2048", "committed-test-fixture"))
+
+    def test_committed_untrusted_rsa_identity_is_a_matching_long_lived_rsa_2048_pair(self):
+        directory = transport.UNTRUSTED_RSA_IDENTITY
+        key, certificate = directory / "key.pem", directory / "cert.pem"
+        # load_cert_chain rejects a key that does not match the certificate.
+        ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER).load_cert_chain(certificate, key)
+        decoded = ssl._ssl._test_decode_cert(str(certificate))
+        self.assertEqual(decoded["subjectAltName"], (("IP Address", "127.0.0.1"),))
+        self.assertEqual(decoded["subject"], decoded["issuer"])
+        remaining = ssl.cert_time_to_seconds(decoded["notAfter"]) - time.time()
+        self.assertGreater(remaining, 50 * 365 * 86400)
+        self.assertLess(ssl.cert_time_to_seconds(decoded["notBefore"]), time.time() + 60)
+        der = ssl.PEM_cert_to_DER_cert(certificate.read_text(encoding="ascii"))
+        self.assertIn(bytes.fromhex("2a864886f70d010101"), der)       # rsaEncryption
+        self.assertIn(bytes.fromhex("2a864886f70d01010b"), der)       # sha256WithRSAEncryption
+        self.assertGreater(len(der), 700)                             # 2048-bit modulus
+
     def test_tls12_endpoint_rejects_tls13_and_accepts_trusted_weak_control(self):
         with tempfile.TemporaryDirectory() as name:
             directory = Path(name)
