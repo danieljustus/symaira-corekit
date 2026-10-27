@@ -2,6 +2,20 @@
 
 The GitHub Releases page is the authoritative source for complete release notes.
 
+## v0.18.3 — 2026-10-28
+
+- `mcpserver`: on Unix, a stdout write failure now interrupts the blocked
+  read on an inherited stdin, so `ServeIO` returns instead of waiting for
+  input that never arrives. In-flight handlers still drain (#426).
+- Security: `golang.org/x/net` v0.62.0 (GO-2026-6866, GO-2026-6860 in the
+  `html` parser and renderer used by `domkit`) and `golang.org/x/sys` v0.49.0.
+  `go.mod` now recommends the Go 1.26.9 toolchain; CI and release builds use
+  Go 1.26.10 for GO-2026-6809 (crypto/x509). The minimum `go` directive stays
+  1.26.4.
+- Rust crates (Git-pinned): rustls, rustls-webpki and webpki root updates for
+  RUSTSEC-2026-0346 to -0349 and -0381 to -0383; tokio 1.53.3 for
+  RUSTSEC-2026-0386.
+
 ## v0.18.2 — 2026-10-07
 
 - `mcpserver`: `ServeIO` reports a caller cancellation (or response write
