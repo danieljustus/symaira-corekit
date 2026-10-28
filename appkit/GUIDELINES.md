@@ -360,16 +360,16 @@ the project-level absences KEY-1, SHELL-7, SHELL-9, POINTER-2, POINTER-3.
 Listed so that nobody invents a rule or a component:
 
 - `SymairaLockedLabel` defaults to a German label and draws an SF Symbol; pass
-  an English label until the shared default changes.
+  an English label until the shared default changes (#185).
 - `SymairaSettingsButton` still draws its gear from an SF Symbol string while
-  `SymairaIcon.settings` exists.
+  `SymairaIcon.settings` exists (#185).
 - No shared helper for app menu commands, ⌘-destination shortcuts or
-  `.searchable` placement; products wire these natively.
+  `.searchable` placement; products wire these natively (#187).
 - No shared table styling or numeric-column helper; products use the native
   `Table` with `.monospacedDigit()`.
 - No shared page scaffold (title, subtitle, toolbar row, state height) or
   sheet scaffold yet. Symaira EraseMe's `Page`, `PageState`, `PageEmpty` and
   `SheetScaffold` are the reference implementations and move here once a
-  second consumer needs them.
+  second consumer needs them (#186).
 - The iOS shell and the onboarding scaffold adoption are documented as
   sketches, not as verified consumers.
