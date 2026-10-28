@@ -45,6 +45,9 @@ public final class DaemonSupervisor: @unchecked Sendable {
 
     private let maxLogsLimit = 1000
 
+    /// Upper bound for draining stdout/stderr after the process exited.
+    static let outputDrainTimeout: DispatchTimeInterval = .seconds(2)
+
     /// The current operational state of the supervisor.
     public var state: DaemonState {
         lock.lock()
@@ -136,19 +139,33 @@ public final class DaemonSupervisor: @unchecked Sendable {
             self.logContinuation = continuation
             lock.unlock()
 
+            // The termination handler can run before the pipes have delivered
+            // their last bytes; it waits (bounded) until both reach EOF so that
+            // output written right before exit is not dropped.
+            let drained = DispatchGroup()
+            let outReader = PipeLineReader(drained: drained)
+            let errReader = PipeLineReader(drained: drained)
+
             outFH.readabilityHandler = { [weak self] handle in
                 let data = handle.availableData
-                guard !data.isEmpty, let text = String(data: data, encoding: .utf8) else { return }
-                self?.processIncomingOutput(text, isError: false)
+                if data.isEmpty { handle.readabilityHandler = nil }
+                for line in outReader.consume(data) {
+                    self?.processIncomingOutput(line, isError: false)
+                }
             }
 
             errFH.readabilityHandler = { [weak self] handle in
                 let data = handle.availableData
-                guard !data.isEmpty, let text = String(data: data, encoding: .utf8) else { return }
-                self?.processIncomingOutput(text, isError: true)
+                if data.isEmpty { handle.readabilityHandler = nil }
+                for line in errReader.consume(data) {
+                    self?.processIncomingOutput(line, isError: true)
+                }
             }
 
             proc.terminationHandler = { [weak self] proc in
+                // A descendant that inherited the pipes can keep them open, so
+                // the wait is bounded instead of blocking on EOF forever.
+                _ = drained.wait(timeout: .now() + DaemonSupervisor.outputDrainTimeout)
                 guard let self = self else { return }
                 let exitCode = proc.terminationStatus
 
@@ -303,6 +320,51 @@ public final class DaemonSupervisor: @unchecked Sendable {
         if let changeCallback {
             changeCallback(newState)
         }
+    }
+}
+
+/// Splits one pipe's byte stream into lines across read-chunk boundaries and
+/// signals its EOF exactly once.
+private final class PipeLineReader: @unchecked Sendable {
+    /// A line without a newline is flushed once it grows past this size.
+    private static let maxPendingBytes = 64 * 1024
+
+    private let lock = NSLock()
+    private let drained: DispatchGroup
+    private var pending = Data()
+    private var reachedEOF = false
+
+    init(drained: DispatchGroup) {
+        self.drained = drained
+        drained.enter()
+    }
+
+    /// Returns the complete lines contained in `data`. Empty `data` marks EOF:
+    /// the unterminated remainder is returned and the drain group is left.
+    func consume(_ data: Data) -> [String] {
+        lock.lock()
+        defer { lock.unlock() }
+        guard !reachedEOF else { return [] }
+
+        guard !data.isEmpty else {
+            reachedEOF = true
+            let rest = pending
+            pending = Data()
+            drained.leave()
+            return rest.isEmpty ? [] : [String(decoding: rest, as: UTF8.self)]
+        }
+
+        pending.append(data)
+        var lines: [String] = []
+        while let newline = pending.firstIndex(of: 0x0A) {
+            lines.append(String(decoding: pending[pending.startIndex..<newline], as: UTF8.self))
+            pending.removeSubrange(pending.startIndex...newline)
+        }
+        if pending.count > Self.maxPendingBytes {
+            lines.append(String(decoding: pending, as: UTF8.self))
+            pending = Data()
+        }
+        return lines
     }
 }
 #endif

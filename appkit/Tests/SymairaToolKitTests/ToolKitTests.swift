@@ -504,35 +504,51 @@ final class ToolDetectorTests: XCTestCase {
     }
 
     func testSlowToolDoesNotSerializeOthers() async throws {
-        // One tool sleeps 2 seconds; others are fast.
+        // The slow tool answers only after every fast tool has run, so it can
+        // succeed only if the fast handshakes are not queued behind it. Marker
+        // files replace wall-clock bounds, which failed on a loaded runner.
+        let fastCount = 3
+        let markers = (0..<fastCount).map { tempDir.appendingPathComponent("fast-\($0)-ran") }
+        let waitForMarkers = markers.map { "[ -f \"\($0.path)\" ]" }.joined(separator: " && ")
         let slow = try makeFakeTool(
             named: "symslow",
-            script: "#!/bin/sh\nsleep 2\necho '{\"version\":\"1.0.0\",\"schema_version\":1}'\n"
+            script: """
+                #!/bin/sh
+                i=0
+                until \(waitForMarkers); do
+                  i=$((i+1)); [ $i -gt 500 ] && exit 1
+                  sleep 0.02
+                done
+                echo '{"version":"1.0.0","schema_version":1}'
+                """
         )
-        let fastCount = 3
         let fastTools = try (0..<fastCount).map { i in
             try makeFakeTool(
                 named: "symfast\(i)",
-                script: "#!/bin/sh\necho '{\"version\":\"1.0.0\",\"schema_version\":1}'\n"
+                script: """
+                    #!/bin/sh
+                    touch "\(markers[i].path)"
+                    echo '{"version":"1.0.0","schema_version":1}'
+                    """
             )
         }
         let allTools = [slow] + fastTools
 
-        let start = Date()
-        let results = await detector.detectInstalled(from: allTools)
-        let elapsed = Date().timeIntervalSince(start)
+        // A generous handshake timeout keeps runner load from killing the
+        // waiting slow tool; serialization still fails because its markers
+        // never appear.
+        let concurrentDetector = ToolDetector(
+            locator: BinaryLocator(bundle: nil, searchPATH: tempDir.path, extraDirectories: []),
+            handshakeTimeout: 30,
+            maxConcurrentHandshakes: 4,
+            allowUnverified: true
+        )
+        let results = await concurrentDetector.detectInstalled(from: allTools)
 
-        // All tools should be detected (slow one should still have versionInfo).
         XCTAssertEqual(results.count, allTools.count, "All tools should be detected")
         XCTAssertNotNil(
             results.first(where: { $0.tool.id == "symslow" })?.versionInfo,
-            "Slow tool should still return version info")
-
-        // With 4 concurrent handshakes, total time should be dominated by
-        // the slowest in each chunk, not by the sum of all.
-        XCTAssertLessThan(
-            elapsed, 5.0,
-            "Concurrent detection should finish well under sequential sum of ~\(2 + fastCount * 1) seconds")
+            "The slow tool answers only if the fast tools ran while it was waiting")
     }
 
     func testRepeatedDetectionUsesCache() async throws {
@@ -562,7 +578,12 @@ final class ToolDetectorTests: XCTestCase {
     }
 
     func testDetectInstalledSlidesWindowWithoutBarrier() async throws {
-        let fastEnded = tempDir.appendingPathComponent("fast-ended")
+        // Ordering is enforced by marker files, not by sleep durations: the slow
+        // handshake cannot finish until the waiting tool has started. A sliding
+        // window starts it as soon as the fast handshake completes; a barrier
+        // implementation would only start it after the slow one, so the slow
+        // tool gives up after its bounded wait and the ordering assertion fails.
+        let waitingStarted = tempDir.appendingPathComponent("waiting-started")
         let events = tempDir.appendingPathComponent("events.txt")
 
         let slow = try makeFakeTool(
@@ -570,7 +591,8 @@ final class ToolDetectorTests: XCTestCase {
             script: """
                 #!/bin/sh
                 printf 'slow-start\\n' >> "\(events.path)"
-                sleep 1
+                i=0
+                while [ ! -f "\(waitingStarted.path)" ] && [ $i -lt 150 ]; do sleep 0.02; i=$((i+1)); done
                 printf 'slow-end\\n' >> "\(events.path)"
                 echo '{"version":"1.0.0","schema_version":1}'
                 """
@@ -580,9 +602,7 @@ final class ToolDetectorTests: XCTestCase {
             script: """
                 #!/bin/sh
                 printf 'fast-start\\n' >> "\(events.path)"
-                sleep 0.1
                 printf 'fast-end\\n' >> "\(events.path)"
-                touch "\(fastEnded.path)"
                 echo '{"version":"1.0.0","schema_version":1}'
                 """
         )
@@ -591,7 +611,7 @@ final class ToolDetectorTests: XCTestCase {
             script: """
                 #!/bin/sh
                 printf 'waiting-start\\n' >> "\(events.path)"
-                while [ ! -f "\(fastEnded.path)" ]; do sleep 0.02; done
+                touch "\(waitingStarted.path)"
                 printf 'waiting-end\\n' >> "\(events.path)"
                 echo '{"version":"1.0.0","schema_version":1}'
                 """

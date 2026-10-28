@@ -45,6 +45,29 @@ final class DaemonSupervisorTests: XCTestCase {
         XCTAssertTrue(lines.contains { $0.text == "hello-world-daemon" })
     }
 
+    /// A short-lived process must not lose output that is still in the pipe
+    /// when its termination is observed. Repeated runs make the race visible.
+    func testFastExitDeliversAllOutputBeforeStreamEnds() async throws {
+        let shellURL = URL(fileURLWithPath: "/bin/sh")
+        let lineCount = 200
+        for attempt in 1...100 {
+            let supervisor = DaemonSupervisor()
+            let stream = supervisor.start(
+                executable: shellURL,
+                arguments: ["-c", "i=1; while [ $i -le \(lineCount) ]; do echo line-$i; i=$((i+1)); done"]
+            )
+
+            var outputLines: [String] = []
+            for await line in stream where !line.isError && line.text.hasPrefix("line-") {
+                outputLines.append(line.text)
+            }
+
+            XCTAssertEqual(outputLines.count, lineCount, "attempt \(attempt) lost output")
+            XCTAssertEqual(outputLines.last, "line-\(lineCount)", "attempt \(attempt) lost the final line")
+            XCTAssertEqual(supervisor.state, .stopped)
+        }
+    }
+
     func testFailedExecution() async throws {
         let supervisor = DaemonSupervisor()
         let falseURL = URL(fileURLWithPath: "/usr/bin/false")

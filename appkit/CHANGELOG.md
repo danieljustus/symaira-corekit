@@ -18,6 +18,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `--fail-on`, `--self-test`). CI runs the self-test.
 - `AGENTS.md` and `README.md` route GUI work through the guidelines.
 
+### Fixed
+- `DaemonSupervisor` no longer drops output that a process writes right
+  before it exits: the log stream ends only after stdout and stderr reached
+  EOF (bounded by two seconds, so a descendant holding a pipe cannot block it).
+  Lines split across read chunks are reassembled instead of being reported as
+  two lines (#188).
+- The `ToolDetector` concurrency tests (sliding window, slow tool not
+  serializing others) order their fake handshakes with marker files instead of
+  sleep durations and elapsed-time bounds, so a loaded runner cannot fail them
+  (#181).
+- CI drops a persistent build description that still points at a Metal
+  toolchain mount from before a runner reboot (#182).
+
 ## [0.17.1] - 2026-10-20
 
 ### Fixed
