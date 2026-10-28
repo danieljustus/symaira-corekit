@@ -63,13 +63,23 @@ extension SymairaIconView where Trigger == Int {
 
 /// A plain icon button that plays the icon's motion on every press.
 public struct SymairaIconButton: View {
-    private let title: LocalizedStringKey
+    private let title: Text
     private let icon: SymairaIcon
     private let size: CGFloat
     private let action: () -> Void
     @State private var taps = 0
 
     public init(_ title: LocalizedStringKey, icon: SymairaIcon, size: CGFloat = 20, action: @escaping () -> Void) {
+        self.init(title: Text(title), icon: icon, size: size, action: action)
+    }
+
+    /// An already-resolved title, shown verbatim (for example a localized string).
+    @_disfavoredOverload
+    public init<S: StringProtocol>(_ title: S, icon: SymairaIcon, size: CGFloat = 20, action: @escaping () -> Void) {
+        self.init(title: Text(title), icon: icon, size: size, action: action)
+    }
+
+    private init(title: Text, icon: SymairaIcon, size: CGFloat, action: @escaping () -> Void) {
         self.title = title
         self.icon = icon
         self.size = size
@@ -85,8 +95,8 @@ public struct SymairaIconButton: View {
                 .contentShape(Rectangle())
         }
         .buttonStyle(.borderless)
-        .accessibilityLabel(Text(title))
-        .help(Text(title))
+        .accessibilityLabel(title)
+        .help(title)
     }
 }
 
@@ -94,6 +104,17 @@ extension Label where Title == Text, Icon == SymairaIconView<Int> {
     /// `Label("Delete", symairaIcon: .delete)`
     @MainActor
     public init(_ title: LocalizedStringKey, symairaIcon icon: SymairaIcon) {
+        self.init {
+            Text(title)
+        } icon: {
+            SymairaIconView(icon)
+        }
+    }
+
+    /// An already-resolved title, shown verbatim (for example a localized string).
+    @MainActor
+    @_disfavoredOverload
+    public init<S: StringProtocol>(_ title: S, symairaIcon icon: SymairaIcon) {
         self.init {
             Text(title)
         } icon: {

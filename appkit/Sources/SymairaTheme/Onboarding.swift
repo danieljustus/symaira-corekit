@@ -158,16 +158,15 @@ public struct SymairaOnboardingScaffold<Step: SymairaOnboardingStep, Content: Vi
             ProgressView(value: flow.progressFraction)
                 .tint(SymairaTheme.goldPrimary)
 
-            Text("Step \(flow.position) of \(flow.stepCount)")
+            Text(SymairaStrings.onboardingStep(flow.position, of: flow.stepCount))
                 .symairaText(.caption)
-                .accessibilityLabel("Step \(flow.position) of \(flow.stepCount)")
         }
     }
 
     private var navigationBar: some View {
         HStack(spacing: SymairaSpacing.medium) {
             if !flow.isFirstStep {
-                Button("Back") { flow.retreat() }
+                Button(SymairaStrings.onboardingBack) { flow.retreat() }
                     .symairaButtonStyle(.secondary)
                     .keyboardShortcut(.leftArrow, modifiers: [])
             }
@@ -175,13 +174,15 @@ public struct SymairaOnboardingScaffold<Step: SymairaOnboardingStep, Content: Vi
             Spacer()
 
             if flow.currentStep.isSkippable && !flow.currentStep.isTerminal {
-                Button("Skip") { flow.skip() }
+                Button(SymairaStrings.onboardingSkip) { flow.skip() }
                     .symairaButtonStyle(.toolbar)
             }
 
-            Button(flow.currentStep.isTerminal ? "Finish" : "Next") { flow.advance() }
-                .symairaButtonStyle(.primary)
-                .keyboardShortcut(.rightArrow, modifiers: [])
+            Button(flow.currentStep.isTerminal ? SymairaStrings.onboardingFinish : SymairaStrings.onboardingNext) {
+                flow.advance()
+            }
+            .symairaButtonStyle(.primary)
+            .keyboardShortcut(.rightArrow, modifiers: [])
         }
     }
 
@@ -190,7 +191,7 @@ public struct SymairaOnboardingScaffold<Step: SymairaOnboardingStep, Content: Vi
         announcedPosition = position
         #if os(macOS) || os(iOS)
         AccessibilityNotification.Announcement(
-            "Step \(position) of \(flow.stepCount)"
+            SymairaStrings.onboardingStep(position, of: flow.stepCount)
         ).post()
         #endif
     }

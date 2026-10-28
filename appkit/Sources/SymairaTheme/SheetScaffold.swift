@@ -12,7 +12,7 @@ public struct SymairaSheetScaffold<Content: View>: View {
     private let content: Content
 
     public init(
-        title: String, dismissTitle: String = "Cancel", dismiss: @escaping () -> Void,
+        title: String, dismissTitle: String = SymairaStrings.cancel, dismiss: @escaping () -> Void,
         primaryTitle: String? = nil, primaryDisabled: Bool = false,
         primary: @escaping () -> Void = {}, @ViewBuilder content: () -> Content
     ) {
@@ -33,7 +33,7 @@ public struct SymairaSheetScaffold<Content: View>: View {
                     .foregroundStyle(SymairaTokens.ink)
                     .accessibilityAddTraits(.isHeader)
                 Spacer()
-                SymairaIconButton("Close", icon: .close, action: dismiss)
+                SymairaIconButton(SymairaStrings.close, icon: .close, action: dismiss)
                     .frame(
                         minWidth: SymairaMetrics.minimumControlHeight, minHeight: SymairaMetrics.minimumControlHeight
                     )

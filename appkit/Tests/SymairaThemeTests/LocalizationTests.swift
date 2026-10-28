@@ -41,6 +41,22 @@ final class LocalizationTests: XCTestCase {
         XCTAssertEqual(SymairaStrings.string("sidebar.missing", "Fallback", bundle: english), "Fallback")
     }
 
+    /// Shared components with fixed copy resolve German, including positional format arguments (#197).
+    func testSharedComponentCopyResolvesGerman() throws {
+        let german = try table("de")
+        let expected = [
+            "common.close": "Schließen", "common.cancel": "Abbrechen", "common.retry": "Erneut versuchen",
+            "common.locked": "Gesperrt", "settings.title": "Einstellungen", "appearance.title": "Erscheinungsbild",
+            "onboarding.next": "Weiter", "navigate.menu": "Navigieren",
+        ]
+        for (key, value) in expected {
+            XCTAssertEqual(SymairaStrings.string(key, "", bundle: german), value, key)
+        }
+        let step = SymairaStrings.string("onboarding.step", "", bundle: german)
+        XCTAssertEqual(String(format: step, 2, 5), "Schritt 2 von 5")
+        XCTAssertEqual(SymairaStrings.onboardingStep(2, of: 5).filter(\.isNumber), "25")
+    }
+
     #if os(macOS)
     /// The native splitter keeps its role and identifier and carries the resolved strings.
     @MainActor

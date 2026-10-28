@@ -1,0 +1,18 @@
+/* Shared UI strings. Keys must exist in every .lproj (see LocalizationTests). */
+
+"provider.title" = "Anbieter";
+"provider.apiKey" = "API-Schlüssel";
+"provider.model" = "Modell";
+"provider.saved" = "Gespeichert";
+"provider.save" = "Speichern";
+"provider.removeKey" = "Gespeicherten Schlüssel entfernen";
+"provider.removeFailed" = "Der gespeicherte Zugang konnte nicht entfernt werden.";
+"provider.noModels" = "Keine Modellliste verfügbar. Gib das Modell in der App ein.";
+"provider.baseURL" = "Basis-URL";
+"provider.modelOrDeployment" = "Modell oder Deployment";
+"provider.loading" = "Lädt …";
+"provider.refreshModels" = "Modelle aktualisieren";
+"provider.testing" = "Wird getestet …";
+"provider.testConnection" = "Verbindung testen";
+"provider.loadedModels" = "%lld Modell(e) geladen.";
+"provider.connected" = "Verbunden in %lld ms.";

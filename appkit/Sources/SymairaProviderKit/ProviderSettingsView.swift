@@ -10,7 +10,7 @@ public struct SymairaProviderPicker: View {
     public init(
         selection: Binding<String>,
         catalog: SymairaProviderCatalog = .bundled,
-        title: String = "Provider"
+        title: String = ProviderStrings.provider
     ) {
         self._selection = selection
         self.catalog = catalog
@@ -39,7 +39,7 @@ public struct SymairaProviderCredentialField: View {
     public init(
         providerID: String,
         store: SymairaProviderCredentialStore = SymairaProviderCredentialStore(),
-        title: String = "API key",
+        title: String = ProviderStrings.apiKey,
         onCredentialChange: (() -> Void)? = nil
     ) {
         self.providerID = providerID
@@ -56,16 +56,16 @@ public struct SymairaProviderCredentialField: View {
                     .textFieldStyle(.roundedBorder)
                     .onSubmit(save)
                 if saved {
-                    Text("Saved")
+                    Text(ProviderStrings.saved)
                         .foregroundStyle(.green)
                         .font(.caption)
                 } else {
-                    Button("Save", action: save)
+                    Button(ProviderStrings.save, action: save)
                         .disabled(value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
             }
             if !value.isEmpty {
-                Button("Remove saved key", role: .destructive, action: delete)
+                Button(ProviderStrings.removeKey, role: .destructive, action: delete)
                     .font(.caption)
             }
             if let errorMessage {
@@ -99,7 +99,7 @@ public struct SymairaProviderCredentialField: View {
 
     private func delete() {
         guard store.delete(for: providerID) else {
-            errorMessage = "The saved credential could not be removed."
+            errorMessage = ProviderStrings.removeFailed
             return
         }
         value = ""
@@ -118,7 +118,7 @@ public struct SymairaModelPicker: View {
     public init(
         selection: Binding<String>,
         models: [SymairaProviderModel],
-        title: String = "Model"
+        title: String = ProviderStrings.model
     ) {
         self._selection = selection
         self.models = models
@@ -127,7 +127,7 @@ public struct SymairaModelPicker: View {
 
     public var body: some View {
         if models.isEmpty {
-            Text("No model list available — enter a model in the host app.")
+            Text(ProviderStrings.noModels)
                 .font(.caption)
                 .foregroundStyle(.secondary)
         } else {
@@ -158,6 +158,7 @@ public struct SymairaProviderSettingsView: View {
     @State private var isLoadingModels = false
     @State private var isTesting = false
     @State private var statusMessage: String?
+    @State private var statusIsSuccess = false
 
     public init(
         providerID: Binding<String>,
@@ -186,29 +187,32 @@ public struct SymairaProviderSettingsView: View {
                 .id(descriptor.id)
 
                 if descriptor.baseURLOverridable || descriptor.baseURLRequiredOverride {
-                    TextField("Base URL", text: $baseURLText)
+                    TextField(ProviderStrings.baseURL, text: $baseURLText)
                         .textContentType(.URL)
                         .autocorrectionDisabled()
                 }
 
                 if descriptor.models.mode == .configured || descriptor.models.mode == .deployment {
-                    TextField("Model or deployment", text: $modelText)
+                    TextField(ProviderStrings.modelOrDeployment, text: $modelText)
                         .autocorrectionDisabled()
                 } else {
                     SymairaModelPicker(selection: $modelText, models: modelsForDisplay(descriptor))
                     if descriptor.models.mode == .discovered {
-                        Button(isLoadingModels ? "Loading…" : "Refresh models", action: loadModels)
-                            .disabled(isLoadingModels)
+                        Button(
+                            isLoadingModels ? ProviderStrings.loading : ProviderStrings.refreshModels,
+                            action: loadModels
+                        )
+                        .disabled(isLoadingModels)
                     }
                 }
 
                 HStack {
-                    Button(isTesting ? "Testing…" : "Test connection", action: testConnection)
+                    Button(isTesting ? ProviderStrings.testing : ProviderStrings.testConnection, action: testConnection)
                         .disabled(isTesting)
                     if let statusMessage {
                         Text(statusMessage)
                             .font(.caption)
-                            .foregroundStyle(statusMessage.hasPrefix("Connected") ? .green : .red)
+                            .foregroundStyle(statusIsSuccess ? .green : .red)
                             .fixedSize(horizontal: false, vertical: true)
                     }
                 }
@@ -263,9 +267,11 @@ public struct SymairaProviderSettingsView: View {
                 let models = try await makeClient(descriptor).discoverModels()
                 discoveredModels = models
                 if modelText.isEmpty { modelText = models.first?.id ?? "" }
-                statusMessage = "Loaded \(models.count) model(s)."
+                statusMessage = ProviderStrings.loadedModels(models.count)
+                statusIsSuccess = true
             } catch {
                 statusMessage = SymairaSecretRedactor.redact(error.localizedDescription)
+                statusIsSuccess = false
             }
         }
     }
@@ -279,9 +285,11 @@ public struct SymairaProviderSettingsView: View {
             do {
                 let result = try await makeClient(descriptor).testConnection()
                 let latency = Int((result.latency * 1_000).rounded())
-                statusMessage = "Connected in \(latency) ms."
+                statusMessage = ProviderStrings.connected(milliseconds: latency)
+                statusIsSuccess = true
             } catch {
                 statusMessage = SymairaSecretRedactor.redact(error.localizedDescription)
+                statusIsSuccess = false
             }
         }
     }

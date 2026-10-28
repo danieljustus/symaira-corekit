@@ -21,7 +21,7 @@ public struct SymairaCommands<Destination: Hashable>: Commands {
     }
 
     public var body: some Commands {
-        CommandMenu("Navigate") {
+        CommandMenu(SymairaStrings.navigateMenu) {
             ForEach(destinations.indices, id: \.self) { index in
                 destinationButton(at: index)
             }

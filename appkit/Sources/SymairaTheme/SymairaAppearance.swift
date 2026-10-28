@@ -10,9 +10,9 @@ public enum SymairaAppearance: String, CaseIterable, Sendable {
 
     public var title: String {
         switch self {
-        case .system: "System"
-        case .light: "Light"
-        case .dark: "Dark"
+        case .system: SymairaStrings.appearanceSystem
+        case .light: SymairaStrings.appearanceLight
+        case .dark: SymairaStrings.appearanceDark
         }
     }
 
@@ -66,12 +66,12 @@ public struct SymairaSettingsButton: View {
                 #endif
             }
         } label: {
-            Label("Settings", symairaIcon: .settings)
+            Label(SymairaStrings.settings, symairaIcon: .settings)
         }
         .labelStyle(.iconOnly)
-        .accessibilityLabel("Settings")
+        .accessibilityLabel(SymairaStrings.settings)
         .accessibilityIdentifier("symaira-settings-button")
-        .help("Settings")
+        .help(SymairaStrings.settings)
     }
 }
 
@@ -98,7 +98,7 @@ public struct SymairaAppearancePicker: View {
     public var body: some View {
         // Shared segments, not the native segmented picker with its system accent.
         SymairaSegmentedControl(
-            "Appearance", selection: $selection,
+            SymairaStrings.appearance, selection: $selection,
             options: Self.options
         )
         .frame(maxWidth: 360)
@@ -113,16 +113,16 @@ public struct SymairaAppearanceMenu: View {
 
     public var body: some View {
         Menu {
-            Picker("Appearance", selection: $selection) {
+            Picker(SymairaStrings.appearance, selection: $selection) {
                 ForEach(SymairaAppearance.allCases, id: \.self) { option in
                     Text(option.title).tag(option)
                 }
             }
             .pickerStyle(.inline)
         } label: {
-            Label("Appearance", systemImage: "circle.lefthalf.filled")
+            Label(SymairaStrings.appearance, systemImage: "circle.lefthalf.filled")
                 .labelStyle(.titleAndIcon)
         }
-        .help("Appearance: System, Light or Dark")
+        .help(SymairaStrings.appearanceHelp)
     }
 }

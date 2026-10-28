@@ -139,7 +139,7 @@ public struct SymairaNotice: View {
             }
 
             if let onDismiss {
-                SymairaIconButton("Dismiss", icon: .close, size: 16, action: onDismiss)
+                SymairaIconButton(SymairaStrings.dismiss, icon: .close, size: 16, action: onDismiss)
                     .frame(minWidth: 24, minHeight: 24)
                     .foregroundStyle(SymairaTheme.foregroundMuted(for: colorScheme))
             }

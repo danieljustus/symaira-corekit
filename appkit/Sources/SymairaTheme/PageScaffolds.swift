@@ -114,7 +114,7 @@ public struct SymairaPageState<Value, Loaded: View>: View {
             SymairaPageStateFrame {
                 VStack(spacing: SymairaSpacing.medium) {
                     SymairaNotice(message: message, tone: .critical)
-                    Button("Retry", action: retry)
+                    Button(SymairaStrings.retry, action: retry)
                         .symairaButtonStyle(.secondary)
                         .accessibilityIdentifier("symaira.page.retry")
                 }

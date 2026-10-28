@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- `SymairaIconButton` and `Label(_:symairaIcon:)` accept an already-resolved
+  `StringProtocol` title (shown verbatim), next to the existing
+  `LocalizedStringKey` initializers.
 - Inter (SIL Open Font License 1.1, unmodified original `Inter[opsz,wght].ttf`)
   ships in `SymairaTheme` next to Google Sans Flex. `SymairaFont.Family`
   (`.brand`, `.text`), `SymairaFont.isAvailable(_:)` and a `family:` parameter
@@ -55,6 +58,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   description (#178).
 
 ### Fixed
+- Remaining fixed English copy in shared components is localized (English and
+  German): sheet Close and default Cancel, notice Dismiss, page Retry,
+  `SymairaLockedLabel` default, Settings button, appearance picker/menu and
+  `SymairaAppearance.title`, the Navigate menu, onboarding step/Back/Skip/Next/
+  Finish, and the provider settings views (own `Localizable.strings` in
+  `SymairaProviderKit`). A successful model refresh is no longer coloured as an
+  error; the status colour no longer depends on the English message text (#197).
 - The native sidebar resize splitter and the sidebar toggle no longer hardcode
   English: their accessibility labels and tooltips resolve from the package's
   new `Localizable.strings` (English and German, English fallback). Role,

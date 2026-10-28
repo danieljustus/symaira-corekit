@@ -4,8 +4,8 @@ import XCTest
 
 @MainActor
 final class LockedLabelTests: XCTestCase {
-    func testDefaultLabelIsEnglish() {
-        XCTAssertEqual(SymairaLockedLabel().text, "Locked")
+    func testDefaultLabelIsLocalized() {
+        XCTAssertEqual(SymairaLockedLabel().text, SymairaStrings.locked)
     }
 
     func testCustomReasonIsPreserved() {
