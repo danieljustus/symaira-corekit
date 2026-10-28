@@ -10,6 +10,15 @@ also preserve historical removals, including `embedkit` in v0.12.0; those
 require migration. Otherwise "check" means a new capability to adopt or a
 behavior change worth confirming.
 
+## v0.18.3
+
+- `mcpserver`: a Unix stdout write failure no longer leaves `ServeIO` blocked
+  on an inherited stdin. No API change.
+- Security updates for `golang.org/x/net` (v0.62.0; `domkit` HTML parsing and
+  rendering) and `golang.org/x/sys` (v0.49.0), plus a `toolchain go1.26.9`
+  line in `go.mod`; the `go 1.26.4` minimum is unchanged. Build consumers with
+  Go 1.26.10 or newer to pick up the GO-2026-6809 standard-library fix.
+
 ## v0.18.2
 
 - `mcpserver`: restores the v0.17 `ServeIO` result when the caller cancels
