@@ -48,7 +48,8 @@ colors:
   topo: "#2B2B2A"
   topo-dark: "#E1E0DA"
 typography:
-  # Google Sans Flex mit fester optischer Größe opsz 18 (siehe Abschnitt Typography).
+  # Überschriften und Messwerte: Google Sans Flex, opsz 18. Fließtext, Labels, Captions: Inter, opsz 14
+  # (siehe Abschnitt Typography).
   display:
     fontFamily: Google Sans Flex
     fontSize: 26px
@@ -79,24 +80,24 @@ typography:
     fontWeight: 650
     lineHeight: 1.35
   body-lg:
-    fontFamily: Google Sans Flex
+    fontFamily: Inter
     fontSize: 14.5px
-    fontWeight: 500
+    fontWeight: 450
     lineHeight: 1.5
   body:
-    fontFamily: Google Sans Flex
+    fontFamily: Inter
     fontSize: 13.5px
-    fontWeight: 500
+    fontWeight: 450
     lineHeight: 1.5
   label:
-    fontFamily: Google Sans Flex
+    fontFamily: Inter
     fontSize: 12.5px
-    fontWeight: 600
+    fontWeight: 550
     lineHeight: 1.4
   caption:
-    fontFamily: Google Sans Flex
+    fontFamily: Inter
     fontSize: 11.5px
-    fontWeight: 600
+    fontWeight: 450
     lineHeight: 1.4
   mono:
     fontFamily: SF Mono
@@ -334,14 +335,14 @@ Jede Rolle gibt es hell (Standardwert) und dunkel (Suffix `-dark`). Code nutzt i
 
 ## Typography
 
-**Google Sans Flex** ist die Marken- und UI-Schrift auf allen Plattformen, SF Mono bleibt für Code. Die Schrift wird als unveränderte Originaldatei mitgeliefert (SIL Open Font License 1.1, Lizenz- und Markenhinweis liegen neben der Datei). Kein Google-Fonts-CDN, keine Teilmengen oder Umbenennungen: eine veränderte Fassung darf den Namen nicht tragen.
+**Google Sans Flex** ist die Markenschrift: Logo, Display, Titel, Überschriften und Messwerte. **Inter** setzt Fließtext, Labels, Buttons und Captions, weil sie bei 11 bis 14px deutlich besser lesbar bleibt. SF Mono bleibt für Code. Beide Schriften stehen unter der SIL Open Font License 1.1, sind also kommerziell und auf allen Plattformen (Apple, Web, Windows, Android, Print) nutzbar, und werden als unveränderte Originaldateien mitgeliefert; Lizenz- und Markenhinweise liegen neben den Dateien. Kein Google-Fonts-CDN, keine Teilmengen oder Umbenennungen: eine veränderte Fassung darf den Namen nicht tragen. SF Pro ist keine Alternative: Apple lizenziert sie nur als Systemschrift auf Apple-Geräten, nicht zum Einbetten, als Webfont oder auf anderen Plattformen.
 
-- **Feste optische Größe `opsz 18`**, keine automatische Anpassung. Automatisch wird Text unter 14px um 5 bis 8 % breiter und wirkt gesperrt. Web: `tokens.css` setzt `font-optical-sizing: none; font-variation-settings: 'opsz' 18` bewusst mit `!important`, weil jede `font`-Kurzschreibweise beide Werte zurücksetzt und über Spezifität sonst gewinnt. Weitere Variationsachsen nur über `font-weight`/`font-stretch` steuern, nicht über eigene `font-variation-settings`. Apple: Variationsachse `opsz` explizit setzen (`SymairaFont`).
-- **Gewichte:** Fließtext 500, Labels und Buttons 600, Titel 650, Überschriften und Messwerte 700.
+- **Feste optische Größe je Schrift**, keine automatische Anpassung: Google Sans Flex `opsz 18` (automatisch wird sie unter 14px um 5 bis 8 % breiter und wirkt gesperrt), Inter `opsz 14` (ihr Textschnitt). Web: `tokens.css` setzt `font-optical-sizing: none; font-variation-settings: 'opsz' var(--sym-opsz)` bewusst mit `!important`, weil jede `font`-Kurzschreibweise beide Werte zurücksetzt und über Spezifität sonst gewinnt. `--sym-opsz` ist standardmäßig 14; Elemente in Google Sans Flex (`.sym-type-*` der Überschriftenrollen, `.sym-font-brand`, eigene Überschriften) setzen `--sym-opsz: 18`. Weitere Variationsachsen nur über `font-weight`/`font-stretch` steuern, nicht über eigene `font-variation-settings`. Apple: Variationsachse `opsz` explizit setzen (`SymairaFont`).
+- **Gewichte:** Inter: Fließtext und Captions 450, Labels und Buttons 550, Hervorhebung und Gruppenlabels 600. Google Sans Flex: Titel 650, Überschriften und Messwerte 700.
 - **Ziffern** in Messwerten tabellarisch (`tnum` bzw. `.monospacedDigit()`).
 - **Dynamic Type:** Größen skalieren relativ zum zugehörigen Textstil.
-- **Keine Symbole als Schriftzeichen.** Google Sans Flex enthält unter anderem ⓘ → ✓ ✕ ⌥ nicht; der Browser würde eine Ersatzschrift einsetzen. Symbole sind SVG bzw. SF Symbols.
-- Web-Fallback-Kette: `"Google Sans Flex", -apple-system, BlinkMacSystemFont, system-ui, sans-serif`.
+- **Keine Symbole als Schriftzeichen.** Die Schriften enthalten nicht jedes Symbol (Google Sans Flex etwa kein ⓘ → ✓ ✕ ⌥); der Browser würde eine Ersatzschrift einsetzen. Symbole sind SVG bzw. SF Symbols.
+- Web-Fallback-Ketten: `--sym-font` `"Google Sans Flex", -apple-system, BlinkMacSystemFont, system-ui, sans-serif`; `--sym-font-text` `"Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif`.
 
 ## Layout
 
@@ -433,5 +434,6 @@ Die Hintergrundebene ist ein Shader. Im Web läuft er über WebGL2 (`web/symaira
 - iOS-Simulator: läuft (`build-ios.sh`). Metal für den Simulator muss mit `-target air64-apple-ios26.0-simulator` kompiliert werden, sonst ignoriert SwiftUI den Shader stillschweigend. Echtes Gerät nicht getestet.
 - Tabellen, Menüs, Dialoge, Formulare, Einstellungen und Leer-/Fehlerzustände sind als interaktive Web-Referenz in `web/catalog.html` gestaltet. Native Umsetzung, VoiceOver-Abnahme und vollständiges Onboarding bleiben offen.
 - Logo und App-Icons (A3 „Verzahnt“) sind noch nicht an die graue Palette angepasst.
+- Inter für Fließtext ist neu und noch nicht im vollständigen Cockpit-Piloten abgenommen; Gewichte 450/550/600 sind ein Startwert.
 - Google Sans Flex ist in SwiftUI und im Web nur in Chrome (Pilot) geprüft. Safari/WebKit-Darstellung und VoiceOver bleiben offen.
 - Die Navigationsauswahl erreicht als Fläche weniger als 3:1 und wird zusätzlich über Fettdruck markiert.

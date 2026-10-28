@@ -68,8 +68,12 @@ def run(p):
     page.evaluate("document.fonts.ready")
     check("type: Google Sans Flex loaded from the bundled original file",
           page.evaluate("document.fonts.check('600 13px \\\"Google Sans Flex\\\"') && [...document.fonts].some(f=>f.family.includes('Google Sans Flex') && f.status==='loaded')"))
-    check("type: fixed optical size opsz 18 on body text",
-          page.evaluate("(()=>{const s=getComputedStyle(document.querySelector('.hint')||document.body);return s.fontOpticalSizing==='none'&&s.fontVariationSettings.replace(/\\s/g,'')===\"\\\"opsz\\\"18\"})()"))
+    check("type: Inter loaded from the bundled original file",
+          page.evaluate("document.fonts.check('450 13px \\\"Inter\\\"') && [...document.fonts].some(f=>f.family.includes('Inter') && f.status==='loaded')"))
+    check("type: body text in Inter with fixed optical size opsz 14",
+          page.evaluate("(()=>{const s=getComputedStyle(document.querySelector('.hint')||document.body);return s.fontFamily.startsWith('Inter')&&s.fontOpticalSizing==='none'&&s.fontVariationSettings.replace(/\\s/g,'')===\"\\\"opsz\\\"14\"})()"))
+    check("type: headings in Google Sans Flex with fixed optical size opsz 18",
+          page.evaluate("(()=>{const s=getComputedStyle(document.querySelector('h2'));return s.fontFamily.includes('Google Sans Flex')&&s.fontVariationSettings.replace(/\\s/g,'')===\"\\\"opsz\\\"18\"})()"))
     check("desktop: no horizontal overflow", page.evaluate("document.documentElement.scrollWidth <= window.innerWidth"))
 
     # Theme toggle

@@ -215,12 +215,14 @@ Six lines, kept in the pull request or issue:
 - **COLOR-4** In light appearance, controls placed directly on the canvas carry
   the 1 pt `SymairaTheme.raisedOutline(for:)`; never rely on fill alone.
 - **TYPE-1** Fonts come from `SymairaTypography` roles or `.symairaText(_:)`
-  (Google Sans Flex, fixed `opsz` 18); no `.font(.system(size:))` and no
+  (Google Sans Flex `opsz` 18 for display, titles, headings and metrics;
+  Inter `opsz` 14 for running text, labels and captions); no `.font(.system(size:))` and no
   `.font(.headline)` or other system text styles.
 - **TYPE-2** Numbers that update use tabular digits (`SymairaTypography.stat`,
   `.readout`, or `.monospacedDigit()`); numeric table columns align trailing.
-- **TYPE-3** Weights: body 500, labels and buttons 600, titles 650, headings
-  and metrics 700; no other weights.
+- **TYPE-3** Weights: Inter body and captions 450, labels and buttons 550,
+  emphasis and section labels 600; Google Sans Flex titles 650, headings and
+  metrics 700; no other weights.
 - **ICON-1** Icons are `SymairaIcon` cases through `SymairaIconView`,
   `SymairaIconButton`, `Label(_:symairaIcon:)` and the `icon:` initializers of
   the shared components. An SF Symbol string is acceptable only where no case

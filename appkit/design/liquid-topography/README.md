@@ -18,7 +18,7 @@ Gemeinsame Designquelle für alle Symaira-Apps (macOS, iOS) und symaira.com.
 | `web/test_catalog.py` | Browser-Checks für Desktop, Touch, Tastatur, Kontraste und reduzierte Bewegung | ✅ |
 | `../../Sources/SymairaTheme/Resources/SymairaTopo.metal` | dieselbe Topografie als Metal-Shader | ✅ |
 | `../../Sources/SymairaTheme/SymairaTopoView.swift` | SwiftUI-View und `.topoProtected()`-Modifier | ✅ |
-| `../../Sources/SymairaTheme/Resources/Fonts/` | Google Sans Flex (unveränderte Originaldatei, OFL, Markenhinweis) | ❌ nur durch neuere Originalversion ersetzen |
+| `../../Sources/SymairaTheme/Resources/Fonts/` | Google Sans Flex und Inter (unveränderte Originaldateien, OFL, Markenhinweis) | ❌ nur durch neuere Originalversion ersetzen |
 
 ## Ablauf nach Änderungen
 

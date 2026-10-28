@@ -218,7 +218,7 @@ consumer or update dependency pins; EraseMe adoption is a separate follow-up.
 
 | Rule | AppKit owner | Product responsibility |
 | --- | --- | --- |
-| Gray palette, Google Sans Flex, optical size, font licensing | Generated `SymairaTokens`, `SymairaFont`, typography roles | Use roles; do not vendor a second theme |
+| Gray palette, Google Sans Flex and Inter, optical sizes, font licensing | Generated `SymairaTokens`, `SymairaFont`, typography roles | Use roles; do not vendor a second theme |
 | Topography animation, clipping and readable protection | `SymairaTopoView`, `.topoProtected()`, `symairaTopography` environment | Protect individual text bounds before padding/expansion, not whole header stacks; cards retain full protection |
 | Rounded main panel, 20 pt radius, 8 pt trailing/bottom inset | `SymairaWorkspace` | Content width and navigation destinations |
 | Continuous sidebar/toolbar chrome, transparency/contrast fallbacks | `SymairaWorkspace`, existing glass helpers | Product content only |

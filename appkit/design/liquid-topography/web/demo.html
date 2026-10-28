@@ -7,16 +7,16 @@
 <link rel="stylesheet" href="../dist/tokens.css">
 <style>
 *{box-sizing:border-box;margin:0}
-body{font:500 13.5px/1.5 var(--sym-font);-webkit-font-smoothing:antialiased;background:var(--sym-canvas);color:var(--sym-ink);min-height:100vh;display:grid;grid-template-rows:auto 1fr}
+body{font:450 13.5px/1.5 var(--sym-font-text);-webkit-font-smoothing:antialiased;background:var(--sym-canvas);color:var(--sym-ink);min-height:100vh;display:grid;grid-template-rows:auto 1fr}
 .bar{display:flex;gap:8px;padding:12px 16px;border-bottom:1px solid var(--sym-line);position:relative;z-index:2;background:var(--sym-sidebar)}
 .app{position:relative;display:grid;place-items:center;padding:48px 24px;overflow:hidden}
-.btn{font:600 12.5px/1.4 var(--sym-font);padding:7px 15px;border-radius:var(--sym-radius-md);border:1px solid var(--sym-line);background:var(--sym-surface);color:var(--sym-ink);cursor:pointer}
+.btn{font:550 12.5px/1.4 var(--sym-font-text);padding:7px 15px;border-radius:var(--sym-radius-md);border:1px solid var(--sym-line);background:var(--sym-surface);color:var(--sym-ink);cursor:pointer}
 .btn[aria-pressed="true"],.primary{background:var(--sym-primary);color:var(--sym-on-primary);border-color:transparent}
 .btn:focus-visible{outline:2px solid var(--sym-primary);outline-offset:2px}
 .card{position:relative;z-index:1;width:min(560px,100%);background:var(--sym-surface);border:1px solid var(--sym-line);border-radius:var(--sym-radius-lg);padding:20px 22px;display:grid;gap:10px}
-.card h1{font:700 16px/1.3 var(--sym-font);letter-spacing:-.01em}
+.card h1{font:700 16px/1.3 var(--sym-font);--sym-opsz:18;letter-spacing:-.01em}
 .card p{color:var(--sym-ink-2)}
-.status{display:inline-flex;gap:8px;align-items:center;font:600 12px/1 var(--sym-font);color:var(--sym-ink-2)}
+.status{display:inline-flex;gap:8px;align-items:center;font:550 12px/1 var(--sym-font-text);color:var(--sym-ink-2)}
 .status i{width:8px;height:8px;border-radius:50%;background:var(--sym-primary)}
 </style>
 </head>

@@ -79,16 +79,24 @@ def css(d, r, topo):
     lines += [f"  --sym-radius-{k}: {v};" for k, v in d["rounded"].items()]
     lines += [f"  --sym-space-{k}: {v};" for k, v in d["spacing"].items()]
     lines += ['  --sym-font: "Google Sans Flex", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;',
+              '  --sym-font-text: "Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;',
+              "  --sym-opsz: 14;",
               '  --sym-font-mono: ui-monospace, "SF Mono", Menlo, monospace;',
               "  --sym-icon-stroke: 2;",
               "  --sym-shadow-float: 0 1px 2px rgba(0,0,0,.05), 0 10px 28px rgba(0,0,0,.10);",
               "  color-scheme: light;", "}",
-              "/* Feste optische Größe: automatisch wird kleine Schrift 5–8 % breiter. Jede font-Kurzschreibweise setzt",
-              "   beides zurück und schlägt über Spezifität jede normale Regel. Daher bewusst !important (DESIGN.md › Typography). */",
-              "body, body * { font-optical-sizing: none !important; font-variation-settings: 'opsz' 18 !important; }"]
+              "/* Feste optische Größe je Schrift (Inter 14, Google Sans Flex 18): automatisch wird kleine Schrift von",
+              "   Google Sans Flex 5–8 % breiter. Jede font-Kurzschreibweise setzt beides zurück und schlägt über",
+              "   Spezifität jede normale Regel. Daher bewusst !important (DESIGN.md › Typography). */",
+              "body, body * { font-optical-sizing: none !important; font-variation-settings: 'opsz' var(--sym-opsz) !important; }",
+              ".sym-font-brand { font-family: var(--sym-font); --sym-opsz: 18; }",
+              ".sym-font-text { font-family: var(--sym-font-text); --sym-opsz: 14; }"]
+    families = {"Google Sans Flex": ("var(--sym-font)", 18), "Inter": ("var(--sym-font-text)", 14),
+                "SF Mono": ("var(--sym-font-mono)", None)}
     for k, t in d["typography"].items():
-        lines.append(f".sym-type-{k} {{ font: {t['fontWeight']} {t['fontSize']}/{t['lineHeight']} "
-                     f"{'var(--sym-font-mono)' if k == 'mono' else 'var(--sym-font)'};"
+        family, opsz = families[t["fontFamily"]]
+        lines.append(f".sym-type-{k} {{ font: {t['fontWeight']} {t['fontSize']}/{t['lineHeight']} {family};"
+                     + (f" --sym-opsz: {opsz};" if opsz else "")
                      + (f" letter-spacing: {t['letterSpacing']};" if "letterSpacing" in t else "") + " }")
     dark = block(1) + "\n  color-scheme: dark;"
     lines += ["@media (prefers-color-scheme: dark) {", ":root:not([data-theme=\"light\"]) {", dark, "}", "}",

@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Inter (SIL Open Font License 1.1, unmodified original `Inter[opsz,wght].ttf`)
+  ships in `SymairaTheme` next to Google Sans Flex. `SymairaFont.Family`
+  (`.brand`, `.text`), `SymairaFont.isAvailable(_:)` and a `family:` parameter
+  on `SymairaFont.font(...)` and `ctFont(...)` (default `.brand`) select it.
 - `GUIDELINES.md`: the Symaira Interface Guidelines. Ninety numbered rules
   for shell and navigation, layout, states, actions and dialogs, forms, color,
   typography and icons, motion, keyboard and accessibility, copy and iOS, each
@@ -36,6 +40,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   legacy migration (#178).
 
 ### Changed
+- Running text, labels and captions now use Inter instead of Google Sans Flex,
+  which was hard to read at 11 to 14 pt. Display, titles, headings, `readout`
+  and `stat` stay Google Sans Flex (`opsz` 18). Inter uses its text optical
+  size `opsz` 14 and the weights 450 (`body`, `callout`, `caption`),
+  550 (`bodyMedium`, `label`) and 600 (`bodyEmphasized`, `micro`). Both fonts
+  are OFL, so they can be used commercially on every platform; SF Pro was
+  rejected because Apple licenses it only as the system font on Apple devices.
+  Web tokens add `--sym-font-text` and `--sym-opsz`, `.sym-font-brand` and
+  `.sym-font-text`; the design tokens, `GUIDELINES.md` TYPE-1/TYPE-3 and the
+  live typography check follow.
 - A save or read that fails with `errSecMissingEntitlement` (-34018) now names
   the missing entitlement and the `.loginKeychain` alternative in its error
   description (#178).

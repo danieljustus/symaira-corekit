@@ -84,6 +84,41 @@ final class TypographyTests: XCTestCase {
         }
     }
 
+    func testBundledInterRegistersWithTextOpticalSize() throws {
+        XCTAssertTrue(SymairaFont.register(), "Inter.ttf must ship in the SymairaTheme bundle")
+        XCTAssertTrue(SymairaFont.isAvailable(.text))
+        let license = try XCTUnwrap(
+            Bundle.module.url(forResource: "Inter-OFL", withExtension: "txt"), "OFL must ship next to the font")
+        XCTAssertTrue(try String(contentsOf: license, encoding: .utf8).contains("SIL OPEN FONT LICENSE"))
+        for size in [11.5, 13.5] as [CGFloat] {
+            let font = SymairaFont.ctFont(size: size, weight: 550, family: .text)
+            XCTAssertEqual(CTFontCopyFamilyName(font) as String, "Inter")
+            let variation = CTFontCopyVariation(font) as? [NSNumber: Double] ?? [:]
+            XCTAssertEqual(variation[SymairaFont.axis("wght")], 550)
+            // 14 is Inter's default optical size, so Core Text may omit it.
+            if let opsz = variation[SymairaFont.axis("opsz")] { XCTAssertEqual(opsz, 14) }
+        }
+    }
+
+    /// Headings carry the brand; running text, labels and captions use Inter.
+    func testRolesSplitBetweenBrandAndTextFamilies() {
+        func family(_ role: SymairaFontRole) -> SymairaFont.Family? {
+            if case .bundled(let family, _, _, _) = role.source { return family }
+            return nil
+        }
+        let brand = [
+            SymairaTypography.display, SymairaTypography.title, SymairaTypography.heading,
+            SymairaTypography.subheading, SymairaTypography.readout, SymairaTypography.stat,
+        ]
+        let text = [
+            SymairaTypography.body, SymairaTypography.bodyEmphasized, SymairaTypography.bodyMedium,
+            SymairaTypography.label, SymairaTypography.callout, SymairaTypography.caption, SymairaTypography.micro,
+        ]
+        for role in brand { XCTAssertEqual(family(role), .brand) }
+        for role in text { XCTAssertEqual(family(role), .text) }
+        XCTAssertNil(family(SymairaTypography.mono))
+    }
+
     func testPackagedResourcesResolveWithoutTheBuildCache() throws {
         let resources = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: resources, withIntermediateDirectories: true)
@@ -95,6 +130,8 @@ final class TypographyTests: XCTestCase {
         let font = try XCTUnwrap(resolved.url(forResource: "GoogleSansFlex", withExtension: "ttf"))
         XCTAssertTrue(font.path.hasPrefix(shipped.path + "/"))
         XCTAssertNotNil(resolved.url(forResource: "GoogleSansFlex-OFL", withExtension: "txt"))
+        XCTAssertNotNil(resolved.url(forResource: "Inter", withExtension: "ttf"))
+        XCTAssertNotNil(resolved.url(forResource: "Inter-OFL", withExtension: "txt"))
         XCTAssertNil(SymairaThemeResources.packagedBundle(in: nil))
     }
 
@@ -140,8 +177,8 @@ final class TypographyTests: XCTestCase {
         for role in roles {
             let baseline: Font
             switch role.source {
-            case .brand(let size, let weight, _):
-                let font = Font(SymairaFont.ctFont(size: size, weight: weight))
+            case .bundled(let family, let size, let weight, _):
+                let font = Font(SymairaFont.ctFont(size: size, weight: weight, family: family))
                 baseline = role.tabularDigits ? font.monospacedDigit() : font
             case .system(let font): baseline = font
             }

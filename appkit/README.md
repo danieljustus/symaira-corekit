@@ -168,7 +168,8 @@ SwiftPM's development fallback. Validate the actual app without the build-cache
 resource bundle; a file-presence check alone does not prove self-contained loading.
 
 Typography uses view-resolved roles so existing mounted views respond to iOS
-Dynamic Type changes while keeping Google Sans Flex's fixed optical size.
+Dynamic Type changes while keeping each bundled font's fixed optical size
+(Google Sans Flex for headings, Inter for running text).
 See [typography API migration and native regression](docs/typography.md) for
 the `Font`/`Text` source changes and the separate simulator check.
 

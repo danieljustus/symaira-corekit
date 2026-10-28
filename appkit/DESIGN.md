@@ -2,7 +2,7 @@
 
 `SymairaTheme` is the shared design and interaction foundation for Symaira
 products. The current direction is **Liquid Topography**: quiet gray surfaces,
-Google Sans Flex, restrained champagne accents and native Apple chrome.
+Google Sans Flex headings over Inter text, restrained champagne accents and native Apple chrome.
 
 The canonical visual specification is
 [`design/liquid-topography/DESIGN.md`](design/liquid-topography/DESIGN.md).

@@ -1,11 +1,13 @@
 import SwiftUI
 
-/// Canonical Symaira type scale, set in Google Sans Flex (see ``SymairaFont``).
+/// Canonical Symaira type scale (see ``SymairaFont``).
 ///
-/// Sizes and weights follow `design/liquid-topography/DESIGN.md`. Every role
-/// uses the fixed optical size `opsz` 18, so small text is not widened. On iOS
+/// Display, titles, headings and metrics are set in Google Sans Flex with the
+/// fixed optical size `opsz` 18. Running text, labels and captions are set in
+/// Inter with its text optical size `opsz` 14, which stays more legible at
+/// small sizes. Sizes and weights follow `design/liquid-topography/DESIGN.md`. On iOS
 /// each role scales with Dynamic Type relative to its text style; macOS has no
-/// Dynamic Type. If the bundled font cannot be registered, the system font with
+/// Dynamic Type. If a bundled font cannot be registered, the system font with
 /// the same size and weight is used. Monospaced roles stay on SF Mono.
 /// Values are `SymairaFontRole` recipes; `.font(role)` resolves them in the view.
 public enum SymairaTypography {
@@ -21,26 +23,26 @@ public enum SymairaTypography {
     /// Sub-heading above a group of rows. 14 / 650.
     public static let subheading = SymairaFont.font(size: 14, weight: 650, relativeTo: .headline)
 
-    /// Default running text. 13.5 / 500.
-    public static let body = SymairaFont.font(size: 13.5, weight: 500, relativeTo: .body)
+    /// Default running text. Inter 13.5 / 450.
+    public static let body = SymairaFont.font(size: 13.5, weight: 450, relativeTo: .body, family: .text)
 
-    /// Running text that carries the weight of a decision (selected row, active value). 13.5 / 700.
-    public static let bodyEmphasized = SymairaFont.font(size: 13.5, weight: 700, relativeTo: .body)
+    /// Running text that carries the weight of a decision (selected row, active value). Inter 13.5 / 600.
+    public static let bodyEmphasized = SymairaFont.font(size: 13.5, weight: 600, relativeTo: .body, family: .text)
 
-    /// Running text on a secondary control. 13.5 / 600.
-    public static let bodyMedium = SymairaFont.font(size: 13.5, weight: 600, relativeTo: .body)
+    /// Running text on a secondary control. Inter 13.5 / 550.
+    public static let bodyMedium = SymairaFont.font(size: 13.5, weight: 550, relativeTo: .body, family: .text)
 
-    /// Badge, pill, button and control label text. 12.5 / 600.
-    public static let label = SymairaFont.font(size: 12.5, weight: 600, relativeTo: .caption)
+    /// Badge, pill, button and control label text. Inter 12.5 / 550.
+    public static let label = SymairaFont.font(size: 12.5, weight: 550, relativeTo: .caption, family: .text)
 
-    /// Secondary text next to a control or inside a row. 12.5 / 500.
-    public static let callout = SymairaFont.font(size: 12.5, weight: 500, relativeTo: .callout)
+    /// Secondary text next to a control or inside a row. Inter 12.5 / 450.
+    public static let callout = SymairaFont.font(size: 12.5, weight: 450, relativeTo: .callout, family: .text)
 
-    /// Helper text, timestamps, counts, scale labels. 11.5 / 500.
-    public static let caption = SymairaFont.font(size: 11.5, weight: 500, relativeTo: .caption)
+    /// Helper text, timestamps, counts, scale labels. Inter 11.5 / 450.
+    public static let caption = SymairaFont.font(size: 11.5, weight: 450, relativeTo: .caption, family: .text)
 
-    /// Uppercase group labels. The smallest role that still has to stay legible. 11.5 / 650.
-    public static let micro = SymairaFont.font(size: 11.5, weight: 650, relativeTo: .caption2)
+    /// Uppercase group labels. The smallest role that still has to stay legible. Inter 11.5 / 600.
+    public static let micro = SymairaFont.font(size: 11.5, weight: 600, relativeTo: .caption2, family: .text)
 
     /// Live value next to a control (brightness, fan speed). 18 / 700, tabular digits.
     public static let readout = SymairaFont.font(size: 18, weight: 700, relativeTo: .title3).monospacedDigit()

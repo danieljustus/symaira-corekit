@@ -5,7 +5,7 @@ import SwiftUI
 /// Unlike `Text.font(Font)`, the role overload returns a `View`, not a `Text`.
 public struct SymairaFontRole: Hashable, Sendable {
     enum Source: Hashable, Sendable {
-        case brand(size: CGFloat, weight: Double, relativeTo: Font.TextStyle)
+        case bundled(family: SymairaFont.Family, size: CGFloat, weight: Double, relativeTo: Font.TextStyle)
         case system(Font)
     }
 
@@ -24,11 +24,16 @@ private struct SymairaBrandFontModifier: ViewModifier {
     #if os(iOS)
     @ScaledMetric private var scaledSize: CGFloat
     #endif
+    private let family: SymairaFont.Family
     private let size: CGFloat
     private let weight: Double
     private let tabularDigits: Bool
 
-    nonisolated init(size: CGFloat, weight: Double, relativeTo textStyle: Font.TextStyle, tabularDigits: Bool) {
+    nonisolated init(
+        family: SymairaFont.Family, size: CGFloat, weight: Double, relativeTo textStyle: Font.TextStyle,
+        tabularDigits: Bool
+    ) {
+        self.family = family
         self.size = size
         self.weight = weight
         self.tabularDigits = tabularDigits
@@ -43,7 +48,7 @@ private struct SymairaBrandFontModifier: ViewModifier {
         #else
         let pointSize = size
         #endif
-        let font = SymairaFont.resolvedFont(size: pointSize, weight: weight)
+        let font = SymairaFont.resolvedFont(size: pointSize, weight: weight, family: family)
         content.font(tabularDigits ? font.monospacedDigit() : font)
     }
 }
@@ -54,10 +59,11 @@ extension View {
     @ViewBuilder
     nonisolated public func font(_ role: SymairaFontRole) -> some View {
         switch role.source {
-        case .brand(let size, let weight, let textStyle):
+        case .bundled(let family, let size, let weight, let textStyle):
             modifier(
                 SymairaBrandFontModifier(
-                    size: size, weight: weight, relativeTo: textStyle, tabularDigits: role.tabularDigits))
+                    family: family, size: size, weight: weight, relativeTo: textStyle, tabularDigits: role.tabularDigits
+                ))
         case .system(let font):
             self.font(role.tabularDigits ? font.monospacedDigit() : font)
         }

@@ -54,7 +54,7 @@ LINE_RULES = [
         "TYPE-1",
         "warn",
         r"\.font\(\.(largeTitle|title|title2|title3|headline|subheadline|body|callout|caption|caption2|footnote)\)",
-        "system text style; use a SymairaTypography role (brand font, opsz 18)",
+        "system text style; use a SymairaTypography role (bundled Google Sans Flex/Inter)",
     ),
     (
         "ICON-1",

@@ -13,10 +13,12 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 FIXTURE = ROOT / "Tests/NativeTypography"
 WEIGHTS = {
     "display": 700, "title": 700, "heading": 700, "subheading": 650,
-    "body": 500, "bodyEmphasized": 700, "bodyMedium": 600, "label": 600,
-    "callout": 500, "caption": 500, "micro": 650, "readout": 700, "stat": 700,
-    "modifier-body": 500, "modifier-title": 700, "tabular-1": 700, "tabular-8": 700,
+    "body": 450, "bodyEmphasized": 600, "bodyMedium": 550, "label": 550,
+    "callout": 450, "caption": 450, "micro": 600, "readout": 700, "stat": 700,
+    "modifier-body": 450, "modifier-title": 700, "tabular-1": 700, "tabular-8": 700,
 }
+# Running text, labels and captions use Inter (opsz 14); everything else Google Sans Flex (opsz 18).
+TEXT_ROLES = {"body", "bodyEmphasized", "bodyMedium", "label", "callout", "caption", "micro", "modifier-body"}
 SAMPLES = set(WEIGHTS) | {"mono", "monoSmall"}
 PHASES = ("large", "accessibility5", "large-restored")
 
@@ -40,9 +42,10 @@ def check(data, bundled):
         assert abs(data[phase]["tabular-1"]["width"] - data[phase]["tabular-8"]["width"]) < 0.1
         for name, weight in WEIGHTS.items():
             font = data[phase + "-resolved"][name]
-            assert (font["family"] == "Google Sans Flex") == bundled, (phase, name, font)
+            family, opsz = ("Inter", 14) if name in TEXT_ROLES else ("Google Sans Flex", 18)
+            assert (font["family"] == family) == bundled, (phase, name, font)
             if bundled:
-                assert font["variation"][str(int.from_bytes(b"opsz", "big"))] == 18, (phase, name, font)
+                assert font["variation"][str(int.from_bytes(b"opsz", "big"))] == opsz, (phase, name, font)
                 assert font["variation"][str(int.from_bytes(b"wght", "big"))] == weight, (phase, name, font)
     for name in SAMPLES:
         base, maximum, restored = [data[phase][name] for phase in PHASES]
