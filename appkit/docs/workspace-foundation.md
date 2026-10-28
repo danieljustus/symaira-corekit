@@ -57,6 +57,163 @@ Reduce Motion, low power and window visibility. The workspace does not own a
 ScrollView, so editors, grids and existing ScrollViewReader navigation can keep
 their own content lifecycle.
 
+## App menu commands and Settings scene (macOS)
+
+`SymairaCommands(destinations:selection:)` adds a native Navigate menu. Pass
+ordered `(value: Destination, label: String)` entries and the same `Binding`
+used by sidebar buttons. Entries 1–9 receive ⌘1–⌘9; additional destinations
+remain menu items without numeric shortcuts. `SymairaSidebarState` owns layout
+only and deliberately has no destination selection. Products still add their
+own primary-action commands and ⌘R refresh.
+
+```swift
+struct ProductApp: App {
+    @State private var selection = "overview"
+    private let destinations = [
+        (value: "overview", label: "Overview"),
+        (value: "events", label: "Events"),
+    ]
+
+    var body: some Scene {
+        WindowGroup {
+            ProductWorkspace(selection: $selection)
+        }
+        .symairaWorkspaceWindow()
+        .commands {
+            SymairaCommands(destinations: destinations, selection: $selection)
+        }
+        SymairaSettingsScene { ProductSettings() }
+    }
+}
+```
+
+Selection in this example is intentionally app-owned. A multi-window product
+that keeps independent selections must pass a binding targeting its active
+workspace (for example via focused scene values), not introduce a second
+selection just for menu commands. The helper stores no global state.
+
+`SymairaSettingsScene(content:)` delegates to native `Settings`, retaining its
+standard app-menu item and ⌘, shortcut. Use `SymairaSettingsButton()` to open it
+through SwiftUI's macOS 14 `openSettings` environment action. The existing
+`SymairaSettingsButton(openSettings:)` remains available for native hosts and
+custom callbacks; workspace toolbars can continue passing that callback.
+Settings content and appearance persistence remain product-owned; place
+`SymairaAppearancePicker(selection:)` in `ProductSettings`, using the existing
+key. These scene/menu helpers and the no-argument button initializer are
+macOS-only; the callback button initializer remains cross-platform.
+
+## Page and sheet scaffolds
+
+`SymairaPage` owns the title, one subtitle line (reserved even when omitted), a
+fixed toolbar row and a padded, centered content column. It is cross-platform;
+product navigation, refresh callbacks and loading tasks remain product-owned.
+Default width is `SymairaMetrics.readableContentWidth`. Pass a wider `maxWidth`
+for dashboards or tables, and `scrolls: false` for self-scrolling content such
+as a native `Table`. Do not nest another ScrollView in a scrolling page.
+Text-bearing content still uses `.symairaCard()`; pages do not wrap tables or
+every section in a card automatically.
+
+```swift
+SymairaPage(title: "Requests", subtitle: "Manage your removal requests") {
+    Button("Refresh", action: refresh)
+        .symairaButtonStyle(.secondary)
+} content: {
+    SymairaPageState(state: state, loading: "Loading requests…", retry: refresh) { requests in
+        if requests.isEmpty {
+            SymairaPageEmpty(icon: .info, title: "No Requests", message: "Create your first request.") {
+                Button("Create Request", action: create)
+                    .symairaButtonStyle(.primary)
+            }
+        } else {
+            requestList(requests)
+        }
+    }
+}
+```
+
+Here `state` is `SymairaPageLoadState<[Request]>`. Map product state to `.idle`,
+`.loading`, `.failed(message)` or `.loaded(value)`. Idle/loading show the
+supplied noun-specific message; failure shows a critical `SymairaNotice` and
+secondary **Retry** button. For an unreachable backend, use `.failed` with
+reconnect instructions plus the product's persistent sidebar status. Failed
+loads must not become `.loaded([])` or zero summaries. Callbacks are synchronous;
+an async product starts/owns its own `Task`. Loaded content decides empty versus
+populated presentation. `SymairaPageEmpty` permits at most one next action by
+convention, with no forced action when none is possible.
+
+All placeholders share one implementation and the fixed
+`SymairaPageLayout.stateHeight` (240 pt); toolbar height is
+`SymairaPageLayout.toolbarHeight` (44 pt). Both scale with Dynamic Type and
+remain identical across state changes at the same text size. Loaded content
+is not constrained to that height. Keep state messages concise; review long
+localized copy at narrow widths and accessibility text sizes in the consumer.
+Neither page states nor empty states add nested scrolling. Headers protect
+individual text bounds; feedback components retain their own protection.
+
+Public initializers (all builders are `@ViewBuilder`):
+
+```swift
+SymairaPage<Toolbar, Content>(
+    title: String, subtitle: String? = nil, scrolls: Bool = true,
+    maxWidth: CGFloat = SymairaMetrics.readableContentWidth,
+    toolbar: () -> Toolbar, content: () -> Content
+)
+// Convenience initializer omits toolbar when Toolbar == EmptyView.
+SymairaPageState<Value, Loaded>(
+    state: SymairaPageLoadState<Value>, loading: String,
+    retry: @escaping () -> Void, loaded: @escaping (Value) -> Loaded
+)
+SymairaPageEmpty<Actions>(
+    icon: SymairaIcon, title: String, message: String, actions: () -> Actions
+)
+// Convenience initializer omits actions when Actions == EmptyView.
+SymairaSheetScaffold<Content>(
+    title: String, dismissTitle: String = "Cancel", dismiss: @escaping () -> Void,
+    primaryTitle: String? = nil, primaryDisabled: Bool = false,
+    primary: @escaping () -> Void = {}, content: () -> Content
+)
+```
+
+`SymairaPageLoadState<Value>` is conditionally `Equatable` and `Sendable` when
+`Value` is. There is no product model or I/O dependency.
+
+```swift
+SymairaSheetScaffold(
+    title: "Create Request", dismiss: close,
+    primaryTitle: "Create Request", primaryDisabled: !isValid, primary: save
+) {
+    requestFields
+}
+```
+
+Sheets provide a named **Close** icon, scrolling content and a footer with
+secondary dismiss left of the optional primary action. Esc invokes dismiss;
+Return invokes the enabled primary action. Omit `primaryTitle` for a read-only
+sheet and use `dismissTitle: "Close"`. When supplying a primary title, also
+supply its callback. Presentation, sheet dimensions, validation, disabled-state
+explanation and consequential-action confirmation remain product-owned. Both
+footer actions use shared button styles: identical font, 20 pt horizontal
+padding and `SymairaMetrics.contentActionHeight` (40 pt macOS, 44 pt iOS).
+Intrinsic widths still depend on labels; products reserve changing label widths.
+
+Accessibility identifiers: `symaira.page.toolbar`, `symaira.page.state`,
+`symaira.page.retry`, `symaira.sheet.close`, `symaira.sheet.dismiss`,
+`symaira.sheet.primary`. Titles are accessibility headings, missing subtitles
+are hidden, and action labels are their visible product-supplied text.
+
+### Promotion boundary
+
+EraseMe's `Page`, `PageState`, `PageEmpty`, `SheetScaffold` map respectively to
+`SymairaPage`, `SymairaPageState`, `SymairaPageEmpty`, `SymairaSheetScaffold`.
+Its local `ViewState` maps to `SymairaPageLoadState`; `PageLayout` maps to
+`SymairaPageLayout` plus product-owned `maxWidth` (EraseMe uses 1008 pt).
+`BrandColors.textPrimary`, `textMuted`, `bgDark` become adaptive
+`SymairaTokens.ink`, `ink3`, `surface`. Refresh belongs in the toolbar builder,
+not a compulsory page task. EraseMe and Desktop need the same stable page/state
+and sheet geometry, satisfying the two-consumer boundary without importing
+privacy or document-domain views. This change does **not** migrate either
+consumer or update dependency pins; EraseMe adoption is a separate follow-up.
+
 ## Approved rule inventory
 
 | Rule | AppKit owner | Product responsibility |

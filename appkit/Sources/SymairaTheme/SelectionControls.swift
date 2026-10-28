@@ -295,16 +295,20 @@ extension ToggleStyle where Self == SymairaSwitchToggleStyle {
 /// sensor data, no permission). Opacity alone is not a disabled cue.
 public struct SymairaLockedLabel: View {
     @Environment(\.colorScheme) private var colorScheme
-    private let text: String
+    let text: String
 
-    public init(_ text: String = "Gesperrt") {
+    public init(_ text: String = "Locked") {
         self.text = text
     }
 
     public var body: some View {
-        Label(text, systemImage: "lock.fill")
-            .labelStyle(.titleAndIcon)
-            .font(SymairaTypography.caption)
-            .foregroundStyle(SymairaTheme.foregroundMuted(for: colorScheme))
+        Label {
+            Text(text)
+        } icon: {
+            SymairaIconView(.lock)
+        }
+        .labelStyle(.titleAndIcon)
+        .font(SymairaTypography.caption)
+        .foregroundStyle(SymairaTheme.foregroundMuted(for: colorScheme))
     }
 }

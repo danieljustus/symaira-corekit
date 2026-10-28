@@ -42,15 +42,31 @@ public enum SymairaAppearance: String, CaseIterable, Sendable {
 
 /// One click opens the host's settings window. No intermediate toolbar menu.
 public struct SymairaSettingsButton: View {
-    private let openSettings: () -> Void
+    private let openSettings: (() -> Void)?
+    #if os(macOS)
+    @Environment(\.openSettings) private var openSettingsAction
+
+    /// Opens the native Settings scene registered by `SymairaSettingsScene`.
+    public init() {
+        openSettings = nil
+    }
+    #endif
 
     public init(openSettings: @escaping () -> Void) {
         self.openSettings = openSettings
     }
 
     public var body: some View {
-        Button(action: openSettings) {
-            Label("Settings", systemImage: "gearshape")
+        Button {
+            if let openSettings {
+                openSettings()
+            } else {
+                #if os(macOS)
+                openSettingsAction()
+                #endif
+            }
+        } label: {
+            Label("Settings", symairaIcon: .settings)
         }
         .labelStyle(.iconOnly)
         .accessibilityLabel("Settings")

@@ -102,11 +102,11 @@ PROGRESS_WINDOW = 3
 
 # (rule, severity, pattern, message) -- reported once when no file in the root matches
 PROJECT_RULES = [
-    ("KEY-1", "info", r"\.keyboardShortcut\(", "no keyboard shortcuts in this source root"),
-    ("SHELL-9", "info", r"\.commands\s*\{|CommandMenu\(|CommandGroup\(", "no app menu commands"),
+    ("KEY-1", "info", r"\.keyboardShortcut\(|\bSymairaCommands\s*\(", "no keyboard shortcuts in this source root"),
+    ("SHELL-9", "info", r"\.commands\s*\{|CommandMenu\(|CommandGroup\(|\bSymairaCommands\s*\(", "no app menu commands"),
     ("POINTER-2", "info", r"\.contextMenu\b", "no context menus on rows or cards"),
     ("POINTER-3", "info", r"\.help\(", "no tooltips on icon-only controls"),
-    ("SHELL-7", "info", r"^\s*Settings\s*\{", "no Settings scene (the gear and ⌘, need one)"),
+    ("SHELL-7", "info", r"\b(?:Settings|SymairaSettingsScene)\s*(?:\{|\(\s*(?:content\s*:)?\s*\{)", "no Settings scene (the gear and ⌘, need one)"),
 ]
 
 SEVERITY_RANK = {"info": 0, "warn": 1, "error": 2}
@@ -247,6 +247,24 @@ struct Fixture: View {
         problems.append(f"comment line flagged: {comment_hits}")
     if set(project) != {r for r, _, _, _ in PROJECT_RULES}:
         problems.append(f"project rules: {project}")
+    shell_rules = {"KEY-1", "SHELL-7", "SHELL-9"}
+    shell_cases = [
+        ("", shell_rules),
+        ("SymairaSettingsButton()", shell_rules),
+        ("SymairaCommands(destinations: destinations, selection: $selection)", {"SHELL-7"}),
+        ("SymairaSettingsScene { ProductSettings() }", {"KEY-1", "SHELL-9"}),
+        ("SymairaSettingsScene(content: { ProductSettings() })", {"KEY-1", "SHELL-9"}),
+        ("SymairaCommands(destinations: [], selection: $selection)\nSymairaSettingsScene { Text(\"Settings\") }", set()),
+        ('.commands { CommandMenu("Navigate") { Button("Overview") {}.keyboardShortcut("1") } }\nSettings { Text("Settings") }', set()),
+        ("let SymairaCommandsPreview = 1\nlet SymairaSettingsScenePreview = 1", shell_rules),
+    ]
+    for source, expected_absences in shell_cases:
+        absences = {
+            rule for rule, _, pattern, _ in COMPILED_PROJECT_RULES
+            if rule in shell_rules and not pattern.search(source)
+        }
+        if absences != expected_absences:
+            problems.append(f"shell fixture {source!r}: expected {sorted(expected_absences)}, got {sorted(absences)}")
     if problems:
         print("self-test FAILED\n" + "\n".join(problems))
         return 1

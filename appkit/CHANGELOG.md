@@ -17,8 +17,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the guidelines (`file:line - RULE-ID severity message`, JSON output,
   `--fail-on`, `--self-test`). CI runs the self-test.
 - `AGENTS.md` and `README.md` route GUI work through the guidelines.
+- `SymairaPage`, `SymairaPageState`, `SymairaPageEmpty`, `SymairaPageLoadState`
+  and `SymairaSheetScaffold`: shared page and sheet scaffolds promoted from
+  Symaira EraseMe. Loading, failure and empty states share one fixed height
+  (`SymairaPageLayout.stateHeight`, scaled with Dynamic Type), so a state change
+  never shifts the toolbar; sheets get a Close icon, scrolling content and a
+  secondary/primary footer with Esc and Return (#186).
+- `SymairaCommands(destinations:selection:)` (macOS): a native Navigate menu
+  that binds ⌘1 to ⌘9 to the product's sidebar selection, and
+  `SymairaSettingsScene { }` plus `SymairaSettingsButton()`, which opens that
+  scene directly (#187). `scripts/gui-review.py` accepts these helpers for
+  SHELL-7, SHELL-9 and KEY-1.
 
 ### Fixed
+- `SymairaLockedLabel` defaults to the English "Locked" and draws
+  `SymairaIcon.lock`; `SymairaSettingsButton` draws `SymairaIcon.settings`
+  instead of the SF Symbol gear (#185).
 - `DaemonSupervisor` no longer drops output that a process writes right
   before it exits: the log stream ends only after stdout and stderr reached
   EOF (bounded by two seconds, so a descendant holding a pipe cannot block it).
