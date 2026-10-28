@@ -146,7 +146,11 @@ Use Liquid Glass for navigation chrome and toolbar controls, not behind reading
 surfaces. Content buttons stay opaque and share stable primary/secondary geometry.
 `symairaGlassChrome` and `SymairaGlassEffectContainer` use native macOS/iOS 26
 effects with material or opaque accessibility fallbacks on earlier systems. See
+[`GUIDELINES.md`](GUIDELINES.md) for the interface rules every Symaira screen
+follows (structure, states, actions, copy, review contract) and
 [`DESIGN.md`](DESIGN.md) for the design rules and migration guidance.
+`python3 scripts/gui-review.py <swift-source-root>` checks product sources
+against the mechanical part of those rules.
 
 The approved desktop shell is `SymairaWorkspace` with `SymairaSidebarState`:
 rounded inset content, continuous chrome, drag resizing and a collapsible icon

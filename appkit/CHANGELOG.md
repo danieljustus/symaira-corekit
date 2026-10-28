@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `GUIDELINES.md`: the Symaira Interface Guidelines. Ninety numbered rules
+  for shell and navigation, layout, states, actions and dialogs, forms, color,
+  typography and icons, motion, keyboard and accessibility, copy and iOS, each
+  mapped to the `SymairaTheme` API that implements it, plus a screen card,
+  a review contract, anti-patterns and the known AppKit gaps.
+- `scripts/gui-review.py`: mechanical review of product Swift sources against
+  the guidelines (`file:line - RULE-ID severity message`, JSON output,
+  `--fail-on`, `--self-test`). CI runs the self-test.
+- `AGENTS.md` and `README.md` route GUI work through the guidelines.
+
 ## [0.17.1] - 2026-10-20
 
 ### Fixed

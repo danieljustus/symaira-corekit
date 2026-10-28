@@ -6,6 +6,10 @@ Read [PB-2026-09-09](docs/product-boundaries.md). AppKit remains a separate shar
 
 Shared public Swift library (Apache-2.0) for Symaira macOS clients. GUI counterpart to `symaira-corekit`. Consumed by the per-tool client apps as a pinned SPM dependency.
 
+## GUI work
+
+Before building, changing or reviewing any SwiftUI surface (here or in a consumer), read in this order: [`GUIDELINES.md`](GUIDELINES.md) (structure, states, actions, copy, keyboard, accessibility, review contract), [`DESIGN.md`](DESIGN.md) (material hierarchy, platform behavior) and [`docs/workspace-foundation.md`](docs/workspace-foundation.md) (shell API, approved rule inventory). Tokens come from [`design/liquid-topography/DESIGN.md`](design/liquid-topography/DESIGN.md). Write the six-line screen card from GUIDELINES.md section 2 before writing code. Review product sources with `python3 scripts/gui-review.py <swift-source-root>` plus the manual checklist in section 13; `python3 scripts/gui-review.py --self-test` runs in CI. A reusable rule accepted in a product pilot lands here first, with implementation and regression check, then consumers adopt it through their exact pin.
+
 ## Build & Test
 
 ```bash
