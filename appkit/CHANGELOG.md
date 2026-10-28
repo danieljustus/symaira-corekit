@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.18.0] - 2026-10-28
+
 ### Added
 - `SymairaIconButton` and `Label(_:symairaIcon:)` accept an already-resolved
   `StringProtocol` title (shown verbatim), next to the existing
@@ -615,7 +617,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [0.9.2]: https://github.com/danieljustus/symaira-appkit/compare/0.9.1...0.9.2
 [0.10.0]: https://github.com/danieljustus/symaira-appkit/compare/0.9.2...0.10.0
 [0.11.0]: https://github.com/danieljustus/symaira-appkit/compare/0.10.0...0.11.0
-[Unreleased]: https://github.com/danieljustus/symaira-appkit/compare/0.17.1...HEAD
+[Unreleased]: https://github.com/danieljustus/symaira-appkit/compare/0.18.0...HEAD
+[0.18.0]: https://github.com/danieljustus/symaira-appkit/compare/0.17.1...0.18.0
 [0.17.1]: https://github.com/danieljustus/symaira-appkit/compare/0.17.0...0.17.1
 [0.17.0]: https://github.com/danieljustus/symaira-appkit/compare/0.16.1...0.17.0
 [0.16.1]: https://github.com/danieljustus/symaira-appkit/compare/0.16.0...0.16.1
