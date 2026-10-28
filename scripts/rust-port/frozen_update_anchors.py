@@ -34,4 +34,4 @@ ANCHORS = {
 
 # Exact independently reviewable module-only compatibility receipt; this does
 # not alter the historical native-v1 capture anchors above.
-UPDATE_MODULE_COMPATIBILITY_RECEIPT_SHA256 = "3f968174b40240f895876c6e181b64abfda73fbe2e517455be6c5ff737c2b7a8"
+UPDATE_MODULE_COMPATIBILITY_RECEIPT_SHA256 = "ceadb6f917873bf35fee9b93c9869e6dbbb67a2e9bb85cc4d72a3ec509f9d8e1"
