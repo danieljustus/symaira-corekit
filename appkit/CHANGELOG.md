@@ -55,6 +55,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   description (#178).
 
 ### Fixed
+- The native sidebar resize splitter and the sidebar toggle no longer hardcode
+  English: their accessibility labels and tooltips resolve from the package's
+  new `Localizable.strings` (English and German, English fallback). Role,
+  identifier and keyboard behavior are unchanged (#195).
 - The macOS Liquid Topography no longer re-lays out the whole window on every
   animation frame. It renders through its own `CAMetalLayer` with a native
   frame timer (20 fps, display rate while the pointer is over it), so ticks

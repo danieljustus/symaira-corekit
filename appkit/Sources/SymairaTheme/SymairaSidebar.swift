@@ -50,8 +50,8 @@ public struct SymairaSidebarToggle: View {
             Image(systemName: "sidebar.left")
         }
         .disabled(!sidebar.canExpand)
-        .accessibilityLabel(sidebar.showsLabels ? "Collapse sidebar" : "Expand sidebar")
-        .help(sidebar.canExpand ? "Toggle sidebar (⌃⌘S)" : "Sidebar is compact at this window width")
+        .accessibilityLabel(sidebar.showsLabels ? SymairaStrings.sidebarCollapse : SymairaStrings.sidebarExpand)
+        .help(sidebar.canExpand ? SymairaStrings.sidebarToggleHelp : SymairaStrings.sidebarCompactHelp)
         .keyboardShortcut("s", modifiers: [.control, .command])
     }
 }
@@ -64,14 +64,15 @@ struct SymairaSidebarResizeHandle: NSViewRepresentable {
     let onResize: (CGFloat) -> Void
     let onStep: (Int) -> Void
 
-    func makeNSView(context: Context) -> Handle {
-        let view = Handle()
+    func makeNSView(context: Context) -> Handle { configured(Handle()) }
+
+    func configured(_ view: Handle) -> Handle {
         view.setAccessibilityElement(true)
         view.setAccessibilityRole(.splitter)
-        view.setAccessibilityLabel("Resize sidebar")
+        view.setAccessibilityLabel(SymairaStrings.sidebarResizeLabel)
         view.setAccessibilityIdentifier("symaira-sidebar-resize")
         view.setAccessibilityOrientation(.vertical)
-        view.toolTip = "Drag to resize or collapse the sidebar. Arrow keys adjust its width."
+        view.toolTip = SymairaStrings.sidebarResizeHelp
         return view
     }
 

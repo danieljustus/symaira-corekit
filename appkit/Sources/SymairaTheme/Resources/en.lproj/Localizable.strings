@@ -1,0 +1,8 @@
+/* Shared SymairaTheme UI strings. Keys must exist in every .lproj (see LocalizationTests). */
+
+"sidebar.resize.label" = "Resize sidebar";
+"sidebar.resize.help" = "Drag to resize or collapse the sidebar. Arrow keys adjust its width.";
+"sidebar.toggle.collapse" = "Collapse sidebar";
+"sidebar.toggle.expand" = "Expand sidebar";
+"sidebar.toggle.help" = "Toggle sidebar (⌃⌘S)";
+"sidebar.toggle.compact" = "Sidebar is compact at this window width";

@@ -1,0 +1,8 @@
+/* Shared SymairaTheme UI strings. Keys must exist in every .lproj (see LocalizationTests). */
+
+"sidebar.resize.label" = "Seitenleiste anpassen";
+"sidebar.resize.help" = "Ziehen ändert die Breite der Seitenleiste oder klappt sie ein. Die Pfeiltasten passen die Breite an.";
+"sidebar.toggle.collapse" = "Seitenleiste einklappen";
+"sidebar.toggle.expand" = "Seitenleiste ausklappen";
+"sidebar.toggle.help" = "Seitenleiste ein- oder ausblenden (⌃⌘S)";
+"sidebar.toggle.compact" = "Bei dieser Fensterbreite bleibt die Seitenleiste kompakt";
