@@ -12,7 +12,7 @@ import typed_contract
 
 
 class AcceptanceControls(unittest.TestCase):
-    CURRENT_CAPTURE = 'testdata/rust-port/sqlite/differential-linux-lock-closure-20261021.json'
+    CURRENT_CAPTURE = 'testdata/rust-port/sqlite/differential-macos-close-diagnostics-20261026.json'
     # A file that genuinely determines the built artifact and its observations.
     ENFORCED_KEY = 'rust/symaira-core-sqlite/src/lib.rs'
 

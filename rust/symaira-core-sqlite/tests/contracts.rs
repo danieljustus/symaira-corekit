@@ -342,11 +342,40 @@ fn locked_migrations_match_go_timeout_and_error_phases() {
             "retry_probe_count": count(&contender, "SELECT COUNT(*) FROM sqlite_master WHERE name='migration_probe'"),
             "released_writer_value": count(&contender, "SELECT id FROM lock_probe")
         });
+        // Time each close separately. The asserted bound stays the combined
+        // total below. Issue #421 observed only the last close exceeding it on
+        // Windows (1.20 s and 1.51 s); those totals match SQLite's win32
+        // delete-retry backoff (25 ms * (1 + n), cumulative 1.15 s after nine
+        // and 1.375 s after ten attempts) when another process briefly holds
+        // the closing database's -wal/-shm without FILE_SHARE_DELETE. The
+        // breakdown and the sidecar listing identify which close and which
+        // file stalled without relaxing any assertion.
+        let sidecars = |dir: &std::path::Path| -> Vec<String> {
+            let mut names: Vec<_> = std::fs::read_dir(dir)
+                .unwrap()
+                .map(|entry| entry.unwrap().file_name().to_string_lossy().into_owned())
+                .collect();
+            names.sort();
+            names
+        };
+        let files_before_close = sidecars(temp.path());
         let cleanup = Instant::now();
+        let mut close_ops = serde_json::Map::new();
+        let step = Instant::now();
         contender.close().unwrap();
+        close_ops.insert("contender".into(), json!(step.elapsed().as_secs_f64()));
+        let step = Instant::now();
         reader.close().unwrap();
+        close_ops.insert("reader".into(), json!(step.elapsed().as_secs_f64()));
+        let files_before_last_close = sidecars(temp.path());
+        let step = Instant::now();
         holder.close().unwrap();
+        close_ops.insert("holder_last".into(), json!(step.elapsed().as_secs_f64()));
+        let files_after_last_close = sidecars(temp.path());
+        let step = Instant::now();
+        let temp_path = temp.path().to_path_buf();
         temp.close().unwrap();
+        close_ops.insert("tempdir".into(), json!(step.elapsed().as_secs_f64()));
         let close_duration = cleanup.elapsed();
         cleanups.push(close_duration);
         eprintln!(
@@ -357,6 +386,11 @@ fn locked_migrations_match_go_timeout_and_error_phases() {
                 "go_state_matched": state == case["state"],
                 "rollback_seconds": rollback_duration.as_secs_f64(),
                 "close_seconds": close_duration.as_secs_f64(),
+                "close_operations_seconds": close_ops,
+                "files_before_close": files_before_close,
+                "files_before_last_close": files_before_last_close,
+                "files_after_last_close": files_after_last_close,
+                "tempdir_removed": !temp_path.exists(),
             })
         );
         assert_eq!(state, case["state"]);
