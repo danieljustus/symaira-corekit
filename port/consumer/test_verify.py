@@ -28,6 +28,13 @@ def init_git(path: Path) -> None:
     subprocess.run(["git", "init", "-q", "-b", "main", str(path)], check=True)
     subprocess.run(["git", "-C", str(path), "config", "user.name", "fixture"], check=True)
     subprocess.run(["git", "-C", str(path), "config", "user.email", "fixture@example.invalid"], check=True)
+    # `git commit` spawns `git maintenance run --auto --detach`, which daemonizes and can
+    # outlive the commit (and the subprocess.run that waited for it) by a few ms. A fixture
+    # repo must have no process left running in it when TemporaryDirectory removes the tree,
+    # otherwise cleanup races with that process's writes under .git/objects (issue #443,
+    # "Directory not empty: 'objects'"). Disable auto maintenance so no such process exists.
+    for key, value in (("maintenance.auto", "false"), ("gc.auto", "0"), ("gc.autoDetach", "false")):
+        subprocess.run(["git", "-C", str(path), "config", key, value], check=True)
 
 
 def pin_consumer_release(document: dict, consumer: Path) -> None:
