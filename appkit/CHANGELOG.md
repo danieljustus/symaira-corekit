@@ -28,6 +28,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `SymairaSettingsScene { }` plus `SymairaSettingsButton()`, which opens that
   scene directly (#187). `scripts/gui-review.py` accepts these helpers for
   SHELL-7, SHELL-9 and KEY-1.
+- `SymairaKeychainStorage` and a `storage:` parameter on both `SymairaKeychain`
+  initializers. `.loginKeychain` stores items in the file-based login keychain
+  so unsandboxed Developer ID apps without the `keychain-access-groups`
+  entitlement can persist credentials; `.dataProtection` stays the default.
+  The login keychain accepts only `accessControl: .none` and performs no
+  legacy migration (#178).
+
+### Changed
+- A save or read that fails with `errSecMissingEntitlement` (-34018) now names
+  the missing entitlement and the `.loginKeychain` alternative in its error
+  description (#178).
 
 ### Fixed
 - `SymairaLockedLabel` defaults to the English "Locked" and draws

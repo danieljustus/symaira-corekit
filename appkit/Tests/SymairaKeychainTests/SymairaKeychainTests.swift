@@ -203,6 +203,98 @@ final class SymairaKeychainTests: XCTestCase {
         XCTAssertEqual(backend.addCount, 2, "failed replacement plus restoration")
     }
 
+    // MARK: - Login keychain storage (#178)
+
+    func testDefaultStorageIsTheDataProtectionKeychain() {
+        XCTAssertEqual(SymairaKeychain(app: "symseek").storage, .dataProtection)
+        XCTAssertEqual(SymairaKeychain(service: "legacy", storage: .loginKeychain).storage, .loginKeychain)
+    }
+
+    func testLoginKeychainQueriesOmitDataProtectionAttributes() throws {
+        let backend = RecordingKeychainBackend()
+        let kc = SymairaKeychain(service: "test", storage: .loginKeychain, backend: backend)
+
+        try kc.save("secret", key: "token")
+        _ = try kc.read(key: "token")
+
+        let queries = backend.copyQueries + backend.addQueries
+        XCTAssertFalse(queries.isEmpty)
+        for query in queries {
+            XCTAssertNil(query[kSecUseDataProtectionKeychain as String])
+            XCTAssertNil(query[kSecAttrSynchronizable as String])
+            XCTAssertNil(query[kSecAttrAccessible as String])
+            XCTAssertEqual(query[kSecAttrService as String] as? String, "test")
+        }
+    }
+
+    func testDataProtectionQueriesKeepTheirAttributes() throws {
+        let backend = RecordingKeychainBackend()
+        let kc = SymairaKeychain(service: "test", backend: backend)
+
+        try kc.save("secret", key: "token")
+
+        let add = try XCTUnwrap(backend.addQueries.first)
+        XCTAssertEqual(add[kSecUseDataProtectionKeychain as String] as? Bool, true)
+        XCTAssertEqual(add[kSecAttrSynchronizable as String] as? Bool, false)
+        XCTAssertNotNil(add[kSecAttrAccessible as String])
+    }
+
+    func testLoginKeychainReadOfMissingKeySkipsLegacyMigration() throws {
+        let backend = RecordingKeychainBackend()
+        let kc = SymairaKeychain(service: "test", storage: .loginKeychain, backend: backend)
+
+        XCTAssertNil(try kc.read(key: "missing"))
+        XCTAssertEqual(backend.copyQueries.count, 1)
+        XCTAssertTrue(backend.addQueries.isEmpty)
+        XCTAssertEqual(backend.deleteCount, 0)
+    }
+
+    func testLoginKeychainRejectsAccessControlPolicies() {
+        let backend = RecordingKeychainBackend()
+        let kc = SymairaKeychain(service: "test", storage: .loginKeychain, backend: backend)
+
+        for policy in [SymairaKeychainAccessControl.devicePasscode, .biometryCurrentSet] {
+            XCTAssertThrowsError(try kc.save("secret", key: "token", accessControl: policy)) { error in
+                guard case SymairaKeychainError.saveFailed(let status) = error else {
+                    return XCTFail("unexpected error: \(error)")
+                }
+                XCTAssertEqual(status, errSecParam)
+            }
+        }
+        XCTAssertTrue(backend.copyQueries.isEmpty)
+        XCTAssertTrue(backend.addQueries.isEmpty)
+    }
+
+    func testMissingEntitlementErrorNamesTheRemedy() throws {
+        let description = try XCTUnwrap(SymairaKeychainError.saveFailed(errSecMissingEntitlement).errorDescription)
+        XCTAssertTrue(description.hasPrefix("Keychain save failed (OSStatus -34018)."))
+        XCTAssertTrue(description.contains("keychain-access-groups"))
+        XCTAssertTrue(description.contains(".loginKeychain"))
+    }
+
+    /// Real round trip through the login keychain from this unentitled test
+    /// binary. Opt-in (`SYMAIRA_KEYCHAIN_LOGIN_PROBE=1`) because it writes to
+    /// the developer's login keychain and a locked keychain would prompt.
+    func testLoginKeychainRoundTripWithoutEntitlement() throws {
+        #if os(macOS)
+        guard ProcessInfo.processInfo.environment["SYMAIRA_KEYCHAIN_LOGIN_PROBE"] == "1" else {
+            throw XCTSkip("Set SYMAIRA_KEYCHAIN_LOGIN_PROBE=1 to exercise the real login keychain.")
+        }
+        let kc = SymairaKeychain(service: "dev.symaira.appkit.tests.login-probe", storage: .loginKeychain)
+        let key = "probe-\(UUID().uuidString)"
+        defer { kc.delete(key: key) }
+
+        XCTAssertTrue(try kc.save("first", key: key))
+        XCTAssertEqual(try kc.read(key: key), "first")
+        XCTAssertTrue(try kc.save("second", key: key))
+        XCTAssertEqual(try kc.read(key: key, timeout: 5), "second")
+        XCTAssertTrue(kc.delete(key: key))
+        XCTAssertNil(try kc.read(key: key))
+        #else
+        throw XCTSkip("The login keychain exists only on macOS.")
+        #endif
+    }
+
     // MARK: - Bounded reads
 
     func testBoundedReadReturnsNilWhenKeychainDoesNotAnswer() throws {
@@ -344,5 +436,53 @@ private final class BlockingReadBackend: _SymairaKeychainBackend, @unchecked Sen
 
     func delete(_ query: [String: Any]) -> OSStatus {
         errSecSuccess
+    }
+}
+
+private final class RecordingKeychainBackend: _SymairaKeychainBackend, @unchecked Sendable {
+    private let lock = NSLock()
+    private var stored: Data?
+    private var _copyQueries: [[String: Any]] = []
+    private var _addQueries: [[String: Any]] = []
+    private var _deleteCount = 0
+
+    var copyQueries: [[String: Any]] { lock.withLock { _copyQueries } }
+    var addQueries: [[String: Any]] { lock.withLock { _addQueries } }
+    var deleteCount: Int { lock.withLock { _deleteCount } }
+
+    func copyMatching(_ query: [String: Any]) -> (OSStatus, Any?) {
+        lock.withLock {
+            _copyQueries.append(query)
+            guard let stored else { return (errSecItemNotFound, nil) }
+            if query[kSecReturnAttributes as String] as? Bool == true {
+                return (errSecSuccess, [kSecValueData as String: stored])
+            }
+            return (errSecSuccess, stored)
+        }
+    }
+
+    func add(_ query: [String: Any]) -> OSStatus {
+        lock.withLock {
+            _addQueries.append(query)
+            stored = query[kSecValueData as String] as? Data
+            return errSecSuccess
+        }
+    }
+
+    func update(_ query: [String: Any], attributes: [String: Any]) -> OSStatus {
+        lock.withLock {
+            guard stored != nil else { return errSecItemNotFound }
+            stored = attributes[kSecValueData as String] as? Data
+            return errSecSuccess
+        }
+    }
+
+    func delete(_ query: [String: Any]) -> OSStatus {
+        lock.withLock {
+            _deleteCount += 1
+            guard stored != nil else { return errSecItemNotFound }
+            stored = nil
+            return errSecSuccess
+        }
     }
 }

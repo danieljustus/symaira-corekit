@@ -12,13 +12,39 @@ public enum SymairaKeychainError: Error, LocalizedError, Sendable {
     public var errorDescription: String? {
         switch self {
         case .saveFailed(let status):
-            return "Keychain save failed (OSStatus \(status))."
+            return "Keychain save failed (OSStatus \(status)).\(Self.hint(for: status))"
         case .readFailed(let status):
-            return "Keychain read failed (OSStatus \(status))."
+            return "Keychain read failed (OSStatus \(status)).\(Self.hint(for: status))"
         case .verificationFailed:
             return "Keychain save succeeded but read-back failed — the credential may not be retrievable."
         }
     }
+
+    /// -34018 means the process lacks the entitlement the data-protection
+    /// keychain requires; name the remedy instead of only the number.
+    private static func hint(for status: OSStatus) -> String {
+        guard status == errSecMissingEntitlement else { return "" }
+        return
+            " The data-protection keychain requires the keychain-access-groups entitlement;"
+            + " unentitled macOS apps should use SymairaKeychain(…, storage: .loginKeychain)."
+    }
+}
+
+/// Which keychain holds the items.
+public enum SymairaKeychainStorage: Sendable, Equatable {
+    /// The data-protection keychain (default): device-only, never synced,
+    /// `kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly` or an access-control
+    /// policy. Requires the `keychain-access-groups` (or application-identifier)
+    /// entitlement; a process without it gets `errSecMissingEntitlement` (-34018).
+    case dataProtection
+
+    /// The file-based login keychain on macOS, for unsandboxed Developer ID
+    /// apps that ship without a keychain entitlement. Items are protected by
+    /// the keychain's per-app ACL instead of data-protection classes, so
+    /// access-control policies other than `.none` are rejected with
+    /// `saveFailed(errSecParam)`, and there is no legacy migration. iOS has
+    /// only the data-protection keychain; there the system stores items in it.
+    case loginKeychain
 }
 
 /// How strongly a stored item is bound to the device's local authentication state.
@@ -97,8 +123,14 @@ private final class ReadResultBox: @unchecked Sendable {
 ///
 /// - Important: Items are **device-only** and do not synchronize via iCloud.
 ///   Consuming apps must not rely on cross-device keychain availability.
+///
+/// - Important: The data-protection keychain requires the
+///   `keychain-access-groups` entitlement. Unsandboxed Developer ID apps that
+///   ship without it get `errSecMissingEntitlement` (-34018) on every save;
+///   they pass `storage: .loginKeychain` instead.
 public struct SymairaKeychain: Sendable {
     public let service: String
+    public let storage: SymairaKeychainStorage
     private let backend: any _SymairaKeychainBackend
 
     /// A single serial queue bounds the number of potentially wedged
@@ -112,20 +144,26 @@ public struct SymairaKeychain: Sendable {
 
     /// Namespaced service for a Symaira app, e.g. `SymairaKeychain(app: "symseek")`
     /// → service `dev.symaira.symseek`.
-    public init(app: String) {
-        self.init(service: "dev.symaira.\(app)")
+    public init(app: String, storage: SymairaKeychainStorage = .dataProtection) {
+        self.init(service: "dev.symaira.\(app)", storage: storage)
     }
 
     /// Escape hatch for migrating existing items stored under legacy service
     /// names (e.g. `com.symaira.memory`).
-    public init(service: String) {
+    public init(service: String, storage: SymairaKeychainStorage = .dataProtection) {
         self.service = service
+        self.storage = storage
         self.backend = SystemSymairaKeychainBackend()
     }
 
     /// Internal initializer used by entitlement-independent tests.
-    init(service: String, backend: any _SymairaKeychainBackend) {
+    init(
+        service: String,
+        storage: SymairaKeychainStorage = .dataProtection,
+        backend: any _SymairaKeychainBackend
+    ) {
         self.service = service
+        self.storage = storage
         self.backend = backend
     }
 
@@ -159,10 +197,13 @@ public struct SymairaKeychain: Sendable {
     /// first and restored if the replacement add fails.
     @discardableResult
     public func save(_ value: String, key: String, accessControl: SymairaKeychainAccessControl) throws -> Bool {
+        if storage == .loginKeychain, accessControl != .none {
+            throw SymairaKeychainError.saveFailed(errSecParam)
+        }
         let material = try makeSaveMaterial(value: value, accessControl: accessControl)
         let identityQuery = baseQuery(key: key)
         guard let existing = try existingItem(key: key) else {
-            let addStatus = backend.add(material.addQuery(key: key, service: service))
+            let addStatus = backend.add(material.addQuery(key: key, service: service, storage: storage))
             guard addStatus == errSecSuccess else {
                 throw SymairaKeychainError.saveFailed(addStatus)
             }
@@ -193,19 +234,15 @@ public struct SymairaKeychain: Sendable {
     }
 
     public func read(key: String) throws -> String? {
-        let query: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: service,
-            kSecAttrAccount as String: key,
-            kSecReturnData as String: true,
-            kSecMatchLimit as String: kSecMatchLimitOne,
-            kSecUseDataProtectionKeychain as String: true,
-            kSecAttrSynchronizable as String: false,
-        ]
+        var query = baseQuery(key: key)
+        query[kSecReturnData as String] = true
+        query[kSecMatchLimit as String] = kSecMatchLimitOne
 
         let (status, item) = backend.copyMatching(query)
         guard status == errSecSuccess, let data = item as? Data else {
             if status == errSecItemNotFound {
+                // The login keychain is where legacy items live; nothing to migrate.
+                guard storage == .dataProtection else { return nil }
                 // One-shot fallback: try legacy query and migrate on hit.
                 return try legacyReadAndMigrate(key: key)
             }
@@ -313,15 +350,10 @@ public struct SymairaKeychain: Sendable {
         let data: Data
         let accessControl: SecAccessControl?
 
-        func addQuery(key: String, service: String) -> [String: Any] {
-            var query: [String: Any] = [
-                kSecClass as String: kSecClassGenericPassword,
-                kSecAttrService as String: service,
-                kSecAttrAccount as String: key,
-                kSecValueData as String: data,
-                kSecUseDataProtectionKeychain as String: true,
-                kSecAttrSynchronizable as String: false,
-            ]
+        func addQuery(key: String, service: String, storage: SymairaKeychainStorage) -> [String: Any] {
+            var query = SymairaKeychain.identityQuery(key: key, service: service, storage: storage)
+            query[kSecValueData as String] = data
+            guard storage == .dataProtection else { return query }
             if let accessControl {
                 query[kSecAttrAccessControl as String] = accessControl
             } else {
@@ -357,13 +389,26 @@ public struct SymairaKeychain: Sendable {
     }
 
     private func baseQuery(key: String) -> [String: Any] {
-        [
+        Self.identityQuery(key: key, service: service, storage: storage)
+    }
+
+    /// Identifies one item. The login-keychain shape matches the legacy query
+    /// that already reads file-based items: no data-protection or sync keys.
+    fileprivate static func identityQuery(
+        key: String,
+        service: String,
+        storage: SymairaKeychainStorage
+    ) -> [String: Any] {
+        var query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
             kSecAttrAccount as String: key,
-            kSecUseDataProtectionKeychain as String: true,
-            kSecAttrSynchronizable as String: false,
         ]
+        if storage == .dataProtection {
+            query[kSecUseDataProtectionKeychain as String] = true
+            query[kSecAttrSynchronizable as String] = false
+        }
+        return query
     }
 
     private struct ExistingItem {
@@ -437,7 +482,7 @@ public struct SymairaKeychain: Sendable {
             throw SymairaKeychainError.saveFailed(deleteStatus)
         }
 
-        let addStatus = backend.add(material.addQuery(key: key, service: service))
+        let addStatus = backend.add(material.addQuery(key: key, service: service, storage: storage))
         guard addStatus == errSecSuccess else {
             // The previous value is restored best-effort before reporting the
             // failed save. This keeps a failed policy change non-destructive.
@@ -453,6 +498,7 @@ public struct SymairaKeychain: Sendable {
     ) -> [String: Any] {
         var query = baseQuery(key: key)
         query[kSecValueData as String] = data
+        guard storage == .dataProtection else { return query }
         if let accessControl = attributes[kSecAttrAccessControl as String] {
             query[kSecAttrAccessControl as String] = accessControl
         } else if let accessible = attributes[kSecAttrAccessible as String] {
