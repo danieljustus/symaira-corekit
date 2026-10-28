@@ -443,6 +443,27 @@ async fn verify_cancellable_with_executable(
     certificate: &[u8],
     token: &crate::CancellationToken,
 ) -> Result<(), String> {
+    verify_cancellable_with_command(
+        Command::new(executable),
+        repo,
+        identity_override,
+        content,
+        signature,
+        certificate,
+        token,
+    )
+    .await
+}
+
+async fn verify_cancellable_with_command(
+    mut command: Command,
+    repo: &str,
+    identity_override: Option<&str>,
+    content: &[u8],
+    signature: &[u8],
+    certificate: &[u8],
+    token: &crate::CancellationToken,
+) -> Result<(), String> {
     crate::check_cancelled(token)?;
     let temporary = private_dir()?;
     let content_path = temporary.0.join("content");
@@ -460,7 +481,6 @@ async fn verify_cancellable_with_executable(
     let pattern = identity_override
         .filter(|pattern| !pattern.is_empty())
         .map_or_else(|| identity_regexp(repo), str::to_owned);
-    let mut command = Command::new(executable);
     command
         .arg("verify-blob")
         .arg("--certificate")
@@ -789,13 +809,26 @@ mod cancellation_tests {
         let temporary = private_dir().unwrap();
         let executable = temporary.0.join("fixture-cosign");
         let ready = temporary.0.join("ready");
+        let ready_tmp = temporary.0.join("ready.tmp");
+        // Readiness handshake: the descendant publishes its pid with an atomic
+        // rename, so the test never observes the marker before the pid is
+        // complete (a plain `echo > ready` creates the file empty first).
         let script = format!(
-            "#!/bin/sh\ntrap '' TERM\nsh -c 'trap \"\" TERM; echo $$ > \"{}\"; while :; do sleep 1; done' &\nwait\n",
-            ready.display()
+            "#!/bin/sh\ntrap '' TERM\nsh -c 'trap \"\" TERM; echo $$ > \"{tmp}\" && mv \"{tmp}\" \"{ready}\"; while :; do sleep 1; done' &\nwait\n",
+            tmp = ready_tmp.display(),
+            ready = ready.display(),
         );
         fs::write(&executable, script).unwrap();
         fs::set_permissions(&executable, fs::Permissions::from_mode(0o700)).unwrap();
-        assert_cancellation_reaps(&executable, &ready).await;
+        // Interpret the owned script as data. Executing the just-written inode
+        // directly races with a sibling test thread's fork on Linux: the
+        // forked child briefly inherits this file's write descriptor until it
+        // execs, so our exec fails with ETXTBSY and the readiness marker is
+        // never written. The verifier argv, process group and descendant
+        // ownership under test are unchanged.
+        let mut fixture = Command::new("/bin/sh");
+        fixture.arg(&executable);
+        assert_cancellation_reaps(fixture, &ready).await;
     }
 
     #[tokio::test]
@@ -803,16 +836,16 @@ mod cancellation_tests {
     async fn early_verifier_failure_is_not_hidden_by_readiness_timeout() {
         let temporary = private_dir().unwrap();
         assert_cancellation_reaps(
-            &temporary.0.join("missing-executable"),
+            Command::new(temporary.0.join("missing-executable")),
             &temporary.0.join("not-ready"),
         )
         .await;
     }
 
-    async fn assert_cancellation_reaps(executable: &Path, ready: &Path) {
+    async fn assert_cancellation_reaps(fixture: Command, ready: &Path) {
         let token = crate::CancellationToken::new();
-        let verification = verify_cancellable_with_executable(
-            executable,
+        let verification = verify_cancellable_with_command(
+            fixture,
             "owner/repo",
             None,
             b"content",
