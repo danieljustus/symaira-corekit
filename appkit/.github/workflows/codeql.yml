@@ -40,17 +40,24 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Select Xcode 27
+        # Same selection as CI: the newest installed full Xcode, no hard-coded
+        # path. A fixed Xcode-beta.app path failed every run once the beta was
+        # replaced by the release.
         run: |
-          XCODE=/Applications/Xcode-beta.app
-          test -d "$XCODE/Contents/Developer"
-          echo "DEVELOPER_DIR=$XCODE/Contents/Developer" >> "$GITHUB_ENV"
-          DEVELOPER_DIR="$XCODE/Contents/Developer" xcodebuild -version | grep -F 'Xcode 27.0'
+          XCODE="$(env -u DEVELOPER_DIR python3 scripts/select_xcode.py --minimum 27.0)"
+          echo "DEVELOPER_DIR=$XCODE" >> "$GITHUB_ENV"
+          DEVELOPER_DIR="$XCODE" xcodebuild -version
       - name: Initialize CodeQL
         uses: github/codeql-action/init@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4.39.1
         with:
           languages: swift
           build-mode: manual
       - name: Build Swift package
-        run: swift build
+        # A fresh scratch path forces a full compile so CodeQL can trace every
+        # source; the persistent .build on this runner would be a no-op build.
+        # --disable-sandbox: under the CodeQL tracer SwiftPM cannot spawn
+        # /usr/bin/sandbox-exec (arm64e system binary; "Bad CPU type in
+        # executable") on macOS 27.
+        run: swift build --disable-sandbox --manifest-cache local --scratch-path "$RUNNER_TEMP/codeql-build"
       - name: Perform CodeQL analysis
         uses: github/codeql-action/analyze@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4.39.1
