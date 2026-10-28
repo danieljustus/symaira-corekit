@@ -147,36 +147,57 @@ public final class SymairaTopoModel {
     #endif
 }
 
-private final class Clock {  // Referenztyp: Mutation im Render-Pfad invalidiert keine View
-    var a = Animated()
-}
-
-private struct Animated {
-    // Random start slice of the noise field: every mount (window, page) shows new terrain.
-    var flowT = SymairaTopoView.startPhase(), rt = 0.0, last: Date?, nextThink = 0.0
-    var cur = SymairaTopoState.idle.target, tintMix = 0.0
-    var mouse = CGPoint(x: -1e4, y: -1e4), mouseAmt = 0.0, press = 0.0
-    var lastOrigin: CGPoint?, lastSize: CGSize?
-}
-
 public struct SymairaTopoView: View {
-    /// Start slice per mount; tests pin it to compare renders pixel for pixel.
+    /// Start slice per mount; tests pin it for deterministic terrain.
     nonisolated(unsafe) static var startPhase: () -> Double = { .random(in: 0..<100) }
-    /// SPM: Shader liegt im Modul-Bundle. Direkter swiftc-Build (Demo): App-Bundle.
-    #if SWIFT_PACKAGE
-    private static let library = ShaderLibrary.bundle(SymairaThemeResources.bundle)
-    #else
-    private static let library = ShaderLibrary.default
-    #endif
+    let model: SymairaTopoModel
+    let animationEnabled: Bool
+    public init(model: SymairaTopoModel, animationEnabled: Bool = true) {
+        self.model = model
+        self.animationEnabled = animationEnabled
+    }
+    public var body: some View {
+        #if os(macOS)
+        TopoMacRenderer(model: model, animationEnabled: animationEnabled)
+        #else
+        TopoSwiftUIRenderer(model: model, animationEnabled: animationEnabled)
+        #endif
+    }
+}
+
+#if os(macOS)
+private struct TopoMacRenderer: View {
+    let model: SymairaTopoModel
+    let animationEnabled: Bool
+    @Environment(\.colorScheme) private var scheme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var visible = true
+    var body: some View {
+        GeometryReader { geo in
+            let origin = geo.frame(in: .named(SymairaTopo.space)).origin
+            TopoMetalSurface(
+                model: model, origin: origin, scheme: scheme,
+                still: reduceMotion || !animationEnabled, visible: visible
+            )
+            .background(TopoPointerTracker(model: model, origin: origin))
+        }
+        .background(TopoWindowVisibility(visible: $visible))
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
+}
+#endif
+
+struct TopoSwiftUIRenderer: View {
     @Bindable var model: SymairaTopoModel
     @Environment(\.colorScheme) private var scheme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.displayScale) private var displayScale
     @Environment(\.scenePhase) private var scenePhase
-    @State private var clock = Clock()
+    @State private var clock = TopoFrameIntegrator()
     @State private var windowVisible = true
     private let animationEnabled: Bool
-    public init(model: SymairaTopoModel, animationEnabled: Bool = true) {
+    init(model: SymairaTopoModel, animationEnabled: Bool = true) {
         self.model = model
         self.animationEnabled = animationEnabled
     }
@@ -194,7 +215,7 @@ public struct SymairaTopoView: View {
         #endif
     }
 
-    public var body: some View {
+    var body: some View {
         GeometryReader { geo in
             TimelineView(
                 .animation(minimumInterval: model.interactive ? nil : 1 / SymairaTokens.Topo.fps, paused: paused)
@@ -217,7 +238,7 @@ public struct SymairaTopoView: View {
         .background(TopoWindowVisibility(visible: $windowVisible))
         #endif
         .onChange(of: paused) { _, _ in
-            clock.a.last = nil
+            clock.reset()
             model.pressed = false
             model.pointer = nil
             model.interactive = false
@@ -227,77 +248,13 @@ public struct SymairaTopoView: View {
 
     /// Alle Eingänge kommen im Koordinatenraum `SymairaTopo.space`; der Shader rechnet im lokalen Raum der View.
     /// Die View kann davon abweichen (z. B. `ignoresSafeArea` unter einer eingeblendeten Sidebar) → Ursprung abziehen.
-    private func shader(size: CGSize, origin o: CGPoint, now: Date) -> Shader {
-        // Zeitintegration (Zustände gleiten mit transitionSeconds)
-        var a = clock.a
-        let dt = min(0.06, a.last.map { now.timeIntervalSince($0) } ?? 0)
-        let f = 1 - exp(-dt / SymairaTokens.Topo.transitionSeconds)
-        let tg = model.state.target
-        a.last = now
-        func ease(_ c: Double, _ t: Double) -> Double { c + (t - c) * f }
-        a.cur = .init(
-            speed: ease(a.cur.speed, tg.speed), warp: ease(a.cur.warp, tg.warp), think: ease(a.cur.think, tg.think),
-            problem: ease(a.cur.problem, tg.problem), ask: ease(a.cur.ask, tg.ask),
-            tintAmount: ease(a.cur.tintAmount, tg.tintAmount), tintIsCritical: tg.tintIsCritical)
-        if !paused {
-            a.flowT += a.cur.speed * dt
-            a.rt += dt
-        }
-        if model.state == .thinking, a.rt > a.nextThink, let s = model.statusPoint {
-            model.ripple(at: s, strength: 0.8)
-            a.nextThink = a.rt + 1.4
-        }
-        let target = still ? nil : model.pointer.map { CGPoint(x: $0.x - o.x, y: $0.y - o.y) }
-        if let p = target {
-            let m = 1 - exp(-dt / 0.12)
-            a.mouse =
-                a.mouse.x < -9e3
-                ? p : CGPoint(x: a.mouse.x + (p.x - a.mouse.x) * m, y: a.mouse.y + (p.y - a.mouse.y) * m)
-        }
-        model.pointerVelocity *= exp(-dt / 0.5)
-        let goal = target == nil ? 0 : 0.45 + 0.55 * model.pointerVelocity
-        a.mouseAmt += (goal - a.mouseAmt) * (1 - exp(-dt / 0.25))
-        a.press += ((still || !model.pressed ? 0 : 1) - a.press) * (1 - exp(-dt / SymairaTokens.Topo.pressSeconds))
-        // Fläche verschoben/verkleinert (z. B. Seitenleiste auf/zu) → Welle von der Kante
-        if let lo = a.lastOrigin, let ls = a.lastSize,
-            abs(lo.x - o.x) + abs(lo.y - o.y) + abs(ls.width - size.width) > 1
-        {
-            model.ripple(
-                at: CGPoint(x: 0, y: o.y + size.height / 2), strength: SymairaTokens.Topo.layoutEdgeRipple,
-                key: "layout.edge")
-        }
-        a.lastOrigin = o
-        a.lastSize = size
-        model.ripples.removeAll { now.timeIntervalSince($0.1) > 2.4 }
-        clock.a = a
-
-        let rects = model.protectedRects(in: CGRect(origin: o, size: size))
-        let rip: [Float] =
-            still
-            ? []
-            : model.ripples.flatMap { r -> [Float] in
-                [Float(r.0.x - o.x), Float(r.0.y - o.y), Float(max(0, now.timeIntervalSince(r.1))), Float(r.2)]
-            }
-        let dark = scheme == .dark
-        let ask =
-            model.askPoint.map { CGPoint(x: $0.x - o.x, y: $0.y - o.y) }
-            ?? CGPoint(x: size.width / 2, y: size.height - 60)
-        let tokens = SymairaTokens.Topo.self
-        return Self.library.symairaTopo(
-            .float4(size.width, size.height, a.flowT, a.rt),
-            .float4(a.mouse.x, a.mouse.y, a.mouseAmt, dark ? 1 : tokens.lightModeFactor),
-            .float4(a.cur.warp, a.cur.think, a.cur.problem, a.cur.ask),
-            .float4(a.cur.tintAmount, ask.x, ask.y, displayScale),
-            .float4(tokens.scale, tokens.levels, tokens.lineAlpha, tokens.indexAlpha),
-            .float4(0, tokens.maxAlpha, tokens.basinOpen, a.press),
-            .float4(tokens.pointerRadius, tokens.pointerStrength, tokens.pressDepth, 0),
-            .color(SymairaTokens.topo),
-            .color(
-                a.cur.tintIsCritical
-                    ? SymairaTokens.critical : (a.cur.ask > 0.01 ? SymairaTokens.primary : SymairaTokens.topo)),
-            .floatArray(rects),
-            .floatArray(rip))
+    private func shader(size: CGSize, origin: CGPoint, now: Date) -> Shader {
+        clock.frame(
+            model: model, size: size, origin: origin, now: now, scheme: scheme,
+            displayScale: displayScale, still: still, paused: paused
+        ).shader
     }
+
 }
 
 extension View {

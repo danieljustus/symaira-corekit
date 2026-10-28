@@ -41,6 +41,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   description (#178).
 
 ### Fixed
+- The macOS Liquid Topography no longer re-lays out the whole window on every
+  animation frame. It renders through its own `CAMetalLayer` with a native
+  frame timer (20 fps, display rate while the pointer is over it), so ticks
+  never update the SwiftUI graph. In a 1000x700 workspace with a 200-row list,
+  outer layout passes fell from 557-746 to 0 per 17 s. Protected zones,
+  appearance, pointer interaction, Reduce Motion, Low Power and window
+  occlusion behave as before; iOS keeps the SwiftUI shader path (#184).
 - `SymairaLockedLabel` defaults to the English "Locked" and draws
   `SymairaIcon.lock`; `SymairaSettingsButton` draws `SymairaIcon.settings`
   instead of the SF Symbol gear (#185).

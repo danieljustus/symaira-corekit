@@ -77,7 +77,7 @@ final class LiquidTopographyTests: XCTestCase {
             for index in 0..<count {
                 model.rects["zone-\(index)"] = (CGRect(x: 100, y: 60, width: 100, height: 80), true)
             }
-            let view = SymairaTopoView(model: model, animationEnabled: false)
+            let view = TopoSwiftUIRenderer(model: model, animationEnabled: false)
                 .frame(width: 300, height: 200)
                 .coordinateSpace(name: SymairaTopo.space)
                 .environment(\.colorScheme, .dark)
@@ -95,7 +95,7 @@ final class LiquidTopographyTests: XCTestCase {
         let size = CGSize(width: 480, height: 320)
         let zone = CGRect(x: 160, y: 110, width: 160, height: 100)
         model.rects["zone"] = (zone, false)
-        let view = SymairaTopoView(model: model)
+        let view = TopoSwiftUIRenderer(model: model)
             .frame(width: size.width, height: size.height)
             .coordinateSpace(name: SymairaTopo.space)
             .environment(\.colorScheme, .dark)
@@ -131,7 +131,7 @@ final class LiquidTopographyTests: XCTestCase {
         let size = CGSize(width: 480, height: 320)
         model.ripple(at: CGPoint(x: 240, y: 160), strength: 1)
         model.ripples = model.ripples.map { ($0.0, Date.now.addingTimeInterval(-0.8), $0.2) }
-        let view = SymairaTopoView(model: model)
+        let view = TopoSwiftUIRenderer(model: model)
             .frame(width: size.width, height: size.height)
             .coordinateSpace(name: SymairaTopo.space)
             .environment(\.colorScheme, .dark)
@@ -153,7 +153,7 @@ final class LiquidTopographyTests: XCTestCase {
         let startPhase = SymairaTopoView.startPhase
         SymairaTopoView.startPhase = { 0 }
         defer { SymairaTopoView.startPhase = startPhase }
-        let view = SymairaTopoView(model: SymairaTopoModel(), animationEnabled: false)
+        let view = TopoSwiftUIRenderer(model: SymairaTopoModel(), animationEnabled: false)
             .frame(width: 480, height: 320)
             .coordinateSpace(name: SymairaTopo.space)
             .environment(\.colorScheme, .dark)

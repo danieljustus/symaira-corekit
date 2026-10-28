@@ -68,7 +68,7 @@ static float topoHeight(float2 pos, thread const TopoIn &in){
 // p2: warp, think, problem, ask p3: tintAmount, askX, askY, displayScale
 // p4: scale, levels, lineA, idxA p5: unused, maxA, basinOpen, press
 // p6: pointerRadius, pointerStrength, pressDepth, unused
-[[ stitchable ]] half4 symairaTopo(float2 pos, half4 color,
+static half4 topoShade(float2 pos, half4 color,
     float4 p0, float4 p1, float4 p2, float4 p3, float4 p4, float4 p5, float4 p6,
     half4 col4, half4 tint4, device const float *rects, int rectCount, device const float *ripples, int rippleCount)
 {
@@ -102,4 +102,27 @@ static float topoHeight(float2 pos, thread const TopoIn &in){
     half3 c = mix(col4.rgb, tint4.rgb, half(tintA));
     // über die Eingangsfarbe (Canvas) komponieren: SwiftUI überspringt vollständig transparente Layer
     return half4(mix(color.rgb, c, half(a)), color.a);
+}
+
+[[ stitchable ]] half4 symairaTopo(float2 pos, half4 color,
+    float4 p0, float4 p1, float4 p2, float4 p3, float4 p4, float4 p5, float4 p6,
+    half4 col4, half4 tint4, device const float *rects, int rectCount, device const float *ripples, int rippleCount) {
+    return topoShade(pos, color, p0, p1, p2, p3, p4, p5, p6, col4, tint4, rects, rectCount, ripples, rippleCount);
+}
+
+vertex float4 topoVertex(uint id [[vertex_id]]) {
+    return float4(id == 1 ? 3. : -1., id == 2 ? 3. : -1., 0., 1.);
+}
+
+// Seven parameter vectors, three encoded-sRGB colors, then array lengths.
+struct TopoUniforms {
+    float4 p[7];
+    float4 canvas, topo, tint;
+    uint4 counts;
+};
+fragment half4 topoFragment(float4 position [[position]], constant TopoUniforms &u [[buffer(0)]],
+                           device const float *rects [[buffer(1)]], device const float *ripples [[buffer(2)]]) {
+    return topoShade(position.xy / max(u.p[3].w, 1.), half4(u.canvas),
+                     u.p[0], u.p[1], u.p[2], u.p[3], u.p[4], u.p[5], u.p[6],
+                     half4(u.topo), half4(u.tint), rects, u.counts.x, ripples, u.counts.y);
 }
