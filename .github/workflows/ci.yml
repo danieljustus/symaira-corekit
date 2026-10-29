@@ -39,8 +39,6 @@ jobs:
             target: linux-amd64
           - os: macos-26
             target: darwin-arm64
-          - os: windows-latest
-            target: windows-amd64
     env:
       FS_NATIVE_TARGET: ${{ matrix.target }}
       # The capture deliberately ignores operator Git configuration. Check out
@@ -98,7 +96,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-26, windows-latest]
+        os: [ubuntu-latest, macos-26]
     env:
       GO_ORACLE: "1"
     steps:
@@ -145,8 +143,6 @@ jobs:
             target: linux-amd64
           - os: macos-26
             target: darwin-arm64
-          - os: windows-latest
-            target: windows-amd64
     # matrix.os preserves legacy protected check names; see ADR 0003.
     runs-on: ${{ matrix.os == 'macos-26' && 'macos-15' || matrix.os }}
     timeout-minutes: 20
@@ -257,11 +253,7 @@ jobs:
             done < "$RUNNER_TEMP/changed-paths"
           fi
           echo "full=$full" >> "$GITHUB_OUTPUT"
-          if [[ "$full" == true ]]; then
-            echo 'test_matrix=["ubuntu-latest","macos-26","windows-latest"]' >> "$GITHUB_OUTPUT"
-          else
-            echo 'test_matrix=["ubuntu-latest","macos-26"]' >> "$GITHUB_OUTPUT"
-          fi
+          echo 'test_matrix=["ubuntu-latest","macos-26"]' >> "$GITHUB_OUTPUT"
 
   test:
     name: test (${{ matrix.os }})
@@ -320,8 +312,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        goos: [linux, darwin, windows]
+        goos: [linux, darwin]
         goarch: [amd64, arm64]
+        exclude:
+          - goos: darwin
+            goarch: amd64
     runs-on: ubuntu-latest
     env:
       CGO_ENABLED: 0
@@ -367,7 +362,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-26, windows-latest]
+        os: [ubuntu-latest, macos-26]
     # matrix.os preserves legacy protected check names; see ADR 0003.
     runs-on: ${{ matrix.os == 'macos-26' && 'macos-15' || matrix.os }}
     env:
@@ -431,7 +426,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-26, windows-latest]
+        os: [ubuntu-latest, macos-26]
     # matrix.os preserves legacy protected check names; see ADR 0003.
     runs-on: ${{ matrix.os == 'macos-26' && 'macos-15' || matrix.os }}
     env:
@@ -496,7 +491,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-26, windows-latest]
+        os: [ubuntu-latest, macos-26]
     steps:
       - name: Record native macOS runner identity
         if: runner.os == 'macOS'
@@ -554,7 +549,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-26, windows-latest]
+        os: [ubuntu-latest, macos-26]
     steps:
       - name: Record native macOS runner identity
         if: runner.os == 'macOS'
@@ -608,7 +603,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-26, windows-latest]
+        os: [ubuntu-latest, macos-26]
     steps:
       - name: Record native macOS runner identity
         if: runner.os == 'macOS'
@@ -649,7 +644,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-26, windows-latest]
+        os: [ubuntu-latest, macos-26]
     steps:
       - name: Record native macOS runner identity
         if: runner.os == 'macOS'
@@ -683,7 +678,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-26, windows-latest]
+        os: [ubuntu-latest, macos-26]
     steps:
       - name: Record native macOS runner identity
         if: runner.os == 'macOS'
@@ -745,7 +740,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-26, windows-latest]
+        os: [ubuntu-latest, macos-26]
     env:
       GIT_CONFIG_COUNT: '1'
       GIT_CONFIG_KEY_0: core.autocrlf
@@ -879,7 +874,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-26, windows-latest]
+        os: [ubuntu-latest, macos-26]
     steps:
       - name: Record native macOS runner identity
         if: runner.os == 'macOS'

@@ -13,12 +13,15 @@ make rust-lint
 make rust-test
 ```
 
-The Go build must remain CGO-free on linux, darwin, and windows (amd64+arm64).
+The Go build must remain CGO-free on Linux (amd64/arm64) and macOS (arm64).
 Race tests use CGO; CI also runs tests with `CGO_ENABLED=0`. The authoritative
 gate list is `.github/workflows/ci.yml`: Go test and cross-build matrices,
 lint, `govulncheck`, `apidiff`, port contracts, native Rust foundation/LLM/update,
 MCP, MCP-config and SQLite checks, hardening/Miri and release-manifest validation.
-The full `main` matrix includes Linux, macOS and Windows. Run the affected
+PR and `main` native matrices cover Linux and Apple Silicon macOS. Windows and
+macOS Intel are unsupported and have no CI or release targets. Existing Windows
+APIs, build tags and fixtures remain for shared-library consumer compatibility;
+do not remove them as part of this CI scope change. Run the affected
 `rust-*-contract` Make targets before pushing Rust changes.
 
 ## Releasing
