@@ -1,3 +1,5 @@
+> Platform scope (2026-10-29, #456): Linux amd64/arm64 and macOS arm64 are required. Windows and macOS Intel are no longer required; historical Windows/Intel evidence below is retained as history, not a current acceptance requirement. Corekit remains a shared library, so existing Windows-facing APIs stay until consumer repositories remove their Windows code.
+
 # FS-001-RUST-STRICT-v1
 
 `symaira_core_fs::validate_path` retains its existing Rust safety policy. This is an explicit, versioned deviation from Go `fsutil.ValidatePath`, not a universal accept/reject parity claim.

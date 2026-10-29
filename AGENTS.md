@@ -30,7 +30,7 @@ make lint               # gofmt -l + go vet
 
 ## Architecture & Constraints
 
-- **100% CGO-free**: `CGO_ENABLED=0` must work for linux/darwin/windows (amd64+arm64).
+- **100% CGO-free**: `CGO_ENABLED=0` must work for Linux amd64/arm64 and macOS arm64. Windows and macOS Intel are no longer required (platform scope decision 2026-10-29, #456). Corekit remains a shared library: retain public APIs used by consumers until their Windows-removal work lands; do not make consumer Windows builds a prerequisite.
 - **Zero Stdio Pollution**: MCP server transport runs over stdio. Never print to `os.Stdout` except structured JSON-RPC 2.0 messages.
 - **No Cloud/SaaS concepts**: No Firebase, Stripe, GCP SDK, or billing code. This is a public Apache-2.0 library.
 - **No tool-specific business logic**: No vault crypto, no memory PII rules, no seek ranking, no fetch fingerprinting, no scope port scanning.
