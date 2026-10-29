@@ -1,3 +1,5 @@
+> Platform scope (2026-10-29, #456): Linux amd64/arm64 and macOS arm64 are required. Windows and macOS Intel are no longer required; historical Windows/Intel evidence below is retained as history, not a current acceptance requirement. Corekit remains a shared library, so existing Windows-facing APIs stay until consumer repositories remove their Windows code.
+
 # Native contract verification without a Go toolchain
 
 ## Accepted integrated-main execution (2026-10-05)
