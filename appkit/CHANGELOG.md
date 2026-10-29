@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.18.1] - 2026-10-29
+
+### Added
+- `View.symairaTopography(_:animationEnabled:)` (iOS): mounts the topography
+  behind an iOS page with the shared coordinate space and `.topoProtected()`
+  environment, the counterpart of `SymairaWorkspace(topography:)`.
+- `Image(symairaIcon:size:scale:)`: a static template image of a `SymairaIcon`
+  in its rest pose for places that render only `Image`, such as iOS tab bars.
+  `Label(_:symairaIcon:)` inside `.tabItem` showed no icon.
+- `GUIDELINES.md` IOS-5 and IOS-6; MOTION-1 names the iOS entry point.
+
 ## [0.18.0] - 2026-10-28
 
 ### Added

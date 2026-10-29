@@ -236,8 +236,9 @@ Six lines, kept in the pull request or issue:
 ## 9. Motion, materials and topography
 
 - **MOTION-1** Topography sits behind the main overview only, passed as
-  `topography:` to `SymairaWorkspace`; never behind settings, tables or dense
-  lists, and never mounted directly in a product.
+  `topography:` to `SymairaWorkspace` (macOS) or `.symairaTopography(_:)`
+  (iOS, IOS-5); never behind settings, tables or dense lists, and never
+  mounted directly in a product.
 - **MOTION-2** Every text-bearing element in a topography area is
   `.topoProtected()`; cards protect their whole surface (`hill: true`);
   headers protect each text, not the whole stack.
@@ -305,6 +306,13 @@ Six lines, kept in the pull request or issue:
 - **IOS-3** Primary actions sit at the bottom within thumb reach; destructive
   actions use confirmation sheets.
 - **IOS-4** Low Power Mode pauses the topography; never force animation.
+- **IOS-5** The main overview mounts the topography with
+  `.symairaTopography(model)` inside its navigation stack, the iOS counterpart
+  of `SymairaWorkspace(topography:)`; dense lists, tables and settings pass
+  `nil` or omit it (MOTION-1).
+- **IOS-6** Tab bar items use `Label { Text(title) } icon: { Image(symairaIcon:) }`;
+  the tab bar renders only `Image`, so `Label(_:symairaIcon:)` shows no icon
+  there.
 
 ## 13. Review contract
 
@@ -372,5 +380,6 @@ Listed so that nobody invents a rule or a component:
   `SymairaSettingsScene` (SHELL-7, SHELL-9).
 - No shared table styling or numeric-column helper; products use the native
   `Table` with `.monospacedDigit()`.
-- The iOS shell and the onboarding scaffold adoption are documented as
-  sketches, not as verified consumers.
+- The onboarding scaffold adoption is documented as a sketch, not as a
+  verified consumer. The iOS shell has one verified consumer (Symaira
+  Learning: `TabView`, `.symairaTopography(_:)`, `Image(symairaIcon:)`).
