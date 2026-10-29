@@ -26,10 +26,29 @@ the shared contracts that apply across languages.
 ## Why CoreKit
 
 - **Standalone-first:** every package works without any other Symaira tool installed — optional integrations are runtime contracts, never build-time imports.
-- **CGO-free:** 100% pure Go on linux/darwin/windows (amd64+arm64); no platform toolchain required.
+- **CGO-free:** 100% pure Go on supported Linux (amd64/arm64) and macOS (arm64) targets; no platform toolchain required.
 - **Cross-language conventions:** exit codes, XDG paths, env-var naming, and MCP stdio framing are shared contracts that also guide the Swift and Python free tools.
 - **Strict SemVer:** API stability is guaranteed within major versions; consumers pin the module in `go.mod`.
 - **Domain-free:** no Vault crypto, Memory PII rules, Seek ranking, Fetch fingerprinting, Scope scanning, or cloud/SaaS primitives.
+
+## Platform support
+
+Product scope is Apple platforms (Apple Silicon macOS and iOS) plus Web.
+Linux remains supported for backend/server and CLI consumers where applicable.
+CoreKit is a shared backend library, not an iOS or Web application runtime.
+
+| Target | CoreKit verification |
+| --- | --- |
+| macOS arm64 | Native Go/Rust, frozen contracts, port contracts and API compatibility on PRs and `main` |
+| Linux amd64 | Native Go/Rust and the same applicable acceptance gates |
+| Linux arm64 | CGO-free Go cross-build and vet |
+| iOS / Web | Product integration scope; no dedicated CoreKit native CI lane |
+| Windows / macOS Intel | Unsupported; no CI or release targets |
+
+Existing Windows APIs, build tags, tests and frozen fixtures are retained for
+shared-library consumer compatibility, not as a support guarantee. Release
+automation publishes library sources and notes, not platform-specific binaries.
+See [#456](https://github.com/danieljustus/symaira-corekit/issues/456).
 
 ## Install
 
