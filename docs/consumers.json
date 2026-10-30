@@ -1,5 +1,5 @@
 {
-  "$schema_note": "Consumers of github.com/danieljustus/symaira-corekit. Every record is checked by port/consumer/verify.py; checkout_commit is the immutable consumer snapshot; cargo_root points the Rust adoption checks at a nested Cargo workspace below the checkout root; release_source=corekit explicitly maps Rust adoption evidence to the CoreKit release namespace; pins are exact and evidence is never inferred from a prose claim.",
+  "$schema_note": "Consumers of github.com/danieljustus/symaira-corekit. Every record is checked by port/consumer/verify.py; checkout_commit is the immutable consumer snapshot; cargo_root points the Rust adoption checks at a nested Cargo workspace below the checkout root; release_source=corekit explicitly maps Rust adoption evidence to the CoreKit release namespace; pins are exact and evidence is never inferred from a prose claim. go_status=retired marks a consumer without Go sources: it needs empty pins, no tracked go.mod/.go files and only standalone evidence.",
   "schema_version": 2,
   "corekit": {
     "repository": "danieljustus/symaira-corekit",
@@ -114,9 +114,8 @@
     {
       "repo": "danieljustus/symaira-eraseme",
       "checkout_commit": "300d9c3800f8efae10675fe5765a5a7062a234df",
-      "pins": [
-        "go.mod"
-      ],
+      "go_status": "retired",
+      "pins": [],
       "rust": {
         "status": "git",
         "package": "symaira-core-version",
@@ -140,17 +139,6 @@
             "report": "evidence/standalone.json",
             "artifact": "evidence/artifact/symeraseme",
             "command": "env -i PATH=/usr/bin:/bin HOME=/var/folders/7v/7bpq0fjn44lflpxdylsx8qs40000gn/T/ev-home-g4v6nw37 /Users/daniel/.hermes/cache/scratch/evidence-wt/symaira-eraseme/evidence/artifact/symeraseme version",
-            "result": {
-              "exit_code": 0,
-              "stdout": "symeraseme dev\n",
-              "stderr": ""
-            }
-          },
-          "rollback": {
-            "status": "verified",
-            "report": "evidence/rollback.json",
-            "artifact": "evidence/artifact/symeraseme-rollback-v0.12.1",
-            "command": "env -i PATH=/usr/bin:/bin HOME=/var/folders/7v/7bpq0fjn44lflpxdylsx8qs40000gn/T/ev-home-rb-run-t5g75vhv /Users/daniel/.hermes/cache/scratch/evidence-wt/symaira-eraseme/evidence/artifact/symeraseme-rollback-v0.12.1 version",
             "result": {
               "exit_code": 0,
               "stdout": "symeraseme dev\n",

@@ -413,7 +413,7 @@
         "python3 port/consumer/verify.py --git-pinned-consumers",
         "python3 scripts/rust-port/adoption.py --check --min-consumers 2"
       ],
-      "stop_rule": "Each recorded consumer must have a real public release of its exact Git-pinned Rust snapshot, source-bound standalone and Go-to-Rust-to-Go rollback reports, artifact/report digests, and independent release-artifact readback. The seven-day observation gate was removed on 2026-10-30. A local tag or verifier pass alone is insufficient; retain Go support until released imports and retirement gates are cleared. ADR 0002 defers optional crates.io publication."
+      "stop_rule": "Each recorded consumer must have a real public release of its exact Git-pinned Rust snapshot, source-bound standalone and Go-to-Rust-to-Go rollback reports, artifact/report digests, and independent release-artifact readback. The seven-day observation gate was removed on 2026-10-30. A Go-retired consumer (go_status=retired) needs no Go-to-Rust-to-Go rollback report. A local tag or verifier pass alone is insufficient; retain Go support until released imports and retirement gates are cleared. ADR 0002 defers optional crates.io publication."
     },
     {
       "id": "RUST-014",
