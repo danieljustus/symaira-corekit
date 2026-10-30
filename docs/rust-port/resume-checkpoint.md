@@ -1,3 +1,14 @@
+## Local completion mode (2026-10-30)
+
+The maintainer decided to finish the remaining migration locally on the
+MacBook (macOS arm64) and push to GitHub once it is complete. Until then local
+gates are the working evidence: `make rust-test rust-lint rust-contracts`, plus
+Linux checks in a local container where Linux-specific behavior matters.
+Consumers are built against the local CoreKit through Cargo path overrides.
+Windows and macOS Intel are no longer required targets (#456, #457). The
+seven-day consumer observation gate is removed. The final push to `main` runs
+ordinary CI once as acceptance; local results are not claimed as native CI.
+
 ## Accepted shared closure; consumer releases still blocked (2026-10-05)
 
 Integrated main `1f3a7276500042121fe2d79a545462a15675aadc` passed
@@ -18,7 +29,8 @@ skipped oracle/signed tests are exercised by separate native differential and
 signed-release gates, not treated as passing from the nextest summary.
 
 RUST-016 remains blocked by the four explicitly linked consumer release issues,
-source-bound standalone/rollback records and minimum seven-day observations.
+source-bound standalone/rollback records. The seven-day observation gate was
+removed on 2026-10-30.
 #370, #373 and #364 remain open. RUST-014/015 remain deferred under ADR 0002.
 No Go package, oracle, pin or consumer release is changed by this status repair.
 Later heads require their own CI. Sections below retain dated historical evidence.
@@ -62,7 +74,8 @@ The maintainer delegated implementation decisions and their documentation.
 and Cargo.lock as supported Rust distribution. RUST-014/015 are demand-driven
 and deferred; registry publication and its conditional rollout are not planned.
 RUST-016 still requires real source-bound released consumer builds, standalone
-and Go-to-Rust-to-Go rollback evidence, and the seven-day observation gate.
+and Go-to-Rust-to-Go rollback evidence (the seven-day observation gate was
+removed on 2026-10-30).
 Go remains while released consumers import it.
 
 [ADR 0003](../adr/0003-native-macos-ci.md) selects supported macOS 15 ARM64,
