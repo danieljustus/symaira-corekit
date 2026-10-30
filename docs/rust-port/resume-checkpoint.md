@@ -6,7 +6,11 @@ gates are the working evidence: `make rust-test rust-lint rust-contracts`, plus
 Linux checks in a local container where Linux-specific behavior matters.
 Consumers are built against the local CoreKit through Cargo path overrides.
 Windows and macOS Intel are no longer required targets (#456, #457). The
-seven-day consumer observation gate is removed. The final push to `main` runs
+seven-day consumer observation gate is removed. Every consumer cuts over Rust-only like EraseMe:
+no Go fallback binary and no Go-to-Rust-to-Go rollback; consumers become
+`go_status: retired` in `docs/consumers.json` and need only standalone
+evidence. Data safety moves to each consumer's cutover gate (automatic
+pre-migration backup plus verified restore). The final push to `main` runs
 ordinary CI once as acceptance; local results are not claimed as native CI.
 
 ## Accepted shared closure; consumer releases still blocked (2026-10-05)
