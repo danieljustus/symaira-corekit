@@ -16,6 +16,13 @@ class ProviderGeneratorTests(unittest.TestCase):
         changed = gen.generate(json.dumps(source).encode("utf-8"))
         self.assertNotEqual(changed, gen.TARGET.read_bytes())
 
+    def test_go_encoder_edge_cases(self):
+        empty = gen.generate(b'{"schema_version": 1, "providers": []}')
+        self.assertEqual(empty, b'{\n  "schema_version": 1,\n  "providers": null\n}\n')
+        source = {"schema_version": 1, "providers": [{"id": "x", "display_name": "a\u2028b\u2029<&>"}]}
+        out = gen.generate(json.dumps(source).encode())
+        self.assertIn(b'"display_name": "a\\u2028b\\u2029<&>"', out)
+
     def test_omitempty_fields_and_null_base_url(self):
         out = json.loads(gen.generate(json.dumps({"schema_version": 1, "providers": [{"id": "x"}]}).encode()))
         self.assertEqual(out["providers"][0], {

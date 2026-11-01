@@ -113,6 +113,25 @@ class FrozenUpdateTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "fixed reviewed bytes"):
                     replay.read_capture(lane)
 
+    def test_symlinked_or_dangling_retired_inputs_are_rejected(self):
+        lane = "request"
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            fixture_dir = self._copy_replay_inputs(root, lane)
+            with mock.patch.object(replay, "ROOT", root), mock.patch.object(replay, "FIXTURES", fixture_dir.parent):
+                replay.read_capture(lane)
+                for relative, message in (("updatecheck/updatecheck.go", "repository input changed"),
+                                          ("go.mod", "module input is missing or unsafe|repository input")):
+                    path = root / relative
+                    original = path.read_bytes()
+                    path.unlink()
+                    replay.read_capture(lane)  # absent: resolved from the v0.18.3 anchor
+                    path.symlink_to(root / "missing-target.go")
+                    with self.assertRaisesRegex(ValueError, message):
+                        replay.read_capture(lane)
+                    path.unlink()
+                    path.write_bytes(original)
+
     def test_actual_read_capture_rejects_external_module_closure(self):
         lane = "request"
         target = "-".join(replay.native_goos_arch())

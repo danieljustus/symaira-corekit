@@ -34,6 +34,30 @@ class RetiredGoTests(unittest.TestCase):
             (root / relative).write_bytes(anchor + b"\n")
             self.assertEqual(retired_go.read_bytes(root, relative), anchor + b"\n")
 
+    def test_traversal_absolute_and_symlink_paths_are_rejected(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            root = base / "root"
+            root.mkdir()
+            outside = base / "outside.go"
+            outside.write_bytes(b"package outside\n")
+            for bad in ("../outside.go", str(outside), "a//b.go", "./x.go", "a\\b.go", ""):
+                with self.assertRaises(ValueError, msg=bad):
+                    retired_go.read_bytes(root, bad)
+                with self.assertRaises(ValueError, msg=bad):
+                    retired_go.exists(root, bad)
+            (root / "versionkit").mkdir()
+            dangling = root / "versionkit/versionkit.go"
+            dangling.symlink_to(base / "missing.go")
+            with self.assertRaises(ValueError):
+                retired_go.read_bytes(root, "versionkit/versionkit.go")
+            with self.assertRaises(ValueError):
+                retired_go.exists(root, "versionkit/versionkit.go")
+            dangling.unlink()
+            (root / "linked").symlink_to(base, target_is_directory=True)
+            with self.assertRaises(ValueError):
+                retired_go.read_bytes(root, "linked/outside.go")
+
     def test_unknown_or_non_go_paths_fail_closed(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

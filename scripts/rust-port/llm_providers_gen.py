@@ -58,8 +58,11 @@ def generate(source: bytes) -> bytes:
         if _str(p.get("credential_ref_env_default")):
             q["credential_env_default"] = p["credential_ref_env_default"]
         providers.append(q)
-    out = {"schema_version": int(src.get("schema_version") or 0), "providers": providers}
-    return (json.dumps(out, indent=2, ensure_ascii=False) + "\n").encode("utf-8")
+    # Go encodes the nil slice of an empty registry as null and always escapes
+    # U+2028/U+2029, even with HTML escaping disabled.
+    out = {"schema_version": int(src.get("schema_version") or 0), "providers": providers or None}
+    text = json.dumps(out, indent=2, ensure_ascii=False).replace("\u2028", "\\u2028").replace("\u2029", "\\u2029")
+    return (text + "\n").encode("utf-8")
 
 
 def main(argv=None) -> int:
