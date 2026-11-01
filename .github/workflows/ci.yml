@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [release/v0.18]
   pull_request:
-    branches: [main]
+    branches: [release/v0.18]
   workflow_dispatch:
     inputs:
       go_oracle:
@@ -453,7 +453,7 @@ jobs:
           go-version: "1.26.10"
 
       - name: Fetch base ref
-        run: git fetch origin main
+        run: git fetch origin release/v0.18
 
       - name: Check for breaking-change escape hatch
         id: hatch
@@ -474,13 +474,13 @@ jobs:
         shell: bash
         run: echo "$GOBIN" >> "$GITHUB_PATH"
 
-      - name: Run apidiff against origin/main
+      - name: Run apidiff against origin/release/v0.18
         if: steps.hatch.outputs.skip != 'true'
         shell: bash
         run: |
           set -euo pipefail
           BASE_DIR=.apidiff-base
-          git worktree add "$BASE_DIR" origin/main
+          git worktree add "$BASE_DIR" origin/release/v0.18
           trap 'git worktree remove --force "$BASE_DIR"' EXIT
           # apidiff compares only the exported API; internal and test
           # packages are excluded by default (opt-in via -allow-internal).

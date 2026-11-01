@@ -10,6 +10,10 @@
 
 > Shared Go library for the remaining Go consumers (`symbrain`, `symdesk`, `symvault`, `symeraseme`). Browse is now a Brain-owned module; `symfritz` is Rust-only and no longer imports the Go module.
 
+> **Maintenance branch `release/v0.18`:** the Go library was retired from `main`
+> after v0.18.3 (ADR 0005 on `main`). This branch receives only Go fixes,
+> released as `v0.18.N` tags. New work targets the Rust workspace on `main`.
+
 **Status:** pre-1.0 — see [CHANGELOG.md](CHANGELOG.md).
 
 Bundles domain-free infrastructure that is otherwise duplicated across tools: MCP server scaffold, TOML config loading, exit codes, logging, path safety, SQLite setup, and update checking.
