@@ -1,4 +1,4 @@
-.PHONY: build test lint consumer-drift port-consumer-verify rust-port-validate port-fixture-source-check port-oracle-selftest port-contract rust-lint rust-test rust-foundation-contract rust-fs-secret-contract rust-mcp-contract rust-mcpcfg-contract rust-llm-contract rust-update-version-contract rust-update-contract rust-update-signed-contract rust-release-contract rust-miri rust-hardening mcp-differential mcp-fuzz-smoke port-consumer-smoke
+.PHONY: build test lint consumer-drift port-consumer-verify rust-port-validate port-fixture-source-check port-contract rust-lint rust-test rust-foundation-contract rust-fs-secret-contract rust-mcp-contract rust-mcpcfg-contract rust-llm-contract rust-update-version-contract rust-update-contract rust-update-signed-contract rust-release-contract rust-miri rust-hardening mcp-differential mcp-fuzz-smoke port-consumer-smoke
 
 DEV_EXTERNAL := $(if $(wildcard $(HOME)/.local/bin/dev-external),$(HOME)/.local/bin/dev-external,)
 CARGO_RUN := $(if $(DEV_EXTERNAL),$(DEV_EXTERNAL) cargo,cargo)
@@ -29,15 +29,14 @@ rust-port-validate:
 port-consumer-smoke:
 	python3 scripts/rust-port/bench.py --suite foundation --smoke
 
+# Regenerating fixtures (generate.py, generate.py --check) builds the retired Go
+# oracle and runs only on release/v0.18; main verifies their pinned provenance.
 port-fixture-source-check:
 	python3 scripts/rust-port/generate.py --check-source
-	python3 scripts/rust-port/generate.py --check
-	python3 -m unittest discover -s scripts/rust-port -p test_fixture_preservation.py
 
-port-oracle-selftest:
-	python3 scripts/rust-port/diff.py --self-test
-
-port-contract: rust-port-validate port-fixture-source-check port-oracle-selftest
+# The Go oracle harness self-test (diff.py --self-test) builds Go and runs only
+# on release/v0.18.
+port-contract: rust-port-validate port-fixture-source-check
 	python3 -m unittest discover -s scripts/rust-port -p test_retirement_routing.py
 
 rust-lint:

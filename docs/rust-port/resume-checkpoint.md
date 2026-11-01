@@ -20,8 +20,15 @@ in `Symaira_Dev/Worktrees/symaira-corekit/go-retire`. Nothing is pushed yet.
   `PermissionError` in `generate.run`'s `os.killpg` (EPERM after the group has
   exited). Seen once on `main` `dc8b66a` during a concurrent run; the same 112
   tests passed when run alone. File as an issue at push time.
+- Retired to `release/v0.18` as live-Go gates: `generate.py` regeneration and
+  `--check`, `test_fixture_preservation`, `diff.py --self-test`, SQLite live
+  differential and the static-update live capture test (conditional skips).
+  `generate.py --check-source` stays on `main`.
+- Local environment limit, pre-existing on `main` `dc8b66a`: `adoption.py
+  --check` (part of `make rust-port-validate`) needs GitHub REST; the local
+  python.org Python fails TLS verification (no CA bundle). CI runs it.
 - Pending at push: replace required status contexts that named removed jobs;
-  AGENTS.md update (protected-file approval timed out once).
+  AGENTS.md update (protected-file approval timed out twice).
 
 ## Local completion mode (2026-10-30)
 
