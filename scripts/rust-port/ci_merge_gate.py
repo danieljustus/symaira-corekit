@@ -11,7 +11,7 @@ import os
 import sys
 
 # Jobs that run on every pull request regardless of the selected scope.
-ALWAYS = frozenset({"changes", "test", "lint", "govulncheck", "apidiff"})
+ALWAYS = frozenset({"changes", "test", "lint", "audit"})
 
 
 def evaluate(needs, full):

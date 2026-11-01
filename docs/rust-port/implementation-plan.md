@@ -286,13 +286,23 @@ Git-revision consumer support remain unchanged.
 
 **Stop rule:** Stop on an unmapped symbol, unversioned drift, skipped/zero-case contract evidence, missing native OS evidence, weakened TLS/path policy, unbounded cancellation or missing rollback. Shared closure does not clear RUST-016: actual consumer releases, standalone/rollback records and observations are still required. Publication, consumer-specific SQL/logger/cancellation adapters and Go removal retain their separate release and rollback gates.
 
+## RUST-018: Retire the Go library from main
+
+**Objective:** Remove CoreKit's own Go implementation from `main` once the shared Rust closure (RUST-013, RUST-017) and the Go-free native aggregate are accepted, without breaking any consumer that still imports the Go module. Decision record: [ADR 0005](../adr/0005-go-library-retirement.md).
+
+**Implementation:** Delete all Go library packages, root `go.mod`/`go.sum`, `.golangci.yml`, Go CI jobs, the Go release gate and the Go consumer-pin drift tooling. `make build test lint` become Rust targets. Frozen fixture provenance reads retired Go paths from the immutable `v0.18.3` commit via `scripts/rust-port/retired_go.py`; the hash-bound Go oracle harness under `scripts/rust-port/` stays byte-identical and is never built. The retired `llmkit/gen` generator is replaced by `scripts/rust-port/llm_providers_gen.py`, byte-identical on the committed registry. Live Go recapture moves to `release/v0.18` (created at `v0.18.3`), which also carries all future Go patch releases.
+
+**Acceptance:** On the candidate, `validate.py`, every `scripts/rust-port` and SQLite harness test, `make build test lint`, `make rust-contracts` with an executable Go denial first on `PATH`, and `make rust-hardening` pass locally on macOS arm64. Ordinary CI on the final push is the remote acceptance.
+
+**Stop rule:** Stop on any tracked Go library source on `main`, a gate that needs Go, a provenance check that silently accepts a missing anchor, or a consumer that loses its pinned Go version. This item does not complete RUST-016 consumer cutovers.
+
 ## Final handoff verification
 
 ```text
 python3 docs/rust-port/validate.py
-GOTOOLCHAIN=go1.26.6 make build
-GOTOOLCHAIN=go1.26.6 make test
-GOTOOLCHAIN=go1.26.6 make lint
+make build test lint
+make rust-contracts
+make rust-hardening
 ```
 
-After RUST-002 exists, the final gate additionally includes fmt, check, Clippy, nextest, doctests, feature checks, coverage, Miri, audit, deny and the complete Go↔Rust differential corpus.
+Since RUST-018 no Go toolchain is used. The historical Go gate (`GOTOOLCHAIN=go1.26.6 make build test lint`) runs only on `release/v0.18`.

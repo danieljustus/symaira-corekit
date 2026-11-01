@@ -11,6 +11,7 @@ import tempfile
 import unittest
 from unittest import mock
 
+import retired_go
 import static_update_oracle as oracle
 
 EXPECTED_COUNTS = {
@@ -88,7 +89,7 @@ class StaticUpdateOracleTests(unittest.TestCase):
         legacy_path = oracle.ROOT / capture["capture"]["historical_fixture"]["path"]
         legacy = json.loads(legacy_path.read_text(encoding="utf-8"))
         legacy_ids = [case["input"]["id"] for case in legacy["cases"]]
-        go_source = (oracle.ROOT / "updatecheck/updateapply/atomic_swap_oracle_test.go").read_text(encoding="utf-8")
+        go_source = retired_go.read_bytes(oracle.ROOT, "updatecheck/updateapply/atomic_swap_oracle_test.go").decode("utf-8")
         go_declared_ids = [line.split('ID: "', 1)[1].split('"', 1)[0] for line in go_source.splitlines() if 'ID: "' in line]
         self.assertEqual(captured_ids, expected_ids)
         self.assertEqual(legacy_ids, expected_ids)
@@ -241,6 +242,9 @@ class StaticUpdateOracleTests(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, "does not match the native capture platform"):
                 oracle._prepare_go_env(scratch / "isolated")
 
+    # ponytail: the bound live producer reads Go sources from the working tree; it
+    # stays byte-identical for fixture provenance and runs only on release/v0.18.
+    @unittest.skipUnless((oracle.ROOT / "updatecheck").is_dir(), "live Go capture retired with the Go library at v0.18.3")
     def test_capture_rejects_input_drift_and_keeps_failed_raw_evidence(self):
         # Synthetic subprocess/snapshot controls only. These reports are not Go
         # observations and must never be registered as native capture evidence.

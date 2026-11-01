@@ -4,64 +4,22 @@ How Symaira tools consume the shared LLM provider layer. The contract lives in
 [`llm-provider-contract.md`](llm-provider-contract.md); this document is the
 consumer-side wiring guide and the credential/logging rulebook.
 
-**Single source of truth:** `corekit/llmkit` (Go) and
-`symaira-appkit/SymairaProviderKit` (Swift), both generated from the shared
-descriptor data in `corekit/contracts/llm_providers.json`. New provider code in
-a consumer repository is a convention violation — file an issue against corekit
-instead.
+**Single source of truth:** the shared descriptor data in
+`corekit/contracts/llm_providers.json`. It is consumed by the Rust crate
+`symaira-core-llm` (through the generated `llmkit/providers.json`) and by
+`symaira-appkit/SymairaProviderKit` (Swift). The Go `llmkit` package was
+retired from `main` after v0.18.3 and stays available to Go consumers at
+`v0.18.x`. New provider code in a consumer repository is a convention
+violation — file an issue against corekit instead.
 
-## Go consumers: wiring llmkit
+## Rust consumers: wiring symaira-core-llm
 
-```go
-import (
-    "context"
-    "errors"
-
-    "github.com/danieljustus/symaira-corekit/exitcodes"
-    "github.com/danieljustus/symaira-corekit/llmkit"
-)
-
-func ask(ctx context.Context) error {
-    desc, _ := llmkit.Lookup("anthropic")
-
-    // Credentials come from a reference, never from a config literal.
-    c, err := llmkit.NewClient(desc, "symvault://secrets/anthropic_key")
-    if err != nil {
-        return classify(err)
-    }
-
-    choice, err := c.Chat(ctx, "", // "" = descriptor default model
-        []llmkit.Message{{Role: "user", Content: "hi"}}, nil)
-    if err != nil {
-        return classify(err)
-    }
-    _ = choice.Content
-    return nil
-}
-
-func classify(err error) error {
-    var le *llmkit.Error
-    if !errors.As(err, &le) {
-        return err
-    }
-    switch le.Code {
-    case llmkit.ErrCodeAuth:
-        return exitcodes.Wrap(err, exitcodes.ExitNoAuth, exitcodes.KindAuth,
-            "provider credentials rejected")
-    case llmkit.ErrCodeRateLimited:
-        return exitcodes.Wrapf(err, exitcodes.ExitConflict, exitcodes.KindConflict,
-            "rate limited; retry after %s", le.RetryAfter)
-    case llmkit.ErrCodeContextOverflow:
-        return exitcodes.Wrap(err, exitcodes.ExitData, exitcodes.KindValidation,
-            "prompt exceeds context window")
-    case llmkit.ErrCodeModelNotFound:
-        return exitcodes.Wrap(err, exitcodes.ExitNotFound, exitcodes.KindNotFound,
-            "model not available for this credential")
-    default:
-        return err
-    }
-}
-```
+Pin `symaira-core-llm` to an exact CoreKit Git revision (ADR 0002). Look up a
+descriptor with `symaira_core_llm::lookup`, build a client with
+`ClientBuilder` from a credential **reference** (`symvault://…`, `env://…`),
+and map `ErrorCode` to `symaira_core_exit::ExitCode` as pinned in
+`contracts/llm_errors.json`. `rust/symaira-core-llm/tests/con_008.rs` is the
+executable reference for both the registry and the error mapping.
 
 Config-file convention: store the **reference** (`symvault://…`, `env://…`) in
 your tool's TOML config under e.g. `provider_credential`, never a key.
@@ -80,9 +38,10 @@ re-vendor the descriptor data deliberately and run appkit's fixture tests.
 
 Both halves read one JSON source. The rules:
 
-1. Edit `contracts/llm_providers.json` (the SSOT).
-2. Regenerate: `go run ./llmkit/gen > llmkit/providers.json`.
-3. Run `go test ./llmkit/ ./contracts/` — the conformance suite covers every
+1. Edit `contracts/llm_providers.json` (the SSOT) and copy it to
+   `rust/test-support/symaira-contract-fixtures/fixtures/contracts/`.
+2. Regenerate: `python3 scripts/rust-port/llm_providers_gen.py`.
+3. Run `make rust-llm-contract` — the drift gate and `con_008` cover every
    new descriptor automatically.
 4. Vendor the updated file into appkit at bump time.
 
@@ -108,9 +67,9 @@ Scenario: a team wants to use a self-hosted vLLM server. No code, no release:
 
 4. Wire it once in code (identical for every custom endpoint):
 
-   ```go
-   custom, _ := llmkit.Lookup("custom")
-   c, _ := llmkit.NewClient(custom, credRef, llmkit.WithBaseURL(baseURL))
+   ```rust
+   let custom = symaira_core_llm::lookup("custom").unwrap().clone();
+   let client = symaira_core_llm::ClientBuilder::new(custom, cred_ref).base_url(base_url).build()?;
    ```
 
 That is the whole integration. A genuinely new cloud vendor is the same flow
@@ -127,15 +86,15 @@ provider = "ollama"
 model = "llama3.1"
 ```
 
-```go
-desc, _ := llmkit.Lookup("ollama")     // auth scheme "none"
-c, _ := llmkit.NewClient(desc, "")      // no credential resolution happens
-models, _ := c.ListModels(ctx)          // GET /api/tags
-_ = c.Generate(ctx, "", "prompt", cb)   // native streaming surface
+```rust
+let desc = symaira_core_llm::lookup("ollama").unwrap().clone(); // auth scheme "none"
+let client = symaira_core_llm::ClientBuilder::new(desc, "").build()?; // no credential resolution
+let models = client.list_models()?;          // model discovery
+client.generate("", "prompt", &options, callback)?; // native streaming surface
 ```
 
 No environment variables, no vault entries, no network beyond localhost. This
-path is pinned by `TestLocalOnlySetupWorks` and must never regress — it is why
+path must never regress — it is why
 several tools are usable for privacy-sensitive work at all. If Ollama is down,
 the failure is `transport_error` / `ExitGeneric` with a retryable verdict.
 

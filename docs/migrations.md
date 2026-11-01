@@ -10,6 +10,18 @@ also preserve historical removals, including `embedkit` in v0.12.0; those
 require migration. Otherwise "check" means a new capability to adopt or a
 behavior change worth confirming.
 
+## Unreleased (Rust-only `main`)
+
+- The Go module is no longer developed on `main`. Go consumers: stay on
+  `v0.18.x`; do **not** move to a later tag, which contains no Go packages.
+  Go fixes arrive as `v0.18.N` tags from `release/v0.18`.
+- Rust consumers: pin an exact CoreKit Git revision plus `Cargo.lock`
+  (ADR 0002). The removed Go-only packages (`auditkit`, `evidencekit`,
+  `domkit`, `vectorkit/turboquant`, `ollamakit`) have no shared Rust crate;
+  keep a consumer-local implementation.
+- Before tagging, rename this heading to the exact `## vX.Y.Z` the release
+  workflow requires.
+
 ## v0.18.3
 
 - `mcpserver`: a Unix stdout write failure no longer leaves `ServeIO` blocked

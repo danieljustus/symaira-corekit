@@ -1,17 +1,19 @@
 # Cross-Language Conventions for Symaira Free Tools
 
-`symaira-corekit` is a Go library, but the conventions it encodes apply to all
-free/public Symaira tools regardless of implementation language. This document
+`symaira-corekit` is a Rust library (its Go library was retired from `main`
+after v0.18.3; see [ADR 0005](adr/0005-go-library-retirement.md)), but the
+conventions it encodes apply to all free/public Symaira tools regardless of
+implementation language. This document
 captures the shared contracts that keep the ecosystem consistent.
 
 ## Tool Inventory
 
 | Tool | Language | Imports corekit | Notes |
 |------|----------|-----------------|-------|
-| `symvault` | Go + Rust migration | yes (Go) | Wraps some corekit packages in `internal/` adapters |
-| `symbrain` | Go + Rust migration | yes (Go) | Direct consumer (also carries the absorbed memory, skills, guard and Browse modules) |
-| `symdesk` | Go + Rust migration | yes (Go) | Direct consumer (also carries the absorbed ingest, print, relate, room and seek modules) |
-| `symeraseme` | Go + Rust migration | yes (Go) | Data-broker removal product |
+| `symvault` | Go + Rust migration | Go `v0.18.x` + Rust Git pin | Wraps some corekit packages in `internal/` adapters |
+| `symbrain` | Go + Rust migration | Go `v0.18.x` + Rust Git pin | Direct consumer (also carries the absorbed memory, skills, guard and Browse modules) |
+| `symdesk` | Go + Rust migration | Go pseudo-version + Rust Git pin | Direct consumer (also carries the absorbed ingest, print, relate, room and seek modules) |
+| `symeraseme` | Rust | Rust Git pin | Data-broker removal product; Go retired |
 | `symfritz` | Rust | no | Rust-only since v0.8.0; v0.7.0 is the immutable Go rollback release |
 | `symcockpit` | Swift | no | macOS thermals/power (tune-only); operate/scope moved to Brain |
 
@@ -19,7 +21,7 @@ The row per tool is one **repository**, not one binary: the 2026-08 repo
 consolidation folded fourteen tools into four products, so a single consumer
 here now covers what used to be several rows.
 
-Tools that do not build Go cannot import the Go library directly. They follow
+Tools that do not build Rust cannot import the crates directly. They follow
 the conventions documented here so that behavior, diagnostics, and integrations
 feel the same across the ecosystem.
 
@@ -41,7 +43,8 @@ The canonical CLI exit-code contract is:
 | `9` | `ExitConfig` | Configuration error |
 | `10` | `ExitInterrupted` | Operation was interrupted |
 
-Go tools reuse the typed constants in `corekit/exitcodes`. Non-Go tools map
+Rust tools reuse the typed constants in `symaira-core-exit` (Go `v0.18.x`:
+`corekit/exitcodes`). Other tools map
 equivalent failures to this table. A product-specific numeric mapping is scoped
 to that product's own protocol and must not be presented as a CoreKit code.
 
@@ -58,7 +61,7 @@ Use the prefix `SYM<NAME>_` for tool-specific environment variables:
 - `SYMTUNE_*` (e.g. `SYMTUNE_EXTBRIGHT_MIN`)
 - `SYMERASEME_*` (e.g. `SYMERASEME_DATA_DIR`)
 
-The Go helper `corekit/envutil.Getenv(name, aliases...)` supports reading a
+`symaira-core-env` (Go `v0.18.x`: `corekit/envutil.Getenv(name, aliases...)`) supports reading a
 variable under multiple aliases, which is useful during migration or for
 supporting `XDG_*` overrides.
 
@@ -91,9 +94,8 @@ use JSON for machine-generated workspace-local state.
 - **Destination**: `stderr`.
 - **Configuration env var**: `SYM<NAME>_LOG_LEVEL` with values `debug`, `info`,
   `warn`, `error`.
-- Go tools use `corekit/logkit`, which reads `SYM<NAME>_LOG_LEVEL` and
-  `SYM<NAME>_LOG_FORMAT` (`text` or `json`).
-- `symeraseme` keeps diagnostics on stderr while its Go-to-Rust migration is in progress.
+- Rust tools use `symaira-core-log` (Go `v0.18.x`: `corekit/logkit`), which
+  reads `SYM<NAME>_LOG_LEVEL` and `SYM<NAME>_LOG_FORMAT` (`text` or `json`).
 - Swift tools currently log warnings/errors ad-hoc to `stderr`. Adopting a
   structured log format (at least for the MCP/server surface) is recommended.
 
@@ -114,7 +116,7 @@ Content-Length: <n>\r\n\r\n<json-rpc-body>
 
 Any tool that exposes an MCP server over stdio must print **only structured
 JSON-RPC frames to stdout**. Logs, diagnostics, warnings, and human-readable
-output must go to `stderr`. This rule applies to Go, Swift, and Python tools
+output must go to `stderr`. This rule applies to Rust, Go, Swift, and Python tools
 alike.
 
 ### JSON Key Encoding
@@ -152,36 +154,38 @@ publishes those as structured fields under the result's `_meta`, keyed
 }
 ```
 
-The Go implementation (`corekit/mcpserver.ToolErrorData`) derives the object
-from optional interfaces on the returned error, so a tool opts in by giving
-its error type the methods it already has elsewhere; an error with nothing to
-add produces no `_meta` at all. The field set, the method names behind each
+The implementations (`symaira-core-mcp`; Go `v0.18.x`:
+`corekit/mcpserver.ToolErrorData`) derive the object from the returned error,
+so a tool opts in by giving its error type the data it already has elsewhere;
+an error with nothing to add produces no `_meta` at all. The field set, the method names behind each
 field, and the omission rules are pinned in
 [`../contracts/mcp_tool_errors.json`](../contracts/mcp_tool_errors.json).
 
 ## Update Checking
 
-The recommended update-check contract is shared across Go and Swift tools to
+The recommended update-check contract is shared across Rust, Go and Swift tools to
 ensure consistent behavior regardless of implementation language.
 
 ### Invariant Semantics
 
 | Property | Contract |
 |----------|----------|
-| **Cache TTL** | 24 hours (`DefaultCacheTTL`). Results persist per repository in the platform cache directory and are reusable across processes. Go uses `$XDG_CACHE_HOME/symaira/updatecheck/<sha256(owner NUL repo)>.json`, falling back to `$HOME/.cache` when `XDG_CACHE_HOME` is not absolute. Setting `Checker.CachePath` to an empty string disables Go persistence; a forced check bypasses every cache layer. |
+| **Cache TTL** | 24 hours (`DefaultCacheTTL`). Results persist per repository in the platform cache directory and are reusable across processes. The cache file is `$XDG_CACHE_HOME/symaira/updatecheck/<sha256(owner NUL repo)>.json`, falling back to `$HOME/.cache` when `XDG_CACHE_HOME` is not absolute. An empty cache path disables persistence; a forced check bypasses every cache layer. |
 | **SemVer parsing** | Only strict `v?MAJOR.MINOR.PATCH` without pre-release or build-metadata suffixes. Versions containing `-` or `+` are silently ignored (treated as dev/unparseable). |
 | **Dev / pre-release builds** | Skipped silently. `parseStableVersion` rejects anything non-stable; pre-release tags and dev version strings produce `nil` (no update offered). |
 | **Invocation** | A check can wait until the API timeout (default 3s). Consumers must run background checks off startup and other critical paths; the library itself does not hide latency. |
 | **Error behavior** | Check failures (HTTP error, timeout, TLS error, malformed/draft/prerelease response) are returned or thrown to the caller. A consumer may silently ignore them for an optional background check. Apply failures are likewise surfaced and should be shown to the user. |
 | **V0-major gap** | When `current.major == 0` and `latest.major > 0`, the update is suppressed. This prevents a pre-v1.0 tool from suddenly advertising a v1.0+ release before the ecosystem is ready. |
 | **Opt-out** | `SYM<NAME>_CHECK_UPDATES=false` environment variable or `[general] check_updates = false` config key. |
-| **Apply hardening** | The apply phase (download, verify, swap) is composable: SHA-256 checksum verification (always), optional Cosign keyless signature verification (via `updatecheck/cosign`), optional archive extraction (via `updatecheck/extract`), and optional install-method detection that rejects Homebrew in-place replacement (via `updatecheck/installmethod`). |
+| **Apply hardening** | The apply phase (download, verify, swap) is composable: SHA-256 checksum verification (always), optional Cosign keyless signature verification, optional archive extraction, and optional install-method detection that rejects Homebrew in-place replacement. |
 
 ### Reference Implementations
 
-- **Go** — `corekit/updatecheck` (`Checker.Check`, `Applier.Apply`)
-  Repository: `danieljustus/symaira-corekit`, package `updatecheck/`
-  See also: `updatecheck/updateapply/`, `updatecheck/cosign/`, `updatecheck/extract/`, `updatecheck/installmethod/`
+- **Rust** — `symaira-core-update` (checker and Applier)
+  Repository: `danieljustus/symaira-corekit`, crate `rust/symaira-core-update/`
+
+- **Go (retired, `v0.18.x` only)** — `corekit/updatecheck` (`Checker.Check`, `Applier.Apply`)
+  and `updatecheck/{updateapply,cosign,extract,installmethod}/` at `release/v0.18`
 
 - **Swift** — `symaira-appkit/SymairaUpdateCheck/UpdateChecker.swift`
   Repository: `danieljustus/symaira-appkit`, target `SymairaUpdateCheck`
@@ -201,8 +205,8 @@ Prefer typed domain errors that map to exit codes. Examples:
 - `symcockpit` (tune module) — `SymTuneCore.TuneError`
 - `symeraseme.SymerasemeError`
 
-`corekit/exitcodes.CLIError` provides the Go equivalent: a typed error that
-carries an exit code and a user-facing message.
+`symaira-core-exit` (Go `v0.18.x`: `corekit/exitcodes.CLIError`) provides a
+typed error that carries an exit code and a user-facing message.
 
 ## `doctor` Command
 
@@ -231,5 +235,5 @@ candidate pointed at no longer exists.
 ## References
 
 - [Product boundaries](product-boundaries.md) — standalone ecosystem ownership contract
-- [CoreKit package index](../README.md)
+- [CoreKit crate index](../README.md)
 - [CoreKit implementation boundaries](../AGENTS.md)

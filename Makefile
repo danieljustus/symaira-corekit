@@ -1,20 +1,18 @@
-.PHONY: build test lint fmt-check clean consumer-drift port-consumer-verify consumer-pin-regression golangci-lint rust-port-validate port-fixture-source-check port-oracle-selftest port-contract rust-lint rust-test rust-foundation-contract rust-fs-secret-contract rust-mcp-contract rust-mcpcfg-contract rust-llm-contract rust-update-version-contract rust-update-contract rust-update-signed-contract rust-release-contract rust-miri rust-hardening mcp-differential mcp-fuzz-smoke port-consumer-smoke rust-sqlite-refreeze
+.PHONY: build test lint consumer-drift port-consumer-verify rust-port-validate port-fixture-source-check port-oracle-selftest port-contract rust-lint rust-test rust-foundation-contract rust-fs-secret-contract rust-mcp-contract rust-mcpcfg-contract rust-llm-contract rust-update-version-contract rust-update-contract rust-update-signed-contract rust-release-contract rust-miri rust-hardening mcp-differential mcp-fuzz-smoke port-consumer-smoke
 
 DEV_EXTERNAL := $(if $(wildcard $(HOME)/.local/bin/dev-external),$(HOME)/.local/bin/dev-external,)
 CARGO_RUN := $(if $(DEV_EXTERNAL),$(DEV_EXTERNAL) cargo,cargo)
-GO_RUN := $(if $(DEV_EXTERNAL),$(DEV_EXTERNAL) go,go)
 
+# The Go library was retired after v0.18.3; Go fixes ship only from the
+# release/v0.18 branch. Every target below runs without a Go toolchain.
 build:
-	CGO_ENABLED=0 go build ./...
+	$(CARGO_RUN) build --workspace --all-targets --locked
 
 consumer-drift:
 	./scripts/consumer-drift.sh
 
 port-consumer-verify:
 	python3 port/consumer/verify.py --released-consumers
-
-consumer-pin-regression:
-	./scripts/test-check-consumer-pins.sh
 
 rust-port-validate:
 	python3 scripts/rust-port/adoption.py --self-test
@@ -41,7 +39,6 @@ port-oracle-selftest:
 
 port-contract: rust-port-validate port-fixture-source-check port-oracle-selftest
 	python3 -m unittest discover -s scripts/rust-port -p test_retirement_routing.py
-	cd scripts/rust-port/go-oracle && GOTOOLCHAIN=go1.26.6 go test ./...
 
 rust-lint:
 	cargo fmt --all --check
@@ -51,10 +48,6 @@ rust-test:
 	cargo test --workspace --all-features --locked
 
 rust-foundation-contract:
-	@if [ "$$GO_ORACLE" = 1 ]; then \
-		python3 scripts/rust-port/generate.py --check && \
-		GOTOOLCHAIN=go1.26.6 CGO_ENABLED=0 go test -count=1 ./versionkit ./exitcodes ./envutil ./logkit ./configkit; \
-	fi
 	python3 scripts/rust-port/frozen_core_replay.py --family foundation
 
 .PHONY: rust-sqlite-contract
@@ -63,26 +56,12 @@ rust-sqlite-contract:
 	cargo test --manifest-path "$(CURDIR)/Cargo.toml" -p symaira-core-sqlite --all-features --locked
 	python3 -m unittest discover -s scripts/rust-port/sqlite -p 'test_*.py'
 	python3 -m unittest discover -s scripts/rust-port -p 'test_rust_sqlite_provenance.py'
-	@if [ "$$GO_ORACLE" = 1 ]; then \
-		python3 scripts/rust-port/sqlite/diff.py --typed-errors --output target/sqlite-contract-report.json; \
-	fi
 	python3 scripts/rust-port/frozen_sqlite_replay.py
 
-# Documented recapture path for a genuine port-input change (see
-# docs/rust-port/adr-rust-003-candidate-source-scope.md). Never run
-# automatically: it regenerates the frozen manifest and writes a new
-# differential capture, and generation is not approval. The new manifest and
-# capture require independent review, and the acceptance tests are repointed in
-# a separate reviewed change.
-.PHONY: rust-sqlite-refreeze
-rust-sqlite-refreeze:
-	@test "$$GO_ORACLE" = 1 || { echo "live SQLite recapture requires GO_ORACLE=1" >&2; exit 1; }
-	@echo "REFREEZE: regenerates the frozen manifest and a new capture; review is still required."
-	python3 scripts/rust-port/sqlite/candidate.py --output testdata/rust-port/sqlite/candidate-source.json
-	python3 scripts/rust-port/sqlite/diff.py --typed-errors --output testdata/rust-port/sqlite/differential-macos-refreeze-$$(date -u +%Y%m%dT%H%M%SZ).json
-	@echo "REFROZEN: review both artifacts independently, then repoint the acceptance tests."
+# Live Go recapture (formerly rust-sqlite-refreeze and rust-fs-secret-live-oracle)
+# needs the retired Go library and runs only on the release/v0.18 branch.
 
-.PHONY: rust-fs-secret-frozen-contract rust-fs-secret-live-oracle
+.PHONY: rust-fs-secret-frozen-contract
 rust-fs-secret-frozen-contract:
 	cargo fmt --all --check
 	cargo test -p symaira-core-fs -p symaira-core-secretref --all-features --locked
@@ -90,14 +69,6 @@ rust-fs-secret-frozen-contract:
 	python3 -c 'import pathlib,tomllib; r=pathlib.Path.cwd(); assert (r/"contracts/secret_refs.json").read_bytes()==(r/"rust/symaira-core-secretref/contracts/secret_refs.json").read_bytes(); assert all(tomllib.loads((r/"rust"/c/"Cargo.toml").read_text())["package"]["publish"] is False for c in ("symaira-core-fs","symaira-core-secretref"))'
 	python3 -m unittest discover -s scripts/rust-port -p 'test_fs_secret_oracle.py'
 	python3 scripts/rust-port/fs_secret_oracle.py
-
-# Preserve the original live evidence path, but never invoke it implicitly.
-rust-fs-secret-live-oracle:
-	@test "$$GO_ORACLE" = 1 || { echo "live FS/SEC oracle requires GO_ORACLE=1" >&2; exit 1; }
-	python3 scripts/rust-port/generate_fs_secret.py --check
-	python3 scripts/rust-port/validate_fs_secret.py
-	python3 scripts/rust-port/diff_fs_secret.py
-	python3 scripts/rust-port/fs-path-control-differential.py
 
 # Keep the complete security gate; portable replay does not replace Miri.
 rust-fs-secret-contract: rust-fs-secret-frozen-contract
@@ -118,48 +89,44 @@ rust-mcpcfg-contract:
 	cargo test -p symaira-core-mcpcfg --all-features --locked
 
 rust-llm-contract:
-	@if [ "$$GO_ORACLE" = 1 ]; then \
-		GOTOOLCHAIN=go1.26.6 CGO_ENABLED=0 $(GO_RUN) test -count=1 ./llmkit/... ./ollamakit/... ./secretref ./contracts && \
-		python3 scripts/rust-port/llm-differential.py; \
-	fi
+	python3 -m unittest discover -s scripts/rust-port -p 'test_llm_providers_gen.py'
+	python3 scripts/rust-port/llm_providers_gen.py --check
 	python3 scripts/rust-port/frozen_core_replay.py --family llm
 	$(CARGO_RUN) fmt --all --check
 	$(CARGO_RUN) clippy --manifest-path "$(CURDIR)/Cargo.toml" -p symaira-core-llm --all-targets --all-features --locked -- -D warnings
 
 rust-update-version-contract:
-	@if [ "$$GO_ORACLE" = 1 ]; then GOTOOLCHAIN=go1.26.6 CGO_ENABLED=0 $(GO_RUN) test -count=1 ./updatecheck; fi
-	GOTOOLCHAIN=go1.26.6 CGO_ENABLED=0 python3 scripts/rust-port/update-version-differential.py
+	python3 scripts/rust-port/update-version-differential.py
 	$(CARGO_RUN) fmt --all --check
 	$(CARGO_RUN) clippy --manifest-path "$(CURDIR)/Cargo.toml" -p symaira-core-update --all-targets --all-features --locked -- -D warnings
 	$(CARGO_RUN) test --manifest-path "$(CURDIR)/Cargo.toml" -p symaira-core-update --all-targets --all-features --locked
 
 # Update replay and production Apply against frozen native Go observations, with
-# mutations rejected. Live regeneration requires explicit GO_ORACLE=1.
+# mutations rejected.
 # The separate signed-release acceptance gate runs in CI
 # and can be invoked locally when the verifier and its trust endpoints exist.
 rust-update-contract: rust-update-version-contract
 	python3 -m unittest discover -s scripts/rust-port -p 'test_update_harness.py'
 	python3 -m unittest discover -s scripts/rust-port -p 'test_frozen_update_replay.py'
-	@if [ "$$GO_ORACLE" = 1 ]; then GOTOOLCHAIN=go1.26.6 CGO_ENABLED=0 $(GO_RUN) test -count=1 ./updatecheck/...; fi
-	GOTOOLCHAIN=go1.26.6 CGO_ENABLED=0 python3 scripts/rust-port/update-response-differential.py
-	GOTOOLCHAIN=go1.26.6 CGO_ENABLED=0 python3 scripts/rust-port/update-response-differential.py --negative-control
-	GOTOOLCHAIN=go1.26.6 CGO_ENABLED=0 python3 scripts/rust-port/update-request-differential.py
-	GOTOOLCHAIN=go1.26.6 CGO_ENABLED=0 python3 scripts/rust-port/update-cache-differential.py
-	GOTOOLCHAIN=go1.26.6 CGO_ENABLED=0 python3 scripts/rust-port/update-cache-differential.py --negative-control
-	GOTOOLCHAIN=go1.26.6 CGO_ENABLED=0 python3 scripts/rust-port/install-method-differential.py
-	GOTOOLCHAIN=go1.26.6 CGO_ENABLED=0 python3 scripts/rust-port/install-method-differential.py --negative-control
-	GOTOOLCHAIN=go1.26.6 CGO_ENABLED=0 python3 scripts/rust-port/update-extract-differential.py
-	GOTOOLCHAIN=go1.26.6 CGO_ENABLED=0 python3 scripts/rust-port/update-extract-differential.py --negative-control
-	GOTOOLCHAIN=go1.26.6 CGO_ENABLED=0 python3 scripts/rust-port/cosign-contract-differential.py
-	GOTOOLCHAIN=go1.26.6 CGO_ENABLED=0 python3 scripts/rust-port/update-apply-differential.py
-	GOTOOLCHAIN=go1.26.6 CGO_ENABLED=0 python3 scripts/rust-port/update-swap-differential.py
-	GOTOOLCHAIN=go1.26.6 CGO_ENABLED=0 python3 scripts/rust-port/update-checker-differential.py --check
-	GOTOOLCHAIN=go1.26.6 CGO_ENABLED=0 python3 scripts/rust-port/update-cancellation-differential.py --check
+	python3 scripts/rust-port/update-response-differential.py
+	python3 scripts/rust-port/update-response-differential.py --negative-control
+	python3 scripts/rust-port/update-request-differential.py
+	python3 scripts/rust-port/update-cache-differential.py
+	python3 scripts/rust-port/update-cache-differential.py --negative-control
+	python3 scripts/rust-port/install-method-differential.py
+	python3 scripts/rust-port/install-method-differential.py --negative-control
+	python3 scripts/rust-port/update-extract-differential.py
+	python3 scripts/rust-port/update-extract-differential.py --negative-control
+	python3 scripts/rust-port/cosign-contract-differential.py
+	python3 scripts/rust-port/update-apply-differential.py
+	python3 scripts/rust-port/update-swap-differential.py
+	python3 scripts/rust-port/update-checker-differential.py --check
+	python3 scripts/rust-port/update-cancellation-differential.py --check
 
 # Real Cosign and end-to-end Apply. Requires curl, Cosign and network;
 # replaces only an isolated disposable target, never an installed binary.
 rust-update-signed-contract:
-	GOTOOLCHAIN=go1.26.6 CGO_ENABLED=0 python3 scripts/rust-port/cosign-valid-differential.py
+	python3 scripts/rust-port/cosign-valid-differential.py
 
 # Complete native functional replay. FS security/Miri and workspace hardening
 # retain their separate required CI lanes; Miri is not a native Windows gate.
@@ -171,7 +138,7 @@ rust-contracts: rust-foundation-contract rust-fs-secret-frozen-contract rust-mcp
 mcpcfg-differential:
 	python3 scripts/rust-port/mcpcfg-differential.py --check
 
-rust-release-contract: consumer-pin-regression
+rust-release-contract:
 	cargo semver-checks check-release
 	python3 -m unittest discover -s port/release -p 'test_*.py'
 	python3 -m unittest discover -s port/consumer -p 'test_*.py'
@@ -194,8 +161,6 @@ rust-hardening:
 	cargo audit
 	cargo deny check
 	python3 docs/rust-port/validate.py
-	make build
-	make test lint
 
 mcp-differential:
 	python3 scripts/rust-port/mcp-differential.py --check
@@ -207,19 +172,6 @@ mcp-fuzz-smoke:
 	cp fuzz/corpus/mcp_frame/* "$$FUZZ_CORPUS"/; \
 	cd fuzz && cargo +nightly-2026-09-03 fuzz run mcp-frame "$$FUZZ_CORPUS" --sanitizer none -- -runs=100
 
-test:
-	CGO_ENABLED=1 go test -race ./...
+test: rust-test
 
-golangci-lint:
-	@command -v golangci-lint >/dev/null 2>&1 || { echo "golangci-lint not found; install from https://golangci-lint.run"; exit 1; }
-	golangci-lint run --timeout 5m
-
-lint: golangci-lint fmt-check
-	go vet ./...
-
-fmt-check:
-	@test -z "$$(gofmt -l .)" || (echo "gofmt diff found:" && gofmt -l . && exit 1)
-
-clean:
-	go clean -cache -testcache
-	rm -rf vendor/
+lint: rust-lint

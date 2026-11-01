@@ -1,3 +1,28 @@
+## Go library retired from main — RUST-018 (2026-11-01)
+
+The maintainer decided on 2026-11-01 to remove CoreKit's Go library from `main`
+now ([ADR 0005](../adr/0005-go-library-retirement.md)). Branch `release/v0.18`
+(local, at `v0.18.3` `0a446ac7`) carries all future Go patch releases; Vault,
+Desktop and Brain keep their exact Go pins. Work branch `local/go-retirement`
+in `Symaira_Dev/Worktrees/symaira-corekit/go-retire`. Nothing is pushed yet.
+
+- Removed: 17 Go package trees, root `go.mod`/`go.sum`, `.golangci.yml`, Go CI
+  jobs (`cross-platform`, `apidiff`, `govulncheck` → `audit`, capture-only
+  dispatch jobs, `native-update-capture.yml`, `consumer-pin-drift.yml`), the Go
+  release gate, Go pin-drift scripts and every `GO_ORACLE` Make branch.
+- Kept byte-identical: the Go oracle harness under `scripts/rust-port/`
+  (SQLite, FS/SEC and update fixture provenance hashes bind it; never built).
+- New: `retired_go.py` reads absent Go paths from the immutable `v0.18.3`
+  commit (tree first, fail closed without the anchor); `llm_providers_gen.py`
+  replaces the Go `llmkit/gen` and is byte-identical on the committed registry.
+- Known baseline flake, not caused by this change: under parallel load the
+  SQLite acceptance tests can time out a `git` subprocess and then hit
+  `PermissionError` in `generate.run`'s `os.killpg` (EPERM after the group has
+  exited). Seen once on `main` `dc8b66a` during a concurrent run; the same 112
+  tests passed when run alone. File as an issue at push time.
+- Pending at push: replace required status contexts that named removed jobs;
+  AGENTS.md update (protected-file approval timed out once).
+
 ## Local completion mode (2026-10-30)
 
 The maintainer decided to finish the remaining migration locally on the

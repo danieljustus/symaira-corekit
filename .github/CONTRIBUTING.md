@@ -17,8 +17,8 @@ Please read and follow our [Code of Conduct](CODE_OF_CONDUCT.md).
 ### Pull Request Process
 
 1. Fork the repository and create a feature branch from `main`.
-2. Follow the existing code style: run `gofmt -w -s .` before committing.
-3. Ensure `go build ./...` and `go test -race ./...` pass for all packages.
+2. Follow the existing code style: run `cargo fmt --all` before committing.
+3. Ensure `make build test lint` passes.
 4. Keep PRs focused on a single concern. Split unrelated changes into separate PRs.
 5. Reference the issue number in your PR description (`Closes #N`).
 6. All commits must be signed.
@@ -29,8 +29,7 @@ Please read and follow our [Code of Conduct](CODE_OF_CONDUCT.md).
 ```bash
 git clone https://github.com/danieljustus/symaira-corekit
 cd symaira-corekit
-go build ./...
-go test ./...
+make build test
 ```
 
 ### Commit Style

@@ -2,7 +2,7 @@
 
 This directory holds the language-neutral fixtures for the contracts documented in
 [`../docs/cross-language-conventions.md`](../docs/cross-language-conventions.md). They
-turn prose claims into data that both this repo's Go tests and
+turn prose claims into data that both this repo's Rust tests and
 `symaira-appkit`'s Swift tests can assert against, so a divergence between the two
 implementations of the same contract fails a build instead of going unnoticed.
 
@@ -17,7 +17,7 @@ implementations of the same contract fails a build instead of going unnoticed.
 | `mcp_tool_errors.json` | Structured error metadata on a failed `tools/call` (`corekit/mcpserver.ToolErrorData`) |
 | `mcp_tool_annotations.json` | MCP tool annotation fields and defaults (`corekit/mcpserver`) |
 | `secret_refs.json` | Shared secret-reference schemes and resolver behavior (`corekit/secretref`) |
-| `llm_providers.json` | Shared LLM provider descriptor registry (`llm-provider-contract.md`, issue #172); consumed by Go `llmkit` and appkit `SymairaProviderKit` |
+| `llm_providers.json` | Shared LLM provider descriptor registry (`llm-provider-contract.md`, issue #172); consumed by `symaira-core-llm` (via the generated `llmkit/providers.json`) and appkit `SymairaProviderKit` |
 | `llm_errors.json` | Shared LLM provider error taxonomy mapped to exit codes (`llm-provider-contract.md`) |
 
 ## Schema
@@ -40,9 +40,11 @@ is a breaking change to this schema, not just to the fixture content.
 
 ## Who reads these
 
-- `exitcodes/contract_test.go`, `updatecheck/contract_test.go`, and
-  `configkit/contract_test.go` in this repo assert the Go implementation
-  against these fixtures.
+- The Rust crates assert against a byte-identical copy in
+  `rust/test-support/symaira-contract-fixtures/fixtures/contracts/` (hash-anchored
+  in `scripts/rust-port/frozen_core_anchors.py`; `make rust-fs-secret-frozen-contract`
+  also compares `secret_refs.json` byte for byte). The retired Go packages
+  asserted the same files up to v0.18.3.
 - `symaira-appkit`'s CI consumes a vendored copy at a pinned corekit revision
   (see danieljustus/symaira-appkit#105) and asserts the Swift implementation
   against the same data.

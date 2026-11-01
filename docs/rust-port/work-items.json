@@ -41,7 +41,7 @@
         "make port-oracle-selftest",
         "make port-fixture-source-check"
       ],
-      "stop_rule": "No Rust production crate until Go\u2194Go self-equality, source-digest rejection, isolated side effects and a deliberate negative-control failure are proven."
+      "stop_rule": "No Rust production crate until Go↔Go self-equality, source-digest rejection, isolated side effects and a deliberate negative-control failure are proven."
     },
     {
       "id": "RUST-002",
@@ -492,6 +492,31 @@
       "stop_rule": "Stop on unmapped consumer API, unversioned drift, skipped/zero-case/native-missing evidence, weakened filesystem/TLS policy, unbounded cancellation or missing rollback. Mapping alone does not authorize consumer cutover.",
       "frozen_go_evidence": "evidence/update-frozen-registration-20261003.json",
       "go_free_acceptance": "evidence/status-reconciliation-20261005.json"
+    },
+    {
+      "id": "RUST-018",
+      "title": "Retire the Go library from main",
+      "depends_on": [
+        "RUST-013",
+        "RUST-017"
+      ],
+      "contracts": [
+        "REL-001",
+        "REL-002",
+        "REL-006"
+      ],
+      "status": "in_progress",
+      "demand_class": "required",
+      "decision_record": "docs/adr/0005-go-library-retirement.md",
+      "acceptance_commands": [
+        "python3 docs/rust-port/validate.py",
+        "python3 -m unittest discover -s scripts/rust-port -p 'test_*.py'",
+        "python3 -m unittest discover -s scripts/rust-port/sqlite -p 'test_*.py'",
+        "make build test lint",
+        "make rust-contracts (with go denied on PATH)",
+        "make rust-hardening"
+      ],
+      "stop_rule": "No Go library source, go.mod/go.sum or Go CI on main; every gate passes with an executable Go denial. Frozen Go provenance resolves from the immutable v0.18.3 commit and fails closed without it. Go consumers stay on v0.18.x; Go fixes only on release/v0.18. Does not complete RUST-016 consumer cutovers."
     }
   ]
 }

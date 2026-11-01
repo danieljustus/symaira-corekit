@@ -63,9 +63,9 @@ class EvaluateTests(unittest.TestCase):
 
     def test_missing_unconditional_dependency_blocks(self):
         partial = needs("success")
-        del partial["apidiff"]
+        del partial["audit"]
         problems = ci_merge_gate.evaluate(partial, "true")
-        self.assertTrue(any("apidiff" in p for p in problems))
+        self.assertTrue(any("audit" in p for p in problems))
 
     def test_cli_fails_closed_on_missing_or_empty_results(self):
         base = {k: v for k, v in os.environ.items() if k not in ("NEEDS_JSON", "CI_FULL_SCOPE")}

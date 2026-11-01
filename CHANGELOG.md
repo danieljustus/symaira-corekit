@@ -2,6 +2,21 @@
 
 The GitHub Releases page is the authoritative source for complete release notes.
 
+## Unreleased
+
+- **Go library retired from `main`** ([ADR 0005](docs/adr/0005-go-library-retirement.md)).
+  All Go packages, `go.mod`/`go.sum`, Go CI, the Go release gate and the Go
+  consumer-pin drift tooling are removed. `v0.18.3` is the last Go release from
+  `main`; Go patch releases ship only from the `release/v0.18` branch. Go
+  consumers keep their exact `v0.18.x` pins.
+- CoreKit on `main` is the Rust workspace (`symaira-core-*` crates, exact Git
+  revision pins per ADR 0002) plus the language-neutral `contracts/` fixtures.
+- CI: `test` and `lint` now run the Rust workspace; `govulncheck` is replaced by
+  `audit` (`cargo audit` + `cargo deny`); `apidiff` and the Go cross-build jobs
+  are removed; CodeQL analyzes Rust and Python instead of Go.
+- Frozen Go fixture provenance reads retired Go sources from the immutable
+  `v0.18.3` commit (`scripts/rust-port/retired_go.py`).
+
 ## v0.18.3 — 2026-10-28
 
 - `mcpserver`: on Unix, a stdout write failure now interrupts the blocked

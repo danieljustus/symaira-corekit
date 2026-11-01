@@ -8,27 +8,22 @@
 
 ![Symaira CoreKit social preview](docs/assets/social-preview.png)
 
-> Shared Go library for the remaining Go consumers (`symbrain`, `symdesk`, `symvault`, `symeraseme`). Browse is now a Brain-owned module; `symfritz` is Rust-only and no longer imports the Go module.
+> Shared Rust crates for the Symaira backends. The Go library was retired from
+> `main` after **v0.18.3**; Go consumers keep their exact pins and Go fixes ship
+> only from the `release/v0.18` branch ([ADR 0005](docs/adr/0005-go-library-retirement.md)).
 
 **Status:** pre-1.0 — see [CHANGELOG.md](CHANGELOG.md).
 
-Bundles domain-free infrastructure that is otherwise duplicated across tools: MCP server scaffold, TOML config loading, exit codes, logging, path safety, SQLite setup, and update checking.
-
-```sh
-go get github.com/danieljustus/symaira-corekit@latest
-```
-
-CoreKit also contains Rust crates. Its cross-language conventions guide other
-backends such as `symcockpit` and the Rust migrations. See
-[`docs/cross-language-conventions.md`](docs/cross-language-conventions.md) for
-the shared contracts that apply across languages.
+Bundles domain-free infrastructure that is otherwise duplicated across tools:
+MCP stdio server, MCP client-config discovery, TOML config loading, exit codes,
+logging, path safety, secret references, SQLite setup, LLM provider transport
+and update checking/applying.
 
 ## Why CoreKit
 
-- **Standalone-first:** every package works without any other Symaira tool installed — optional integrations are runtime contracts, never build-time imports.
-- **CGO-free:** 100% pure Go on supported Linux (amd64/arm64) and macOS (arm64) targets; no platform toolchain required.
-- **Cross-language conventions:** exit codes, XDG paths, env-var naming, and MCP stdio framing are shared contracts that also guide the Swift and Python free tools.
-- **Strict SemVer:** API stability is guaranteed within major versions; consumers pin the module in `go.mod`.
+- **Standalone-first:** every crate works without any other Symaira tool installed — optional integrations are runtime contracts, never build-time imports.
+- **Cross-language conventions:** exit codes, XDG paths, env-var naming and MCP stdio framing are shared contracts that also guide the Swift and Python tools ([`docs/cross-language-conventions.md`](docs/cross-language-conventions.md), fixtures in [`contracts/`](contracts/README.md)).
+- **Exact pins:** consumers depend on a full 40-character Git revision plus `Cargo.lock` ([ADR 0002](docs/adr/0002-rust-distribution-git-pins.md)); crates stay `publish = false`.
 - **Domain-free:** no Vault crypto, Memory PII rules, Seek ranking, Fetch fingerprinting, Scope scanning, or cloud/SaaS primitives.
 
 ## Platform support
@@ -39,108 +34,69 @@ CoreKit is a shared backend library, not an iOS or Web application runtime.
 
 | Target | CoreKit verification |
 | --- | --- |
-| macOS arm64 | Native Go/Rust, frozen contracts, port contracts and API compatibility on PRs and `main` |
-| Linux amd64 | Native Go/Rust and the same applicable acceptance gates |
-| Linux arm64 | CGO-free Go cross-build and vet |
+| macOS arm64 | Native Rust workspace, frozen Go-free contracts, port contracts on PRs and `main` |
+| Linux amd64 | Native Rust workspace and the same applicable acceptance gates |
 | iOS / Web | Product integration scope; no dedicated CoreKit native CI lane |
 | Windows / macOS Intel | Unsupported; no CI or release targets |
 
-Existing Windows APIs, build tags, tests and frozen fixtures are retained for
-shared-library consumer compatibility, not as a support guarantee. Release
-automation publishes library sources and notes, not platform-specific binaries.
-See [#456](https://github.com/danieljustus/symaira-corekit/issues/456).
-
 ## Install
 
+Pin an exact revision in the consumer's `Cargo.toml` and commit `Cargo.lock`:
+
+```toml
+[dependencies]
+symaira-core-log = { git = "https://github.com/danieljustus/symaira-corekit", rev = "<40-hex revision>" }
+```
+
+## Crates
+
+| Crate | Purpose |
+|-------|---------|
+| `symaira-core-exit` | Typed exit codes and CLI error mapping; see [`contracts/exit_codes.json`](contracts/exit_codes.json) |
+| `symaira-core-version` | `version --json` handshake payload (`{tool, version, schema_version}`) |
+| `symaira-core-env` | Ordered environment-variable lookup helpers |
+| `symaira-core-log` | Structured stderr logging, configured via `SYM<APP>_LOG_LEVEL` |
+| `symaira-core-config` | TOML config loader with XDG paths, project overrides and env vars |
+| `symaira-core-fs` | Capability-scoped filesystem primitives: atomic writes, path validation, temp-file safety |
+| `symaira-core-secretref` | Secret references: `symvault://`, `keychain://`, `env://`, bare env names |
+| `symaira-core-mcp` | Small, owned MCP JSON-RPC 2.0 stdio adapter with zero stdout pollution |
+| `symaira-core-mcpcfg` | MCP server config discovery across AI clients (JSONC/JSON/YAML) |
+| `symaira-core-llm` | Descriptor-driven LLM providers (OpenAI-compatible, Anthropic, Ollama), streaming, embeddings, error taxonomy |
+| `symaira-core-sqlite` | SQLite open/pragma/migration/locking contract |
+| `symaira-core-update` | Release check, archive extraction, checksum/Cosign verification, atomic apply with rollback |
+
+The former Go-only packages `auditkit`, `evidencekit`, `domkit`,
+`vectorkit/turboquant` and `ollamakit` have no shared Rust crate: their
+contracts are consumer-local (see [`docs/rust-port/demand-assessment.md`](docs/rust-port/demand-assessment.md)).
+They remain available in Go at `v0.18.x`.
+
+## Build and test
+
 ```sh
-go get github.com/danieljustus/symaira-corekit@latest
+make build              # cargo build --workspace --all-targets --locked
+make test               # cargo test --workspace --all-features --locked
+make lint               # cargo fmt --check + clippy -D warnings
+make rust-contracts     # complete Go-free native contract aggregate
+make rust-hardening     # nextest, doctests, cargo-hack, coverage, audit, deny
 ```
 
-Import any package individually; each one is independently usable:
-
-```go
-import "github.com/danieljustus/symaira-corekit/logkit"
-```
-
-Consumers pin the module version in `go.mod` — see [Versioning](#versioning).
-
-## Standalone-First Contract
-
-Corekit is a shared foundation, not a runtime dependency graph between products.
-Consumers must keep working when every other Symaira tool is absent. Optional
-cross-tool behavior belongs behind runtime detection and fallback in the
-consumer, not as imports from sibling tool repositories.
-
-Corekit must stay free of Vault crypto, Memory PII policy, Seek ranking, Fetch
-fingerprinting, Scope port scanning, billing, and other product- or
-cloud-specific behavior.
-
-## Packages
-
-| Package | Since | Purpose |
-|---------|-------|---------|
-| `auditkit` | v0.11.0 | Tamper-evident SHA-256 hash-chain audit log with anchor checkpoints and size-based rotation |
-| `configkit` | v0.1.0 | TOML config loader with XDG paths, project overrides, and env vars |
-| `domkit` | v0.9.0 | Shared semantic DOM pipeline for schema, selector, image, truncation, and markdown extraction |
-| `envutil` | v0.1.0 | Safe environment variable access with alias support |
-| `evidencekit` | v0.4.0 | Grounded extraction contract (`SourceRef`, `Span`, `Extraction`, `AlignmentStatus`), JSONL sidecar encode/decode, exact/normalized text-span alignment, and grounded-only validation |
-| `exitcodes` | v0.1.0 | Typed exit codes (`ExitOK`, `ExitGeneric`, `ExitNoInput`, `ExitNoAuth`, `ExitForbidden`, `ExitNotFound`, `ExitConflict`, `ExitSoftware`, `ExitData`, `ExitConfig`, `ExitInterrupted`) and `CLIError` type; see [`contracts/exit_codes.json`](contracts/exit_codes.json) |
-| `fsutil` | v0.1.0 | Atomic file writes, path traversal validation, temp-file safety |
-| `llmkit` | v0.14.0 | Shared LLM provider layer: descriptor-driven registry, one OpenAI transport plus an Anthropic dialect, streaming, tool use, embeddings, model discovery, credential references (`symvault://`/`env://`), and the contract error taxonomy |
-| `logkit` | v0.1.0 | Structured logging (`log/slog`) to stderr, configurable via `SYM<APP>_LOG_LEVEL` |
-| `mcpcfgkit` | v0.10.0 | MCP server config discovery across AI client applications (JSONC/JSON/YAML) |
-| `mcpserver` | v0.1.0 | Generic JSON-RPC 2.0 stdio server for MCP tool registration |
-| `ollamakit` | v0.4.1 | Deprecated: superseded by `llmkit` (Ollama is now a provider descriptor); retained compatibility shim |
-| `secretref` | v0.16.2 | Shared secret-reference resolver for `symvault://`, `keychain://`, `env://` and bare environment names |
-| `sqlitekit` | v0.1.0 | `modernc.org/sqlite` wrapper with WAL mode and embedded migrations |
-| `updatecheck` | v0.1.0 | GitHub release checker (opt-in, max 1×/24h) |
-| `updatecheck/cosign` | v0.6.0 | Cosign keyless signature verification for release checksums (Repo/BinaryName/IdentityRegexp parametrisierbar) |
-| `updatecheck/extract` | v0.6.0 | Safe archive extraction (tar.gz/zip) with path-traversal protection |
-| `updatecheck/installmethod` | v0.6.0 | Install-method detection: Homebrew, `go install`, package-manager, direct-download, build-from-source |
-| `updatecheck/updateapply` | v0.5.0 | Self-update installer: matching-asset download, checksum verification, atomic replacement with rollback, re-exec, and optional Cosign verification, archive extraction, install-method detection, and post-swap executable validation |
-| `vectorkit/turboquant` | v0.2.0 | CGO-free TurboQuant scalar vector quantization: deterministic rotation, packed encode/decode, inner-product/cosine scoring, sidecar metadata, benchmarks |
-| `versionkit` | v0.3.0 | Standardized handshake payload (`{tool, version, schema_version}`) for CLI tools |
-
-Install the module with `go get github.com/danieljustus/symaira-corekit@latest` — see [Install](#install).
-
-## Usage
-
-```go
-import "github.com/danieljustus/symaira-corekit/logkit"
-
-// Reads MYAPP_LOG_LEVEL (debug|info|warn|error, default warn) and
-// MYAPP_LOG_FORMAT (text|json, default text) from the environment.
-logger := logkit.NewFromEnv("myapp")
-logger.Info("started", "version", "1.0.0")
-```
+No Go toolchain is required for any gate on `main`.
 
 ## Documentation
 
-- [`docs/cross-language-conventions.md`](docs/cross-language-conventions.md) — shared contracts that apply across Go, Swift, and Python tools
-- [`docs/migrations.md`](docs/migrations.md) — migration notes and check items per minor release
-- [`docs/rust-port/README.md`](docs/rust-port/README.md) — contract-first Go→Rust migration handoff and execution gates
-- [`docs/adr/0001-authkit-session-and-biometric-broker.md`](docs/adr/0001-authkit-session-and-biometric-broker.md) — Architecture Decision Record: AuthKit session and biometric broker
+- [`docs/cross-language-conventions.md`](docs/cross-language-conventions.md) — shared contracts that apply across Rust, Swift and Python tools
+- [`docs/migrations.md`](docs/migrations.md) — migration notes per release
+- [`docs/rust-port/README.md`](docs/rust-port/README.md) — contract-first Go→Rust migration record and gates
+- [`docs/adr/`](docs/adr/) — architecture decision records
 - [`assets/branding/README.md`](assets/branding/README.md) — vendored CoreKit brand-only icon family and checksum guard
 
 ## Versioning
 
-Strict SemVer. Each tool pins its corekit version in `go.mod`.
+Rust consumers pin an exact Git revision. Repository tags after `v0.18.3` on
+`main` describe the Rust workspace; Go consumers stay on `v0.18.x`.
 
-**Update expectation:** a consumer pins a version deliberately, but is expected
-to move to the latest compatible minor release no later than that consumer's
-own next release. Pinning is for stability between releases, not a license to
-fall permanently behind. See [`docs/migrations.md`](docs/migrations.md) for
-what changed in each minor release since v0.3.0.
-
-`.github/workflows/consumer-pin-drift.yml` compares every consumer in
-`docs/consumers.json` against the latest CoreKit release on each CoreKit
-release and on a monthly schedule, and opens or updates one tracking issue when
-any of them lag. The workflow needs the `CONSUMER_READ_TOKEN` secret and
-degrades to a logged warning when it is absent.
-
-Run `make consumer-drift` (or `scripts/consumer-drift.sh`) from this repo to
-list every sibling Symaira repo checked out alongside it and the corekit
-version each one currently pins.
+Run `make consumer-drift` (or `scripts/consumer-drift.sh`) from this repo to run
+the consumer verifier and list the CoreKit Go pin of every sibling Symaira repo.
 
 ## Contributing · Security · License
 
