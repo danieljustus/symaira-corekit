@@ -505,7 +505,7 @@
         "REL-002",
         "REL-006"
       ],
-      "status": "in_progress",
+      "status": "complete",
       "demand_class": "required",
       "decision_record": "docs/adr/0005-go-library-retirement.md",
       "acceptance_commands": [
@@ -516,7 +516,8 @@
         "make rust-contracts (with go denied on PATH)",
         "make rust-hardening"
       ],
-      "stop_rule": "No Go library source, go.mod/go.sum or Go CI on main; every gate passes with an executable Go denial. Frozen Go provenance resolves from the immutable v0.18.3 commit and fails closed without it. Go consumers stay on v0.18.x; Go fixes only on release/v0.18. Does not complete RUST-016 consumer cutovers."
+      "stop_rule": "No Go library source, go.mod/go.sum or Go CI on main; every gate passes with an executable Go denial. Frozen Go provenance resolves from the immutable v0.18.3 commit and fails closed without it. Go consumers stay on v0.18.x; Go fixes only on release/v0.18. Does not complete RUST-016 consumer cutovers.",
+      "local_acceptance": "PASS (local) macOS arm64 at 098136a with an executable go denial first on PATH: validate.py, 129+112+61+14 harness tests, make build test lint, make rust-contracts, make port-fixture-source-check, make rust-hardening, port/release/verify.py --dry-run; FS/SEC frozen contract also with go and git denied. Independent review deleg_ac3533c1 REQUEST_CHANGES fixed in 098136a, delta review deleg_a4f04b59 APPROVE. Remote acceptance: ordinary CI on the final push."
     }
   ]
 }

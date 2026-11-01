@@ -4,7 +4,9 @@ The maintainer decided on 2026-11-01 to remove CoreKit's Go library from `main`
 now ([ADR 0005](../adr/0005-go-library-retirement.md)). Branch `release/v0.18`
 (local, at `v0.18.3` `0a446ac7`) carries all future Go patch releases; Vault,
 Desktop and Brain keep their exact Go pins. Work branch `local/go-retirement`
-in `Symaira_Dev/Worktrees/symaira-corekit/go-retire`. Nothing is pushed yet.
+in `Symaira_Dev/Worktrees/symaira-corekit/go-retire`, fast-forwarded into local
+`main`. RUST-018 is `complete` (PASS local, see `work-items.json`); nothing is
+pushed yet. `release/v0.18` passed its Go gate locally (`make build test lint`).
 
 - Removed: 17 Go package trees, root `go.mod`/`go.sum`, `.golangci.yml`, Go CI
   jobs (`cross-platform`, `apidiff`, `govulncheck` → `audit`, capture-only
