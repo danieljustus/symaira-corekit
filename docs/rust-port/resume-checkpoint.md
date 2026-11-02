@@ -2,11 +2,11 @@
 
 The maintainer decided on 2026-11-01 to remove CoreKit's Go library from `main`
 now ([ADR 0005](../adr/0005-go-library-retirement.md)). Branch `release/v0.18`
-(local, at `v0.18.3` `0a446ac7`) carries all future Go patch releases; Vault,
-Desktop and Brain keep their exact Go pins. Work branch `local/go-retirement`
-in `Symaira_Dev/Worktrees/symaira-corekit/go-retire`, fast-forwarded into local
-`main`. RUST-018 is `complete` (PASS local, see `work-items.json`); nothing is
-pushed yet. `release/v0.18` passed its Go gate locally (`make build test lint`).
+(created at `v0.18.3` `0a446ac7`, pushed to GitHub) carries all future Go patch
+releases; Vault, Desktop and Brain keep their exact Go pins. RUST-018 is
+`complete` (see `work-items.json`) and merged to `main` through PR #460
+(`95e50f7`), whose push CI on `main` passed. `release/v0.18` passed its Go gate
+locally (`make build test lint`).
 
 - Removed: 17 Go package trees, root `go.mod`/`go.sum`, `.golangci.yml`, Go CI
   jobs (`cross-platform`, `apidiff`, `govulncheck` → `audit`, capture-only
@@ -21,7 +21,7 @@ pushed yet. `release/v0.18` passed its Go gate locally (`make build test lint`).
   SQLite acceptance tests can time out a `git` subprocess and then hit
   `PermissionError` in `generate.run`'s `os.killpg` (EPERM after the group has
   exited). Seen once on `main` `dc8b66a` during a concurrent run; the same 112
-  tests passed when run alone. File as an issue at push time.
+  tests passed when run alone. Tracked in #461.
 - Retired to `release/v0.18` as live-Go gates: `generate.py` regeneration and
   `--check`, `test_fixture_preservation`, `diff.py --self-test`, SQLite live
   differential and the static-update live capture test (conditional skips).
@@ -29,7 +29,8 @@ pushed yet. `release/v0.18` passed its Go gate locally (`make build test lint`).
 - Local environment limit, pre-existing on `main` `dc8b66a`: `adoption.py
   --check` (part of `make rust-port-validate`) needs GitHub REST; the local
   python.org Python fails TLS verification (no CA bundle). CI runs it.
-- Pending at push: replace required status contexts that named removed jobs.
+- Required status contexts on `main` were replaced to name the Rust jobs
+  (`lint`, `test`, `audit`, `merge gate` and the Go-free/frozen contract jobs).
   AGENTS.md now describes the Rust-only `main`.
 
 ## Local completion mode (2026-10-30)
