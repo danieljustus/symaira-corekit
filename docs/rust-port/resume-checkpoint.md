@@ -29,8 +29,8 @@ pushed yet. `release/v0.18` passed its Go gate locally (`make build test lint`).
 - Local environment limit, pre-existing on `main` `dc8b66a`: `adoption.py
   --check` (part of `make rust-port-validate`) needs GitHub REST; the local
   python.org Python fails TLS verification (no CA bundle). CI runs it.
-- Pending at push: replace required status contexts that named removed jobs;
-  AGENTS.md update (protected-file approval timed out twice).
+- Pending at push: replace required status contexts that named removed jobs.
+  AGENTS.md now describes the Rust-only `main`.
 
 ## Local completion mode (2026-10-30)
 
