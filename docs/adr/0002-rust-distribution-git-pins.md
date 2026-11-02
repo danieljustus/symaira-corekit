@@ -42,8 +42,11 @@ registry baseline exists.
 
 RUST-016 and #370 still require real public releases of every exact Git-pinned
 consumer, source-bound standalone and Go-to-Rust-to-Go rollback reports, and
-independent downloaded-artifact readback. Shared native/API/security gates and
-the consumer issues' minimum seven-day observation remain required.
+independent downloaded-artifact readback. Shared native/API/security gates
+remain required. The former minimum seven-day observation was removed by the
+maintainer on 2026-10-30; it is no longer a RUST-016 gate. On the same date the
+Go-to-Rust-to-Go rollback requirement was replaced by Rust-only consumer
+cutovers (`go_status: retired`) with backup and verified restore.
 
 Do not remove the Go module while a released consumer still imports it. #373
 needs successful consumer retirements and verified rollback; #368 still needs

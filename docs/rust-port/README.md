@@ -1,8 +1,8 @@
 # Go→Rust migration handoff
 
-Status: **Git-pinned Rust consumer releases remain the distribution path. RUST-014/015 registry work is not planned and is demand-driven/deferred by [ADR 0002](../adr/0002-rust-distribution-git-pins.md). RUST-016 remains blocked on actual consumer release/standalone/rollback evidence and shared native/API gates. Go remains supported while released consumers import it.**
+Status: **The Go library is retired from `main` (RUST-018, [ADR 0005](../adr/0005-go-library-retirement.md)); `v0.18.3` is the last Go release and Go fixes ship only from `release/v0.18`. Git-pinned Rust consumer releases remain the distribution path. RUST-014/015 registry work is not planned and is demand-driven/deferred by [ADR 0002](../adr/0002-rust-distribution-git-pins.md). RUST-016 remains blocked on the Rust-only cutovers of Vault, Desktop and Brain.**
 
-This directory freezes the starting point for a contract-first Rust implementation of `symaira-corekit`. The Go implementation remains supported, buildable and the executable oracle while Go consumers exist. Rust crates are added beside it and are adopted package by package; this is not a flag-day repository rewrite.
+This directory records the contract-first Rust implementation of `symaira-corekit`. The Go implementation served as the executable oracle; its observations are frozen and its sources stay readable at `v0.18.3` for fixture provenance. Rust crates are added beside it and are adopted package by package; this is not a flag-day repository rewrite.
 
 ## Pinned oracle
 
@@ -10,7 +10,7 @@ This directory freezes the starting point for a contract-first Rust implementati
 - Stable release: `v0.17.0`
 - Go module: `github.com/danieljustus/symaira-corekit`
 - Go toolchain: `go1.26.6`
-- Oracle gate: `GOTOOLCHAIN=go1.26.6 make build test lint`
+- Oracle gate: `GOTOOLCHAIN=go1.26.6 make build test lint` (historical; since RUST-018 only on `release/v0.18`)
 - Production/fixture digest: `ab38c1cc4d2f91026e1d6836e1138388fd683a789ab8f104269d019c3caff95c`
 
 The oracle is five commits after `v0.17.0`. Every generated fixture must name the exact commit and verify the tracked Go/JSON/SQL input digest. Later Go changes require an explicit contract classification and regenerated fixture before the corresponding Rust parity status can remain green.

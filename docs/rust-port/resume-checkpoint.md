@@ -1,3 +1,52 @@
+## Go library retired from main — RUST-018 (2026-11-01)
+
+The maintainer decided on 2026-11-01 to remove CoreKit's Go library from `main`
+now ([ADR 0005](../adr/0005-go-library-retirement.md)). Branch `release/v0.18`
+(local, at `v0.18.3` `0a446ac7`) carries all future Go patch releases; Vault,
+Desktop and Brain keep their exact Go pins. Work branch `local/go-retirement`
+in `Symaira_Dev/Worktrees/symaira-corekit/go-retire`, fast-forwarded into local
+`main`. RUST-018 is `complete` (PASS local, see `work-items.json`); nothing is
+pushed yet. `release/v0.18` passed its Go gate locally (`make build test lint`).
+
+- Removed: 17 Go package trees, root `go.mod`/`go.sum`, `.golangci.yml`, Go CI
+  jobs (`cross-platform`, `apidiff`, `govulncheck` → `audit`, capture-only
+  dispatch jobs, `native-update-capture.yml`, `consumer-pin-drift.yml`), the Go
+  release gate, Go pin-drift scripts and every `GO_ORACLE` Make branch.
+- Kept byte-identical: the Go oracle harness under `scripts/rust-port/`
+  (SQLite, FS/SEC and update fixture provenance hashes bind it; never built).
+- New: `retired_go.py` reads absent Go paths from the immutable `v0.18.3`
+  commit (tree first, fail closed without the anchor); `llm_providers_gen.py`
+  replaces the Go `llmkit/gen` and is byte-identical on the committed registry.
+- Known baseline flake, not caused by this change: under parallel load the
+  SQLite acceptance tests can time out a `git` subprocess and then hit
+  `PermissionError` in `generate.run`'s `os.killpg` (EPERM after the group has
+  exited). Seen once on `main` `dc8b66a` during a concurrent run; the same 112
+  tests passed when run alone. File as an issue at push time.
+- Retired to `release/v0.18` as live-Go gates: `generate.py` regeneration and
+  `--check`, `test_fixture_preservation`, `diff.py --self-test`, SQLite live
+  differential and the static-update live capture test (conditional skips).
+  `generate.py --check-source` stays on `main`.
+- Local environment limit, pre-existing on `main` `dc8b66a`: `adoption.py
+  --check` (part of `make rust-port-validate`) needs GitHub REST; the local
+  python.org Python fails TLS verification (no CA bundle). CI runs it.
+- Pending at push: replace required status contexts that named removed jobs.
+  AGENTS.md now describes the Rust-only `main`.
+
+## Local completion mode (2026-10-30)
+
+The maintainer decided to finish the remaining migration locally on the
+MacBook (macOS arm64) and push to GitHub once it is complete. Until then local
+gates are the working evidence: `make rust-test rust-lint rust-contracts`, plus
+Linux checks in a local container where Linux-specific behavior matters.
+Consumers are built against the local CoreKit through Cargo path overrides.
+Windows and macOS Intel are no longer required targets (#456, #457). The
+seven-day consumer observation gate is removed. Every consumer cuts over Rust-only like EraseMe:
+no Go fallback binary and no Go-to-Rust-to-Go rollback; consumers become
+`go_status: retired` in `docs/consumers.json` and need only standalone
+evidence. Data safety moves to each consumer's cutover gate (automatic
+pre-migration backup plus verified restore). The final push to `main` runs
+ordinary CI once as acceptance; local results are not claimed as native CI.
+
 ## Accepted shared closure; consumer releases still blocked (2026-10-05)
 
 Integrated main `1f3a7276500042121fe2d79a545462a15675aadc` passed
@@ -18,7 +67,8 @@ skipped oracle/signed tests are exercised by separate native differential and
 signed-release gates, not treated as passing from the nextest summary.
 
 RUST-016 remains blocked by the four explicitly linked consumer release issues,
-source-bound standalone/rollback records and minimum seven-day observations.
+source-bound standalone/rollback records. The seven-day observation gate was
+removed on 2026-10-30.
 #370, #373 and #364 remain open. RUST-014/015 remain deferred under ADR 0002.
 No Go package, oracle, pin or consumer release is changed by this status repair.
 Later heads require their own CI. Sections below retain dated historical evidence.
@@ -62,7 +112,8 @@ The maintainer delegated implementation decisions and their documentation.
 and Cargo.lock as supported Rust distribution. RUST-014/015 are demand-driven
 and deferred; registry publication and its conditional rollout are not planned.
 RUST-016 still requires real source-bound released consumer builds, standalone
-and Go-to-Rust-to-Go rollback evidence, and the seven-day observation gate.
+and Go-to-Rust-to-Go rollback evidence (the seven-day observation gate was
+removed on 2026-10-30).
 Go remains while released consumers import it.
 
 [ADR 0003](../adr/0003-native-macos-ci.md) selects supported macOS 15 ARM64,

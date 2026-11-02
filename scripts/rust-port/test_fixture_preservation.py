@@ -20,6 +20,9 @@ SPEC.loader.exec_module(GENERATOR)
 
 
 class FixturePreservationTest(unittest.TestCase):
+    # Live regeneration builds the pinned Go oracle; it was retired from main
+    # with the Go library (ADR 0005) and runs only on release/v0.18.
+    @unittest.skipUnless((GENERATOR.REPO / "versionkit").is_dir(), "live Go regeneration retired with the Go library at v0.18.3")
     def test_real_regeneration_preserves_independent_corpora(self):
         with tempfile.TemporaryDirectory(prefix="corekit-preservation path-") as raw:
             root = Path(raw)

@@ -357,6 +357,27 @@ import (
                 report = verify.verify_manifest(manifest, workspace_root=root, corekit_root=corekit)
                 self.assertIn(expected, {finding["code"] for finding in report["findings"]})
 
+    def test_go_retired_consumer_needs_only_standalone_and_no_go_sources(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            root = Path(raw)
+            manifest, corekit, consumer, _, _ = make_fixture(root)
+            document = json.loads(manifest.read_text(encoding="utf-8"))
+            record = document["consumers"][0]
+            record["go_status"] = "retired"
+            record["pins"] = []
+            del record["rust"]["evidence"]["rollback"]
+            manifest.write_text(json.dumps(document), encoding="utf-8")
+            codes = {f["code"] for f in verify.verify_manifest(manifest, workspace_root=root, corekit_root=corekit)["findings"]}
+            self.assertIn("go.retired.present", codes)
+            self.assertFalse({c for c in codes if c.startswith("evidence.rollback")})
+            subprocess.run(["git", "-C", str(consumer), "rm", "-q", "go.mod", "cmd/main.go"], check=True)
+            subprocess.run(["git", "-C", str(consumer), "commit", "-qm", "retire go"], check=True)
+            recapture_build_source(document, consumer)
+            pin_consumer_release(document, consumer)
+            manifest.write_text(json.dumps(document), encoding="utf-8")
+            report = verify.verify_manifest(manifest, workspace_root=root, corekit_root=corekit)
+            self.assertEqual(report["status"], "passed", report["findings"])
+
     def test_legacy_go_only_receipts_fail_without_rust_provenance_or_rollback(self) -> None:
         with tempfile.TemporaryDirectory() as raw:
             root = Path(raw)

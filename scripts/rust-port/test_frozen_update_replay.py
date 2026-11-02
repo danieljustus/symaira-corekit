@@ -9,6 +9,7 @@ import unittest
 from unittest import mock
 
 import frozen_update_replay as replay
+import retired_go
 
 
 class FrozenUpdateTests(unittest.TestCase):
@@ -28,10 +29,9 @@ class FrozenUpdateTests(unittest.TestCase):
         }
         for name in repository_paths:
             relative = name.removeprefix("repository/")
-            source = replay.ROOT / relative
             destination = root / relative
             destination.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copyfile(source, destination)
+            destination.write_bytes(retired_go.read_bytes(replay.ROOT, relative))
         receipt = root / "docs/rust-port/evidence/update-module-compat-v1.json"
         receipt.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(replay.ROOT / "docs/rust-port/evidence/update-module-compat-v1.json", receipt)
@@ -79,9 +79,9 @@ class FrozenUpdateTests(unittest.TestCase):
                     for item in source_files + [record["producer"]]:
                         name = item["path"]
                         if name.startswith("repository/") and name not in replay.MODULE_INPUT_PATHS:
-                            source = replay.ROOT / name.removeprefix("repository/")
-                            self.assertTrue(source.is_file(), name)
-                            self.assertEqual(replay.digest(source.read_bytes()), item["sha256"], name)
+                            relative = name.removeprefix("repository/")
+                            self.assertTrue(retired_go.exists(replay.ROOT, relative), name)
+                            self.assertEqual(replay.digest(retired_go.read_bytes(replay.ROOT, relative)), item["sha256"], name)
 
     def test_actual_read_capture_accepts_only_exact_module_pair_and_bound_inputs(self):
         lane = "request"
@@ -112,6 +112,25 @@ class FrozenUpdateTests(unittest.TestCase):
                 fixture.write_bytes(original_raw + b" ")
                 with self.assertRaisesRegex(ValueError, "fixed reviewed bytes"):
                     replay.read_capture(lane)
+
+    def test_symlinked_or_dangling_retired_inputs_are_rejected(self):
+        lane = "request"
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            fixture_dir = self._copy_replay_inputs(root, lane)
+            with mock.patch.object(replay, "ROOT", root), mock.patch.object(replay, "FIXTURES", fixture_dir.parent):
+                replay.read_capture(lane)
+                for relative, message in (("updatecheck/updatecheck.go", "repository input changed"),
+                                          ("go.mod", "module input is missing or unsafe|repository input")):
+                    path = root / relative
+                    original = path.read_bytes()
+                    path.unlink()
+                    replay.read_capture(lane)  # absent: resolved from the v0.18.3 anchor
+                    path.symlink_to(root / "missing-target.go")
+                    with self.assertRaisesRegex(ValueError, message):
+                        replay.read_capture(lane)
+                    path.unlink()
+                    path.write_bytes(original)
 
     def test_actual_read_capture_rejects_external_module_closure(self):
         lane = "request"

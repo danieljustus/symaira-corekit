@@ -41,7 +41,7 @@
         "make port-oracle-selftest",
         "make port-fixture-source-check"
       ],
-      "stop_rule": "No Rust production crate until Go\u2194Go self-equality, source-digest rejection, isolated side effects and a deliberate negative-control failure are proven."
+      "stop_rule": "No Rust production crate until Go↔Go self-equality, source-digest rejection, isolated side effects and a deliberate negative-control failure are proven."
     },
     {
       "id": "RUST-002",
@@ -413,7 +413,7 @@
         "python3 port/consumer/verify.py --git-pinned-consumers",
         "python3 scripts/rust-port/adoption.py --check --min-consumers 2"
       ],
-      "stop_rule": "Each recorded consumer must have a real public release of its exact Git-pinned Rust snapshot, source-bound standalone and Go-to-Rust-to-Go rollback reports, artifact/report digests, independent release-artifact readback and its minimum seven-day observation. A local tag or verifier pass alone is insufficient; retain Go support until released imports and retirement gates are cleared. ADR 0002 defers optional crates.io publication."
+      "stop_rule": "Each recorded consumer must have a real public release of its exact Git-pinned Rust snapshot, source-bound standalone and Go-to-Rust-to-Go rollback reports, artifact/report digests, and independent release-artifact readback. The seven-day observation gate was removed on 2026-10-30. A Go-retired consumer (go_status=retired) needs no Go-to-Rust-to-Go rollback report. Since 2026-10-30 every consumer cuts over Rust-only (EraseMe model): Go sources are removed at cutover, so each record becomes go_status=retired and only standalone evidence applies; data safety is a consumer cutover gate (pre-migration backup plus verified restore). A local tag or verifier pass alone is insufficient; retain Go support until released imports and retirement gates are cleared. ADR 0002 defers optional crates.io publication."
     },
     {
       "id": "RUST-014",
@@ -492,6 +492,32 @@
       "stop_rule": "Stop on unmapped consumer API, unversioned drift, skipped/zero-case/native-missing evidence, weakened filesystem/TLS policy, unbounded cancellation or missing rollback. Mapping alone does not authorize consumer cutover.",
       "frozen_go_evidence": "evidence/update-frozen-registration-20261003.json",
       "go_free_acceptance": "evidence/status-reconciliation-20261005.json"
+    },
+    {
+      "id": "RUST-018",
+      "title": "Retire the Go library from main",
+      "depends_on": [
+        "RUST-013",
+        "RUST-017"
+      ],
+      "contracts": [
+        "REL-001",
+        "REL-002",
+        "REL-006"
+      ],
+      "status": "complete",
+      "demand_class": "required",
+      "decision_record": "docs/adr/0005-go-library-retirement.md",
+      "acceptance_commands": [
+        "python3 docs/rust-port/validate.py",
+        "python3 -m unittest discover -s scripts/rust-port -p 'test_*.py'",
+        "python3 -m unittest discover -s scripts/rust-port/sqlite -p 'test_*.py'",
+        "make build test lint",
+        "make rust-contracts (with go denied on PATH)",
+        "make rust-hardening"
+      ],
+      "stop_rule": "No Go library source, go.mod/go.sum or Go CI on main; every gate passes with an executable Go denial. Frozen Go provenance resolves from the immutable v0.18.3 commit and fails closed without it. Go consumers stay on v0.18.x; Go fixes only on release/v0.18. Does not complete RUST-016 consumer cutovers.",
+      "local_acceptance": "PASS (local) macOS arm64 at 098136a with an executable go denial first on PATH: validate.py, 129+112+61+14 harness tests, make build test lint, make rust-contracts, make port-fixture-source-check, make rust-hardening, port/release/verify.py --dry-run; FS/SEC frozen contract also with go and git denied. Independent review deleg_ac3533c1 REQUEST_CHANGES fixed in 098136a, delta review deleg_a4f04b59 APPROVE. Remote acceptance: ordinary CI on the final push."
     }
   ]
 }

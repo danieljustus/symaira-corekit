@@ -619,7 +619,9 @@ def _check_evidence(record: dict[str, Any], checkout: Path, findings: list[Findi
     release_commit = release.get("commit") if isinstance(release, dict) else None
     standalone_artifact: str | None = None
     standalone_digest: str | None = None
-    for name in ("standalone", "rollback"):
+    # A Go-retired consumer has no Go artifact to roll back to; only standalone applies.
+    names = ("standalone",) if _go_retired(record) else ("standalone", "rollback")
+    for name in names:
         item = evidence.get(name)
         if not isinstance(item, dict) or item.get("status") != "verified":
             _add(findings, repository, f"evidence.{name}", f"{name} evidence is not verified")
@@ -1153,8 +1155,29 @@ def tracked_go_imports(checkout: Path) -> list[str]:
     return imports
 
 
+def _go_retired(record: dict[str, Any]) -> bool:
+    """A consumer that deleted its Go sources declares ``"go_status": "retired"``."""
+    return record.get("go_status") == "retired"
+
+
+def _check_go_retired(record: dict[str, Any], checkout: Path, findings: list[Finding]) -> None:
+    """Fail closed: a retired consumer must have no pins, go.mod or tracked Go files."""
+    repository = str(record.get("repo", "unknown"))
+    if record.get("pins") != []:
+        _add(findings, repository, "go.retired.pins", "Go-retired consumer must declare an empty pins array")
+    available, paths = _tracked_go_files(checkout)
+    code, tracked_mod, _ = _git(["ls-files", "--", "go.mod"], checkout)
+    if not available or code:
+        _add(findings, repository, "go.imports.unavailable", "cannot inspect the selected repository's tracked Go files")
+    elif paths or tracked_mod:
+        _add(findings, repository, "go.retired.present", "Go-retired consumer still tracks go.mod or Go source files")
+
+
 def _check_go(record: dict[str, Any], checkout: Path, findings: list[Finding]) -> None:
     repository = str(record.get("repo", "unknown"))
+    if _go_retired(record):
+        _check_go_retired(record, checkout, findings)
+        return
     _check_go_replacements(record, checkout, findings)
     pins = record.get("pins")
     if not isinstance(pins, list) or not pins:

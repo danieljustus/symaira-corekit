@@ -14,6 +14,7 @@ import sys
 import tempfile
 
 from bounded_oracle_process import run_checked
+import retired_go
 from frozen_update_anchors import (
     ANCHORS,
     CAPTURE_SOURCE_COMMIT,
@@ -161,13 +162,17 @@ def read_capture(lane, alternate=None):
         if parts[0] == "modules":
             raise ValueError("native update closure contains external Go module inputs")
         if parts[0] == "repository":
+            relative = PurePosixPath(*parts[1:]).as_posix()
             source = ROOT.joinpath(*parts[1:])
-            if source.is_symlink() or not source.is_file() or not source.resolve().is_relative_to(ROOT):
-                raise ValueError(f"native update repository input changed: {name}")
-            if name in MODULE_INPUT_PATHS:
-                module_records[name] = item["sha256"]
-            elif digest(source.read_bytes()) != item["sha256"]:
-                raise ValueError(f"native update repository input changed: {name}")
+            try:
+                if not retired_go.exists(ROOT, relative):
+                    raise ValueError
+                if name in MODULE_INPUT_PATHS:
+                    module_records[name] = item["sha256"]
+                elif digest(retired_go.read_bytes(ROOT, relative)) != item["sha256"]:
+                    raise ValueError
+            except (ValueError, OSError):
+                raise ValueError(f"native update repository input changed: {name}") from None
     if len(seen) < 100 or record["producer"]["path"] != "repository/scripts/rust-port/native_update_capture.py":
         raise ValueError("incomplete native source inventory")
     if set(module_records) != MODULE_INPUT_PATHS:
@@ -177,10 +182,13 @@ def read_capture(lane, alternate=None):
         raise ValueError("native update historical module input pair differs")
     current_modules = {}
     for name in MODULE_INPUT_PATHS:
-        source = ROOT.joinpath(*PurePosixPath(name).parts[1:])
-        if source.is_symlink() or not source.is_file() or not source.resolve().is_relative_to(ROOT):
-            raise ValueError(f"native update Go module input is missing or unsafe: {name}")
-        current_modules[name] = digest(source.read_bytes())
+        relative = name.removeprefix("repository/")
+        try:
+            if not retired_go.exists(ROOT, relative):
+                raise ValueError
+            current_modules[name] = digest(retired_go.read_bytes(ROOT, relative))
+        except (ValueError, OSError):
+            raise ValueError(f"native update Go module input is missing or unsafe: {name}") from None
     if current_modules != approved_modules:
         raise ValueError("current Go module files differ from the approved frozen-update compatibility pair")
 

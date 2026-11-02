@@ -1824,30 +1824,30 @@
       "id": "REL-001",
       "seam": "dual-language repository build",
       "fixture": "clean checkout",
-      "go_oracle": "GOTOOLCHAIN=go1.26.6 make build test lint",
-      "expected": "Go remains green after every Rust change",
+      "go_oracle": "release/v0.18: GOTOOLCHAIN=go1.26.6 make build test lint",
+      "expected": "Go remains green on release/v0.18; since ADR 0005 main builds, tests and lints without Go",
       "comparison": "manual-gate",
       "platforms": [
         "darwin",
         "linux",
         "windows"
       ],
-      "rust_test": "CI Go gate",
+      "rust_test": "CI merge gate (Rust test, lint, audit) on main; Go gate on release/v0.18",
       "status": "parity"
     },
     {
       "id": "REL-002",
       "seam": "Go SemVer/API compatibility",
       "fixture": "origin/main API snapshot",
-      "go_oracle": "apidiff -m -incompatible base.api .",
-      "expected": "no unannounced incompatible Go API change",
+      "go_oracle": "release/v0.18: apidiff -m -incompatible base.api .",
+      "expected": "no unannounced incompatible Go API change; the Go removal from main is announced in ADR 0005, CHANGELOG and docs/migrations.md, and v0.18.x stays API-frozen",
       "comparison": "api-shape",
       "platforms": [
         "darwin",
         "linux",
         "windows"
       ],
-      "rust_test": "CI apidiff gate",
+      "rust_test": "ADR 0005 announcement; apidiff on release/v0.18",
       "status": "parity"
     },
     {
@@ -1912,7 +1912,7 @@
       "seam": "consumer pins and standalone-first",
       "fixture": "consumer go.mod/Cargo.toml/Cargo.lock inventory",
       "go_oracle": "make consumer-drift plus Rust pin checker",
-      "expected": "exact pins, no sibling build/start dependency, Go consumers remain supported",
+      "expected": "exact pins, no sibling build/start dependency, Go consumers remain supported on release/v0.18",
       "comparison": "manual-gate",
       "platforms": [
         "darwin",

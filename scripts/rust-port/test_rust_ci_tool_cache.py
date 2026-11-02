@@ -99,7 +99,7 @@ class RustToolCacheWorkflowTests(unittest.TestCase):
         self.assertNotRegex(block, r"(?m)^\s+if:")
         self.assertLess(
             self.job.index("      - name: Add Rust verification tools to PATH"),
-            self.job.index("      - name: Run complete dual-language hardening gate\n        run: make rust-hardening"),
+            self.job.index("      - name: Run complete Rust hardening gate\n        run: make rust-hardening"),
         )
 
 

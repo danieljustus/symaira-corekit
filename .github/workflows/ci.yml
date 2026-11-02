@@ -6,15 +6,6 @@ on:
   pull_request:
     branches: [main]
   workflow_dispatch:
-    inputs:
-      go_oracle:
-        description: Capture additive native process/static-update Go observations for review
-        type: boolean
-        default: false
-      fs_secret_capture:
-        description: Capture additive native FS/SEC observations for independent review
-        type: boolean
-        default: false
   schedule:
     - cron: '0 4 * * 1'
 
@@ -25,204 +16,6 @@ permissions:
   contents: read
 
 jobs:
-  fs-secret-evidence:
-    name: FS/SEC capture (${{ matrix.target }})
-    if: github.event_name == 'workflow_dispatch' && inputs.fs_secret_capture
-    # matrix.os preserves legacy protected check names; see ADR 0003.
-    runs-on: ${{ matrix.os == 'macos-26' && 'macos-15' || matrix.os }}
-    timeout-minutes: 15
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: ubuntu-latest
-            target: linux-amd64
-          - os: macos-26
-            target: darwin-arm64
-    env:
-      FS_NATIVE_TARGET: ${{ matrix.target }}
-      # The capture deliberately ignores operator Git configuration. Check out
-      # the same exact bytes first, rather than inheriting Windows autocrlf.
-      GIT_CONFIG_COUNT: '1'
-      GIT_CONFIG_KEY_0: core.autocrlf
-      GIT_CONFIG_VALUE_0: 'false'
-    steps:
-      - name: Record native macOS runner identity
-        if: runner.os == 'macOS'
-        shell: bash
-        run: |
-          sw_vers
-          test "$(uname -m)" = arm64
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
-        with:
-          fetch-depth: 0
-          ref: ${{ github.sha }}
-      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
-        with:
-          go-version: '1.26.6'
-      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
-        with:
-          python-version: '3.14'
-      - name: Verify structural controls
-        run: python -B -W error -m unittest discover -s scripts/rust-port -p test_fs_secret_oracle.py -v
-      - name: Populate existing pinned dependencies before offline capture
-        run: python -c "import os,pathlib,sys; sys.path.insert(0,'scripts/rust-port'); from bounded_oracle_process import run_checked; run_checked(['go','mod','download'],cwd=pathlib.Path('scripts/rust-port/go-oracle'),env=dict(os.environ),timeout=300,artifact_dir=pathlib.Path(os.environ['RUNNER_TEMP'])/'fs-native-evidence'/'bootstrap',check=True)"
-      - name: Capture clean native observations without accepting them
-        shell: bash
-        env:
-          GO_ORACLE: '1'
-        run: |
-          set -euo pipefail
-          python scripts/rust-port/fs_secret_oracle.py --capture \
-            --output "testdata/rust-port/fixtures/fs-secret/frozen-v1/$FS_NATIVE_TARGET.json" \
-            --artifacts-dir "$RUNNER_TEMP/fs-native-evidence/raw"
-      - name: Retain original native bytes and failure evidence
-        if: always()
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: fs-secret-evidence-${{ matrix.target }}-${{ github.sha }}
-          path: |
-            testdata/rust-port/fixtures/fs-secret/frozen-v1/${{ matrix.target }}.json
-            ${{ runner.temp }}/fs-native-evidence
-          if-no-files-found: error
-          retention-days: 30
-
-  process-oracle-capture:
-    name: Native process-oracle capture (${{ matrix.os }})
-    if: github.event_name == 'workflow_dispatch' && inputs.go_oracle
-    # matrix.os preserves legacy protected check names; see ADR 0003.
-    runs-on: ${{ matrix.os == 'macos-26' && 'macos-15' || matrix.os }}
-    timeout-minutes: 15
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, macos-26]
-    env:
-      GO_ORACLE: "1"
-    steps:
-      - name: Record native macOS runner identity
-        if: runner.os == 'macOS'
-        shell: bash
-        run: |
-          sw_vers
-          test "$(uname -m)" = arm64
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
-        with:
-          fetch-depth: 0
-          ref: ${{ github.sha }}
-      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
-        with:
-          go-version: "1.26.6"
-      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
-        with:
-          python-version: "3.12"
-      - name: Capture actual native Go outputs without replacing accepted observations
-        shell: bash
-        run: |
-          set -euo pipefail
-          mkdir -p "$RUNNER_TEMP/process-oracles"
-          python scripts/rust-port/mcp-differential.py --capture "$RUNNER_TEMP/process-oracles/mcp.json"
-          python scripts/rust-port/mcpcfg-differential.py --capture "$RUNNER_TEMP/process-oracles/mcpcfg.json"
-          git rev-parse HEAD > "$RUNNER_TEMP/process-oracles/source-head.txt"
-      - name: Retain diagnostic captures for explicit source and output review
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: process-oracles-${{ matrix.os }}-${{ github.sha }}
-          path: ${{ runner.temp }}/process-oracles
-          if-no-files-found: error
-          retention-days: 30
-
-  static-update-evidence:
-    name: Static update evidence (${{ matrix.target }})
-    if: github.event_name == 'workflow_dispatch' && inputs.go_oracle
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: ubuntu-latest
-            target: linux-amd64
-          - os: macos-26
-            target: darwin-arm64
-    # matrix.os preserves legacy protected check names; see ADR 0003.
-    runs-on: ${{ matrix.os == 'macos-26' && 'macos-15' || matrix.os }}
-    timeout-minutes: 20
-    env:
-      CGO_ENABLED: 0
-      GOTOOLCHAIN: go1.26.6
-      STATIC_EVIDENCE_TARGET: ${{ matrix.target }}
-    steps:
-      - name: Record native macOS runner identity
-        if: runner.os == 'macOS'
-        shell: bash
-        run: |
-          sw_vers
-          test "$(uname -m)" = arm64
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
-      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
-        with:
-          go-version: '1.26.6'
-          cache: true
-      - uses: dtolnay/rust-toolchain@4dfd137a5aecc12897f37a01818006f58cf58347 # 1.98.0
-      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
-        with:
-          python-version: '3.14'
-      - name: Native owned-process and registration controls
-        shell: bash
-        run: |
-          python -W error -m unittest discover -s scripts/rust-port -p test_bounded_oracle_process.py -v
-          python -W error -m unittest discover -s scripts/rust-port -p test_static_update_oracle.py -v
-      - name: Populate existing pinned Go dependencies
-        run: python -c "import os,pathlib,sys; sys.path.insert(0,'scripts/rust-port'); from bounded_oracle_process import run_checked; run_checked(['go','mod','download'],cwd=pathlib.Path.cwd(),env=dict(os.environ),timeout=300,artifact_dir=pathlib.Path('target/static-native-evidence/raw/bootstrap'),check=True)"
-      - name: Capture clean native observations and compare actual Rust workloads
-        shell: bash
-        env:
-          GO_ORACLE: '1'
-        run: |
-          python - <<'PY'
-          import hashlib, importlib.util, json, os, pathlib, sys
-          sys.path.insert(0, "scripts/rust-port")
-          import static_update_oracle as oracle
-          import update_static_runner as replay
-          spec = importlib.util.spec_from_file_location("version_replay", "scripts/rust-port/update-version-differential.py")
-          version = importlib.util.module_from_spec(spec)
-          spec.loader.exec_module(version)
-          root = pathlib.Path("target/static-native-evidence")
-          root.mkdir(parents=True, exist_ok=True)
-          assert oracle.native_goos_arch() == tuple(os.environ["STATIC_EVIDENCE_TARGET"].split("-"))
-          head = oracle.run_checked(["git", "rev-parse", "HEAD"], cwd=pathlib.Path.cwd(), env=dict(os.environ), timeout=30, artifact_dir=root / "raw" / "head", check=True).stdout.decode("utf-8").strip()
-          results = []
-          for lane, lane_spec in oracle.LANES.items():
-              fixture = root / (lane + ".json")
-              value, _, _ = oracle.capture_go(lane, root / "raw" / lane)
-              assert value["capture"]["working_tree_clean"] is True
-              assert value["capture"]["source_commit"] == head
-              oracle._validate_payload(lane, value, oracle.native_goos_arch())
-              fixture.write_bytes(oracle._json_bytes(value))
-              if lane == "version":
-                  run = version.replay(fixture)
-                  version.require_positive(run)
-                  version.reject_mutation(value)
-              else:
-                  run = replay._rust(lane, fixture)
-                  replay._require_positive(lane, run)
-                  for changed, marker, label in replay._mutations(lane, value):
-                      replay._require_rejection(lane, changed, marker, label)
-              (root / (lane + ".rust.log")).write_text(run.stdout, encoding="utf-8")
-              results.append({"lane": lane, "cases": lane_spec["count"], "sha256": hashlib.sha256(fixture.read_bytes()).hexdigest(), "rust_exit": run.returncode, "negative_controls_passed": True})
-              print("native Go/current Rust comparison", lane, lane_spec["count"], "cases", flush=True)
-          (root / "results.json").write_text(json.dumps({"source_head": head, "native_target": oracle.native_goos_arch(), "classification": "native candidate comparison; independent anchor approval and frozen acceptance remain required", "results": results}, indent=2) + "\n", encoding="utf-8")
-          PY
-      - name: Retain native raw bytes and candidate comparisons
-        if: always()
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: static-native-evidence-${{ matrix.target }}-${{ github.sha }}
-          path: |
-            target/static-native-evidence/
-            target/static-update-process/
-          if-no-files-found: warn
-          retention-days: 30
-
   changes:
     name: select CI scope
     runs-on: ubuntu-latest
@@ -246,7 +39,7 @@ jobs:
             git diff --name-only -z "$BASE_SHA" HEAD > "$RUNNER_TEMP/changed-paths"
             while IFS= read -r -d '' path; do
               case "$path" in
-                rust/*|.cargo/*|port/*|scripts/rust-port/*|testdata/rust-port/*|contracts/*|docs/rust-port/*|.github/workflows/*|Cargo.*|rust-toolchain.toml|Makefile|go.mod|go.sum|*.rs)
+                rust/*|.cargo/*|port/*|scripts/rust-port/*|testdata/rust-port/*|contracts/*|docs/rust-port/*|.github/workflows/*|Cargo.*|rust-toolchain.toml|Makefile|*.rs)
                   full=true
                   break ;;
               esac
@@ -254,7 +47,6 @@ jobs:
           fi
           echo "full=$full" >> "$GITHUB_OUTPUT"
           echo 'test_matrix=["ubuntu-latest","macos-26"]' >> "$GITHUB_OUTPUT"
-
   test:
     name: test (${{ matrix.os }})
     needs: changes
@@ -262,7 +54,6 @@ jobs:
       fail-fast: false
       matrix:
         os: ${{ fromJSON(needs.changes.outputs.test_matrix) }}
-        go-version: ["1.26.10"]
     # matrix.os preserves legacy protected check names; see ADR 0003.
     runs-on: ${{ matrix.os == 'macos-26' && 'macos-15' || matrix.os }}
     steps:
@@ -273,66 +64,19 @@ jobs:
           sw_vers
           test "$(uname -m)" = arm64
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
-      - name: Run tests
-        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
-        with:
-          go-version: ${{ matrix.go-version }}
       - name: Set up Python
         uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: "3.12"
       - name: Verify vendored brand assets
         run: python scripts/verify-brand-assets.py
-      - name: Verify opt-in Go Apply capture isolation
-        env:
-          GO_ORACLE: '1'
-        run: python -B -W error -m unittest discover -s scripts/rust-port -p test_update_harness.py -k apply_real_oracle -v
-      - name: Download dependencies
-        run: go mod download
-      - name: Verify dependencies
-        run: go mod verify
+      - name: Install pinned Rust toolchain
+        shell: bash
+        run: rustup toolchain install 1.98.0 --profile minimal --component rustfmt,clippy
       - name: Build
-        run: go build ./...
-        env:
-          CGO_ENABLED: "0"
-      - name: Test with race detector
-        if: runner.os != 'Windows'
-        run: go test -race -count=1 -timeout=5m ./...
-        env:
-          CGO_ENABLED: "1"
-      - name: Test without cgo
-        run: go test -count=1 -timeout=5m ./...
-        env:
-          CGO_ENABLED: "0"
-
-  cross-platform:
-    name: cross (${{ matrix.goos }}/${{ matrix.goarch }})
-    needs: changes
-    if: needs.changes.outputs.full == 'true'
-    strategy:
-      fail-fast: false
-      matrix:
-        goos: [linux, darwin]
-        goarch: [amd64, arm64]
-        exclude:
-          - goos: darwin
-            goarch: amd64
-    runs-on: ubuntu-latest
-    env:
-      CGO_ENABLED: 0
-      GOOS: ${{ matrix.goos }}
-      GOARCH: ${{ matrix.goarch }}
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
-      - name: Set up Go
-        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
-        with:
-          go-version: "1.26.10"
-      - name: Build
-        run: go build ./...
-      - name: Vet
-        run: go vet ./...
-
+        run: cargo build --workspace --all-targets --locked
+      - name: Test
+        run: cargo test --workspace --all-features --locked
   lint:
     name: lint
     runs-on: ubuntu-latest
@@ -344,17 +88,15 @@ jobs:
         run: python3 -B -W error -m unittest discover -s scripts/rust-port -p test_rust_ci_tool_cache.py -v
       - name: Verify fail-closed merge gate
         run: python3 -B -W error -m unittest discover -s scripts/rust-port -p test_ci_merge_gate.py -v
-      - name: Set up Go
-        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
-        with:
-          go-version: "1.26.10"
-      - name: Run golangci-lint
-        uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
+      - name: Install pinned Rust toolchain
+        shell: bash
+        run: rustup toolchain install 1.98.0 --profile minimal --component rustfmt,clippy
+      - name: Rust format
+        run: cargo fmt --all --check
       - name: Validate Rust migration handoff
         run: make rust-port-validate
         env:
           GITHUB_TOKEN: ${{ github.token }}
-
   port-contract:
     name: port contract (${{ matrix.os }})
     needs: changes
@@ -365,9 +107,6 @@ jobs:
         os: [ubuntu-latest, macos-26]
     # matrix.os preserves legacy protected check names; see ADR 0003.
     runs-on: ${{ matrix.os == 'macos-26' && 'macos-15' || matrix.os }}
-    env:
-      GOTOOLCHAIN: go1.26.6
-      CGO_ENABLED: 0
     steps:
       - name: Record native macOS runner identity
         if: runner.os == 'macOS'
@@ -378,10 +117,6 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
         with:
           fetch-depth: 0
-      - name: Set up Go
-        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
-        with:
-          go-version: "1.26.6"
       - name: Set up Python
         uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
@@ -392,96 +127,24 @@ jobs:
         run: |
           python -W error -m unittest discover -s scripts/rust-port -p test_workspace_root.py -v
           python -W error -m unittest discover -s scripts/rust-port -p test_rust005.py -v
-      - name: Verify oracle provenance and generated fixtures
-        run: python scripts/rust-port/generate.py --check-source && python scripts/rust-port/generate.py --check
-      - name: Verify real regeneration preserves independent corpora
-        run: python -m unittest discover -s scripts/rust-port -p test_fixture_preservation.py
-      - name: Run native oracle harness self-test
-        run: python scripts/rust-port/diff.py --self-test
-      - name: Test Go oracle helpers
-        working-directory: scripts/rust-port/go-oracle
-        run: go test ./...
-  #
-  #  --- DEPRECATED (replaced by golangci-lint above) ---
-  #  go vet / gofmt
-  #  gofmt -l .
-  #  go vet ./...
-
-  govulncheck:
-    name: govulncheck
+      - name: Verify pinned oracle provenance
+        run: python scripts/rust-port/generate.py --check-source
+      - name: Verify retired Go sources resolve from the v0.18.3 anchor
+        run: python -m unittest discover -s scripts/rust-port -p test_retired_go.py -v
+  audit:
+    name: audit
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
-      - name: Set up Go
-        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
-        with:
-          go-version: "1.26.10"
-      - name: Install govulncheck
-        run: go install golang.org/x/vuln/cmd/govulncheck@v1.4.0
-      - name: Run govulncheck
-        run: govulncheck ./...
-
-  apidiff:
-    name: ${{ matrix.os == 'ubuntu-latest' && 'apidiff' || format('apidiff ({0})', matrix.os) }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, macos-26]
-    # matrix.os preserves legacy protected check names; see ADR 0003.
-    runs-on: ${{ matrix.os == 'macos-26' && 'macos-15' || matrix.os }}
-    env:
-      GOBIN: ${{ github.workspace }}/.bin
-    steps:
-      - name: Record native macOS runner identity
-        if: runner.os == 'macOS'
+      - name: Install pinned Rust toolchain
         shell: bash
+        run: rustup toolchain install 1.98.0 --profile minimal
+      - name: Audit Rust dependencies
         run: |
-          sw_vers
-          test "$(uname -m)" = arm64
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
-        with:
-          fetch-depth: 0
-
-      - name: Set up Go
-        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
-        with:
-          go-version: "1.26.10"
-
-      - name: Fetch base ref
-        run: git fetch origin main
-
-      - name: Check for breaking-change escape hatch
-        id: hatch
-        shell: bash
-        run: |
-          if git log -1 --pretty=%s | grep -q 'BREAKING CHANGE'; then
-            echo "Intentional breaking change detected; skipping apidiff."
-            echo "skip=true" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Install apidiff
-        if: steps.hatch.outputs.skip != 'true'
-        shell: bash
-        run: go install golang.org/x/exp/cmd/apidiff@v0.0.0-20260727155853-b88d891fe743
-
-      - name: Add apidiff to PATH
-        if: steps.hatch.outputs.skip != 'true'
-        shell: bash
-        run: echo "$GOBIN" >> "$GITHUB_PATH"
-
-      - name: Run apidiff against origin/main
-        if: steps.hatch.outputs.skip != 'true'
-        shell: bash
-        run: |
-          set -euo pipefail
-          BASE_DIR=.apidiff-base
-          git worktree add "$BASE_DIR" origin/main
-          trap 'git worktree remove --force "$BASE_DIR"' EXIT
-          # apidiff compares only the exported API; internal and test
-          # packages are excluded by default (opt-in via -allow-internal).
-          (cd "$BASE_DIR" && apidiff -m -w ../base.api .)
-          apidiff -m -incompatible base.api .
-
+          cargo install cargo-audit --version 0.22.2 --locked
+          cargo audit
+          cargo install cargo-deny --version 0.20.2 --locked
+          cargo deny check
   rust-foundation:
     name: Rust foundation (${{ matrix.os }})
     needs: changes
@@ -502,10 +165,6 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
         with:
           fetch-depth: 0
-      - name: Set up Go oracle toolchain
-        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
-        with:
-          go-version: "1.26.6"
       - name: Set up Python
         uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
@@ -538,7 +197,6 @@ jobs:
           path: target/frozen-core-replay/
           if-no-files-found: warn
           retention-days: 30
-
   rust-update-signed:
     name: Rust update signed-release acceptance (${{ matrix.os }})
     needs: changes
@@ -561,10 +219,6 @@ jobs:
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
-      - name: Set up Go oracle toolchain
-        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
-        with:
-          go-version: "1.26.6"
       - name: Set up Python
         uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
@@ -593,7 +247,6 @@ jobs:
             target/cancellation-native.json
           if-no-files-found: error
           retention-days: 30
-
   rust-mcp:
     name: Rust MCP (${{ matrix.os }})
     needs: changes
@@ -634,7 +287,6 @@ jobs:
           python-version: "3.12"
       - name: Run frozen MCP corpus and intended-assertion negative control
         run: make mcp-differential
-
   rust-mcpcfg:
     name: Rust MCP config (${{ matrix.os }})
     needs: changes
@@ -668,7 +320,6 @@ jobs:
         run: python scripts/rust-port/mcpcfg-differential.py --check
       - name: Verify process-capture integrity, identity and Go-free replay
         run: python -m unittest discover -s scripts/rust-port -p test_frozen_process_oracle.py
-
   rust-sqlite-native:
     name: Rust SQLite native (${{ matrix.os }})
     needs: changes
@@ -690,50 +341,25 @@ jobs:
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
-      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
-        with:
-          go-version: "1.26.6"
       - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: "3.12"
       - name: Install pinned Rust toolchain
         shell: bash
         run: rustup toolchain install 1.98.0 --profile minimal --component rustfmt,clippy
-      - name: SQLite tests and live source-bound differential
+      - name: SQLite tests and frozen source-bound replay
         shell: bash
         run: |
           set -euo pipefail
           cargo test --manifest-path "$GITHUB_WORKSPACE/Cargo.toml" -p symaira-core-sqlite --all-features --locked
           cargo clippy --manifest-path "$GITHUB_WORKSPACE/Cargo.toml" -p symaira-core-sqlite --all-targets --all-features --locked -- -D warnings
-          # Capture real current inputs without replacing the frozen acceptance
-          # record. A stale committed record must still fail the tests below.
-          source=$(git rev-parse HEAD)
-          base='${{ github.event.pull_request.base.sha || github.sha }}'
-          git merge-base --is-ancestor "$base" "$source"
-          git reset --soft "$base"
-          trap 'git reset --soft "$source"' EXIT
-          python scripts/rust-port/sqlite/candidate.py --output target/sqlite-native-candidate-source.json
-          python scripts/rust-port/sqlite/diff.py --typed-errors --candidate-manifest target/sqlite-native-candidate-source.json --output sqlite-native-report.json
-          git reset --soft "$source"
-          trap - EXIT
+          # Live Go recapture was retired with the Go library (release/v0.18 only).
           python -m unittest discover -s scripts/rust-port/sqlite -p 'test_*.py'
-      - name: Retain native differential evidence
-        if: always()
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: sqlite-native-${{ matrix.os }}-${{ github.event.pull_request.head.sha || github.sha }}
-          path: |
-            sqlite-native-report.json
-            target/sqlite-native-candidate-source.json
-          if-no-files-found: error
-          retention-days: 30
-
+          python scripts/rust-port/frozen_sqlite_replay.py
   rust-rust003-native:
     name: Rust RUST-003 native (${{ matrix.os }})
     needs: changes
-    # Capture-only preparation is not anchored Rust acceptance. Every ordinary
-    # PR/main run still requires this gate after reviewed fixtures are registered.
-    if: needs.changes.outputs.full == 'true' && !(github.event_name == 'workflow_dispatch' && inputs.fs_secret_capture)
+    if: needs.changes.outputs.full == 'true'
     # matrix.os preserves legacy protected check names; see ADR 0003.
     runs-on: ${{ matrix.os == 'macos-26' && 'macos-15' || matrix.os }}
     timeout-minutes: 20
@@ -831,7 +457,6 @@ jobs:
           cargo audit
           cargo install cargo-deny --version 0.20.2 --locked
           cargo deny check
-
   rust-rust003-miri:
     name: Rust RUST-003 Miri
     needs: changes
@@ -845,7 +470,6 @@ jobs:
           rustup component add miri --toolchain nightly
       - name: Run Miri with filesystem isolation disabled
         run: MIRIFLAGS=-Zmiri-disable-isolation cargo +nightly miri test -p symaira-core-fs -p symaira-core-secretref --all-features
-
   rust-rust013-miri:
     name: Rust RUST-013 Miri gate
     needs: changes
@@ -864,7 +488,6 @@ jobs:
         run: python3 scripts/rust-port/miri_gate.py --negative-test
       - name: Run bounded split Miri gate
         run: python3 scripts/rust-port/miri_gate.py --run
-
   rust-rust013-native:
     name: Rust RUST-013 native (${{ matrix.os }})
     needs: changes
@@ -890,7 +513,6 @@ jobs:
         run: cargo +1.98.0 test --workspace --all-features --locked
       - name: Run workspace doctests natively
         run: cargo +1.98.0 test --workspace --doc --all-features --locked
-
   rust-rust013-hardening:
     name: Rust RUST-013 hardening
     needs: changes
@@ -901,10 +523,6 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
         with:
           fetch-depth: 0
-      - name: Set up Go oracle toolchain
-        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
-        with:
-          go-version: "1.26.10"
       - name: Set up Python
         uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
@@ -934,13 +552,8 @@ jobs:
           CARGO_INSTALL_ROOT: ${{ runner.temp }}/corekit-cargo-install-root
         shell: bash
         run: echo "$CARGO_INSTALL_ROOT/bin" >> "$GITHUB_PATH"
-      - name: Install pinned Go linter
-        uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
-        with:
-          version: v2.13.2
-      - name: Run complete dual-language hardening gate
+      - name: Run complete Rust hardening gate
         run: make rust-hardening
-
   rust-release-manifest:
     name: Rust release manifest
     needs: changes
@@ -963,21 +576,18 @@ jobs:
           python3 -m unittest discover -s port/consumer -p 'test_*.py'
       - name: Verify release manifest, packages, provenance and SBOM
         run: python3 port/release/verify.py --dry-run
-
   merge-gate:
     name: merge gate
     # Single fail-closed context over every pull-request CI job; see
     # scripts/rust-port/ci_merge_gate.py for the accepted job results.
-    # Manual evidence-capture dispatches deliberately skip some full-scope jobs.
+    # Manual dispatches are not pull-request evidence and skip the gate.
     if: always() && github.event_name != 'workflow_dispatch'
     needs:
       - changes
       - test
-      - cross-platform
       - lint
       - port-contract
-      - govulncheck
-      - apidiff
+      - audit
       - rust-foundation
       - rust-update-signed
       - rust-mcp

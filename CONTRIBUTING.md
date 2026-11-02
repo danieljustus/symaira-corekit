@@ -2,27 +2,27 @@
 
 ## Development setup
 
-Requirements: Go 1.26 or newer (the module sets `go 1.26.4`), golangci-lint,
-and the Rust toolchain pinned in `rust-toolchain.toml` for Rust changes.
+Requirements: the Rust toolchain pinned in `rust-toolchain.toml` and Python 3.12
+or newer for the contract harness. No Go toolchain is needed on `main`; the Go
+library was retired after v0.18.3 ([ADR 0005](docs/adr/0005-go-library-retirement.md)).
 
 ```sh
-make build    # CGO_ENABLED=0 go build ./...
-make test     # CGO_ENABLED=1 go test -race ./...
-make lint     # golangci-lint + gofmt check + go vet
-make rust-lint
-make rust-test
+make build    # cargo build --workspace --all-targets --locked
+make test     # cargo test --workspace --all-features --locked
+make lint     # cargo fmt --check + clippy -D warnings
+make rust-contracts
+make rust-hardening
 ```
 
-The Go build must remain CGO-free on Linux (amd64/arm64) and macOS (arm64).
-Race tests use CGO; CI also runs tests with `CGO_ENABLED=0`. The authoritative
-gate list is `.github/workflows/ci.yml`: Go test and cross-build matrices,
-lint, `govulncheck`, `apidiff`, port contracts, native Rust foundation/LLM/update,
-MCP, MCP-config and SQLite checks, hardening/Miri and release-manifest validation.
-PR and `main` native matrices cover Linux and Apple Silicon macOS. Windows and
-macOS Intel are unsupported and have no CI or release targets. Existing Windows
-APIs, build tags and fixtures remain for shared-library consumer compatibility;
-do not remove them as part of this CI scope change. Run the affected
-`rust-*-contract` Make targets before pushing Rust changes.
+The authoritative gate list is `.github/workflows/ci.yml`: Rust build/test,
+format, dependency audit, port contracts, native Rust foundation/LLM/update,
+MCP, MCP-config and SQLite checks, hardening/Miri and release-manifest
+validation. PR and `main` native matrices cover Linux and Apple Silicon macOS.
+Windows and macOS Intel are unsupported and have no CI or release targets.
+Run the affected `rust-*-contract` Make targets before pushing Rust changes.
+
+Go fixes for consumers that still import the Go module land only on the
+`release/v0.18` branch, with that branch's own Go gates.
 
 ## Releasing
 
@@ -31,41 +31,29 @@ The maintainer deliberately creates and pushes a release tag. The tag-triggered
 GitHub release with generated notes. It requires an exact `## vX.Y.Z` heading
 in `docs/migrations.md` for that tag.
 
-Process for a new `vX.Y.Z` release (strict SemVer; breaking changes
-require a major bump and a `BREAKING CHANGE` commit trailer so the
-apidiff job skips):
-
-1. **Confirm `main` is green.** All CI checks on `main` must pass:
-   all configured Go and Rust platform jobs, lint, govulncheck and apidiff.
+1. **Confirm `main` is green.** All CI checks on `main` must pass, including
+   the `merge gate` context.
 2. **Run the full local gates:**
    ```sh
-   make test
-   make lint
-   make build
+   make build test lint rust-contracts
    ```
-3. **Check consumer drift** — every sibling Symaira repo that pins
-   corekit and is checked out alongside this one:
+3. **Check consumers:**
    ```sh
    make consumer-drift
    ```
-   The list should be empty or contain only intentional pins.
 4. **Tag and push:**
    ```sh
    git tag -a vX.Y.Z -m "vX.Y.Z"
    git push origin vX.Y.Z
    ```
-5. **Verify the release workflow and generated notes** derived from merged PRs:
+5. **Verify the release workflow and generated notes:**
    ```sh
    gh release view vX.Y.Z
    ```
-   Review user-facing changes and linked PRs; edit the generated notes if
-   necessary. Keep release notes in English.
-6. **Verify** the release page shows the correct tag, notes, and no
-   attached assets unless intended.
+   Keep release notes in English and check the page has no unintended assets.
 
 ## Update policy for consumers
 
-Consumers pin a corekit version in `go.mod` deliberately, but are
-expected to move to the latest compatible minor release no later than
-their own next release. See `docs/migrations.md` for per-release
-changes since v0.3.0.
+Rust consumers pin an exact Git revision plus `Cargo.lock` (ADR 0002) and are
+expected to move to the latest CoreKit revision no later than their own next
+release. Go consumers stay on `v0.18.x`. See `docs/migrations.md`.

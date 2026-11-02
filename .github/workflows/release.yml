@@ -1,14 +1,11 @@
-# Release automation for a Go library.
+# Release automation for the Rust library workspace.
 #
 # symaira-corekit is a library: it ships no binaries, so there are no release
-# assets to build or sign. The only manual step left in the tag -> release path
-# was opening the GitHub Release itself — which is exactly what went wrong for
-# four consecutive tags (see #158) until it was backfilled by hand.
-#
-# This workflow closes that gap: every `v*` tag push creates the GitHub Release
-# with generated notes. It runs after the test gate on the tagged commit passes,
-# so a failing tree cannot get a release. Apple signing/notarization and the
-# Homebrew tap do not apply (nothing binary is produced).
+# assets to build or sign. Rust consumers pin an exact Git revision plus
+# Cargo.lock (ADR 0002); crates are not published. Every `v*` tag push creates
+# the GitHub Release with generated notes after the Rust test gate on the
+# tagged commit passes. The retired Go module's patch releases come only from
+# the release/v0.18 branch, whose own workflow keeps the Go gate.
 
 name: Release
 
@@ -29,23 +26,17 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Set up Go
-        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
-        with:
-          go-version: '1.26.10'
+      - name: Install pinned Rust toolchain
+        shell: bash
+        run: rustup toolchain install 1.98.0 --profile minimal --component rustfmt,clippy
 
       - name: Test
-        run: go test -race ./...
+        run: cargo test --workspace --all-features --locked
 
       - name: Lint
         run: |
-          gofmt_out=$(gofmt -l .)
-          if [ -n "$gofmt_out" ]; then
-            echo "::error::gofmt needs formatting:"
-            echo "$gofmt_out"
-            exit 1
-          fi
-          go vet ./...
+          cargo fmt --all --check
+          cargo clippy --workspace --all-targets --all-features --locked -- -D warnings
 
   release:
     needs: test
