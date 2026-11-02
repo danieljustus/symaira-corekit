@@ -2,7 +2,7 @@
 
 The GitHub Releases page is the authoritative source for complete release notes.
 
-## Unreleased
+## v0.19.0 — 2026-11-02
 
 - **Go library retired from `main`** ([ADR 0005](docs/adr/0005-go-library-retirement.md)).
   All Go packages, `go.mod`/`go.sum`, Go CI, the Go release gate and the Go
@@ -16,6 +16,8 @@ The GitHub Releases page is the authoritative source for complete release notes.
   are removed; CodeQL analyzes Rust and Python instead of Go.
 - Frozen Go fixture provenance reads retired Go sources from the immutable
   `v0.18.3` commit (`scripts/rust-port/retired_go.py`).
+- Docs: required platforms are Linux amd64/arm64 and macOS arm64; Windows and
+  macOS Intel are no longer supported (#459).
 
 ## v0.18.3 — 2026-10-28
 
