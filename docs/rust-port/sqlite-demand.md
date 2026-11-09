@@ -13,7 +13,7 @@ mutation/process tests passed again here. Run helper Go tests from the nested
 `scripts/rust-port/sqlite` module, not the repository root.
 
 The private Rust connection/migration implementation now exact-pins rusqlite
-0.40.2 (bundled, defaults disabled). Scoped Cargo check and strict Clippy passed;
+0.41.1 (bundled, defaults disabled; raised from 0.40.2 for RUSTSEC-2026-0459). Scoped Cargo check and strict Clippy passed;
 audit and deny passed with non-fatal duplicate warnings. Tests and differential
 adapter implementation are assigned to `.worktrees/rust-006-parity` on branch
 `rust/rust-006-parity`, with an explicit coordinator source snapshot. Their
