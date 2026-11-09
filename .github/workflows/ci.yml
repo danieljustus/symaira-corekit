@@ -347,35 +347,6 @@ jobs:
       - name: Install pinned Rust toolchain
         shell: bash
         run: rustup toolchain install 1.98.0 --profile minimal --component rustfmt,clippy
-      # TEMPORARY (corekit #464): native Go-oracle capture for the one-time
-      # re-registration; removed again before merge.
-      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
-        with:
-          go-version: "1.26.6"
-      - name: TEMPORARY native source-bound differential capture
-        shell: bash
-        run: |
-          set -euo pipefail
-          source=$(git rev-parse HEAD)
-          base='${{ github.event.pull_request.base.sha || github.sha }}'
-          git merge-base --is-ancestor "$base" "$source"
-          git reset --soft "$base"
-          trap 'git reset --soft "$source"' EXIT
-          mkdir -p target
-          python scripts/rust-port/sqlite/candidate.py --output target/sqlite-native-candidate-source.json
-          python scripts/rust-port/sqlite/diff.py --typed-errors --candidate-manifest target/sqlite-native-candidate-source.json --output sqlite-native-report.json
-          git reset --soft "$source"
-          trap - EXIT
-      - name: TEMPORARY retain native differential evidence
-        if: always()
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: sqlite-native-${{ matrix.os }}-${{ github.event.pull_request.head.sha || github.sha }}
-          path: |
-            sqlite-native-report.json
-            target/sqlite-native-candidate-source.json
-          if-no-files-found: error
-          retention-days: 30
       - name: SQLite tests and frozen source-bound replay
         shell: bash
         run: |
