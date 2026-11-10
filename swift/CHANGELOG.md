@@ -14,12 +14,16 @@ the releases of the former `symaira-appkit` repository.
 ### Added
 - Shared animated icons: `operate`, `restart`, `memory`, `battery`,
   `keepAwake`, `expired` and `externalDrive`.
+- ICON-4 documents and checks the menu-safe `Image(symairaIcon:)` label.
 
 ### Changed
 - The package directory inside CoreKit is `swift/` (formerly `appkit/`).
   No consumer change.
 
 ### Fixed
+- Switch toggles honor hidden labels while retaining their accessibility name;
+  macOS 14 and iOS 17 use the native switch because their SwiftUI does not
+  expose label visibility to custom styles.
 - Fast-exiting daemons cannot overwrite their terminal state with a late
   running state; lifecycle tests no longer depend on short sleeps (#473).
 

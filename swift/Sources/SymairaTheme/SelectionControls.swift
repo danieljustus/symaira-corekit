@@ -217,25 +217,43 @@ extension View {
 // MARK: - Switch
 
 /// Switch with the approved silhouette: 56 × 32 pt track, 24 pt knob. On uses
-/// the `selected` role. Keeps native toggle semantics for accessibility.
+/// the `selected` role. Keeps native toggle semantics for accessibility. On
+/// macOS 14 and iOS 17, uses the native switch to honor hidden labels.
 public struct SymairaSwitchToggleStyle: ToggleStyle {
-    @Environment(\.colorScheme) private var colorScheme
-    @Environment(\.isEnabled) private var isEnabled
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-
     public init() {}
 
     public func makeBody(configuration: Configuration) -> some View {
-        // No spacer: the switch sits next to its label like the native style, so it
-        // also fits rows that hide the label or already align it themselves.
+        if #available(macOS 15, iOS 18, *) {
+            SymairaSwitchBody(configuration: configuration)
+        } else {
+            // Earlier SwiftUI does not expose labelsVisibility to custom styles.
+            Toggle(isOn: configuration.$isOn) { configuration.label }
+                .toggleStyle(.switch)
+        }
+    }
+}
+
+@available(macOS 15, iOS 18, *)
+struct SymairaSwitchBody: View {
+    @Environment(\.isEnabled) private var isEnabled
+    @Environment(\.labelsVisibility) private var labelsVisibility
+    let configuration: ToggleStyleConfiguration
+
+    static func showsLabel(_ visibility: Visibility) -> Bool {
+        visibility != .hidden
+    }
+
+    var body: some View {
         HStack(spacing: SymairaSpacing.medium) {
-            configuration.label
-            // A button keeps the switch keyboard-operable (Space) on macOS.
+            if Self.showsLabel(labelsVisibility) {
+                configuration.label
+            }
             SymairaSwitchButton(isOn: configuration.$isOn)
         }
         .opacity(isEnabled ? 1 : 0.55)
         .accessibilityRepresentation {
             Toggle(isOn: configuration.$isOn) { configuration.label }
+                .toggleStyle(.switch)
         }
     }
 }

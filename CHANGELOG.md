@@ -6,6 +6,8 @@ The GitHub Releases page is the authoritative source for complete release notes.
 
 - Swift shared icons add `operate`, `restart`, `memory`, `battery`,
   `keepAwake`, `expired` and `externalDrive`.
+- Swift switches honor hidden labels; GUI review flags menu labels that should
+  use `Image(symairaIcon:)` instead of `SymairaIconView` (#470).
 - The Swift package directory is renamed from `appkit/` to `swift/`
   (ADR 0006 amendment). No consumer change: package identity, products,
   modules and the resource bundle name stay the same.

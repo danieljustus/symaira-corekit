@@ -234,6 +234,8 @@ Six lines, kept in the pull request or issue:
   `SymairaIconButton` does both.
 - **ICON-3** Toolbar controls use `.symairaButtonStyle(.toolbar)` (glass);
   content actions never do.
+- **ICON-4** Use `Image(symairaIcon:)` rather than `SymairaIconView` in a
+  `Menu` label; borderless macOS menus can render the latter blank.
 
 ## 9. Motion, materials and topography
 
@@ -332,7 +334,7 @@ Severity: `error` violates a non-negotiable or the token contract; `warn`
 violates a rule that has an existing shared replacement; `info` marks a
 judgment call or a project-level absence.
 
-**Mechanical** (`scripts/gui-review.py`): COLOR-1, TYPE-1, ICON-1, ICON-2,
+**Mechanical** (`scripts/gui-review.py`): COLOR-1, TYPE-1, ICON-1, ICON-2, ICON-4,
 STATE-1, ACTION-1, COPY-3, MOTION-1, MOTION-4, MOTION-6, FORM-1, SHELL-1, and
 the project-level absences KEY-1, SHELL-7, SHELL-9, POINTER-2, POINTER-3.
 

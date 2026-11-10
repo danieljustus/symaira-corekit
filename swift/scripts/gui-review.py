@@ -123,8 +123,45 @@ def swift_files(root: Path):
             yield path
 
 
+def menu_label_icons(text: str):
+    # Mask ordinary Swift strings and comments, retaining offsets and newlines.
+    masked = re.sub(
+        r'//[^\n]*|/\*[\s\S]*?\*/|"(?:\\.|[^"\\])*"',
+        lambda m: re.sub(r'[^\n]', ' ', m.group()), text,
+    )
+
+    def closing_brace(start):
+        depth = 0
+        for pos in range(start, len(masked)):
+            if masked[pos] == '{':
+                depth += 1
+            elif masked[pos] == '}':
+                depth -= 1
+                if depth == 0:
+                    return pos
+        return None
+
+    for menu in re.finditer(r'\bMenu\s*\{', masked):
+        end = closing_brace(menu.end() - 1)
+        if end is None:
+            continue
+        label = re.match(r'\s*label\s*:\s*\{', masked[end + 1:])
+        if not label:
+            continue
+        start = end + label.end()
+        end_label = closing_brace(start)
+        if end_label is None:
+            continue
+        for icon in re.finditer(r'\bSymairaIconView\s*\(', masked[start + 1:end_label]):
+            yield start + 1 + icon.start()
+
+
 def review_text(text: str, display: str) -> list[dict]:
-    findings = []
+    findings = [
+        {"file": display, "line": text.count("\n", 0, pos) + 1, "rule": "ICON-4", "severity": "warn",
+         "message": "Menu label uses SymairaIconView; use Image(symairaIcon:)"}
+        for pos in menu_label_icons(text)
+    ]
     lines = text.splitlines()
     for index, line in enumerate(lines, start=1):
         stripped = line.lstrip()
@@ -265,6 +302,17 @@ struct Fixture: View {
         }
         if absences != expected_absences:
             problems.append(f"shell fixture {source!r}: expected {sorted(expected_absences)}, got {sorted(absences)}")
+    menu_cases = [
+        ('Menu { Button("Go") {} } label: { SymairaIconView(.more) }', 1),
+        ('Menu { SymairaIconView(.more) } label: { Image(symairaIcon: .more) }', 0),
+        ('Menu { Button("}") {} } label: { HStack { SymairaIconView(.more) } }', 1),
+        ('// Menu {} label: { SymairaIconView(.more) }\nButton {} label: { SymairaIconView(.more) }', 0),
+        ('Menu {} label: { /* SymairaIconView(.more) */ Image(symairaIcon: .more) }', 0),
+    ]
+    for source, expected_count in menu_cases:
+        hits = [f for f in review_text(source, "menu.swift") if f["rule"] == "ICON-4"]
+        if len(hits) != expected_count:
+            problems.append(f"menu fixture {source!r}: expected {expected_count}, got {len(hits)}")
     if problems:
         print("self-test FAILED\n" + "\n".join(problems))
         return 1
