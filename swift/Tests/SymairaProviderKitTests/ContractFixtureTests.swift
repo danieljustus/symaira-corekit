@@ -30,7 +30,7 @@ final class ContractFixtureTests: XCTestCase {
             .deletingLastPathComponent()
             .deletingLastPathComponent()
             .deletingLastPathComponent()
-            .deletingLastPathComponent()  // appkit/Tests/<target>/<file> -> repository root
+            .deletingLastPathComponent()  // swift/Tests/<target>/<file> -> repository root
         let fixtureURL = repositoryRoot.appendingPathComponent("contracts/llm_providers.json")
         let fixtureCatalog = try SymairaProviderCatalog(data: Data(contentsOf: fixtureURL))
 
@@ -42,7 +42,7 @@ final class ContractFixtureTests: XCTestCase {
             .deletingLastPathComponent()
             .deletingLastPathComponent()
             .deletingLastPathComponent()
-            .deletingLastPathComponent()  // appkit/Tests/<target>/<file> -> repository root
+            .deletingLastPathComponent()  // swift/Tests/<target>/<file> -> repository root
         let fixtureURL = repositoryRoot.appendingPathComponent("contracts/llm_errors.json")
         let fixtureCatalog = try SymairaProviderErrorCatalog(data: Data(contentsOf: fixtureURL))
 

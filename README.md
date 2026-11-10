@@ -9,7 +9,7 @@
 ![Symaira CoreKit social preview](docs/assets/social-preview.png)
 
 > Shared Rust crates for the Symaira backends and the shared Swift package
-> (AppKit, under [`appkit/`](appkit/README.md)) for the native clients. The Go library was retired from
+> (AppKit, under [`swift/`](swift/README.md)) for the native clients. The Go library was retired from
 > `main` after **v0.18.3**; Go consumers keep their exact pins and Go fixes ship
 > only from the `release/v0.18` branch ([ADR 0005](docs/adr/0005-go-library-retirement.md)).
 
@@ -45,7 +45,7 @@ CoreKit is a shared backend library, not an iOS or Web application runtime.
 
 **Swift (AppKit):** add the package as an exact-pinned SwiftPM dependency and
 reference products with `package: "symaira-corekit"`; see
-[`appkit/README.md`](appkit/README.md).
+[`swift/README.md`](swift/README.md).
 
 ```swift
 .package(url: "https://github.com/danieljustus/symaira-corekit.git", exact: "0.20.0")
@@ -78,11 +78,11 @@ symaira-core-log = { git = "https://github.com/danieljustus/symaira-corekit", re
 ## Swift package (AppKit)
 
 The Swift package formerly developed as `symaira-appkit` lives under
-[`appkit/`](appkit/README.md): `SymairaTheme`, `SymairaCLIRunner`,
+[`swift/`](swift/README.md): `SymairaTheme`, `SymairaCLIRunner`,
 `SymairaToolKit`, `SymairaKeychain`, `SymairaUpdateCheck`, `SymairaDaemonKit`,
 `SymairaIngestContract`, `SymairaMCP` and `SymairaProviderKit`, plus the shared
-GUI rules ([`appkit/GUIDELINES.md`](appkit/GUIDELINES.md),
-[`appkit/DESIGN.md`](appkit/DESIGN.md)). Its contract tests read the same
+GUI rules ([`swift/GUIDELINES.md`](swift/GUIDELINES.md),
+[`swift/DESIGN.md`](swift/DESIGN.md)). Its contract tests read the same
 `contracts/` fixtures as the Rust crates.
 
 The former Go-only packages `auditkit`, `evidencekit`, `domkit`,
@@ -99,11 +99,11 @@ make lint               # cargo fmt --check + clippy -D warnings
 make rust-contracts     # complete Go-free native contract aggregate
 make rust-hardening     # nextest, doctests, cargo-hack, coverage, audit, deny
 make swift-test         # Swift package build + tests (needs a full Xcode)
-make swift-lint         # swift-format --strict over appkit/Sources and appkit/Tests
+make swift-lint         # swift-format --strict over swift/Sources and swift/Tests
 ```
 
 No Go toolchain is required for any gate on `main`. The Swift targets resolve
-a full Xcode toolchain themselves (see [`appkit/README.md`](appkit/README.md)).
+a full Xcode toolchain themselves (see [`swift/README.md`](swift/README.md)).
 
 ## Documentation
 

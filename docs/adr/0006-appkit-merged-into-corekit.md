@@ -2,7 +2,8 @@
 
 Status: accepted, 2026-11-10, by the maintainer. Supersedes the "separate
 CoreKit/AppKit repositories" rule of PB-2026-09-09 revisions 1 to 5
-(revision 6 records this decision).
+(revision 6 records this decision). Amended 2026-11-10: the Swift
+directory is `swift/`, see [Amendment](#amendment-2026-11-10-swift-directory).
 
 ## Decision
 
@@ -69,3 +70,19 @@ implementations one reviewable commit.
   only build what they reference.
 - `docs/consumers.json` keeps tracking the Rust/Go consumers its verifier
   understands; Swift pins are listed in `docs/migrations.md` for `v0.20.0`.
+
+## Amendment 2026-11-10: `swift/` directory
+
+The Swift package directory is renamed from `appkit/` to `swift/`, next to
+`rust/`. "AppKit" collides with Apple's AppKit framework, so a path named
+after the language is unambiguous for people and agents. References to
+`appkit/` in this ADR and in the `v0.20.0` release notes describe the layout
+at that tag; on `main` read them as `swift/`.
+
+- No consumer change: the package identity (`symaira-corekit`), product and
+  module names and the `symaira-corekit_SymairaTheme.bundle` name are
+  unchanged. Local `path:` dependencies point at the repository root and are
+  unaffected.
+- History: `git log -- appkit swift` (or `git log --follow <file>`) shows the
+  complete history across the rename.
+- The CI path filter of `.github/workflows/swift.yml` now matches `swift/**`.

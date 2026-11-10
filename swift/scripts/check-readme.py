@@ -11,7 +11,7 @@ import tempfile
 from pathlib import Path
 
 
-ROOT = Path(__file__).resolve().parents[1]  # appkit/: README and CHANGELOG
+ROOT = Path(__file__).resolve().parents[1]  # swift/: README and CHANGELOG
 PACKAGE_ROOT = ROOT.parent  # repository root: Package.swift
 README = ROOT / "README.md"
 CHANGELOG = ROOT / "CHANGELOG.md"

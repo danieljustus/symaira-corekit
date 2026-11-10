@@ -1,6 +1,6 @@
 # Symaira AppKit
 
-> **AppKit now lives in [`symaira-corekit`](../README.md)** ([ADR 0006](../docs/adr/0006-appkit-merged-into-corekit.md)). The former `symaira-appkit` repository is archived; its history is preserved here under `appkit/`.
+> **AppKit now lives in [`symaira-corekit`](../README.md)** ([ADR 0006](../docs/adr/0006-appkit-merged-into-corekit.md)). The former `symaira-appkit` repository is archived; its history is preserved here under `swift/`.
 >
 > **Accepted product direction — implementation pending:** AppKit remains the shared Swift foundation. Brain owns the future credential-management UI; domain-specific views stay product-owned, not in AppKit. The optional Browse/Operate and credential UI transfers do not eliminate shared native foundations or change existing dependency pins. See [PB-2026-09-09](../docs/product-boundaries.md).
 
@@ -185,9 +185,9 @@ the `Font`/`Text` source changes and the separate simulator check.
 ## Build & Test
 
 ```bash
-make swift-build   # from the repository root (or `make build` inside appkit/)
-make swift-test    # or `make test` inside appkit/
-make swift-lint    # or `make lint` inside appkit/
+make swift-build   # from the repository root (or `make build` inside swift/)
+make swift-test    # or `make test` inside swift/
+make swift-lint    # or `make lint` inside swift/
 ```
 
 The Makefile resolves a full Xcode toolchain and exports `DEVELOPER_DIR` for

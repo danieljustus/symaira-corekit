@@ -23,7 +23,7 @@ __pycache__/
 /target
 /fuzz/target/
 
-# Swift package (appkit/, manifest at the root). `/.build` without a trailing
+# Swift package (swift/, manifest at the root). `/.build` without a trailing
 # slash also matches the symlinked build directory of the dev-storage convention.
 /.build
 .swiftpm/

@@ -4,7 +4,7 @@
 
 Read [PB-2026-09-09](../docs/product-boundaries.md) and [ADR 0006](../docs/adr/0006-appkit-merged-into-corekit.md). AppKit is the shared Swift foundation inside `symaira-corekit` (formerly the separate `symaira-appkit` repository), not a new application or a home for credential-management views. Brain owns the future credential management UI; the separate credential service owns authorization and keys. Reuse only modules with two genuine consumers. Keep immutable pins and cross-language fixture checks. The UI transfer and removal of the old management app remain gated implementation work.
 
-Shared public Swift library (Apache-2.0) for Symaira macOS and iOS clients, maintained in the CoreKit repository next to the Rust crates. Sources, tests, scripts and GUI rules live in this `appkit/` directory; `Package.swift` sits at the repository root because SwiftPM resolves remote packages only from there. Consumed by the client apps as an exact-pinned SPM dependency on `symaira-corekit`.
+Shared public Swift library (Apache-2.0) for Symaira macOS and iOS clients, maintained in the CoreKit repository next to the Rust crates. Sources, tests, scripts and GUI rules live in this `swift/` directory; `Package.swift` sits at the repository root because SwiftPM resolves remote packages only from there. Consumed by the client apps as an exact-pinned SPM dependency on `symaira-corekit`.
 
 ## GUI work
 
@@ -13,7 +13,7 @@ Before building, changing or reviewing any SwiftUI surface (here or in a consume
 ## Build & Test
 
 ```bash
-make build              # run inside appkit/; from the repository root: make swift-build
+make build              # run inside swift/; from the repository root: make swift-build
 make test               # root: make swift-test
 make lint               # root: make swift-lint
 make toolchain          # show which Swift toolchain will be used
@@ -45,5 +45,5 @@ make toolchain          # show which Swift toolchain will be used
 
 The Swift package ships with the CoreKit release process (one tag series, `vX.Y.Z`; SwiftPM accepts the `v` prefix).
 
-1. Add Swift changes to `appkit/CHANGELOG.md` (Keep-a-Changelog) under the CoreKit version being released, and to the root `CHANGELOG.md` / `docs/migrations.md` entry for that version. Keep the single exact pin in `appkit/README.md` equal to the newest `appkit/CHANGELOG.md` release (`scripts/check-readme.py` enforces it).
+1. Add Swift changes to `swift/CHANGELOG.md` (Keep-a-Changelog) under the CoreKit version being released, and to the root `CHANGELOG.md` / `docs/migrations.md` entry for that version. Keep the single exact pin in `swift/README.md` equal to the newest `swift/CHANGELOG.md` release (`scripts/check-readme.py` enforces it).
 2. Tag `vX.Y.Z` on CoreKit `main` per the root release workflow. Strict SemVer — breaking Swift API changes bump the minor pre-1.0; per-app migration stays explicit (each app updates its pin deliberately).

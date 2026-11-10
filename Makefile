@@ -8,19 +8,19 @@ CARGO_RUN := $(if $(DEV_EXTERNAL),$(DEV_EXTERNAL) cargo,cargo)
 build:
 	$(CARGO_RUN) build --workspace --all-targets --locked
 
-# Swift package (appkit/, manifest at the repository root; ADR 0006). The
-# appkit Makefile resolves a full Xcode toolchain for the child process only.
+# Swift package (swift/, manifest at the repository root; ADR 0006). The
+# swift/ Makefile resolves a full Xcode toolchain for the child process only.
 swift-build:
-	$(MAKE) -C appkit build
+	$(MAKE) -C swift build
 
 swift-test:
-	$(MAKE) -C appkit test
+	$(MAKE) -C swift test
 
 swift-lint:
-	$(MAKE) -C appkit lint
+	$(MAKE) -C swift lint
 
 swift-format:
-	$(MAKE) -C appkit format
+	$(MAKE) -C swift format
 
 consumer-drift:
 	./scripts/consumer-drift.sh

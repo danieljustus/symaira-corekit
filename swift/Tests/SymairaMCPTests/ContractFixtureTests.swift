@@ -24,7 +24,7 @@ final class MCPJSONEncodingContractFixtureTests: XCTestCase {
             .deletingLastPathComponent()  // ContractFixtureTests.swift
             .deletingLastPathComponent()  // SymairaMCPTests
             .deletingLastPathComponent()  // Tests
-            .deletingLastPathComponent()  // appkit
+            .deletingLastPathComponent()  // swift
             .appendingPathComponent("contracts/json_encoding.json")
         let data = try Data(contentsOf: url)
         return try JSONDecoder().decode(Fixture.self, from: data)
@@ -91,7 +91,7 @@ final class MCPToolAnnotationsContractFixtureTests: XCTestCase {
             .deletingLastPathComponent()  // ContractFixtureTests.swift
             .deletingLastPathComponent()  // SymairaMCPTests
             .deletingLastPathComponent()  // Tests
-            .deletingLastPathComponent()  // appkit
+            .deletingLastPathComponent()  // swift
             .appendingPathComponent("contracts/mcp_tool_annotations.json")
         let data = try Data(contentsOf: url)
         return try JSONDecoder().decode(Fixture.self, from: data)
