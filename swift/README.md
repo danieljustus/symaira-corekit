@@ -26,11 +26,11 @@ Add the CoreKit package as an exact-pinned dependency in the client app's `Packa
 and reference products from `package: "symaira-corekit"`:
 
 ```swift
-.package(url: "https://github.com/danieljustus/symaira-corekit.git", exact: "0.20.0")
+.package(url: "https://github.com/danieljustus/symaira-corekit.git", exact: "0.21.0")
 ```
 
 `.product(name: "SymairaTheme", package: "symaira-corekit")`. XcodeGen projects use
-`url: https://github.com/danieljustus/symaira-corekit.git` with `exactVersion: 0.20.0`.
+`url: https://github.com/danieljustus/symaira-corekit.git` with `exactVersion: 0.21.0`.
 Migrating from `symaira-appkit`: switch URL, package name and version together, and copy
 `symaira-corekit_SymairaTheme.bundle` (formerly `symaira-appkit_SymairaTheme.bundle`) into
 packaged apps. See [`docs/migrations.md`](../docs/migrations.md) `v0.20.0`.

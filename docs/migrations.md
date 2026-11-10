@@ -10,6 +10,27 @@ also preserve historical removals, including `embedkit` in v0.12.0; those
 require migration. Otherwise "check" means a new capability to adopt or a
 behavior change worth confirming.
 
+## v0.21.0
+
+- **Swift consumers:** move the pin to `exact: "0.21.0"` (XcodeGen
+  `exactVersion: 0.21.0`). Check:
+  - New `SymairaIcon` cases `operate`, `restart`, `memory`, `battery`,
+    `keepAwake`, `expired` and `externalDrive` replace local SF Symbol
+    stand-ins (Brain: `hand.tap`, `restart.circle`; Cockpit: memory, battery,
+    keep-awake, expired-credential and external-drive rows). Battery level and
+    charging variants are not available yet.
+  - `SymairaSwitchToggleStyle` now honors `.labelsHidden()`. Remove
+    `Toggle(isOn:) { EmptyView() }` workarounds inside `SymairaFormRow`. On
+    macOS 14, iOS 17 and tvOS 17 the style falls back to the native toggle.
+  - Use `Image(symairaIcon:)` for `Menu` labels (rule ICON-4); `gui-review.py`
+    now warns on `SymairaIconView` inside a `Menu` label.
+  - The package declares tvOS 17; `SymairaTheme` and `SymairaKeychain` build
+    for tvOS. Process-execution modules stay macOS-only.
+- **Rust consumers:** `symaira-core-fs` and `symaira-core-secretref` require
+  `rustix = "1.1.6"` as a caret range instead of `=1.1.4`. After moving the
+  CoreKit revision, a consumer workspace may select any rustix 1.x ≥ 1.1.6.
+  `symaira-core-version` still pins `serde_json = "=1.0.151"` (#475).
+
 ## v0.20.0
 
 - **Swift consumers of the former `symaira-appkit`:** the package now lives in

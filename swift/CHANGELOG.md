@@ -11,6 +11,8 @@ the releases of the former `symaira-appkit` repository.
 
 ## [Unreleased]
 
+## [0.21.0] - 2026-11-10
+
 ### Added
 - Shared animated icons: `operate`, `restart`, `memory`, `battery`,
   `keepAwake`, `expired` and `externalDrive`.

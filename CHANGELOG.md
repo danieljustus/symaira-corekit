@@ -2,7 +2,7 @@
 
 The GitHub Releases page is the authoritative source for complete release notes.
 
-## Unreleased
+## v0.21.0 — 2026-11-10
 
 - Swift shared icons add `operate`, `restart`, `memory`, `battery`,
   `keepAwake`, `expired` and `externalDrive`.
