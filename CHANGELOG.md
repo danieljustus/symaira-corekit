@@ -2,6 +2,12 @@
 
 The GitHub Releases page is the authoritative source for complete release notes.
 
+## Unreleased
+
+- The Swift package directory is renamed from `appkit/` to `swift/`
+  (ADR 0006 amendment). No consumer change: package identity, products,
+  modules and the resource bundle name stay the same.
+
 ## v0.20.0 — 2026-11-10
 
 - **AppKit merged into CoreKit** ([ADR 0006](docs/adr/0006-appkit-merged-into-corekit.md)).

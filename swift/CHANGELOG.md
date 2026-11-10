@@ -11,6 +11,10 @@ the releases of the former `symaira-appkit` repository.
 
 ## [Unreleased]
 
+### Changed
+- The package directory inside CoreKit is `swift/` (formerly `appkit/`).
+  No consumer change.
+
 ## [0.20.0] - 2026-11-10
 
 ### Breaking

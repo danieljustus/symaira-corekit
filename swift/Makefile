@@ -1,4 +1,4 @@
-# Symaira CoreKit Swift package (appkit/) — build/test entrypoints.
+# Symaira CoreKit Swift package (swift/) — build/test entrypoints.
 #
 # The manifest lives at the repository root (SwiftPM resolves remote packages
 # only from there), so swift commands run with --package-path pointing at it.
