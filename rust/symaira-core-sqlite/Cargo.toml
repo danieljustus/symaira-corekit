@@ -8,7 +8,7 @@ repository.workspace = true
 publish = false
 
 [dependencies]
-rusqlite = { version = "=0.40.2", default-features = false, features = ["bundled"] }
+rusqlite = { version = "=0.41.1", default-features = false, features = ["bundled"] }
 symaira-core-fs = { path = "../symaira-core-fs", version = "=0.0.0" }
 thiserror.workspace = true
 
