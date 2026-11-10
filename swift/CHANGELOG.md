@@ -11,6 +11,10 @@ the releases of the former `symaira-appkit` repository.
 
 ## [Unreleased]
 
+### Fixed
+- Fast-exiting daemons cannot overwrite their terminal state with a late
+  running state; lifecycle tests no longer depend on short sleeps (#473).
+
 ### Changed
 - The package directory inside CoreKit is `swift/` (formerly `appkit/`).
   No consumer change.

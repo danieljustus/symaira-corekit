@@ -143,6 +143,11 @@ public final class DaemonSupervisor: @unchecked Sendable {
             // their last bytes; it waits (bounded) until both reach EOF so that
             // output written right before exit is not dropped.
             let drained = DispatchGroup()
+            // A fast child can terminate before run() returns. Publish its
+            // running state before the termination handler publishes its exit.
+            let started = DispatchGroup()
+            started.enter()
+            defer { started.leave() }
             let outReader = PipeLineReader(drained: drained)
             let errReader = PipeLineReader(drained: drained)
 
@@ -166,6 +171,7 @@ public final class DaemonSupervisor: @unchecked Sendable {
                 // A descendant that inherited the pipes can keep them open, so
                 // the wait is bounded instead of blocking on EOF forever.
                 _ = drained.wait(timeout: .now() + DaemonSupervisor.outputDrainTimeout)
+                started.wait()
                 guard let self = self else { return }
                 let exitCode = proc.terminationStatus
 

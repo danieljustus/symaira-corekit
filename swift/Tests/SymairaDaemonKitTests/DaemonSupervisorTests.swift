@@ -10,11 +10,9 @@ final class DaemonSupervisorTests: XCTestCase {
         // Use a simple long-running command like sleep
         let sleepURL = URL(fileURLWithPath: "/bin/sleep")
 
-        let stream = supervisor.start(executable: sleepURL, arguments: ["10"])
+        let stream = supervisor.start(executable: sleepURL, arguments: ["3600"])
 
-        // Wait a short moment to ensure the process runs
-        try? await Task.sleep(nanoseconds: 100_000_000)  // 100ms
-
+        // start() publishes the running state synchronously.
         XCTAssertEqual(supervisor.state, .running(pid: supervisor.state.statePID ?? 0))
 
         supervisor.stop()
@@ -94,10 +92,7 @@ final class DaemonSupervisorTests: XCTestCase {
         let sleepURL = URL(fileURLWithPath: "/bin/sleep")
 
         // Start first process (long-running)
-        let stream1 = supervisor.start(executable: sleepURL, arguments: ["10"])
-
-        // Give it time to start
-        try? await Task.sleep(nanoseconds: 200_000_000)  // 200ms
+        let stream1 = supervisor.start(executable: sleepURL, arguments: ["3600"])
 
         let pid1: Int32
         if case .running(let pid) = supervisor.state {
@@ -109,10 +104,7 @@ final class DaemonSupervisorTests: XCTestCase {
 
         // Restart while running: this triggers stopInternal() → old process terminated,
         // then a new process is spawned. The new stream must be live.
-        let stream2 = supervisor.start(executable: sleepURL, arguments: ["5"])
-
-        // Give the second process time to start
-        try? await Task.sleep(nanoseconds: 200_000_000)  // 200ms
+        let stream2 = supervisor.start(executable: sleepURL, arguments: ["3600"])
 
         // The supervisor must be in .running state for the new process
         guard case .running(let pid2) = supervisor.state else {
