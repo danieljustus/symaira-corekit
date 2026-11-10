@@ -23,8 +23,8 @@ the releases of the former `symaira-appkit` repository.
 
 ### Fixed
 - Switch toggles honor hidden labels while retaining their accessibility name;
-  macOS 14 and iOS 17 use the native switch because their SwiftUI does not
-  expose label visibility to custom styles.
+  macOS 14, iOS 17 and tvOS 17 use the native switch because their SwiftUI
+  does not expose label visibility to custom styles.
 - Fast-exiting daemons cannot overwrite their terminal state with a late
   running state; lifecycle tests no longer depend on short sleeps (#473).
 

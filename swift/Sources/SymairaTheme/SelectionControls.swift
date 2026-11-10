@@ -218,22 +218,27 @@ extension View {
 
 /// Switch with the approved silhouette: 56 × 32 pt track, 24 pt knob. On uses
 /// the `selected` role. Keeps native toggle semantics for accessibility. On
-/// macOS 14 and iOS 17, uses the native switch to honor hidden labels.
+/// macOS 14, iOS 17 and tvOS 17, uses the native toggle to honor hidden labels.
 public struct SymairaSwitchToggleStyle: ToggleStyle {
     public init() {}
 
     public func makeBody(configuration: Configuration) -> some View {
-        if #available(macOS 15, iOS 18, *) {
+        if #available(macOS 15, iOS 18, tvOS 18, *) {
             SymairaSwitchBody(configuration: configuration)
         } else {
             // Earlier SwiftUI does not expose labelsVisibility to custom styles.
+            #if os(tvOS)
+            // tvOS 17 has no switch style; its native toggle is focusable.
+            Toggle(isOn: configuration.$isOn) { configuration.label }
+            #else
             Toggle(isOn: configuration.$isOn) { configuration.label }
                 .toggleStyle(.switch)
+            #endif
         }
     }
 }
 
-@available(macOS 15, iOS 18, *)
+@available(macOS 15, iOS 18, tvOS 18, *)
 struct SymairaSwitchBody: View {
     @Environment(\.isEnabled) private var isEnabled
     @Environment(\.labelsVisibility) private var labelsVisibility
