@@ -333,7 +333,7 @@ public struct SymairaGlassChromeModifier: ViewModifier {
     @ViewBuilder
     private func adaptiveGlass(_ content: Content) -> some View {
         #if compiler(>=6.2)
-        if #available(macOS 26.0, iOS 26.0, *) {
+        if #available(macOS 26.0, iOS 26.0, tvOS 26.0, *) {
             switch variant {
             case .regular:
                 content.glassEffect(
@@ -413,7 +413,7 @@ public struct SymairaGlassEffectContainer<Content: View>: View {
     @ViewBuilder
     public var body: some View {
         #if compiler(>=6.2)
-        if #available(macOS 26.0, iOS 26.0, *) {
+        if #available(macOS 26.0, iOS 26.0, tvOS 26.0, *) {
             GlassEffectContainer(spacing: spacing) {
                 content
             }
@@ -462,7 +462,7 @@ public struct SymairaAdaptiveButtonModifier: ViewModifier {
     @ViewBuilder
     private func toolbarButton(_ content: Content) -> some View {
         #if compiler(>=6.2)
-        if #available(macOS 26.0, iOS 26.0, *) {
+        if #available(macOS 26.0, iOS 26.0, tvOS 26.0, *) {
             content.buttonStyle(.glass)
         } else {
             content.buttonStyle(.borderless)

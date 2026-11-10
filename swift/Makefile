@@ -34,7 +34,7 @@ endif
 # Prefer the selected Xcode; a standalone installation on PATH is the fallback.
 SWIFT_FORMAT ?= $(shell DEVELOPER_DIR="$(XCODE_DIR)" xcrun --find swift-format 2>/dev/null || command -v swift-format)
 
-.PHONY: help build test test-make lint format toolchain formatter
+.PHONY: help build build-tvos test test-make lint format toolchain formatter
 
 ## help: List available targets
 help:
@@ -53,6 +53,11 @@ toolchain:
 ## build: Build all library targets
 build: toolchain
 	$(SWIFT) build --package-path $(PACKAGE_PATH)
+
+## build-tvos: Build shared UI and keychain for tvOS Simulator
+build-tvos: toolchain
+	cd $(PACKAGE_PATH) && xcodebuild -scheme SymairaTheme -destination 'generic/platform=tvOS Simulator' CODE_SIGNING_ALLOWED=NO build
+	cd $(PACKAGE_PATH) && xcodebuild -scheme SymairaKeychain -destination 'generic/platform=tvOS Simulator' CODE_SIGNING_ALLOWED=NO build
 
 ## test: Run Makefile regressions and the Swift suite (needs full Xcode)
 test: toolchain test-make

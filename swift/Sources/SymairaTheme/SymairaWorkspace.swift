@@ -108,6 +108,8 @@ private struct NavigationLabel: View {
                     : (hovered || configuration.isPressed ? SymairaTokens.raised : Color.clear)
             )
             .clipShape(RoundedRectangle(cornerRadius: SymairaRadius.control))
-            .onHover { hovered = $0 }
+            #if !os(tvOS)
+        .onHover { hovered = $0 }
+            #endif
     }
 }

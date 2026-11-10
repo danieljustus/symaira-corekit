@@ -381,6 +381,15 @@ Listed so that nobody invents a rule or a component:
 
 - The `battery` glyph is static; level-specific and charging variants or a
   level parameter are not yet available.
+- tvOS builds cover SymairaTheme and SymairaKeychain, but no consumer screen
+  has yet been verified on a tvOS simulator (Symaira Media spike S8). Use
+  focus rather than hover and a native top tab bar; dense content has no
+  topography. The macOS workspace and Settings scene remain macOS-only.
+- Other Swift modules are not yet covered by tvOS CI. SymairaCLIRunner and
+  SymairaDaemonKit process execution, SymairaToolKit binary discovery, the
+  SymairaIngestContract CLI adapters, and SymairaUpdateCheck installation and
+  subprocess helpers remain macOS-only: tvOS does not provide desktop process
+  execution or app installation. Their portable APIs are not excluded.
 - No shared helper for `.searchable` placement; products wire it natively.
   Destination commands and the Settings scene use `SymairaCommands` and
   `SymairaSettingsScene` (SHELL-7, SHELL-9).

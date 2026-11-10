@@ -42,11 +42,13 @@ public struct SymairaIconView<Trigger: Equatable>: View {
             }
         }
         .frame(width: size, height: size)
+        #if !os(tvOS)
         .onHover { hovering in
             guard host == nil else { return }  // inside a Symaira control the whole control drives hover
             isHovered = hovering
             hoverChange = Date()
         }
+        #endif
         .onChange(of: host?.hovered) { hoverChange = Date() }
         .onChange(of: host?.presses) { clickStart = Date() }
         .onChange(of: trigger) { clickStart = Date() }
@@ -156,7 +158,9 @@ struct SymairaIconHost<Content: View>: View {
     var body: some View {
         content
             .environment(\.symairaIconInteraction, interaction)
-            .onHover { interaction.hovered = $0 }
+            #if !os(tvOS)
+        .onHover { interaction.hovered = $0 }
+            #endif
             .onChange(of: isPressed) { _, pressed in
                 if pressed { interaction.presses += 1 }
             }

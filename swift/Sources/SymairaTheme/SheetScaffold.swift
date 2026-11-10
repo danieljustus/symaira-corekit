@@ -51,12 +51,16 @@ public struct SymairaSheetScaffold<Content: View>: View {
                 Spacer()
                 Button(dismissTitle, action: dismiss)
                     .symairaButtonStyle(.secondary)
-                    .keyboardShortcut(.cancelAction)
+                    #if !os(tvOS)
+                .keyboardShortcut(.cancelAction)
+                    #endif
                     .accessibilityIdentifier("symaira.sheet.dismiss")
                 if let primaryTitle {
                     Button(primaryTitle, action: primary)
                         .symairaButtonStyle(.primary)
-                        .keyboardShortcut(.defaultAction)
+                        #if !os(tvOS)
+                    .keyboardShortcut(.defaultAction)
+                        #endif
                         .disabled(primaryDisabled)
                         .accessibilityIdentifier("symaira.sheet.primary")
                 }

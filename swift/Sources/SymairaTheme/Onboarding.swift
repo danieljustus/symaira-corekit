@@ -168,7 +168,9 @@ public struct SymairaOnboardingScaffold<Step: SymairaOnboardingStep, Content: Vi
             if !flow.isFirstStep {
                 Button(SymairaStrings.onboardingBack) { flow.retreat() }
                     .symairaButtonStyle(.secondary)
-                    .keyboardShortcut(.leftArrow, modifiers: [])
+                    #if !os(tvOS)
+                .keyboardShortcut(.leftArrow, modifiers: [])
+                    #endif
             }
 
             Spacer()
@@ -182,7 +184,9 @@ public struct SymairaOnboardingScaffold<Step: SymairaOnboardingStep, Content: Vi
                 flow.advance()
             }
             .symairaButtonStyle(.primary)
+            #if !os(tvOS)
             .keyboardShortcut(.rightArrow, modifiers: [])
+            #endif
         }
     }
 

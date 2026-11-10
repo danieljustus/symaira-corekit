@@ -1,4 +1,4 @@
-.PHONY: build test lint swift-build swift-test swift-lint swift-format consumer-drift port-consumer-verify rust-port-validate port-fixture-source-check port-contract rust-lint rust-test rust-foundation-contract rust-fs-secret-contract rust-mcp-contract rust-mcpcfg-contract rust-llm-contract rust-update-version-contract rust-update-contract rust-update-signed-contract rust-release-contract rust-miri rust-hardening mcp-differential mcp-fuzz-smoke port-consumer-smoke
+.PHONY: build test lint swift-build swift-build-tvos swift-test swift-lint swift-format consumer-drift port-consumer-verify rust-port-validate port-fixture-source-check port-contract rust-lint rust-test rust-foundation-contract rust-fs-secret-contract rust-mcp-contract rust-mcpcfg-contract rust-llm-contract rust-update-version-contract rust-update-contract rust-update-signed-contract rust-release-contract rust-miri rust-hardening mcp-differential mcp-fuzz-smoke port-consumer-smoke
 
 DEV_EXTERNAL := $(if $(wildcard $(HOME)/.local/bin/dev-external),$(HOME)/.local/bin/dev-external,)
 CARGO_RUN := $(if $(DEV_EXTERNAL),$(DEV_EXTERNAL) cargo,cargo)
@@ -12,6 +12,9 @@ build:
 # swift/ Makefile resolves a full Xcode toolchain for the child process only.
 swift-build:
 	$(MAKE) -C swift build
+
+swift-build-tvos:
+	$(MAKE) -C swift build-tvos
 
 swift-test:
 	$(MAKE) -C swift test

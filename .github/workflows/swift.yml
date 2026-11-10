@@ -73,6 +73,8 @@ jobs:
           if [ "$MEM_GB" -le 8 ]; then JOBS=2; elif [ "$MEM_GB" -le 16 ]; then JOBS=4; else JOBS=6; fi
           # Keep manifest metadata per checkout; the self-hosted runner is shared by worktrees.
           swift build --manifest-cache local -v -j "$JOBS"
+      - name: Build tvOS shared libraries
+        run: make -C swift build-tvos
       # Runs the full XCTest suite on every push, pull request and the weekly
       # schedule; the schedule catches upstream/toolchain drift (self-hosted
       # runner — faster than queueing on macOS GitHub runners).

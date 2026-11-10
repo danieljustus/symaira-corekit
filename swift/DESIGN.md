@@ -83,6 +83,11 @@ never depend on a sibling checkout.
 - Keep prose within `SymairaMetrics.readableContentWidth`; grids and dashboards
   may choose a wider product-owned content budget.
 
+- On tvOS, use the focus engine and a native top tab bar rather than pointer
+  hover or the macOS workspace. Keep topography off dense content. Keyboard
+  shortcuts and hover effects are unavailable; focus feedback belongs to the
+  native controls. Liquid Glass falls back on tvOS before version 26.
+
 ## Accessibility defaults
 
 - Adaptive text/status colors retain the canonical contrast checks.

@@ -15,6 +15,7 @@ the releases of the former `symaira-appkit` repository.
 - Shared animated icons: `operate`, `restart`, `memory`, `battery`,
   `keepAwake`, `expired` and `externalDrive`.
 - ICON-4 documents and checks the menu-safe `Image(symairaIcon:)` label.
+- tvOS 17 support and simulator build coverage for SymairaTheme and SymairaKeychain.
 
 ### Changed
 - The package directory inside CoreKit is `swift/` (formerly `appkit/`).
