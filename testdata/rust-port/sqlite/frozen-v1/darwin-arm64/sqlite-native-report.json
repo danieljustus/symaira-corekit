@@ -1,8 +1,8 @@
 {
   "go": {
     "capture_interval": [
-      1794260636,
-      1794260641
+      1794336395,
+      1794336400
     ],
     "cases": [
       {
@@ -83,13 +83,13 @@
         "id": "SQL-003",
         "state": {
           "applied_at": [
-            "2026-11-09T21:44:01Z",
-            "2026-11-09T21:44:01Z"
+            "2026-11-10T18:46:40Z",
+            "2026-11-10T18:46:40Z"
           ],
           "applied_at_utc": true,
           "data": [
             {
-              "created_at": "2026-11-09T21:44:01Z",
+              "created_at": "2026-11-10T18:46:40Z",
               "id": "item-1",
               "name": "alpha"
             }
@@ -126,14 +126,14 @@
         "id": "SQL-004",
         "state": {
           "applied_at": [
-            "2026-11-09T21:44:01Z",
-            "2026-11-09T21:44:01Z"
+            "2026-11-10T18:46:40Z",
+            "2026-11-10T18:46:40Z"
           ],
           "applied_at_unchanged": true,
           "applied_at_utc": true,
           "data": [
             {
-              "created_at": "2026-11-09T21:44:01Z",
+              "created_at": "2026-11-10T18:46:40Z",
               "id": "item-1",
               "name": "alpha"
             }
@@ -293,19 +293,19 @@
         "scripts/rust-port/sqlite/cause_test.go": "82899fbc9f001a03ffb005aa22330b4615be07b23af84d61f4a841f77a422bc5",
         "scripts/rust-port/sqlite/cost_gate.py": "6da087b92e93ac92b9b477df6a79538c83881ab53f219614cd7e28a96ee8863f",
         "scripts/rust-port/sqlite/diff.py": "f48f3ec851f4839e1177d70a6cff7bb7111eca5bc20e8cca8dd79f15b28300db",
-        "scripts/rust-port/sqlite/generate.py": "876a6127007bf90e90e6c9493d7ef54e3a713e4bc9cfdfbf3564806ef800040a",
+        "scripts/rust-port/sqlite/generate.py": "c418fde863e41dfc0015ac7fe86c875c7ac7b98345a38f549e33224b59151d8b",
         "scripts/rust-port/sqlite/go.mod": "ca0dac8ac8d3f259ebf6fd50de3178b16f1f82c7d2ac3e9345d3f071615e3b58",
         "scripts/rust-port/sqlite/go.sum": "9146e7666d70f22e7739e8735d90275a271753977bd21337caf82345fd8f3cd0",
         "scripts/rust-port/sqlite/main.go": "df4455c4952bb4932f13ad618b8a9920ecb7a901cbceac2eb34850a77bc7cea3",
         "scripts/rust-port/sqlite/main_test.go": "6bead4fe1755c3afb0a0272e2b3ae5d5333072e9d9ef78b11a88fe0b5afed7da",
         "scripts/rust-port/sqlite/migrations/001_test.sql": "31c01d0b463acd6a9f7b4c6b198fe998b26b3309ee31350ea4efff26efd13f79",
         "scripts/rust-port/sqlite/migrations/002_index.sql": "d605a1446f538f11e03213209af02a4f0a319ce82cb3720913b1698088d67449",
-        "scripts/rust-port/sqlite/test_acceptance.py": "b310fd5f94a7c04ee4ed2d235a56ead66c19ebcfbb90ec48c162d475c7724988",
+        "scripts/rust-port/sqlite/test_acceptance.py": "ab70d127f52eb89a76d9d19b3a1b55fb7b0eaa7a6793c8862aafbe1a93611108",
         "scripts/rust-port/sqlite/test_case_ids.py": "ab81b8da7e0f4154f7d1da4ecf11d659ca82ebf89d0c31a4e04d7cd021bda147",
         "scripts/rust-port/sqlite/test_cost_gate.py": "62433454e6f75856cbfd8aa119a01ff67d78254141e4c4cb6a2a1a94ae642572",
         "scripts/rust-port/sqlite/test_diff.py": "f8e9703c4d0960ca19943c6562e3356f59647b6eef91f832e7fde1ecfcb4df11",
         "scripts/rust-port/sqlite/test_failure_capture.py": "c53ed0e0308cbe130667b8c242be5006d0db4e591aa331ccab331c022d2845bc",
-        "scripts/rust-port/sqlite/test_generate.py": "d1f8380387b0f4a39e48e49a265901e13d74d37f9e696729319091b5a176abe2",
+        "scripts/rust-port/sqlite/test_generate.py": "27d2b38b037eeb4ef1122f0237e90eeefcee1ff89da91f782ab5b05e121df71d",
         "scripts/rust-port/sqlite/test_typed.py": "c516d8f2e2b01729a55bb9cd7306ae7e1852fa67bfc74b61fe5bb2f7fa1dcc4a",
         "scripts/rust-port/sqlite/testdata/locked-migration/capture.py": "6e8ec1a4f099db8df91d6ed3f1324026727065dbd9d7a6f699132f1cde4f45bd",
         "scripts/rust-port/sqlite/testdata/locked-migration/main.go": "4c411414e1f5a0a7f6878193b96099c273b46d09fcbaea215d170b8a758b4b76",
@@ -471,13 +471,13 @@
     }
   },
   "rust": {
-    "binary_sha256": "70370d4dd21de2870efdd02d3d087b535da14885f009f86a3c0b004bac08453f",
+    "binary_sha256": "4b1f0ad6f753be61dc3ff2b6ad3c8a7d38555914338f6713a4024477d81d42b3",
     "candidate_base": "82968b4fc9537daf62c2008331f5e5ce5d32b6c6",
-    "candidate_manifest_sha256": "ec74dbf7614feaaa849b7068c9e0b7b464ff8c379817749c95696cf665f4846f",
-    "candidate_revision": "726fc2a17b531249173c1cd21b8a9bfa72057e79",
+    "candidate_manifest_sha256": "f4ecb0fcb4ed790b71d7b94140c82f7bace7df9d76b3044e5a6e9fea10d5fb3c",
+    "candidate_revision": "bd10cb884573caae8fc0e6a11762be7f94a19f74",
     "capture_interval": [
-      1794260656,
-      1794260661
+      1794336424,
+      1794336430
     ],
     "cases": [
       {
@@ -511,7 +511,7 @@
       },
       {
         "id": "SQL-002",
-        "observed_busy_seconds": 5.01271775,
+        "observed_busy_seconds": 5.039937708,
         "state": {
           "connections": [
             {
@@ -561,12 +561,12 @@
         "id": "SQL-003",
         "state": {
           "applied_at": [
-            "2026-11-09T21:44:21Z",
-            "2026-11-09T21:44:21Z"
+            "2026-11-10T18:47:09Z",
+            "2026-11-10T18:47:09Z"
           ],
           "data": [
             {
-              "created_at": "2026-11-09T21:44:21Z",
+              "created_at": "2026-11-10T18:47:09Z",
               "id": "item-1",
               "name": "alpha"
             }
@@ -603,13 +603,13 @@
         "id": "SQL-004",
         "state": {
           "applied_at": [
-            "2026-11-09T21:44:21Z",
-            "2026-11-09T21:44:21Z"
+            "2026-11-10T18:47:09Z",
+            "2026-11-10T18:47:09Z"
           ],
           "applied_at_unchanged": true,
           "data": [
             {
-              "created_at": "2026-11-09T21:44:21Z",
+              "created_at": "2026-11-10T18:47:09Z",
               "id": "item-1",
               "name": "alpha"
             }
@@ -749,9 +749,9 @@
     },
     "source_hashes": {
       ".gitattributes": "21afaa90802761d0d8a3e8c4ab6cea036bbb535a19a09523b201dc6bfe6abf77",
-      ".github/workflows/ci.yml": "799f0ddb9022042ee0e530e68c62929f3bcefdfa0939fd40f87c871c156e989e",
-      "Cargo.lock": "9a2078f4b6260c1434c70f48bfa9a4c8611fe28ece5fd436d617b51baa69be3b",
-      "Cargo.lock#dependency-closure": "315ac88718bf46971bfe9d572d2ae921872fe8d986c7106da6d1cbd6af8c2cdc",
+      ".github/workflows/ci.yml": "a27494f09173f400efea3ada579cdf12b4378390f4679e5112f0562daf837f62",
+      "Cargo.lock": "872dc764812fe764b07eacaaa95bc98a3d7414a23a15db9607e1799c4256c53d",
+      "Cargo.lock#dependency-closure": "0c6cee3ce6dae9fd508c91a622e2c468f220b3cfec0a8dd25f008e77edeaaad7",
       "Cargo.toml": "df91bfd17125616b1bf7d19fd2dc51160d80b4da7fd34e18ecd37a3a5d229e84",
       "rust-toolchain.toml": "e879701472a698533f43f54989bbf5f3101eb0503472159d32633f3bb8a13fdf",
       "rust/symaira-core-config/Cargo.toml": "1f405889056892b0c01dcdd3b10a2dd3e90ab1ef7e3bade551b2d826973cd38b",
@@ -760,7 +760,7 @@
       "rust/symaira-core-env/src/lib.rs": "dc94e67c44c38718c9b3de7a10f0e6fc5b753baac2db6c81df107e372b6f188e",
       "rust/symaira-core-exit/Cargo.toml": "e6d3b12319406936f73c019e101dbbdff4e1002741b55ea74908666510e21fa9",
       "rust/symaira-core-exit/src/lib.rs": "330e359ceac948ba133f308e62a3967f386592457e5e7719cf4ce87df80a8e5b",
-      "rust/symaira-core-fs/Cargo.toml": "fc660b64005bf070136c220b5d61d8fd98170c135f99d1db72fc6592215f11b9",
+      "rust/symaira-core-fs/Cargo.toml": "5c71508b25500b8de54f40f6e266a393dd0b347b48d0377a5481487edd9e1824",
       "rust/symaira-core-fs/src/lib.rs": "5a66b877005f079bfd824b43f8b149ea442e385e7a3b0ab21d74f64dc6518b11",
       "rust/symaira-core-fs/tests/parity.rs": "b60321ca203595eedfd6da9460c2237aa683c5e982952266d78d9df4398a3cfa",
       "rust/symaira-core-llm/Cargo.toml": "9d221fc502740b88ba4b2675326417ff24565093893dc19ef1f59b3ff8266ca4",
@@ -789,7 +789,7 @@
       "rust/symaira-core-mcpcfg/src/bin/mcpcfg_fixture.rs": "38fc2cb7cd15102e2c18b2c70fdedd94f2450fff5132d4dbbee75a74700334ad",
       "rust/symaira-core-mcpcfg/src/lib.rs": "bf1e5a991f3645b912e87b1b03b66a35a6b574f34b6c4ef9333349da908ab145",
       "rust/symaira-core-mcpcfg/tests/parity.rs": "a886491a4a1e8f07679e3a98be37b042af80e5c2312ac61122eb5a1343be9549",
-      "rust/symaira-core-secretref/Cargo.toml": "8fbe198e5685ed498c0042127e5d4a015a683b4dce9ec35f37b2135ab49fa723",
+      "rust/symaira-core-secretref/Cargo.toml": "f5babee0323e12a5d11afbd1c5d8e9c2b4d35ed0a84ccb6eb3217e379ad66d5f",
       "rust/symaira-core-secretref/src/lib.rs": "41a553885c6cb08bf44be9d413897fbb7fb39122b1f17fac8281338b00f83f7d",
       "rust/symaira-core-secretref/tests/parity.rs": "80665d3a6c0cf5543dec10626a1451446318c33df27a80efb86d6bc6410abf85",
       "rust/symaira-core-sqlite/Cargo.toml": "88bb2aeb93b64a22ae15441f55e03c8abfc60af3d072c1a1e331a6de91b43d6c",
@@ -852,19 +852,19 @@
       "scripts/rust-port/sqlite/cause_test.go": "82899fbc9f001a03ffb005aa22330b4615be07b23af84d61f4a841f77a422bc5",
       "scripts/rust-port/sqlite/cost_gate.py": "6da087b92e93ac92b9b477df6a79538c83881ab53f219614cd7e28a96ee8863f",
       "scripts/rust-port/sqlite/diff.py": "f48f3ec851f4839e1177d70a6cff7bb7111eca5bc20e8cca8dd79f15b28300db",
-      "scripts/rust-port/sqlite/generate.py": "876a6127007bf90e90e6c9493d7ef54e3a713e4bc9cfdfbf3564806ef800040a",
+      "scripts/rust-port/sqlite/generate.py": "c418fde863e41dfc0015ac7fe86c875c7ac7b98345a38f549e33224b59151d8b",
       "scripts/rust-port/sqlite/go.mod": "ca0dac8ac8d3f259ebf6fd50de3178b16f1f82c7d2ac3e9345d3f071615e3b58",
       "scripts/rust-port/sqlite/go.sum": "9146e7666d70f22e7739e8735d90275a271753977bd21337caf82345fd8f3cd0",
       "scripts/rust-port/sqlite/main.go": "df4455c4952bb4932f13ad618b8a9920ecb7a901cbceac2eb34850a77bc7cea3",
       "scripts/rust-port/sqlite/main_test.go": "6bead4fe1755c3afb0a0272e2b3ae5d5333072e9d9ef78b11a88fe0b5afed7da",
       "scripts/rust-port/sqlite/migrations/001_test.sql": "31c01d0b463acd6a9f7b4c6b198fe998b26b3309ee31350ea4efff26efd13f79",
       "scripts/rust-port/sqlite/migrations/002_index.sql": "d605a1446f538f11e03213209af02a4f0a319ce82cb3720913b1698088d67449",
-      "scripts/rust-port/sqlite/test_acceptance.py": "b310fd5f94a7c04ee4ed2d235a56ead66c19ebcfbb90ec48c162d475c7724988",
+      "scripts/rust-port/sqlite/test_acceptance.py": "ab70d127f52eb89a76d9d19b3a1b55fb7b0eaa7a6793c8862aafbe1a93611108",
       "scripts/rust-port/sqlite/test_case_ids.py": "ab81b8da7e0f4154f7d1da4ecf11d659ca82ebf89d0c31a4e04d7cd021bda147",
       "scripts/rust-port/sqlite/test_cost_gate.py": "62433454e6f75856cbfd8aa119a01ff67d78254141e4c4cb6a2a1a94ae642572",
       "scripts/rust-port/sqlite/test_diff.py": "f8e9703c4d0960ca19943c6562e3356f59647b6eef91f832e7fde1ecfcb4df11",
       "scripts/rust-port/sqlite/test_failure_capture.py": "c53ed0e0308cbe130667b8c242be5006d0db4e591aa331ccab331c022d2845bc",
-      "scripts/rust-port/sqlite/test_generate.py": "d1f8380387b0f4a39e48e49a265901e13d74d37f9e696729319091b5a176abe2",
+      "scripts/rust-port/sqlite/test_generate.py": "27d2b38b037eeb4ef1122f0237e90eeefcee1ff89da91f782ab5b05e121df71d",
       "scripts/rust-port/sqlite/test_typed.py": "c516d8f2e2b01729a55bb9cd7306ae7e1852fa67bfc74b61fe5bb2f7fa1dcc4a",
       "scripts/rust-port/sqlite/testdata/locked-migration/capture.py": "6e8ec1a4f099db8df91d6ed3f1324026727065dbd9d7a6f699132f1cde4f45bd",
       "scripts/rust-port/sqlite/testdata/locked-migration/main.go": "4c411414e1f5a0a7f6878193b96099c273b46d09fcbaea215d170b8a758b4b76",

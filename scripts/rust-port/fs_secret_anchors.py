@@ -1,15 +1,19 @@
 """Reviewed SHA-256 anchors for native FS/SEC frozen-v1 captures.
 
-Re-registered on 2026-10-21 after ADR RUST-004 replaced the raw Cargo.lock
-binding with the lockfile dependency closure. The Go observations of every new
-capture are byte-identical to the 2026-10-20 registration; only the lockfile
-record, harness hashes and per-run identities differ. Capture never edits this
-map; replay has no historical fallback.
-See docs/rust-port/evidence/frozen-reregistration-20261021.json (previous: docs/rust-port/evidence/frozen-reregistration-20261020.json).
+Re-registered on 2026-11-10 for darwin-arm64 and linux-amd64 after the rustix
+requirement moved from =1.1.4 to 1.1.6 in symaira-core-fs and
+symaira-core-secretref (#463), which changes the lockfile dependency closure and
+both crate manifests. The Go observations, raw observations and case inventory of
+every new capture are byte-identical to the 2026-10-21 registration; only the
+lockfile and manifest records, commit heads, Go toolchain cache paths and per-run
+identities differ. windows-amd64 is retained unchanged as historical evidence:
+Windows left the supported platform scope (#459) and no gate replays it. Capture
+never edits this map; replay has no historical fallback.
+See docs/rust-port/evidence/frozen-reregistration-20261110.json (previous: docs/rust-port/evidence/frozen-reregistration-20261021.json).
 """
 
 TRUSTED_CAPTURE_SHA256: dict[str, str] = {
-    'darwin-arm64': '144b3b1ae84042117e6c8dcb675baf1ca2dfd4d30d8b1fdf7825cd84ad77b1f3',
-    'linux-amd64': '4a780c61a7bbe1e80af7555b359bd8a4156c8072ef1447dd78e84642be69d8ed',
+    'darwin-arm64': '000fe14cefed82271dd45b8b840a4d4061535b0e5d78a9da9f3d7073af705ae1',
+    'linux-amd64': '32be440c2828440c8e13d29578eca0e752ea504bc45f5c5ff0034a0dc3515e6f',
     'windows-amd64': '9cd98c130b84fba3eec1e5817fa9c9ba3b51b735145dbe324932decf9a1e4565'
 }

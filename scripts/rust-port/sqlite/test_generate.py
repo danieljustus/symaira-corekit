@@ -114,6 +114,46 @@ class ProcessTests(unittest.TestCase):
                                    capture_output=True, text=True, timeout=3).stdout.strip()
             self.assertTrue(not state or state.startswith("Z"), state)
 
+    @unittest.skipIf(os.name == "nt", "POSIX process-group contract only")
+    def test_normal_exit_tolerates_killpg_permission_error(self):
+        # macOS can return EPERM from killpg() after the reaped group leader
+        # exited normally (corekit #461).
+        calls = []
+
+        def denied(pid, sig):
+            calls.append((pid, sig))
+            raise PermissionError(1, "Operation not permitted")
+
+        with patch.object(generator.os, "killpg", denied):
+            output = generator.run([sys.executable, "-c", "print('ok')"], cwd=generator.ROOT)
+        self.assertEqual(output.strip(), b"ok")
+        self.assertEqual(len(calls), 1)
+
+    @unittest.skipIf(os.name == "nt", "POSIX process-group contract only")
+    def test_normal_exit_still_tolerates_missing_group(self):
+        def gone(pid, sig):
+            raise ProcessLookupError(3, "No such process")
+
+        with patch.object(generator.os, "killpg", gone):
+            output = generator.run([sys.executable, "-c", "print('ok')"], cwd=generator.ROOT)
+        self.assertEqual(output.strip(), b"ok")
+
+    @unittest.skipIf(os.name == "nt", "POSIX process-group contract only")
+    def test_timeout_does_not_swallow_killpg_permission_error(self):
+        real_killpg = os.killpg
+        spawned = []
+
+        def denied(pid, sig):
+            spawned.append(pid)
+            real_killpg(pid, sig)  # do not leak the sleeping child
+            raise PermissionError(1, "Operation not permitted")
+
+        with patch.object(generator.os, "killpg", denied):
+            with self.assertRaises(PermissionError):
+                generator.run([sys.executable, "-c", "import time; time.sleep(60)"],
+                              cwd=generator.ROOT, timeout=1)
+        self.assertEqual(len(spawned), 1)
+
     @unittest.skipIf(os.name == "nt", "Unix umask contract only")
     def test_runner_does_not_modify_parent_umask(self):
         previous = os.umask(0o022)

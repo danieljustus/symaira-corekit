@@ -254,6 +254,15 @@ class ConsumerVerifierTests(unittest.TestCase):
             if items[stage]["status"] == "complete":
                 self.assertEqual(items[prerequisite]["status"], "complete")
 
+    def test_semver_pattern_follows_spec_without_backtracking(self) -> None:
+        for valid in ("1.0.0", "1.0.0-alpha.1", "1.0.0-0.3.7", "1.0.0-x-y-z.--", "1.0.0-0A.is.legal",
+                      "1.0.0-1a", "1.0.0-beta+exp.sha.5114f85"):
+            self.assertIsNotNone(verify.SEMVER_RE.fullmatch(valid), valid)
+        for invalid in ("01.0.0", "1.0.0-01", "1.0.0-", "1.0.0-alpha..1", "1.0.0+"):
+            self.assertIsNone(verify.SEMVER_RE.fullmatch(invalid), invalid)
+        # The former prerelease alternation backtracked exponentially on this input.
+        self.assertIsNone(verify.SEMVER_RE.fullmatch("0.0.0-0." + "--." * 5000 + "!"))
+
     def test_pseudoversion_is_preserved_exactly(self) -> None:
         text = "module example.invalid/tool\n\nrequire (\n\tgithub.com/danieljustus/symaira-corekit v0.0.0-20260908091500-0123456789ab\n)\n"
         self.assertEqual(verify.parse_go_pin(text), "v0.0.0-20260908091500-0123456789ab")
