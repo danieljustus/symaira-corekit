@@ -18,6 +18,24 @@ final class SymairaIconTests: XCTestCase {
         }
     }
 
+    func testNewIconsHaveExpectedNamesAndMotion() {
+        let icons: [(SymairaIcon, String)] = [
+            (.operate, "operate"), (.restart, "restart"), (.memory, "memory"), (.battery, "battery"),
+            (.keepAwake, "keep-awake"), (.expired, "expired"), (.externalDrive, "external-drive"),
+        ]
+        for (icon, rawValue) in icons {
+            XCTAssertEqual(icon.rawValue, rawValue)
+            XCTAssertEqual(SymairaIcon(rawValue: rawValue), icon)
+            XCTAssertTrue(icon.spec.contains { !$0.click.isEmpty }, "\(icon) needs click motion")
+            XCTAssertTrue(
+                icon.spec.contains {
+                    $0.hover.x != 0 || $0.hover.y != 0 || $0.hover.r != 0
+                        || $0.hover.s != 1 || $0.hover.sx != 1 || $0.hover.sy != 1
+                },
+                "\(icon) needs hover motion")
+        }
+    }
+
     func testMotionsSettleBackToRest() {
         for icon in SymairaIcon.allCases {
             for track in icon.spec.flatMap(\.click) {

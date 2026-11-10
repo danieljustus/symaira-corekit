@@ -11,13 +11,17 @@ the releases of the former `symaira-appkit` repository.
 
 ## [Unreleased]
 
-### Fixed
-- Fast-exiting daemons cannot overwrite their terminal state with a late
-  running state; lifecycle tests no longer depend on short sleeps (#473).
+### Added
+- Shared animated icons: `operate`, `restart`, `memory`, `battery`,
+  `keepAwake`, `expired` and `externalDrive`.
 
 ### Changed
 - The package directory inside CoreKit is `swift/` (formerly `appkit/`).
   No consumer change.
+
+### Fixed
+- Fast-exiting daemons cannot overwrite their terminal state with a late
+  running state; lifecycle tests no longer depend on short sleeps (#473).
 
 ## [0.20.0] - 2026-11-10
 

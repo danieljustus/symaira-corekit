@@ -116,6 +116,11 @@ let result = try await applier.applyBundle(release: release, targetPath: install
 
 ### Shared UI foundation
 
+`SymairaIcon` includes `operate`, `restart`, `memory`, `battery`, `keepAwake`,
+`expired` and `externalDrive`. Use `SymairaIconView` or the shared icon-aware
+controls; the battery glyph does not indicate a measured charge level. See the
+[full icon vocabulary](Brand/Icons/README.md).
+
 ```swift
 import SwiftUI
 import SymairaTheme

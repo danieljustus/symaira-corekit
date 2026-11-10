@@ -228,6 +228,8 @@ Six lines, kept in the pull request or issue:
   the shared components. An SF Symbol string is acceptable only where no case
   exists, and then the case is added to `Brand/Icons/icons.svg` instead of
   staying in the product.
+  Shared cases include `operate`, `restart`, `memory`, `battery`, `keepAwake`,
+  `expired` and `externalDrive`.
 - **ICON-2** Icon-only controls carry `.accessibilityLabel` and `.help(...)`;
   `SymairaIconButton` does both.
 - **ICON-3** Toolbar controls use `.symairaButtonStyle(.toolbar)` (glass);
@@ -375,6 +377,8 @@ the project-level absences KEY-1, SHELL-7, SHELL-9, POINTER-2, POINTER-3.
 
 Listed so that nobody invents a rule or a component:
 
+- The `battery` glyph is static; level-specific and charging variants or a
+  level parameter are not yet available.
 - No shared helper for `.searchable` placement; products wire it natively.
   Destination commands and the Settings scene use `SymairaCommands` and
   `SymairaSettingsScene` (SHELL-7, SHELL-9).
