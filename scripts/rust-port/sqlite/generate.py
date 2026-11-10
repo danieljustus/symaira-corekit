@@ -43,6 +43,7 @@ def run(command: list[str], *, cwd: Path, env: dict | None = None,
         proc = subprocess.Popen(command, cwd=cwd, env=env, stdout=stdout,
                                 stderr=stderr, **options)
         expired = False
+        kill_denied: PermissionError | None = None
         try:
             try:
                 proc.wait(timeout=timeout)
@@ -54,6 +55,13 @@ def run(command: list[str], *, cwd: Path, env: dict | None = None,
                     os.killpg(proc.pid, signal.SIGKILL)
                 except ProcessLookupError:
                     pass
+                except PermissionError as exc:
+                    # macOS reports EPERM instead of ESRCH once the reaped group
+                    # leader's group holds no signalable process. That is a clean
+                    # exit, not a cleanup failure; on the timeout path an
+                    # unkillable group must still fail the run.
+                    if expired:
+                        kill_denied = exc
             elif expired:
                 # Native Windows execution remains a separate acceptance gate.
                 try:
@@ -65,6 +73,8 @@ def run(command: list[str], *, cwd: Path, env: dict | None = None,
                     proc.wait(timeout=10)
                     raise RuntimeError("Windows process-tree cleanup failed") from exc
             proc.wait(timeout=10)
+        if kill_denied is not None:
+            raise kill_denied
         if expired:
             raise TimeoutError(f"command exceeded {timeout}s: {command[0]}")
         for stream in (stdout, stderr):

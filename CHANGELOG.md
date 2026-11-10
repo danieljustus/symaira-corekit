@@ -9,6 +9,12 @@ The GitHub Releases page is the authoritative source for complete release notes.
 - Swift switches honor hidden labels; GUI review flags menu labels that should
   use `Image(symairaIcon:)` instead of `SymairaIconView` (#470).
 - Add tvOS 17 builds for SymairaTheme and SymairaKeychain, with CI coverage.
+- `symaira-core-fs` and `symaira-core-secretref` now require `rustix = "1.1.6"`
+  (caret range, locked to 1.1.6) instead of `=1.1.4`, so consumers that pull
+  these crates as Git dependencies can move their own workspace to newer 1.x
+  rustix releases (#463). The SQLite capture harness no longer fails a clean run
+  when macOS `killpg` returns `EPERM` after the child exited (#461). FS/SEC and
+  SQLite frozen evidence is re-captured natively for the new lockfile closure.
 - The Swift package directory is renamed from `appkit/` to `swift/`
   (ADR 0006 amendment). No consumer change: package identity, products,
   modules and the resource bundle name stay the same.
