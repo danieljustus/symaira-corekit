@@ -2,6 +2,24 @@
 
 The GitHub Releases page is the authoritative source for complete release notes.
 
+## v0.20.0 — 2026-11-10
+
+- **AppKit merged into CoreKit** ([ADR 0006](docs/adr/0006-appkit-merged-into-corekit.md)).
+  The complete `symaira-appkit` history now lives under `appkit/`; the Swift
+  package (`SymairaTheme`, `SymairaCLIRunner`, `SymairaToolKit`,
+  `SymairaKeychain`, `SymairaUpdateCheck`, `SymairaDaemonKit`,
+  `SymairaIngestContract`, `SymairaMCP`, `SymairaProviderKit`) is resolved from
+  the repository root `Package.swift`. Swift consumers pin
+  `https://github.com/danieljustus/symaira-corekit.git`, `exact: "0.20.0"`,
+  `package: "symaira-corekit"`; see `docs/migrations.md` and
+  `appkit/CHANGELOG.md`. The archived AppKit repository keeps its `0.1.0` to
+  `0.18.1` tags.
+- Swift contract tests read `contracts/*.json` directly (vendored copies
+  removed). New `swift.yml` workflow on the self-hosted Apple Silicon runner;
+  CodeQL also analyzes Swift. Root `make swift-build|swift-test|swift-lint|swift-format`.
+- PB-2026-09-09 revision 6 records the merge.
+- Rust crates: no API change; `rusqlite` 0.41.1 for RUSTSEC-2026-0459 (#464).
+
 ## v0.19.0 — 2026-11-02
 
 - **Go library retired from `main`** ([ADR 0005](docs/adr/0005-go-library-retirement.md)).

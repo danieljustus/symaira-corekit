@@ -1,16 +1,18 @@
 # Symaira AppKit
 
-> **Accepted product direction — implementation pending:** AppKit remains a separate shared Swift foundation. Brain owns the future credential-management UI; domain-specific views stay product-owned, not in AppKit. The optional Browse/Operate and credential UI transfers do not eliminate shared native foundations or change existing dependency pins. See [PB-2026-09-09](docs/product-boundaries.md).
+> **AppKit now lives in [`symaira-corekit`](../README.md)** ([ADR 0006](../docs/adr/0006-appkit-merged-into-corekit.md)). The former `symaira-appkit` repository is archived; its history is preserved here under `appkit/`.
+>
+> **Accepted product direction — implementation pending:** AppKit remains the shared Swift foundation. Brain owns the future credential-management UI; domain-specific views stay product-owned, not in AppKit. The optional Browse/Operate and credential UI transfers do not eliminate shared native foundations or change existing dependency pins. See [PB-2026-09-09](../docs/product-boundaries.md).
 
-[![CI](https://github.com/danieljustus/symaira-appkit/actions/workflows/ci.yml/badge.svg)](https://github.com/danieljustus/symaira-appkit/actions/workflows/ci.yml) [![Release](https://img.shields.io/github/v/release/danieljustus/symaira-appkit?label=Release)](https://github.com/danieljustus/symaira-appkit/releases/latest) [![Coverage](https://img.shields.io/badge/coverage-not%20published-lightgrey)](https://github.com/danieljustus/symaira-appkit/actions/workflows/ci.yml) [![License](https://img.shields.io/github/license/danieljustus/symaira-appkit)](LICENSE) [![Swift 6](https://img.shields.io/badge/swift-6.0-orange)](https://swift.org)
+[![Swift](https://github.com/danieljustus/symaira-corekit/actions/workflows/swift.yml/badge.svg)](https://github.com/danieljustus/symaira-corekit/actions/workflows/swift.yml) [![Release](https://img.shields.io/github/v/release/danieljustus/symaira-corekit?label=Release)](https://github.com/danieljustus/symaira-corekit/releases/latest) [![License](https://img.shields.io/github/license/danieljustus/symaira-corekit)](../LICENSE) [![Swift 6](https://img.shields.io/badge/swift-6.0-orange)](https://swift.org)
 
 ![Symaira AppKit social preview](docs/assets/social-preview.png)
 
-Shared Swift foundations for the macOS clients of the [Symaira](https://symaira.com) ecosystem — the GUI counterpart to [`symaira-corekit`](https://github.com/danieljustus/symaira-corekit).
+Shared Swift foundations for the macOS clients of the [Symaira](https://symaira.com) ecosystem — maintained in [`symaira-corekit`](../README.md) next to the Rust crates for the backends.
 
 Every Symaira app stays fully standalone: this package is consumed as a **pinned SPM dependency** (exact version), never as a required runtime service.
 
-## Why symaira-appkit
+## Why AppKit
 
 - **Zero third-party dependencies** — Foundation, SwiftUI and Security only; nothing extra to audit per app.
 - **One pinned dependency per app** — every client builds against the exact version it was released with; breaking changes are explicit, not accidental.
@@ -20,11 +22,18 @@ Every Symaira app stays fully standalone: this package is consumed as a **pinned
 
 ## Install
 
-Add the package as an exact-pinned dependency in the client app's `Package.swift`:
+Add the CoreKit package as an exact-pinned dependency in the client app's `Package.swift`
+and reference products from `package: "symaira-corekit"`:
 
 ```swift
-.package(url: "https://github.com/danieljustus/symaira-appkit.git", exact: "0.18.1")
+.package(url: "https://github.com/danieljustus/symaira-corekit.git", exact: "0.20.0")
 ```
+
+`.product(name: "SymairaTheme", package: "symaira-corekit")`. XcodeGen projects use
+`url: https://github.com/danieljustus/symaira-corekit.git` with `exactVersion: 0.20.0`.
+Migrating from `symaira-appkit`: switch URL, package name and version together, and copy
+`symaira-corekit_SymairaTheme.bundle` (formerly `symaira-appkit_SymairaTheme.bundle`) into
+packaged apps. See [`docs/migrations.md`](../docs/migrations.md) `v0.20.0`.
 
 ## Modules
 
@@ -91,14 +100,14 @@ import SymairaUpdateCheck
 
 let release = ReleaseInfo(
     tagName: "0.18.0",
-    htmlURL: "https://github.com/danieljustus/symaira-appkit/releases/tag/0.18.0"
+    htmlURL: "https://github.com/danieljustus/symaira-desktop/releases/tag/0.18.0"
 )
 let installURL = "/Applications/Symaira.app"
 let applier = UpdateApplier(
     checkInstallMethod: true,
     cosignConfig: CosignConfig(
-        repo: "danieljustus/symaira-appkit",
-        binaryName: "symaira-appkit",
+        repo: "danieljustus/symaira-desktop",
+        binaryName: "symdesk",
         identityRegexp: "https://github.com/danieljustus/"
     )
 )
@@ -162,7 +171,7 @@ settings window alongside other preferences. `SymairaSidebarToggle`,
 Product-specific screens and settings keys remain product-owned; release pins
 must be upgraded explicitly before other installed apps acquire these changes.
 
-Packaged apps must embed `symaira-appkit_SymairaTheme.bundle` in their Resources
+Packaged apps must embed `symaira-corekit_SymairaTheme.bundle` in their Resources
 directory. The shared font/shader resolver prefers that shipped bundle before
 SwiftPM's development fallback. Validate the actual app without the build-cache
 resource bundle; a file-presence check alone does not prove self-contained loading.
@@ -176,9 +185,9 @@ the `Font`/`Text` source changes and the separate simulator check.
 ## Build & Test
 
 ```bash
-make build
-make test
-make lint
+make swift-build   # from the repository root (or `make build` inside appkit/)
+make swift-test    # or `make test` inside appkit/
+make swift-lint    # or `make lint` inside appkit/
 ```
 
 The Makefile resolves a full Xcode toolchain and exports `DEVELOPER_DIR` for
@@ -200,4 +209,4 @@ macOS/iOS 26+ when built with a compatible SDK.
 
 ## License
 
-Apache-2.0
+Apache-2.0, see [LICENSE](../LICENSE).

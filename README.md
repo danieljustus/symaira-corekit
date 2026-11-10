@@ -1,6 +1,6 @@
 # Symaira CoreKit
 
-> **Accepted product direction — implementation pending:** CoreKit remains a separate backend-infrastructure library; AppKit remains a separate Swift foundation. Product consolidation does not move credential cryptography, browser engines, native automation or product-domain policy into shared libraries. Shared modules require real consumers and immutable, tested contracts. See [PB-2026-09-09](docs/product-boundaries.md).
+> **Accepted product direction — implementation pending:** CoreKit is the single shared-library repository: Rust crates for the backends and, since v0.20.0, the Swift AppKit package for the native clients ([ADR 0006](docs/adr/0006-appkit-merged-into-corekit.md)). Product consolidation does not move credential cryptography, browser engines, native automation or product-domain policy into shared libraries. Shared modules require real consumers and immutable, tested contracts. See [PB-2026-09-09](docs/product-boundaries.md).
 
 [![CI](https://github.com/danieljustus/symaira-corekit/actions/workflows/ci.yml/badge.svg)](https://github.com/danieljustus/symaira-corekit/actions/workflows/ci.yml)
 [![Latest release](https://img.shields.io/github/v/release/danieljustus/symaira-corekit)](https://github.com/danieljustus/symaira-corekit/releases)
@@ -8,7 +8,8 @@
 
 ![Symaira CoreKit social preview](docs/assets/social-preview.png)
 
-> Shared Rust crates for the Symaira backends. The Go library was retired from
+> Shared Rust crates for the Symaira backends and the shared Swift package
+> (AppKit, under [`appkit/`](appkit/README.md)) for the native clients. The Go library was retired from
 > `main` after **v0.18.3**; Go consumers keep their exact pins and Go fixes ship
 > only from the `release/v0.18` branch ([ADR 0005](docs/adr/0005-go-library-retirement.md)).
 
@@ -36,12 +37,21 @@ CoreKit is a shared backend library, not an iOS or Web application runtime.
 | --- | --- |
 | macOS arm64 | Native Rust workspace, frozen Go-free contracts, port contracts on PRs and `main` |
 | Linux amd64 | Native Rust workspace and the same applicable acceptance gates |
-| iOS / Web | Product integration scope; no dedicated CoreKit native CI lane |
+| macOS / iOS (Swift package) | `swift.yml`: build, tests, format, README examples on macOS; iOS Simulator build on `main` |
+| Web | Product integration scope; no dedicated CoreKit CI lane |
 | Windows / macOS Intel | Unsupported; no CI or release targets |
 
 ## Install
 
-Pin an exact revision in the consumer's `Cargo.toml` and commit `Cargo.lock`:
+**Swift (AppKit):** add the package as an exact-pinned SwiftPM dependency and
+reference products with `package: "symaira-corekit"`; see
+[`appkit/README.md`](appkit/README.md).
+
+```swift
+.package(url: "https://github.com/danieljustus/symaira-corekit.git", exact: "0.20.0")
+```
+
+**Rust:** pin an exact revision in the consumer's `Cargo.toml` and commit `Cargo.lock`:
 
 ```toml
 [dependencies]
@@ -65,6 +75,16 @@ symaira-core-log = { git = "https://github.com/danieljustus/symaira-corekit", re
 | `symaira-core-sqlite` | SQLite open/pragma/migration/locking contract |
 | `symaira-core-update` | Release check, archive extraction, checksum/Cosign verification, atomic apply with rollback |
 
+## Swift package (AppKit)
+
+The Swift package formerly developed as `symaira-appkit` lives under
+[`appkit/`](appkit/README.md): `SymairaTheme`, `SymairaCLIRunner`,
+`SymairaToolKit`, `SymairaKeychain`, `SymairaUpdateCheck`, `SymairaDaemonKit`,
+`SymairaIngestContract`, `SymairaMCP` and `SymairaProviderKit`, plus the shared
+GUI rules ([`appkit/GUIDELINES.md`](appkit/GUIDELINES.md),
+[`appkit/DESIGN.md`](appkit/DESIGN.md)). Its contract tests read the same
+`contracts/` fixtures as the Rust crates.
+
 The former Go-only packages `auditkit`, `evidencekit`, `domkit`,
 `vectorkit/turboquant` and `ollamakit` have no shared Rust crate: their
 contracts are consumer-local (see [`docs/rust-port/demand-assessment.md`](docs/rust-port/demand-assessment.md)).
@@ -78,9 +98,12 @@ make test               # cargo test --workspace --all-features --locked
 make lint               # cargo fmt --check + clippy -D warnings
 make rust-contracts     # complete Go-free native contract aggregate
 make rust-hardening     # nextest, doctests, cargo-hack, coverage, audit, deny
+make swift-test         # Swift package build + tests (needs a full Xcode)
+make swift-lint         # swift-format --strict over appkit/Sources and appkit/Tests
 ```
 
-No Go toolchain is required for any gate on `main`.
+No Go toolchain is required for any gate on `main`. The Swift targets resolve
+a full Xcode toolchain themselves (see [`appkit/README.md`](appkit/README.md)).
 
 ## Documentation
 
@@ -92,8 +115,10 @@ No Go toolchain is required for any gate on `main`.
 
 ## Versioning
 
-Rust consumers pin an exact Git revision. Repository tags after `v0.18.3` on
-`main` describe the Rust workspace; Go consumers stay on `v0.18.x`.
+Rust consumers pin an exact Git revision; Swift consumers pin an exact tag
+(`exact: "0.20.0"`, SwiftPM accepts the `v` prefix). Repository tags after
+`v0.18.3` on `main` describe the Rust workspace and, from `v0.20.0`, the Swift
+package; Go consumers stay on `v0.18.x`.
 
 Run `make consumer-drift` (or `scripts/consumer-drift.sh`) from this repo to run
 the consumer verifier and list the CoreKit Go pin of every sibling Symaira repo.

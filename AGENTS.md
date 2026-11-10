@@ -2,9 +2,9 @@
 
 ## Current product contract
 
-Read [PB-2026-09-09](docs/product-boundaries.md) before changing ownership or integration boundaries. It is the accepted target, not a completed migration. CoreKit remains a separate shared backend library; AppKit remains separate. Require two real consumers per shared module. No credential crypto, browser engine, native automation or product-domain policy belongs here merely to enable consolidation.
+Read [PB-2026-09-09](docs/product-boundaries.md) before changing ownership or integration boundaries. It is the accepted target, not a completed migration. CoreKit is the single shared-library repository; the former `symaira-appkit` Swift package lives under `appkit/` ([ADR 0006](docs/adr/0006-appkit-merged-into-corekit.md)). Require two real consumers per shared module. No credential crypto, browser engine, native automation or product-domain policy belongs here merely to enable consolidation.
 
-This repository is the public Apache-2.0 licensed shared library for Symaira public-core tools.
+This repository is the public Apache-2.0 licensed shared library for Symaira public-core tools (Rust crates) and native clients (Swift package).
 
 ## Ecosystem Guidance
 
@@ -15,9 +15,10 @@ This repository is the public Apache-2.0 licensed shared library for Symaira pub
 
 ## Repository Role
 
-- `main` is a Rust workspace. The Go library was retired after v0.18.3 ([ADR 0005](docs/adr/0005-go-library-retirement.md)): no Go library code, `go.mod` or Go CI on `main`. Go fixes for consumers that still import the Go module (`symvault`, `symdesk`, `symbrain` until their Rust-only cutovers) land only on branch `release/v0.18` as `v0.18.N` tags.
+- `main` is a Rust workspace plus the Swift package under `appkit/`. The Go library was retired after v0.18.3 ([ADR 0005](docs/adr/0005-go-library-retirement.md)): no Go library code, `go.mod` or Go CI on `main`. Go fixes for consumers that still import the Go module (`symvault`, `symdesk`, `symbrain` until their Rust-only cutovers) land only on branch `release/v0.18` as `v0.18.N` tags.
 - Crates under `rust/`: `symaira-core-exit`, `-version`, `-env`, `-log`, `-config`, `-fs`, `-secretref`, `-mcp`, `-mcpcfg`, `-llm`, `-sqlite`, `-update`. Language-neutral contracts live in `contracts/`; `llmkit/providers.json` is generated from `contracts/llm_providers.json` by `scripts/rust-port/llm_providers_gen.py`.
-- Every crate must be independently usable and testable.
+- Swift package (AppKit): sources, tests, scripts and GUI rules under `appkit/`; `Package.swift` at the repository root (SwiftPM resolves remote packages only there). Read [`appkit/AGENTS.md`](appkit/AGENTS.md) before Swift or GUI work.
+- Every crate and Swift module must be independently usable and testable.
 - Preserve standalone-first behavior for every consumer. Corekit may provide reusable helpers and conventions, but it must never make any public tool require another Symaira tool at build time or startup.
 
 ## Build & Test
@@ -27,6 +28,8 @@ make build              # cargo build --workspace --all-targets --locked
 make test               # cargo test --workspace --all-features --locked
 make lint               # cargo fmt --check + clippy -D warnings
 make rust-contracts     # Go-free native contract aggregate
+make swift-test         # Swift package build + tests (full Xcode required)
+make swift-lint         # swift-format --strict
 ```
 
 No gate may require a Go toolchain. Frozen Go fixture provenance reads retired Go sources from the immutable `v0.18.3` commit (`scripts/rust-port/retired_go.py`); keep the hash-bound oracle harness under `scripts/rust-port/` byte-identical.
@@ -39,8 +42,8 @@ No gate may require a Go toolchain. Frozen Go fixture provenance reads retired G
 - **No tool-specific business logic**: No vault crypto, no memory PII rules, no seek ranking, no fetch fingerprinting, no scope port scanning.
 - **No cross-tool coupling**: Do not depend on `symaira-vault`, `symaira-memory`, `symaira-seek`, `symaira-fetch`, `symaira-scope`, or any of their internal modules. Optional integrations must remain runtime contracts implemented by consumers.
 - **Cross-language conventions**: CoreKit's Rust crates share conventions (exit codes, XDG paths, env var naming, MCP stdio framing, zero stdout pollution) that also guide the Swift and Python free tools. See `docs/cross-language-conventions.md`.
-- **Exact pins**: Rust consumers pin a full 40-character Git revision plus `Cargo.lock` ([ADR 0002](docs/adr/0002-rust-distribution-git-pins.md)); crates stay `publish = false`.
-- **GUI handshake contract (`symaira-core-version`)**: every core's `version --json` subcommand must emit the `Info` payload (`{tool, version, schema_version}`). symaira-appkit's `SymairaToolKit` performs its schema handshake against exactly these field names — never rename them. Bump the tool's `schema_version` whenever its machine-readable JSON output changes incompatibly. The plain `version` output should stay "tool vX.Y.Z" so appkit's fallback parser keeps working.
+- **Exact pins**: Rust consumers pin a full 40-character Git revision plus `Cargo.lock` ([ADR 0002](docs/adr/0002-rust-distribution-git-pins.md)); crates stay `publish = false`. Swift consumers pin an exact tag (`.package(url: "https://github.com/danieljustus/symaira-corekit.git", exact: "X.Y.Z")`, products from `package: "symaira-corekit"`).
+- **GUI handshake contract (`symaira-core-version`)**: every core's `version --json` subcommand must emit the `Info` payload (`{tool, version, schema_version}`). the Swift package's `SymairaToolKit` (`appkit/`) performs its schema handshake against exactly these field names — never rename them. Bump the tool's `schema_version` whenever its machine-readable JSON output changes incompatibly. The plain `version` output should stay "tool vX.Y.Z" so appkit's fallback parser keeps working.
 
 ## Consumer Bump Ownership
 

@@ -187,8 +187,8 @@ ensure consistent behavior regardless of implementation language.
 - **Go (retired, `v0.18.x` only)** — `corekit/updatecheck` (`Checker.Check`, `Applier.Apply`)
   and `updatecheck/{updateapply,cosign,extract,installmethod}/` at `release/v0.18`
 
-- **Swift** — `symaira-appkit/SymairaUpdateCheck/UpdateChecker.swift`
-  Repository: `danieljustus/symaira-appkit`, target `SymairaUpdateCheck`
+- **Swift** — `appkit/Sources/SymairaUpdateCheck/UpdateChecker.swift`
+  Repository: `danieljustus/symaira-corekit` (formerly `symaira-appkit`, ADR 0006), target `SymairaUpdateCheck`
   Documents itself as a Swift port of `corekit/updatecheck`.
 
 ## Version Source

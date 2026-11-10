@@ -10,6 +10,27 @@ also preserve historical removals, including `embedkit` in v0.12.0; those
 require migration. Otherwise "check" means a new capability to adopt or a
 behavior change worth confirming.
 
+## v0.20.0
+
+- **Swift consumers of the former `symaira-appkit`:** the package now lives in
+  CoreKit (ADR 0006). In one change per consumer:
+  - `Package.swift`: `.package(url: "https://github.com/danieljustus/symaira-corekit.git", exact: "0.20.0")`
+    and `.product(name: "<Product>", package: "symaira-corekit")`.
+  - XcodeGen `project.yml`: package key `symaira-corekit`,
+    `url: https://github.com/danieljustus/symaira-corekit.git`,
+    `exactVersion: 0.20.0`, and `package: symaira-corekit` in every dependency.
+  - Packaging scripts: copy `symaira-corekit_SymairaTheme.bundle` instead of
+    `symaira-appkit_SymairaTheme.bundle`.
+  - Review `appkit/CHANGELOG.md` for every AppKit release between the old pin
+    and 0.18.1; 0.20.0 has no Swift source change beyond the bundle name.
+  - Pins at the time of the merge: Brain, Learning, EraseMe 0.18.1; HQ 0.18.0;
+    Cockpit 0.17.1 (tuning XcodeGen 0.15.1); Brain scope/operate 0.15.1;
+    Watch 0.14.2; Desktop and its room/meet packages 0.14.0 (meet XcodeGen
+    0.7.0, ingest client 0.2.0); Vault client 0.10.0.
+- Rust consumers: no API change. `symaira-core-sqlite` uses `rusqlite` 0.41.1
+  (RUSTSEC-2026-0459). Cargo now also fetches the `appkit/` sources with the
+  Git dependency; nothing else changes.
+
 ## v0.19.0
 
 - The Go module is no longer developed on `main`. Go consumers: stay on

@@ -1,16 +1,26 @@
-name: CI
+# Swift package CI (appkit/ sources, manifest at the repository root; ADR 0006).
+# Runs on the self-hosted Apple Silicon runner because the package needs a full
+# Xcode 26+ toolchain. Fork pull requests never reach the self-hosted runner.
+name: Swift
 
 permissions: read-all
 
 on:
   push:
     branches: [main]
-    paths-ignore:
-      - 'docs/**'
-      - '**.md'
-      - 'LICENSE'
-      - '.github/ISSUE_TEMPLATE/**'
+    paths:
+      - 'Package.swift'
+      - 'appkit/**'
+      - '!appkit/**.md'
+      - 'contracts/**'
+      - '.github/workflows/swift.yml'
   pull_request:
+    paths:
+      - 'Package.swift'
+      - 'appkit/**'
+      - '!appkit/**.md'
+      - 'contracts/**'
+      - '.github/workflows/swift.yml'
   schedule:
     - cron: '37 5 * * 1'  # weekly Monday 05:37 UTC — full suite incl. tests
 
@@ -24,7 +34,8 @@ env:
 
 jobs:
   test:
-    runs-on: [self-hosted, macOS, ARM64, macbook-appkit]  # supported self-hosted runner
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: [self-hosted, macOS, ARM64, macbook-corekit]  # supported self-hosted runner
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -35,26 +46,26 @@ jobs:
         # Minimum Xcode 26 supplies the required Swift 6.2 compatibility coverage.
         # Select the newest installed full Xcode without changing machine state.
         run: |
-          XCODE="$(env -u DEVELOPER_DIR python3 scripts/select_xcode.py --minimum 26.0)"
+          XCODE="$(env -u DEVELOPER_DIR python3 appkit/scripts/select_xcode.py --minimum 26.0)"
           echo "DEVELOPER_DIR=$XCODE" >> "$GITHUB_ENV"
           DEVELOPER_DIR="$XCODE" xcodebuild -version
       - name: Regression-test Xcode selection
-        run: python3 scripts/test_select_xcode.py
+        run: python3 appkit/scripts/test_select_xcode.py
       - name: Regression-test stale build description cleanup
-        run: python3 scripts/test_drop_stale_build_description.py
+        run: python3 appkit/scripts/test_drop_stale_build_description.py
       - name: Regression-test formatter discovery
-        run: make test-make
+        run: make -C appkit test-make
       - name: Self-test the GUI guidelines review
-        run: python3 -I scripts/gui-review.py --self-test
+        run: python3 -I appkit/scripts/gui-review.py --self-test
       - name: Check Swift formatting
-        run: make lint
+        run: make -C appkit lint
       - name: Swift version
         run: swift --version
       - name: Verify approved icon family
-        run: python3 scripts/verify-approved-icon.py
+        run: python3 appkit/scripts/verify-approved-icon.py
       - name: Drop stale Metal toolchain build description
         # The persistent .build keeps the pre-reboot Metal cryptex path (#182).
-        run: python3 scripts/drop_stale_build_description.py
+        run: python3 appkit/scripts/drop_stale_build_description.py
       - name: Build
         # Scale parallelism by RAM: Mini (8GB) needs -j2, MacBook (24GB) can do more
         run: |
@@ -71,11 +82,11 @@ jobs:
           if [ "$MEM_GB" -le 8 ]; then JOBS=2; elif [ "$MEM_GB" -le 16 ]; then JOBS=4; else JOBS=6; fi
           swift test --manifest-cache local -v -j "$JOBS"
       - name: Verify README examples
-        run: python3 scripts/check-readme.py
+        run: python3 appkit/scripts/check-readme.py
 
   swift-62-build:
     if: github.event_name != 'pull_request'  # additional Swift 6.2 coverage runs on main and the weekly safety net
-    runs-on: [self-hosted, macOS, ARM64, macbook-appkit]  # supported self-hosted runner
+    runs-on: [self-hosted, macOS, ARM64, macbook-corekit]  # supported self-hosted runner
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -83,14 +94,14 @@ jobs:
       - name: Select supported Xcode
         # Xcode 26 supplies the Swift 6.2 toolchain covered by this build.
         run: |
-          XCODE="$(env -u DEVELOPER_DIR python3 scripts/select_xcode.py --minimum 26.0)"
+          XCODE="$(env -u DEVELOPER_DIR python3 appkit/scripts/select_xcode.py --minimum 26.0)"
           echo "DEVELOPER_DIR=$XCODE" >> "$GITHUB_ENV"
           DEVELOPER_DIR="$XCODE" xcodebuild -version
       - name: Swift version
         run: swift --version
       - name: Drop stale Metal toolchain build description
         # The persistent .build keeps the pre-reboot Metal cryptex path (#182).
-        run: python3 scripts/drop_stale_build_description.py
+        run: python3 appkit/scripts/drop_stale_build_description.py
       - name: Build (Swift 6.2+)
         run: |
           MEM_GB=$(($(sysctl -n hw.memsize) / 1073741824))
@@ -103,7 +114,7 @@ jobs:
   # the macOS jobs. Build-only: `swift build --sdk` needs no code signing.
   ios-build:
     if: github.event_name != 'pull_request'  # full iOS compatibility coverage runs on main and the weekly safety net
-    runs-on: [self-hosted, macOS, ARM64, macbook-appkit]  # supported self-hosted runner
+    runs-on: [self-hosted, macOS, ARM64, macbook-corekit]  # supported self-hosted runner
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -112,7 +123,7 @@ jobs:
       - name: Select supported Xcode
         # Ignore any stale runner-level selection; direct explicit selections fail closed.
         run: |
-          XCODE="$(env -u DEVELOPER_DIR python3 scripts/select_xcode.py --minimum 26.0)"
+          XCODE="$(env -u DEVELOPER_DIR python3 appkit/scripts/select_xcode.py --minimum 26.0)"
           echo "DEVELOPER_DIR=$XCODE" >> "$GITHUB_ENV"
           DEVELOPER_DIR="$XCODE" xcodebuild -version
       - name: Swift version
@@ -130,7 +141,7 @@ jobs:
           fi
       - name: Drop stale Metal toolchain build description
         # The persistent .build keeps the pre-reboot Metal cryptex path (#182).
-        run: python3 scripts/drop_stale_build_description.py
+        run: python3 appkit/scripts/drop_stale_build_description.py
       - name: Build (iOS Simulator)
         # Scale parallelism by RAM: Mini (8GB) needs -j2, MacBook (24GB) can do more
         run: |

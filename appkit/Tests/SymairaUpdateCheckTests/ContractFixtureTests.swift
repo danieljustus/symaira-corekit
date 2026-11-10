@@ -38,6 +38,7 @@ final class UpdateCheckContractFixtureTests: XCTestCase {
             .deletingLastPathComponent()  // ContractFixtureTests.swift
             .deletingLastPathComponent()  // SymairaUpdateCheckTests
             .deletingLastPathComponent()  // Tests
+            .deletingLastPathComponent()  // appkit
             .appendingPathComponent("contracts/update_check_invariants.json")
         let data = try Data(contentsOf: url)
         return try JSONDecoder().decode(Fixture.self, from: data)

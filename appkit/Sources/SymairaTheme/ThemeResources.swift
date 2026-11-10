@@ -7,6 +7,6 @@ enum SymairaThemeResources {
     static let bundle = packagedBundle(in: Bundle.main.resourceURL) ?? Bundle.module
 
     static func packagedBundle(in directory: URL?) -> Bundle? {
-        directory.flatMap { Bundle(url: $0.appendingPathComponent("symaira-appkit_SymairaTheme.bundle")) }
+        directory.flatMap { Bundle(url: $0.appendingPathComponent("symaira-corekit_SymairaTheme.bundle")) }
     }
 }

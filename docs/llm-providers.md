@@ -7,7 +7,7 @@ consumer-side wiring guide and the credential/logging rulebook.
 **Single source of truth:** the shared descriptor data in
 `corekit/contracts/llm_providers.json`. It is consumed by the Rust crate
 `symaira-core-llm` (through the generated `llmkit/providers.json`) and by
-`symaira-appkit/SymairaProviderKit` (Swift). The Go `llmkit` package was
+`SymairaProviderKit` (Swift, `appkit/` in this repository). The Go `llmkit` package was
 retired from `main` after v0.18.3 and stays available to Go consumers at
 `v0.18.x`. New provider code in a consumer repository is a convention
 violation — file an issue against corekit instead.
@@ -26,13 +26,13 @@ your tool's TOML config under e.g. `provider_credential`, never a key.
 
 ## Swift consumers: wiring SymairaProviderKit
 
-`SymairaProviderKit` in symaira-appkit mirrors the same descriptor registry.
-It vendors `contracts/llm_providers.json` at the pinned corekit revision (same
-mechanism as the other cross-language fixtures, see
-`contracts/README.md` § Compatibility policy). Provider pickers, defaults, and
-capability gating in Swift clients read that vendored copy; credentials resolve
-through the Keychain broker (`keychain://service/account`). On a corekit bump,
-re-vendor the descriptor data deliberately and run appkit's fixture tests.
+`SymairaProviderKit` (`appkit/Sources/SymairaProviderKit`) mirrors the same
+descriptor registry. It bundles a copy of `contracts/llm_providers.json` as a
+resource, and its contract test asserts that copy equals the canonical file in
+this repository. Provider pickers, defaults, and capability gating in Swift
+clients read the bundled copy; credentials resolve through the Keychain broker
+(`keychain://service/account`). Swift clients receive descriptor changes by
+raising their exact CoreKit pin.
 
 ## Staying in sync
 
@@ -43,7 +43,8 @@ Both halves read one JSON source. The rules:
 2. Regenerate: `python3 scripts/rust-port/llm_providers_gen.py`.
 3. Run `make rust-llm-contract` — the drift gate and `con_008` cover every
    new descriptor automatically.
-4. Vendor the updated file into appkit at bump time.
+4. Copy it to `appkit/Sources/SymairaProviderKit/Resources/` and run
+   `make swift-test`; the Swift contract test fails on any drift.
 
 Field renames are breaking changes to the fixture schema (see
 `contracts/README.md`); additive fields are minor.

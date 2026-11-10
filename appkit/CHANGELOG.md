@@ -5,7 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+Since 0.20.0 the Swift package is released from `symaira-corekit` together with
+the Rust crates (one tag series, `vX.Y.Z`; ADR 0006). Entries up to 0.18.1 are
+the releases of the former `symaira-appkit` repository.
+
 ## [Unreleased]
+
+## [0.20.0] - 2026-11-10
+
+### Breaking
+- The package moved into `symaira-corekit` (ADR 0006). Depend on
+  `https://github.com/danieljustus/symaira-corekit.git` with `exact: "0.20.0"`
+  and reference products with `package: "symaira-corekit"`. Product and module
+  names are unchanged; there are no source changes since 0.18.1.
+- The `SymairaTheme` resource bundle is now
+  `symaira-corekit_SymairaTheme.bundle`. Packaged apps must embed it under that
+  name; `SymairaThemeResources` looks it up in `Contents/Resources`.
+
+### Changed
+- Contract tests read the canonical CoreKit `contracts/*.json` directly; the
+  vendored `contracts/` copies are gone.
+- CI runs in CoreKit's `swift.yml`; the root `Makefile` gains `swift-build`,
+  `swift-test`, `swift-lint` and `swift-format`.
 
 ## [0.18.1] - 2026-10-29
 

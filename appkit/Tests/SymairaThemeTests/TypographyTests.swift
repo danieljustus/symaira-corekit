@@ -123,7 +123,7 @@ final class TypographyTests: XCTestCase {
         let resources = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: resources, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: resources) }
-        let shipped = resources.appendingPathComponent("symaira-appkit_SymairaTheme.bundle")
+        let shipped = resources.appendingPathComponent("symaira-corekit_SymairaTheme.bundle")
         try FileManager.default.copyItem(at: Bundle.module.bundleURL, to: shipped)
         let resolved = try XCTUnwrap(SymairaThemeResources.packagedBundle(in: resources))
         XCTAssertEqual(resolved.bundleURL.standardizedFileURL, shipped.standardizedFileURL)

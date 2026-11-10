@@ -11,7 +11,8 @@ import tempfile
 from pathlib import Path
 
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[1]  # appkit/: README and CHANGELOG
+PACKAGE_ROOT = ROOT.parent  # repository root: Package.swift
 README = ROOT / "README.md"
 CHANGELOG = ROOT / "CHANGELOG.md"
 
@@ -31,7 +32,7 @@ def readme_pin(readme: str) -> str:
 
 
 def swift_package_manifest() -> str:
-    package_path = ROOT.as_posix().replace('\\', '\\\\').replace('"', '\\"')
+    package_path = PACKAGE_ROOT.as_posix().replace('\\', '\\\\').replace('"', '\\"')
     return f'''// swift-tools-version: 6.0
 import PackageDescription
 
@@ -39,23 +40,23 @@ let package = Package(
     name: "READMEExamples",
     platforms: [.macOS(.v14)],
     dependencies: [
-        .package(name: "symaira-appkit", path: "{package_path}"),
+        .package(name: "symaira-corekit", path: "{package_path}"),
     ],
     targets: [
         .executableTarget(
             name: "ToolKitExample",
             dependencies: [
-                .product(name: "SymairaCLIRunner", package: "symaira-appkit"),
-                .product(name: "SymairaToolKit", package: "symaira-appkit"),
+                .product(name: "SymairaCLIRunner", package: "symaira-corekit"),
+                .product(name: "SymairaToolKit", package: "symaira-corekit"),
             ]
         ),
         .executableTarget(
             name: "UpdateCheckExample",
-            dependencies: [.product(name: "SymairaUpdateCheck", package: "symaira-appkit")]
+            dependencies: [.product(name: "SymairaUpdateCheck", package: "symaira-corekit")]
         ),
         .executableTarget(
             name: "ThemeExample",
-            dependencies: [.product(name: "SymairaTheme", package: "symaira-appkit")]
+            dependencies: [.product(name: "SymairaTheme", package: "symaira-corekit")]
         ),
     ]
 )

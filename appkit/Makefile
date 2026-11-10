@@ -1,4 +1,8 @@
-# Symaira AppKit — build/test entrypoints.
+# Symaira CoreKit Swift package (appkit/) — build/test entrypoints.
+#
+# The manifest lives at the repository root (SwiftPM resolves remote packages
+# only from there), so swift commands run with --package-path pointing at it.
+# The root Makefile delegates its swift-* targets here.
 #
 # Command Line Tools ship no XCTest and no SwiftUI macro plugins, so a bare
 # `swift build` fails whenever xcode-select points at
@@ -10,6 +14,7 @@
 # path if it is a real Xcode, then Xcode.app, then Xcode-beta.app.
 
 SWIFT ?= swift
+PACKAGE_PATH ?= ..
 
 XCODE_DIR := $(shell \
 	if [ -n "$$DEVELOPER_DIR" ]; then \
@@ -47,11 +52,11 @@ toolchain:
 
 ## build: Build all library targets
 build: toolchain
-	$(SWIFT) build
+	$(SWIFT) build --package-path $(PACKAGE_PATH)
 
 ## test: Run Makefile regressions and the Swift suite (needs full Xcode)
 test: toolchain test-make
-	$(SWIFT) test
+	$(SWIFT) test --package-path $(PACKAGE_PATH)
 
 ## test-make: Verify formatter discovery and failure propagation
 test-make:
