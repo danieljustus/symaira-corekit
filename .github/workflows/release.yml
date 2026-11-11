@@ -4,8 +4,8 @@
 # assets to build or sign. Rust consumers pin an exact Git revision plus
 # Cargo.lock (ADR 0002); crates are not published. Every `v*` tag push creates
 # the GitHub Release with generated notes after the Rust test gate on the
-# tagged commit passes. The retired Go module's patch releases come only from
-# the release/v0.18 branch, whose own workflow keeps the Go gate.
+# tagged commit passes. The retired Go module has no further releases; v0.18.3
+# is final.
 
 name: Release
 

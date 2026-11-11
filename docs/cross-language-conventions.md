@@ -185,7 +185,7 @@ ensure consistent behavior regardless of implementation language.
   Repository: `danieljustus/symaira-corekit`, crate `rust/symaira-core-update/`
 
 - **Go (retired, `v0.18.x` only)** — `corekit/updatecheck` (`Checker.Check`, `Applier.Apply`)
-  and `updatecheck/{updateapply,cosign,extract,installmethod}/` at `release/v0.18`
+  and `updatecheck/{updateapply,cosign,extract,installmethod}/` at tag `v0.18.3`
 
 - **Swift** — `swift/Sources/SymairaUpdateCheck/UpdateChecker.swift`
   Repository: `danieljustus/symaira-corekit` (formerly `symaira-appkit`, ADR 0006), target `SymairaUpdateCheck`

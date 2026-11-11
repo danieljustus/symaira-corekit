@@ -55,5 +55,15 @@ blocking the Rust-only CoreKit.
 
 ## Rollback
 
-Restore Go on `main` with `git revert` of the retirement commit; `v0.18.3` and
-`release/v0.18` remain the reference implementation in the meantime.
+Restore Go on `main` with `git revert` of the retirement commit; `v0.18.3`
+remains the reference implementation in the meantime.
+
+## Amendment (2026-11-10): maintenance line ended
+
+The maintainer ended the Go maintenance line. Branch `release/v0.18` was
+deleted after it had produced no release beyond `v0.18.3`; its two commits
+after that tag only adjusted its own CI and README. `v0.18.3` is the final Go
+release. Consumers that still import the Go module stay on that tag until
+their Rust-only cutover. A live Go recapture, if ever needed again, starts
+from a branch created at tag `v0.18.3`; frozen provenance on `main` already
+resolves from that tag (`scripts/rust-port/retired_go.py`).

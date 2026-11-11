@@ -10,8 +10,8 @@
 
 > Shared Rust crates for the Symaira backends and the shared Swift package
 > (AppKit, under [`swift/`](swift/README.md)) for the native clients. The Go library was retired from
-> `main` after **v0.18.3**; Go consumers keep their exact pins and Go fixes ship
-> only from the `release/v0.18` branch ([ADR 0005](docs/adr/0005-go-library-retirement.md)).
+> `main` after **v0.18.3**, the final Go release; Go consumers keep that exact pin
+> ([ADR 0005](docs/adr/0005-go-library-retirement.md)).
 
 **Status:** pre-1.0 — see [CHANGELOG.md](CHANGELOG.md).
 

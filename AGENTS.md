@@ -15,7 +15,7 @@ This repository is the public Apache-2.0 licensed shared library for Symaira pub
 
 ## Repository Role
 
-- `main` is a Rust workspace plus the Swift package under `swift/`. The Go library was retired after v0.18.3 ([ADR 0005](docs/adr/0005-go-library-retirement.md)): no Go library code, `go.mod` or Go CI on `main`. Go fixes for consumers that still import the Go module (`symvault`, `symdesk`, `symbrain` until their Rust-only cutovers) land only on branch `release/v0.18` as `v0.18.N` tags.
+- `main` is a Rust workspace plus the Swift package under `swift/`. The Go library was retired after v0.18.3 ([ADR 0005](docs/adr/0005-go-library-retirement.md)): no Go library code, `go.mod` or Go CI on `main`. The Go maintenance branch `release/v0.18` was deleted on 2026-11-10: `v0.18.3` is the final Go release, and consumers that still import the Go module (`symvault`, `symdesk`, `symbrain` until their Rust-only cutovers) stay on that tag.
 - Crates under `rust/`: `symaira-core-exit`, `-version`, `-env`, `-log`, `-config`, `-fs`, `-secretref`, `-mcp`, `-mcpcfg`, `-llm`, `-sqlite`, `-update`. Language-neutral contracts live in `contracts/`; `llmkit/providers.json` is generated from `contracts/llm_providers.json` by `scripts/rust-port/llm_providers_gen.py`.
 - Swift package (AppKit): sources, tests, scripts and GUI rules under `swift/`; `Package.swift` at the repository root (SwiftPM resolves remote packages only there). Read [`swift/AGENTS.md`](swift/AGENTS.md) before Swift or GUI work.
 - Every crate and Swift module must be independently usable and testable.
@@ -56,8 +56,8 @@ behind when nobody owned it.
 - **Who bumps:** the corekit maintainer (@danieljustus) bumps every listed
   consumer's pin, one change per consumer, verified by that consumer's own
   test suite.
-- **Trigger:** within two weeks of a corekit release (or a `release/v0.18`
-  Go patch), or immediately before cutting a consumer's own release —
+- **Trigger:** within two weeks of a corekit release, or immediately before
+  cutting a consumer's own release —
   whichever comes first.
 - **Follow-up mechanism:** `make consumer-drift` runs
   `port/consumer/verify.py` against every record in `docs/consumers.json` and

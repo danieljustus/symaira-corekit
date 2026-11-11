@@ -21,8 +21,8 @@ validation. PR and `main` native matrices cover Linux and Apple Silicon macOS.
 Windows and macOS Intel are unsupported and have no CI or release targets.
 Run the affected `rust-*-contract` Make targets before pushing Rust changes.
 
-Go fixes for consumers that still import the Go module land only on the
-`release/v0.18` branch, with that branch's own Go gates.
+The Go module is no longer maintained: `v0.18.3` is its final release, and
+the `release/v0.18` maintenance branch has been removed.
 
 ## Releasing
 

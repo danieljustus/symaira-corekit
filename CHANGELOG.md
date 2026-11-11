@@ -2,6 +2,11 @@
 
 The GitHub Releases page is the authoritative source for complete release notes.
 
+## Unreleased
+
+- The Go maintenance branch `release/v0.18` is removed; `v0.18.3` is the
+  final Go release (ADR 0005 amendment).
+
 ## v0.21.0 — 2026-11-10
 
 - Swift shared icons add `operate`, `restart`, `memory`, `battery`,
