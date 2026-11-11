@@ -133,6 +133,7 @@ final class SelectionControlsTests: XCTestCase {
         XCTAssertEqual(SymairaTheme.raisedOutline(for: .dark), .clear)
     }
 
+    #if os(macOS)
     func testSecondaryButtonOnLightCanvasDrawsItsOutline() throws {
         let host = ThemeRenderHost.render(
             // No label: anti-aliased glyph edges would otherwise pass for an outline.
@@ -156,6 +157,7 @@ final class SelectionControlsTests: XCTestCase {
         }
         XCTAssertGreaterThan(outlined, 100, "secondary button has no visible edge on the light canvas")
     }
+    #endif
 
     private enum Profile: Hashable { case system, cool, max }
 

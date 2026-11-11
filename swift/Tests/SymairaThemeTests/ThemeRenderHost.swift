@@ -1,13 +1,19 @@
-import AppKit
 import SwiftUI
 
-/// Renders a SwiftUI view in an offscreen AppKit window so its body is
+#if os(macOS)
+import AppKit
+#elseif canImport(UIKit)
+import UIKit
+#endif
+
+/// Renders a SwiftUI view in an offscreen window so its body is
 /// evaluated with a live environment — Canvas closures run, `@Environment`
 /// reads resolve, button styles execute `makeBody`, and layout/drawing pass
 /// actually happen. This is how the Symaira design-system components are
 /// exercised without a third-party inspection library (issue #48).
 @MainActor
 enum ThemeRenderHost {
+    #if os(macOS)
     /// Windows are retained for the lifetime of the test process so the
     /// rendered views stay attached and keep their render state.
     private static var retainedWindows: [NSWindow] = []
@@ -33,4 +39,25 @@ enum ThemeRenderHost {
         retainedWindows.append(window)
         return hosting
     }
+    #elseif canImport(UIKit)
+    /// Windows are retained for the lifetime of the test process so the
+    /// rendered views stay attached and keep their render state.
+    private static var retainedWindows: [UIWindow] = []
+
+    @discardableResult
+    static func render<V: View>(
+        _ view: V,
+        size: CGSize = CGSize(width: 480, height: 360)
+    ) -> UIView {
+        let controller = UIHostingController(rootView: view)
+        let window = UIWindow(frame: CGRect(origin: .zero, size: size))
+        window.rootViewController = controller
+        window.isHidden = false
+        controller.view.frame = window.bounds
+        controller.view.setNeedsLayout()
+        controller.view.layoutIfNeeded()
+        retainedWindows.append(window)
+        return controller.view
+    }
+    #endif
 }

@@ -1,3 +1,5 @@
+// CLIRunner is macOS-only.
+#if os(macOS)
 import XCTest
 
 @testable import SymairaCLIRunner
@@ -328,3 +330,4 @@ final class CLIRunnerTests: XCTestCase {
             CLIRunner.augmentedPATHPrefix)
     }
 }
+#endif

@@ -49,6 +49,7 @@ final class SymingestRulesContractTests: XCTestCase {
         }
     }
 
+    #if os(macOS)
     func testMissingBinaryFailsClearly() async {
         let locator = BinaryLocator(searchPATH: "", extraDirectories: [])
         let client = SymingestRulesClient(locator: locator)
@@ -59,6 +60,7 @@ final class SymingestRulesContractTests: XCTestCase {
             XCTAssertEqual(error as? SymingestRulesError, .missingBinary)
         }
     }
+    #endif
 
     func testMailAccountStableIDAndPasswordSecretKind() {
         let account = MailAccount(
@@ -355,6 +357,8 @@ final class SymingestRulesContractTests: XCTestCase {
         XCTAssertTrue(mail.accounts.isEmpty)
     }
 
+    // The symingest clients are macOS-only.
+    #if os(macOS)
     // MARK: - Client command construction (fake symingest binary)
 
     private var tempDirectories: [URL] = []
@@ -563,4 +567,5 @@ final class SymingestRulesContractTests: XCTestCase {
         XCTAssertEqual(
             try readLastArgs(from: dir), ["mail", "--json", "--config", "/tmp/config.toml", "delete", "acct-1"])
     }
+    #endif
 }

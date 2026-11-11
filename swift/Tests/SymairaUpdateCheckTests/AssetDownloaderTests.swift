@@ -1,3 +1,5 @@
+// AssetDownloader is macOS-only.
+#if os(macOS)
 import CryptoKit
 import XCTest
 
@@ -220,3 +222,4 @@ final class AssetDownloaderTests: XCTestCase {
         XCTAssertEqual(progressBox.lastWritten, Int64(body.count))
     }
 }
+#endif

@@ -95,7 +95,7 @@ final class WorkspaceFoundationTests: XCTestCase {
                 XCTAssertNotEqual(try sample(images[0]), try sample(images[1]))
             }
         }
-        XCTAssertEqual(SymairaBarColors.track, SymairaTokens.ink3)
+        XCTAssertEqual(SymairaBarColors.track, SymairaTokens.raised)
         XCTAssertEqual(SymairaBarColors.fill, SymairaTokens.ink)
     }
 

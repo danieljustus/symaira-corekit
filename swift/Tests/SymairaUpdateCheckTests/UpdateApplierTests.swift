@@ -1,3 +1,5 @@
+// UpdateApplier, its streaming client and SubprocessRunner are macOS-only.
+#if os(macOS)
 import CryptoKit
 import XCTest
 
@@ -2061,3 +2063,4 @@ final class UpdateApplierTests: XCTestCase {
         XCTAssertEqual(result.exitCode, 0)
     }
 }
+#endif

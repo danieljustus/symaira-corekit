@@ -159,11 +159,37 @@ public struct SymairaTopoView: View {
     public var body: some View {
         #if os(macOS)
         TopoMacRenderer(model: model, animationEnabled: animationEnabled)
+        #elseif canImport(UIKit)
+        TopoUIKitRenderer(model: model, animationEnabled: animationEnabled)
         #else
         TopoSwiftUIRenderer(model: model, animationEnabled: animationEnabled)
         #endif
     }
 }
+
+#if canImport(UIKit)
+/// iOS/tvOS: the native Metal surface; `scenePhase` is the visibility signal.
+/// The body reads no observed model property, so neither frames nor scroll-time
+/// geometry updates (`model.rects`) re-evaluate it; the surface observes those
+/// itself and redraws natively.
+private struct TopoUIKitRenderer: View {
+    let model: SymairaTopoModel
+    let animationEnabled: Bool
+    @Environment(\.colorScheme) private var scheme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.scenePhase) private var scenePhase
+    var body: some View {
+        GeometryReader { geo in
+            TopoMetalSurface(
+                model: model, origin: geo.frame(in: .named(SymairaTopo.space)).origin, scheme: scheme,
+                still: reduceMotion || !animationEnabled, visible: scenePhase != .background
+            )
+        }
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
+}
+#endif
 
 #if os(macOS)
 private struct TopoMacRenderer: View {

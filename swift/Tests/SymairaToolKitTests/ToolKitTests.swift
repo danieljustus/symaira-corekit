@@ -155,6 +155,8 @@ final class RegistryTests: XCTestCase {
     }
 }
 
+// BinaryLocator and ToolDetector are macOS-only.
+#if os(macOS)
 final class BinaryLocatorTests: XCTestCase {
     private var tempDir: URL!
 
@@ -634,3 +636,4 @@ final class ToolDetectorTests: XCTestCase {
             waitingStart, slowEnd, "A completed fast task should admit the next task before the slow task ends")
     }
 }
+#endif

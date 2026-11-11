@@ -46,6 +46,7 @@ final class SymingestReOCRContractTests: XCTestCase {
         }
     }
 
+    #if os(macOS)
     func testMissingBinaryFailsClearly() async {
         let locator = BinaryLocator(searchPATH: "", extraDirectories: [])
         let client = SymingestReOCRClient(locator: locator)
@@ -56,6 +57,7 @@ final class SymingestReOCRContractTests: XCTestCase {
             XCTAssertEqual(error as? ReOCRContractError, .missingBinary)
         }
     }
+    #endif
 
     func testRequestDiscriminatesInputs() {
         let byID = ReOCRRequest.documentID(7)
@@ -66,6 +68,8 @@ final class SymingestReOCRContractTests: XCTestCase {
         XCTAssertEqual(byPath.archivePath, "/archive/source.pdf")
     }
 
+    // The symingest clients are macOS-only.
+    #if os(macOS)
     // MARK: - Client command construction (fake symingest binary)
 
     private var tempDirectories: [URL] = []
@@ -179,4 +183,5 @@ final class SymingestReOCRContractTests: XCTestCase {
         }
         XCTAssertEqual(try readLastArgs(from: dir), ["reocr", "--json", "/x.pdf"])
     }
+    #endif
 }
