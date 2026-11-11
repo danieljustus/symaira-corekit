@@ -229,7 +229,8 @@ consumer or update dependency pins; EraseMe adoption is a separate follow-up.
 | Keep mounted content and last chosen width on toolbar toggles | Workspace + sidebar state | Avoid identity-reset workarounds |
 | Native splitter semantics, arrow keys and toolbar shortcut | Sidebar adapter + `SymairaSidebarToggle` | Localized labels/focus in product rows |
 | Stable action geometry across primary/secondary state | Button styles + `SymairaMetrics.contentAction*` | Stable label area, title and action callback |
-| Neutral slider/meter rails and fills | `SymairaBarColors`, `SymairaProgressStyle` | Native slider mechanics, units, warning text/icons |
+| Neutral slider/meter rails and fills (`raised` groove + `line` outline, `ink` fill) | `SymairaBarColors`, `SymairaProgressStyle` | Native slider mechanics, units, warning text/icons |
+| Dashboard summary tile (stat value, label, detail) | `SymairaStatTile` | Values, labels and which tiles appear |
 | Navigation geometry, selection/hover/pressed colors, focus and AX | `SymairaNavigationButton` | Destination, clear label, symbol, selection and action |
 | System/Light/Dark control inside settings | `SymairaAppearance`, `SymairaAppearancePicker` | Existing persistence namespace; no writes from previews |
 | One trailing native gear, direct action with no submenu | `SymairaSettingsButton` inside shared toolbar | Open/reuse native settings window; no duplicate sidebar/parent-toolbar entry |

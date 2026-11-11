@@ -122,9 +122,10 @@ Six lines, kept in the pull request or issue:
   `xLarge`, gaps between cards `medium`, inside cards `small`.
 - **LAYOUT-7** A toolbar row inside a page has a fixed height, so switching
   pages does not shift the content below it.
-- **LAYOUT-8** Dashboards order summary tiles (value in
+- **LAYOUT-8** Dashboards order summary tiles (`SymairaStatTile`, value in
   `SymairaTypography.stat`) first, then charts, then tables, then event logs;
-  at most five tiles in one row.
+  at most five tiles in one row. Use `showsCard: false` for a tile that sits
+  inside a card or sheet.
 
 ## 5. States and feedback
 
@@ -147,7 +148,9 @@ Six lines, kept in the pull request or issue:
   that says why; opacity alone is not a signal.
 - **STATE-7** Progress with a known duration uses `SymairaProgressStyle`;
   unknown duration uses `SymairaLoadingState`; both keep the layout size
-  stable.
+  stable. The empty track is a quiet groove (`SymairaBarColors.track` =
+  `raised` with a 1 pt `trackOutline` = `line`) and the fill is `ink`, so 0 %
+  never reads as full in either appearance; do not draw a track from `ink3`.
 - **STATE-8** Counts and summaries render only from loaded data; after a
   failed load the error appears where content would start, not zero values.
 - **STATE-9** Topography follows the app state through `SymairaTopoModel`:
@@ -395,6 +398,12 @@ Listed so that nobody invents a rule or a component:
   `SymairaSettingsScene` (SHELL-7, SHELL-9).
 - No shared table styling or numeric-column helper; products use the native
   `Table` with `.monospacedDigit()`.
+- Meters and quiz building blocks beyond the linear bar are not shared yet:
+  a circular progress ring, a seven-day activity strip and a selectable answer
+  row. One product carries local copies of each; they move into SymairaTheme
+  once a second product needs them (two-consumer rule). Until then, compose
+  them locally from `SymairaBarColors`, `SymairaTokens` roles and
+  `SymairaIconView`, and keep their VoiceOver label and value.
 - The onboarding scaffold adoption is documented as a sketch, not as a
   verified consumer. The iOS shell has one verified consumer (Symaira
   Learning: `TabView`, `.symairaTopography(_:)`, `Image(symairaIcon:)`).

@@ -4,6 +4,10 @@ The GitHub Releases page is the authoritative source for complete release notes.
 
 ## Unreleased
 
+- Swift: `SymairaProgressStyle` draws the empty track as a `raised` groove with
+  a 1 pt `line` outline instead of `ink3`, so a meter at 0 % no longer reads as
+  full in dark or light; new shared `SymairaStatTile` summary tile (#476).
+
 - The Go maintenance branch `release/v0.18` is removed; `v0.18.3` is the
   final Go release (ADR 0005 amendment).
 

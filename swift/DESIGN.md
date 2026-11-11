@@ -63,7 +63,12 @@ never depend on a sibling checkout.
 - `.toolbar` remains the compact, native glass button role. Group adjacent glass
   controls in `SymairaGlassEffectContainer` rather than glassing every card.
 - `SymairaBarColors` and `SymairaProgressStyle` share neutral meter/slider colors.
-  Warnings remain explicit text/icons, not an unrelated meter palette.
+  Warnings remain explicit text/icons, not an unrelated meter palette. The
+  empty track is a groove: `raised` fill with a 1 pt `line` outline
+  (`SymairaBarColors.track`, `.trackOutline`); the fill is `ink`. `ink3` is a
+  text role, too bright for a rail.
+- `SymairaStatTile` is the dashboard summary tile (value in
+  `SymairaTypography.stat`, label, optional detail) on an opaque card.
 - `SymairaAppearance` and `SymairaAppearancePicker` provide System/Light/Dark
   inside the settings form, alongside the other preferences, never in the gear.
   macOS `.apply()` affects existing/new native surfaces; System clears the
@@ -118,6 +123,7 @@ SPM dependencies are development state, not a published fleet upgrade.
 | Text-protection environment wrapper | `.topoProtected()` in a shared workspace |
 | Stateful prominent/secondary button | `.symairaButtonStyle(.primary/.secondary)` |
 | Native slider and meter palette | `SymairaBarColors` + `SymairaProgressStyle` |
+| Dashboard summary tile | `SymairaStatTile` |
 | Direct settings-window action | `SymairaSettingsButton` |
 | Appearance mapping/control inside settings | `SymairaAppearance` + `SymairaAppearancePicker` |
 | Text-bearing content card | `.symairaCard()` |

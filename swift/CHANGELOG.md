@@ -11,6 +11,22 @@ the releases of the former `symaira-appkit` repository.
 
 ## [Unreleased]
 
+### Added
+- `SymairaStatTile`: the shared dashboard summary tile (value in
+  `SymairaTypography.stat`, label, optional detail, optional card surface) with
+  one combined VoiceOver element (#476).
+- `SymairaBarColors.trackOutline` and a `track:` parameter on
+  `SymairaProgressStyle.init` (source compatible).
+
+### Changed
+- The empty meter track is a quiet groove: `SymairaBarColors.track` is now
+  `raised` with a 1 pt `line` outline instead of `ink3`, so a meter at 0 % no
+  longer reads as full on `surface` in dark or light (#476).
+
+### Documentation
+- GUIDELINES section 15 lists the circular ring, week strip and answer row as
+  known gaps until a second product needs them.
+
 ## [0.21.0] - 2026-11-10
 
 ### Added
