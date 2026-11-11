@@ -2,16 +2,17 @@
 
 ## Supported Versions
 
-| Version | Supported          |
-| ------- | ------------------ |
-| v0.18.x | :white_check_mark: |
-| v0.17.x | :white_check_mark: |
-| v0.16.x | :white_check_mark: |
-| v0.15.x | :white_check_mark: |
-| v0.14.x | :white_check_mark: |
-| < v0.14  | :x:                |
+| Version  | Supported          |
+| -------- | ------------------ |
+| v0.21.x  | :white_check_mark: |
+| v0.20.x  | :white_check_mark: |
+| v0.19.x  | :white_check_mark: |
+| <= v0.18 | :x:                |
 
-All releases are covered by security updates for 3 months after the next minor release.
+Rust and Swift releases are covered by security updates for 3 months after the
+next minor release. v0.18.3 is the final release of the retired Go library; the
+Go maintenance line has ended ([ADR 0005](../docs/adr/0005-go-library-retirement.md)),
+so v0.18.x and earlier receive no further fixes.
 
 ## Reporting a Vulnerability
 
