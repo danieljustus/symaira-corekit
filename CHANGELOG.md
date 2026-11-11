@@ -4,6 +4,12 @@ The GitHub Releases page is the authoritative source for complete release notes.
 
 ## Unreleased
 
+- The workspace requires `serde_json = "1.0.151"` (caret range, still locked to
+  1.0.151) instead of `=1.0.151`, so consumers with their own serde_json
+  requirement can resolve newer 1.0.x releases together with CoreKit crates
+  (#475). The workspace manifest is a bound FS/SEC and SQLite input, so both
+  frozen evidence lanes are re-captured natively; the lockfile closure is
+  unchanged.
 - The Go maintenance branch `release/v0.18` is removed; `v0.18.3` is the
   final Go release (ADR 0005 amendment).
 

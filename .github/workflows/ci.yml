@@ -320,6 +320,80 @@ jobs:
         run: python scripts/rust-port/mcpcfg-differential.py --check
       - name: Verify process-capture integrity, identity and Go-free replay
         run: python -m unittest discover -s scripts/rust-port -p test_frozen_process_oracle.py
+  # TEMPORARY (corekit #475): native FS/SEC Go-oracle capture for the one-time
+  # re-registration; removed again, with its merge-gate entry, before merge.
+  fs-secret-evidence:
+    name: TEMPORARY FS/SEC capture (${{ matrix.target }})
+    needs: changes
+    if: needs.changes.outputs.full == 'true'
+    # matrix.os preserves legacy protected check names; see ADR 0003.
+    runs-on: ${{ matrix.os == 'macos-26' && 'macos-15' || matrix.os }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: linux-amd64
+          - os: macos-26
+            target: darwin-arm64
+    env:
+      FS_NATIVE_TARGET: ${{ matrix.target }}
+      # The capture deliberately ignores operator Git configuration.
+      GIT_CONFIG_COUNT: '1'
+      GIT_CONFIG_KEY_0: core.autocrlf
+      GIT_CONFIG_VALUE_0: 'false'
+    steps:
+      - name: Record native macOS runner identity
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          sw_vers
+          test "$(uname -m)" = arm64
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: '1.26.6'
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.14'
+      - name: Verify structural controls
+        run: python -B -W error -m unittest discover -s scripts/rust-port -p test_fs_secret_oracle.py -v
+      - name: Populate pinned oracle dependencies before offline capture
+        shell: bash
+        run: |
+          set -euo pipefail
+          # The Go library is retired from main, so ../../.. no longer holds a
+          # go.mod: resolve the helper module against the pinned oracle tree.
+          oracle=f3d3eb79b9b1f31b4f973d2ed518a8292cedf588
+          work="$RUNNER_TEMP/fs-native-bootstrap"
+          mkdir -p "$work/src" "$work/helper"
+          git archive "$oracle" | tar -x -C "$work/src"
+          cp -R scripts/rust-port/go-oracle/. "$work/helper/"
+          sed -i.bak "s|^replace github.com/danieljustus/symaira-corekit => .*|replace github.com/danieljustus/symaira-corekit => $work/src|" "$work/helper/go.mod"
+          (cd "$work/helper" && go mod download)
+      - name: Capture clean native observations without accepting them
+        shell: bash
+        env:
+          GO_ORACLE: '1'
+        run: |
+          set -euo pipefail
+          python scripts/rust-port/fs_secret_oracle.py --capture \
+            --output "testdata/rust-port/fixtures/fs-secret/frozen-v1/$FS_NATIVE_TARGET.json" \
+            --artifacts-dir "$RUNNER_TEMP/fs-native-evidence/raw"
+      - name: Retain original native bytes and failure evidence
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: fs-secret-evidence-${{ matrix.target }}-${{ github.event.pull_request.head.sha || github.sha }}
+          path: |
+            testdata/rust-port/fixtures/fs-secret/frozen-v1/${{ matrix.target }}.json
+            ${{ runner.temp }}/fs-native-evidence
+          if-no-files-found: error
+          retention-days: 30
   rust-sqlite-native:
     name: Rust SQLite native (${{ matrix.os }})
     needs: changes
@@ -347,6 +421,35 @@ jobs:
       - name: Install pinned Rust toolchain
         shell: bash
         run: rustup toolchain install 1.98.0 --profile minimal --component rustfmt,clippy
+      # TEMPORARY (corekit #475): native Go-oracle capture for the one-time
+      # re-registration; removed again before merge.
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: "1.26.6"
+      - name: TEMPORARY native source-bound differential capture
+        shell: bash
+        run: |
+          set -euo pipefail
+          source=$(git rev-parse HEAD)
+          base='${{ github.event.pull_request.base.sha || github.sha }}'
+          git merge-base --is-ancestor "$base" "$source"
+          git reset --soft "$base"
+          trap 'git reset --soft "$source"' EXIT
+          mkdir -p target
+          python scripts/rust-port/sqlite/candidate.py --output target/sqlite-native-candidate-source.json
+          python scripts/rust-port/sqlite/diff.py --typed-errors --candidate-manifest target/sqlite-native-candidate-source.json --output sqlite-native-report.json
+          git reset --soft "$source"
+          trap - EXIT
+      - name: TEMPORARY retain native differential evidence
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: sqlite-native-${{ matrix.os }}-${{ github.event.pull_request.head.sha || github.sha }}
+          path: |
+            sqlite-native-report.json
+            target/sqlite-native-candidate-source.json
+          if-no-files-found: error
+          retention-days: 30
       - name: SQLite tests and frozen source-bound replay
         shell: bash
         run: |
@@ -593,6 +696,7 @@ jobs:
       - rust-mcp
       - rust-mcpcfg
       - rust-sqlite-native
+      - fs-secret-evidence # TEMPORARY (corekit #475): remove with the job
       - rust-rust003-native
       - rust-rust003-miri
       - rust-rust013-miri
