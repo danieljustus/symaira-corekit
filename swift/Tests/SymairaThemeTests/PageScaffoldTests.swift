@@ -71,6 +71,10 @@ final class PageScaffoldTests: XCTestCase {
     private func height(_ view: some View) throws -> CGFloat {
         let renderer = ImageRenderer(content: view)
         renderer.proposedSize = ProposedViewSize(width: 600, height: nil)
+        #if os(macOS)
         return try XCTUnwrap(renderer.nsImage).size.height
+        #else
+        return try XCTUnwrap(renderer.uiImage).size.height
+        #endif
     }
 }

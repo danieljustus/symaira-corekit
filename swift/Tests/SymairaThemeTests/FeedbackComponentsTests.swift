@@ -54,6 +54,7 @@ final class FeedbackComponentsTests: XCTestCase {
         }
     }
 
+    #if os(macOS)
     /// A message long enough to wrap must not blow up the layout of a
     /// surrounding `NavigationSplitView`. Laying the message out with
     /// `.fixedSize(horizontal: false, vertical: true)` next to a `Spacer` gave
@@ -89,6 +90,7 @@ final class FeedbackComponentsTests: XCTestCase {
     private static func descendants(of view: NSView) -> [NSView] {
         view.subviews + view.subviews.flatMap(descendants(of:))
     }
+    #endif
 
     // MARK: - Empty state
 

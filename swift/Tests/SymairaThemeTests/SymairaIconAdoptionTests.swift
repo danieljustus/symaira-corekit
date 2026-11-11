@@ -1,3 +1,4 @@
+#if os(macOS)
 import AppKit
 import SwiftUI
 import XCTest
@@ -98,3 +99,4 @@ final class SymairaIconInteractionTests: XCTestCase {
         XCTAssertNil(standalone.values.last ?? nil, "Icons outside a Symaira control keep their own hover")
     }
 }
+#endif

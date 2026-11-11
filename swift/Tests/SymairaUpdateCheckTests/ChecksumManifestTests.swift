@@ -1,3 +1,5 @@
+// ChecksumManifest is macOS-only.
+#if os(macOS)
 import XCTest
 
 @testable import SymairaUpdateCheck
@@ -65,3 +67,4 @@ final class ChecksumManifestTests: XCTestCase {
         }
     }
 }
+#endif
