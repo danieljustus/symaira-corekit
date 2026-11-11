@@ -1,32 +1,33 @@
 """Reviewed native SQLite reports; capture never changes this map.
 
-Re-registered on 2026-11-10 for darwin-arm64 and linux-amd64 from pull-request
-CI run 42866448038 (candidate revision 44c1c51d9ff04bbdae484aec0b41d077bf794ddb)
-after the rustix requirement moved from =1.1.4 to 1.1.6 (#463), which changes
-the symaira-core-sqlite lock closure through symaira-core-fs, and after the
-SQLite capture harness changed (generate.py EPERM handling, test_generate.py,
-test_acceptance.py; #461). Typed verdicts, checked fields and accepted
-differences are unchanged; Go observations differ only in capture timestamps and
-the three harness file hashes. windows-amd64 is retained unchanged as historical
-evidence: Windows left the supported platform scope (#459) and no gate replays
-it.
-See docs/rust-port/evidence/frozen-reregistration-20261110.json (previous: docs/rust-port/evidence/frozen-reregistration-20261109.json).
+Re-registered on 2026-11-11 for darwin-arm64 and linux-amd64 from pull-request
+CI run 43104032164 (source commit 5c625553cc6dc895c9cf28d87cae65988f68c247,
+candidate revision e40b132905a840abf5a213eae231b193218fe4e5) after the workspace
+serde_json requirement moved from =1.0.151 to the caret range 1.0.151 (#475),
+which changes the bound workspace Cargo.toml, and after test_acceptance.py
+pointed at the new acceptance capture. The lockfile dependency closure is
+unchanged. Typed verdicts, checked fields and accepted differences are
+unchanged; Go observations differ only in capture timestamps and the
+test_acceptance.py harness hash. windows-amd64 is retained unchanged as
+historical evidence: Windows left the supported platform scope (#459) and no
+gate replays it.
+See docs/rust-port/evidence/frozen-reregistration-20261111.json (previous: docs/rust-port/evidence/frozen-reregistration-20261110.json).
 """
 
-CAPTURES = {'darwin-arm64': {'artifact_id': 13791154739,
+CAPTURES = {'darwin-arm64': {'artifact_id': 13892494283,
                   'manifest': 'testdata/rust-port/sqlite/frozen-v1/darwin-arm64/sqlite-native-candidate-source.json',
-                  'manifest_sha256': 'f4ecb0fcb4ed790b71d7b94140c82f7bace7df9d76b3044e5a6e9fea10d5fb3c',
+                  'manifest_sha256': 'a8ea5f16a107cc5926958e6b1452b5d63b145e9580ea68a6f35e7320bf2991bb',
                   'report': 'testdata/rust-port/sqlite/frozen-v1/darwin-arm64/sqlite-native-report.json',
-                  'report_sha256': '3916c5c9ecd0dce050f154acf8be1bab94e74cfb7b8221cd240807d1b6542290',
-                  'source_commit': '44c1c51d9ff04bbdae484aec0b41d077bf794ddb',
-                  'workflow_run': 42866448038},
- 'linux-amd64': {'artifact_id': 13788415410,
+                  'report_sha256': 'e2876d5a4a262db92aa97655cc0ec678d8381f9fb40180673083f36c5c2cee0c',
+                  'source_commit': '5c625553cc6dc895c9cf28d87cae65988f68c247',
+                  'workflow_run': 43104032164},
+ 'linux-amd64': {'artifact_id': 13892009096,
                  'manifest': 'testdata/rust-port/sqlite/frozen-v1/linux-amd64/sqlite-native-candidate-source.json',
-                 'manifest_sha256': 'f4ecb0fcb4ed790b71d7b94140c82f7bace7df9d76b3044e5a6e9fea10d5fb3c',
+                 'manifest_sha256': 'a8ea5f16a107cc5926958e6b1452b5d63b145e9580ea68a6f35e7320bf2991bb',
                  'report': 'testdata/rust-port/sqlite/frozen-v1/linux-amd64/sqlite-native-report.json',
-                 'report_sha256': '6897838515b6c28c487289321c6d1552accd0143bec7ac7845bf99ee1741bdf8',
-                 'source_commit': '44c1c51d9ff04bbdae484aec0b41d077bf794ddb',
-                 'workflow_run': 42866448038},
+                 'report_sha256': '75dd2f20721399c8219b16b6b33e8a0a74a1fcbb22d7d90c2ce6674b547a3057',
+                 'source_commit': '5c625553cc6dc895c9cf28d87cae65988f68c247',
+                 'workflow_run': 43104032164},
  'windows-amd64': {'artifact_id': 12328925122,
                    'manifest': 'testdata/rust-port/sqlite/frozen-v1/windows-amd64/sqlite-native-candidate-source.json',
                    'manifest_sha256': '9d5f9e4fc3e96b96efa811dd91edff161528c9efed59f5a88592d2eb9a799896',

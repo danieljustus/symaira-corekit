@@ -1,0 +1,221 @@
+{
+ "date": "2026-11-11",
+ "fs_sec": {
+  "anchors": {
+   "darwin-arm64": "523ace09f23c5dc95084f7649cdf2b87e434e7d90dd20458b3f9a83bcd97b5fe",
+   "linux-amd64": "afa4687c46eb2771b5697f805212ded2e093a5c702a6d6621d53317110167200",
+   "windows-amd64": "9cd98c130b84fba3eec1e5817fa9c9ba3b51b735145dbe324932decf9a1e4565"
+  },
+  "artifacts": {
+   "darwin-arm64": {
+    "artifact_id": 13892889912,
+    "fixture": "testdata/rust-port/fixtures/fs-secret/frozen-v1/darwin-arm64.json",
+    "sha256": "523ace09f23c5dc95084f7649cdf2b87e434e7d90dd20458b3f9a83bcd97b5fe",
+    "source_commit": "5c625553cc6dc895c9cf28d87cae65988f68c247",
+    "workflow_run": 43104032164
+   },
+   "linux-amd64": {
+    "artifact_id": 13893511114,
+    "fixture": "testdata/rust-port/fixtures/fs-secret/frozen-v1/linux-amd64.json",
+    "sha256": "afa4687c46eb2771b5697f805212ded2e093a5c702a6d6621d53317110167200",
+    "source_commit": "5c625553cc6dc895c9cf28d87cae65988f68c247",
+    "workflow_run": 43104032164
+   }
+  },
+  "capture_run": 43104032164,
+  "previous_anchors": {
+   "darwin-arm64": "000fe14cefed82271dd45b8b840a4d4061535b0e5d78a9da9f3d7073af705ae1",
+   "linux-amd64": "32be440c2828440c8e13d29578eca0e752ea504bc45f5c5ff0034a0dc3515e6f",
+   "windows-amd64": "9cd98c130b84fba3eec1e5817fa9c9ba3b51b735145dbe324932decf9a1e4565"
+  },
+  "retained_unchanged": {
+   "windows-amd64": "outside the supported platform scope since #459; fixture and anchor kept as historical evidence; not replayed by any gate and no recapture is required"
+  },
+  "review": {
+   "darwin-arm64": {
+    "case_inventory_identical": true,
+    "changed": [
+     "/capture/candidate/files[candidate/Cargo.toml]/sha256",
+     "/capture/candidate/head_after",
+     "/capture/candidate/head_before",
+     "/capture/commands[git-head-after]/stdout_sha256",
+     "/capture/commands[git-head-before]/stdout_sha256",
+     "/capture/commands[go-env-000]/stdout_bytes",
+     "/capture/commands[go-env-000]/stdout_sha256",
+     "/capture/commands[go-env-002]/stdout_bytes",
+     "/capture/commands[go-env-002]/stdout_sha256",
+     "/capture/commands[go-env-003]/stdout_bytes",
+     "/capture/commands[go-env-003]/stdout_sha256",
+     "/capture/commands[go-env-004]/stdout_bytes",
+     "/capture/commands[go-env-004]/stdout_sha256",
+     "/capture/commands[go-list-after]/stdout_sha256",
+     "/capture/commands[go-list-before]/stdout_sha256",
+     "/capture/go/modules_sha256",
+     "/capture/go/probe_binary_sha256",
+     "/capture/inputs/after_sha256",
+     "/capture/inputs/before_sha256",
+     "/capture/inputs/files[candidate/Cargo.toml]/sha256",
+     "/capture/inputs/files[modules/current-helper/effective.mod]/sha256",
+     "/capture/inputs/groups/candidate",
+     "/capture/inputs/groups/modules"
+    ],
+    "explained": "serde_json requirement =1.0.151 -> 1.0.151 (caret) changes the workspace Cargo.toml hash; commit heads and per-run identities; go env outputs are hosted-toolcache paths; Go observations, raw observations, case inventory, oracle and native target byte-identical",
+    "go_identical": false,
+    "observations_identical": true,
+    "only_in_new": [],
+    "only_in_old": [],
+    "oracle_identical": true,
+    "raw_observations_identical": true
+   },
+   "linux-amd64": {
+    "case_inventory_identical": true,
+    "changed": [
+     "/capture/candidate/files[candidate/Cargo.toml]/sha256",
+     "/capture/candidate/head_after",
+     "/capture/candidate/head_before",
+     "/capture/commands[git-head-after]/stdout_sha256",
+     "/capture/commands[git-head-before]/stdout_sha256",
+     "/capture/commands[go-env-000]/stdout_bytes",
+     "/capture/commands[go-env-000]/stdout_sha256",
+     "/capture/commands[go-env-001]/stdout_bytes",
+     "/capture/commands[go-env-001]/stdout_sha256",
+     "/capture/commands[go-env-003]/stdout_bytes",
+     "/capture/commands[go-env-003]/stdout_sha256",
+     "/capture/commands[go-env-004]/stdout_bytes",
+     "/capture/commands[go-env-004]/stdout_sha256",
+     "/capture/commands[go-list-after]/stdout_sha256",
+     "/capture/commands[go-list-before]/stdout_sha256",
+     "/capture/go/modules_sha256",
+     "/capture/go/probe_binary_sha256",
+     "/capture/inputs/after_sha256",
+     "/capture/inputs/before_sha256",
+     "/capture/inputs/files[candidate/Cargo.toml]/sha256",
+     "/capture/inputs/files[modules/current-helper/effective.mod]/sha256",
+     "/capture/inputs/groups/candidate",
+     "/capture/inputs/groups/modules"
+    ],
+    "explained": "serde_json requirement =1.0.151 -> 1.0.151 (caret) changes the workspace Cargo.toml hash; commit heads and per-run identities; go env outputs are hosted-toolcache paths; Go observations, raw observations, case inventory, oracle and native target byte-identical",
+    "go_identical": false,
+    "observations_identical": true,
+    "only_in_new": [],
+    "only_in_old": [],
+    "oracle_identical": true,
+    "raw_observations_identical": true
+   }
+  }
+ },
+ "maintainer_decision": "Re-registration under the maintainer's standing delegation of implementation decisions; verdicts, cases and accepted differences unchanged (2026-11-11).",
+ "reason": "The workspace serde_json requirement moves from =1.0.151 to the caret range 1.0.151 (consumer compatibility, #475). Cargo.lock and every lockfile dependency closure are unchanged, but the workspace Cargo.toml is an enforced FS/SEC and SQLite input; test_acceptance.py pointing at differential-macos-serdejson-caret-20261111.json alters a bound SQLite harness file.",
+ "source_commit": "5c625553cc6dc895c9cf28d87cae65988f68c247",
+ "sqlite": {
+  "captures": {
+   "darwin-arm64": {
+    "artifact_id": 13892494283,
+    "manifest": "testdata/rust-port/sqlite/frozen-v1/darwin-arm64/sqlite-native-candidate-source.json",
+    "manifest_sha256": "a8ea5f16a107cc5926958e6b1452b5d63b145e9580ea68a6f35e7320bf2991bb",
+    "report": "testdata/rust-port/sqlite/frozen-v1/darwin-arm64/sqlite-native-report.json",
+    "report_sha256": "e2876d5a4a262db92aa97655cc0ec678d8381f9fb40180673083f36c5c2cee0c",
+    "source_commit": "5c625553cc6dc895c9cf28d87cae65988f68c247",
+    "workflow_run": 43104032164
+   },
+   "linux-amd64": {
+    "artifact_id": 13892009096,
+    "manifest": "testdata/rust-port/sqlite/frozen-v1/linux-amd64/sqlite-native-candidate-source.json",
+    "manifest_sha256": "a8ea5f16a107cc5926958e6b1452b5d63b145e9580ea68a6f35e7320bf2991bb",
+    "report": "testdata/rust-port/sqlite/frozen-v1/linux-amd64/sqlite-native-report.json",
+    "report_sha256": "75dd2f20721399c8219b16b6b33e8a0a74a1fcbb22d7d90c2ce6674b547a3057",
+    "source_commit": "5c625553cc6dc895c9cf28d87cae65988f68c247",
+    "workflow_run": 43104032164
+   }
+  },
+  "previous": {
+   "darwin-arm64": {
+    "artifact_id": 13791154739,
+    "manifest_sha256": "f4ecb0fcb4ed790b71d7b94140c82f7bace7df9d76b3044e5a6e9fea10d5fb3c",
+    "report_sha256": "3916c5c9ecd0dce050f154acf8be1bab94e74cfb7b8221cd240807d1b6542290",
+    "workflow_run": 42866448038
+   },
+   "linux-amd64": {
+    "artifact_id": 13788415410,
+    "manifest_sha256": "f4ecb0fcb4ed790b71d7b94140c82f7bace7df9d76b3044e5a6e9fea10d5fb3c",
+    "report_sha256": "6897838515b6c28c487289321c6d1552accd0143bec7ac7845bf99ee1741bdf8",
+    "workflow_run": 42866448038
+   }
+  },
+  "retained_unchanged": {
+   "windows-amd64": "outside the supported platform scope since #459; not replayed by any gate"
+  },
+  "review": {
+   "acceptance_capture": "testdata/rust-port/sqlite/differential-macos-serdejson-caret-20261111.json",
+   "candidate_revision": "e40b132905a840abf5a213eae231b193218fe4e5",
+   "changed_pointers": {
+    "darwin-arm64": [
+     "/go/capture_interval[0]",
+     "/go/capture_interval[1]",
+     "/go/cases[SQL-003]/state/applied_at[0]",
+     "/go/cases[SQL-003]/state/applied_at[1]",
+     "/go/cases[SQL-003]/state/data[item-1]/created_at",
+     "/go/cases[SQL-004]/state/applied_at[0]",
+     "/go/cases[SQL-004]/state/applied_at[1]",
+     "/go/cases[SQL-004]/state/data[item-1]/created_at",
+     "/go/oracle/artifact_hashes/scripts/rust-port/sqlite/test_acceptance.py",
+     "/rust/binary_sha256",
+     "/rust/candidate_manifest_sha256",
+     "/rust/candidate_revision",
+     "/rust/capture_interval[0]",
+     "/rust/capture_interval[1]",
+     "/rust/cases[SQL-002]/observed_busy_seconds",
+     "/rust/cases[SQL-003]/state/applied_at[0]",
+     "/rust/cases[SQL-003]/state/applied_at[1]",
+     "/rust/cases[SQL-003]/state/data[item-1]/created_at",
+     "/rust/cases[SQL-004]/state/applied_at[0]",
+     "/rust/cases[SQL-004]/state/applied_at[1]",
+     "/rust/cases[SQL-004]/state/data[item-1]/created_at",
+     "/rust/source_hashes/.github/workflows/ci.yml",
+     "/rust/source_hashes/Cargo.toml",
+     "/rust/source_hashes/scripts/rust-port/sqlite/test_acceptance.py"
+    ],
+    "linux-amd64": [
+     "/go/capture_interval[0]",
+     "/go/capture_interval[1]",
+     "/go/cases[SQL-003]/state/applied_at[0]",
+     "/go/cases[SQL-003]/state/applied_at[1]",
+     "/go/cases[SQL-003]/state/data[item-1]/created_at",
+     "/go/cases[SQL-004]/state/applied_at[0]",
+     "/go/cases[SQL-004]/state/applied_at[1]",
+     "/go/cases[SQL-004]/state/data[item-1]/created_at",
+     "/go/oracle/artifact_hashes/scripts/rust-port/sqlite/test_acceptance.py",
+     "/rust/candidate_manifest_sha256",
+     "/rust/candidate_revision",
+     "/rust/capture_interval[0]",
+     "/rust/capture_interval[1]",
+     "/rust/cases[SQL-002]/observed_busy_seconds",
+     "/rust/cases[SQL-003]/state/applied_at[0]",
+     "/rust/cases[SQL-003]/state/applied_at[1]",
+     "/rust/cases[SQL-003]/state/data[item-1]/created_at",
+     "/rust/cases[SQL-004]/state/applied_at[0]",
+     "/rust/cases[SQL-004]/state/applied_at[1]",
+     "/rust/cases[SQL-004]/state/data[item-1]/created_at",
+     "/rust/source_hashes/.github/workflows/ci.yml",
+     "/rust/source_hashes/Cargo.toml",
+     "/rust/source_hashes/scripts/rust-port/sqlite/test_acceptance.py"
+    ]
+   },
+   "manifest_changed_pointers": {
+    "darwin-arm64": [
+     "/source_hashes/.github/workflows/ci.yml",
+     "/source_hashes/Cargo.toml",
+     "/source_hashes/scripts/rust-port/sqlite/test_acceptance.py"
+    ],
+    "linux-amd64": [
+     "/source_hashes/.github/workflows/ci.yml",
+     "/source_hashes/Cargo.toml",
+     "/source_hashes/scripts/rust-port/sqlite/test_acceptance.py"
+    ]
+   },
+   "previous_registration": "docs/rust-port/evidence/frozen-reregistration-20261110.json",
+   "verdict": "passed on darwin-arm64 and linux-amd64; 6 cases; 42 checked fields each; 0 differences; identical 9 accepted-difference paths and checked-field lists"
+  }
+ },
+ "workflow_run": 43104032164
+}

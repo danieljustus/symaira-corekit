@@ -4,6 +4,12 @@ The GitHub Releases page is the authoritative source for complete release notes.
 
 ## Unreleased
 
+- The workspace requires `serde_json = "1.0.151"` (caret range, still locked to
+  1.0.151) instead of `=1.0.151`, so consumers with their own serde_json
+  requirement can resolve newer 1.0.x releases together with CoreKit crates
+  (#475). The workspace manifest is a bound FS/SEC and SQLite input, so both
+  frozen evidence lanes are re-captured natively; the lockfile closure is
+  unchanged.
 - Swift: `SymairaProgressStyle` draws the empty track as a `raised` groove with
   a 1 pt `line` outline instead of `ink3`, so a meter at 0 % no longer reads as
   full in dark or light; new shared `SymairaStatTile` summary tile (#476).
