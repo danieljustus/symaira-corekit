@@ -22,6 +22,18 @@ the releases of the former `symaira-appkit` repository.
 - The empty meter track is a quiet groove: `SymairaBarColors.track` is now
   `raised` with a 1 pt `line` outline instead of `ink3`, so a meter at 0 % no
   longer reads as full on `surface` in dark or light (#476).
+- The iOS and tvOS Liquid Topography no longer ticks a SwiftUI `TimelineView`
+  at 20 fps, which re-evaluated the view and built a new `Shader` on the main
+  thread every frame. `SymairaTopoView` now renders through the same
+  `CAMetalLayer` pipeline as macOS, driven by a `CADisplayLink`
+  (`preferredFrameRateRange`: 20 fps idle, up to the screen's
+  `maximumFramesPerSecond` while interactive). Protected-zone changes while
+  scrolling redraw the surface natively instead of re-evaluating SwiftUI.
+  Reduce Motion, `animationEnabled: false`, Low Power Mode and a backgrounded
+  scene keep the field static; leaving the window invalidates the display
+  link. macOS behavior is unchanged; frame integration, input observation and
+  the pause rules now live in a shared driver. Not measured on a physical
+  iPhone (#477).
 
 ### Documentation
 - GUIDELINES section 15 lists the circular ring, week strip and answer row as
