@@ -1,22 +1,22 @@
 {
   "schema_version": 1,
-  "source_commit": "44c1c51d9ff04bbdae484aec0b41d077bf794ddb",
+  "source_commit": "5c625553cc6dc895c9cf28d87cae65988f68c247",
   "oracle_commit": "f3d3eb79b9b1f31b4f973d2ed518a8292cedf588",
-  "capture_run": 42866448038,
-  "provenance_review": "docs/rust-port/evidence/frozen-reregistration-20261110.json",
-  "registration_review": "docs/rust-port/evidence/frozen-reregistration-20261110.json",
+  "capture_run": 43104032164,
+  "provenance_review": "docs/rust-port/evidence/frozen-reregistration-20261111.json",
+  "registration_review": "docs/rust-port/evidence/frozen-reregistration-20261111.json",
   "fixtures": [
     {
       "target": "darwin-arm64",
       "path": "darwin-arm64.json",
-      "sha256": "000fe14cefed82271dd45b8b840a4d4061535b0e5d78a9da9f3d7073af705ae1",
+      "sha256": "523ace09f23c5dc95084f7649cdf2b87e434e7d90dd20458b3f9a83bcd97b5fe",
       "case_count": 13,
       "path_control_count": 9
     },
     {
       "target": "linux-amd64",
       "path": "linux-amd64.json",
-      "sha256": "32be440c2828440c8e13d29578eca0e752ea504bc45f5c5ff0034a0dc3515e6f",
+      "sha256": "afa4687c46eb2771b5697f805212ded2e093a5c702a6d6621d53317110167200",
       "case_count": 13,
       "path_control_count": 9
     },
