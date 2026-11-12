@@ -4,6 +4,18 @@ The GitHub Releases page is the authoritative source for complete release notes.
 
 ## Unreleased
 
+- `symaira-core-mcp`: queued tool calls no longer block the reader. At most 16
+  handlers still run at once, but further calls wait in a FIFO (up to 1024)
+  while `ping`, `tools/list` and protocol errors keep being answered; before,
+  `ping` waited behind every running call. Result objects and input schemas are
+  written with sorted keys, so the response bytes no longer change when a
+  consumer build enables `serde_json/preserve_order` (#480).
+- New [docs/rust-port/go-compatibility.md](docs/rust-port/go-compatibility.md)
+  records which differences from the retired Go library are intended in
+  `-mcp`, `-fs`, `-secretref`, `-log`, `-llm` and `-config` (#480).
+- Swift CI runs the SymairaTheme tests, including the UIKit Metal topography
+  tests, on an existing iOS Simulator device on `main` and the weekly schedule
+  (#479).
 - The workspace requires `serde_json = "1.0.151"` (caret range, still locked to
   1.0.151) instead of `=1.0.151`, so consumers with their own serde_json
   requirement can resolve newer 1.0.x releases together with CoreKit crates
