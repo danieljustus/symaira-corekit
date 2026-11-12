@@ -1948,6 +1948,10 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(
+        miri,
+        ignore = "wall-clock liveness deadline; the dispatcher itself is covered by the other concurrency tests"
+    )]
     fn ping_is_answered_while_every_tool_slot_is_busy() {
         let gate = Arc::new((Mutex::new(false), Condvar::new()));
         let server = Server::new("test", "1.0");
