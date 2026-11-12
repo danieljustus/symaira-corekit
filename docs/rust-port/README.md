@@ -2,6 +2,8 @@
 
 Status: **The Go library is retired from `main` (RUST-018, [ADR 0005](../adr/0005-go-library-retirement.md)); `v0.18.3` is the last Go release and Go fixes ship only from `release/v0.18`. Git-pinned Rust consumer releases remain the distribution path. RUST-014/015 registry work is not planned and is demand-driven/deferred by [ADR 0002](../adr/0002-rust-distribution-git-pins.md). RUST-016 remains blocked on the Rust-only cutovers of Vault, Desktop and Brain.**
 
+Intended differences between the Rust crates and the retired Go library are listed in [go-compatibility.md](go-compatibility.md).
+
 This directory records the contract-first Rust implementation of `symaira-corekit`. The Go implementation served as the executable oracle; its observations are frozen and its sources stay readable at `v0.18.3` for fixture provenance. Rust crates are added beside it and are adopted package by package; this is not a flag-day repository rewrite.
 
 ## Pinned oracle

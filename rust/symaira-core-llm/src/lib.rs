@@ -1,6 +1,8 @@
 #![deny(unsafe_code)]
 
 //! Shared, descriptor-driven LLM HTTP transports.
+//! Intended differences from the retired Go `llmkit` are listed in
+//! `docs/rust-port/go-compatibility.md`.
 
 mod chat;
 mod client;

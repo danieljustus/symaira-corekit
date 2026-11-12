@@ -77,6 +77,9 @@ jobs:
         run: cargo build --workspace --all-targets --locked
       - name: Test
         run: cargo test --workspace --all-features --locked
+      - name: Test MCP output order with serde_json/preserve_order
+        # A consumer build can unify this feature; response bytes must not change.
+        run: cargo test -p symaira-core-mcp --features serde_json/preserve_order --locked
   lint:
     name: lint
     runs-on: ubuntu-latest

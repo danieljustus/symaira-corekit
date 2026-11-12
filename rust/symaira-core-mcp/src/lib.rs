@@ -5,6 +5,8 @@
 //! The adapter does not depend on an MCP SDK.  It keeps framing, request
 //! validation, response encoding, and tool dispatch in one auditable boundary
 //! so the wire contract remains independent of Rust framework defaults.
+//! Intended differences from the retired Go `mcpserver` are listed in
+//! `docs/rust-port/go-compatibility.md`.
 
 use serde::Serialize;
 use serde::de::DeserializeOwned;
@@ -340,6 +342,13 @@ impl Tool {
 }
 
 const MAX_CONCURRENT_TOOL_CALLS: usize = 16;
+/// Tool calls waiting for a free handler slot. The reader only blocks once this
+/// queue is full, so `ping`, `tools/list` and protocol errors keep being
+/// answered while every handler slot is busy.
+const MAX_QUEUED_TOOL_CALLS: usize = 1024;
+
+type ToolCall = (Request, ResponseMode);
+type ToolJob = thread::JoinHandle<Result<(), TransportError>>;
 
 struct ToolCallLimiter {
     state: Mutex<usize>,
@@ -611,7 +620,27 @@ impl Server {
         terminal_error: Arc<Mutex<Option<TransportError>>>,
         limiter: Arc<ToolCallLimiter>,
     ) -> Result<(), TransportError> {
-        let mut jobs = Vec::new();
+        let (tool_queue, queued_calls) = mpsc::sync_channel::<ToolCall>(MAX_QUEUED_TOOL_CALLS);
+        let dispatcher = {
+            let server = self.clone();
+            let writer = Arc::clone(&writer);
+            let token = token.clone();
+            let terminal_error = Arc::clone(&terminal_error);
+            thread::Builder::new()
+                .name("symaira-mcp-dispatch".to_string())
+                .spawn(move || {
+                    server.run_tool_queue(queued_calls, writer, token, terminal_error, limiter)
+                })
+                .map_err(|error| TransportError::Write(format!("spawn dispatcher: {error}")))?
+        };
+        // Normal termination closes the queue and waits for every queued and
+        // running call; cancellation returns without joining, as before.
+        let finish = move |tool_queue: mpsc::SyncSender<ToolCall>| {
+            drop(tool_queue);
+            dispatcher
+                .join()
+                .unwrap_or_else(|_| Err(TransportError::Write("handler panicked".to_string())))
+        };
         loop {
             if token.is_cancelled() {
                 let error = terminal_error.lock().ok().and_then(|error| error.clone());
@@ -620,26 +649,16 @@ impl Server {
             match receiver.recv_timeout(std::time::Duration::from_millis(10)) {
                 Ok(item) => {
                     let terminal = item_is_terminal(&item);
-                    match self.dispatch_item(
-                        item,
-                        Arc::clone(&writer),
-                        token.clone(),
-                        Arc::clone(&terminal_error),
-                        Arc::clone(&limiter),
-                    ) {
-                        Ok(Some(job)) => jobs.push(job),
-                        Ok(None) => {}
-                        Err(error) => {
-                            token.cancel();
-                            return Err(error);
-                        }
+                    if let Err(error) = self.dispatch_item(item, Arc::clone(&writer), &tool_queue) {
+                        token.cancel();
+                        return Err(error);
                     }
                     if terminal {
                         if token.is_cancelled() {
                             let error = terminal_error.lock().ok().and_then(|error| error.clone());
                             return Err(error.unwrap_or(TransportError::Cancelled));
                         }
-                        return Self::wait_jobs(jobs);
+                        return finish(tool_queue);
                     }
                 }
                 Err(mpsc::RecvTimeoutError::Timeout) => continue,
@@ -648,55 +667,102 @@ impl Server {
                         let error = terminal_error.lock().ok().and_then(|error| error.clone());
                         return Err(error.unwrap_or(TransportError::Cancelled));
                     }
-                    return Self::wait_jobs(jobs);
+                    return finish(tool_queue);
                 }
             }
         }
+    }
+
+    /// Starts queued tool calls in arrival order, at most
+    /// `MAX_CONCURRENT_TOOL_CALLS` at a time, then waits for all of them.
+    fn run_tool_queue<W: Write + Send + 'static>(
+        &self,
+        queued_calls: mpsc::Receiver<ToolCall>,
+        writer: Arc<Mutex<W>>,
+        token: CancellationToken,
+        terminal_error: Arc<Mutex<Option<TransportError>>>,
+        limiter: Arc<ToolCallLimiter>,
+    ) -> Result<(), TransportError> {
+        let mut jobs = Vec::new();
+        for (request, mode) in queued_calls {
+            let Ok(permit) = limiter.acquire(&token) else {
+                // Cancelled: the serve loop reports the terminal error.
+                break;
+            };
+            match self.spawn_tool_call(
+                request,
+                mode,
+                permit,
+                Arc::clone(&writer),
+                token.clone(),
+                Arc::clone(&terminal_error),
+            ) {
+                Ok(job) => jobs.push(job),
+                Err(error) => {
+                    if let Ok(mut first_error) = terminal_error.lock()
+                        && first_error.is_none()
+                    {
+                        *first_error = Some(error.clone());
+                    }
+                    token.cancel();
+                    break;
+                }
+            }
+        }
+        Self::wait_jobs(jobs)
+    }
+
+    fn spawn_tool_call<W: Write + Send + 'static>(
+        &self,
+        request: Request,
+        mode: ResponseMode,
+        permit: ToolCallPermit,
+        writer: Arc<Mutex<W>>,
+        token: CancellationToken,
+        job_error: Arc<Mutex<Option<TransportError>>>,
+    ) -> Result<ToolJob, TransportError> {
+        let server = self.clone();
+        thread::Builder::new()
+            .name("symaira-mcp-tool".to_string())
+            .spawn(move || {
+                let result = catch_unwind(AssertUnwindSafe(|| {
+                    server.handle_request(request, mode, Arc::clone(&writer), token.clone())
+                }));
+                let result = match result {
+                    Ok(result) => result,
+                    Err(_) => Err(TransportError::Write("handler panicked".to_string())),
+                };
+                if let Err(error) = &result {
+                    match job_error.lock() {
+                        Ok(mut first_error) if first_error.is_none() => {
+                            *first_error = Some(error.clone());
+                        }
+                        _ => {}
+                    }
+                    token.cancel();
+                }
+                drop(permit);
+                result
+            })
+            .map_err(|error| TransportError::Write(format!("spawn tool handler: {error}")))
     }
 
     fn dispatch_item<W: Write + Send + 'static>(
         &self,
         item: ReadItem,
         writer: Arc<Mutex<W>>,
-        token: CancellationToken,
-        terminal_error: Arc<Mutex<Option<TransportError>>>,
-        limiter: Arc<ToolCallLimiter>,
-    ) -> Result<Option<thread::JoinHandle<Result<(), TransportError>>>, TransportError> {
+        tool_queue: &mpsc::SyncSender<ToolCall>,
+    ) -> Result<(), TransportError> {
         match item {
             ReadItem::Request(request, mode) if request.method == "tools/call" => {
-                let permit = limiter.acquire(&token)?;
-                let server = self.clone();
-                let job_error = Arc::clone(&terminal_error);
-                let job = thread::Builder::new()
-                    .name("symaira-mcp-tool".to_string())
-                    .spawn(move || {
-                        let result = catch_unwind(AssertUnwindSafe(|| {
-                            server.handle_request(request, mode, Arc::clone(&writer), token.clone())
-                        }));
-                        let result = match result {
-                            Ok(result) => result,
-                            Err(_) => Err(TransportError::Write("handler panicked".to_string())),
-                        };
-                        if let Err(error) = &result {
-                            match job_error.lock() {
-                                Ok(mut first_error) if first_error.is_none() => {
-                                    *first_error = Some(error.clone());
-                                }
-                                _ => {}
-                            }
-                            token.cancel();
-                        }
-                        drop(permit);
-                        result
-                    })
-                    .map_err(|error| {
-                        TransportError::Write(format!("spawn tool handler: {error}"))
-                    })?;
-                Ok(Some(job))
+                // A closed queue means the dispatcher stopped on cancellation;
+                // the serve loop then returns the recorded terminal error.
+                let _ = tool_queue.send((request, mode));
+                Ok(())
             }
-            ReadItem::Request(request, mode) => self
-                .handle_request(request, mode, writer, token)
-                .map(|_| None),
+            ReadItem::Request(request, mode) => {
+                self.handle_request(request, mode, writer, CancellationToken::new())
+            }
             ReadItem::ProtocolError(error, mode) => {
                 let response = match error {
                     ProtocolErrorKind::Parse(message) => rpc_error(
@@ -713,15 +779,13 @@ impl Server {
                         return Err(TransportError::Read(message));
                     }
                 };
-                write_frame(&writer, mode, &response).map(|_| None)
+                write_frame(&writer, mode, &response)
             }
-            ReadItem::Eof => Ok(None),
+            ReadItem::Eof => Ok(()),
         }
     }
 
-    fn wait_jobs(
-        jobs: Vec<thread::JoinHandle<Result<(), TransportError>>>,
-    ) -> Result<(), TransportError> {
+    fn wait_jobs(jobs: Vec<ToolJob>) -> Result<(), TransportError> {
         let mut first_error = None;
         for job in jobs {
             match job.join() {
@@ -986,7 +1050,8 @@ fn raw_null() -> Box<RawValue> {
     RawValue::from_string("null".to_string()).expect("null is valid JSON")
 }
 
-fn rpc_result(id: Box<RawValue>, result: Value) -> RpcResponse {
+fn rpc_result(id: Box<RawValue>, mut result: Value) -> RpcResponse {
+    sort_object_keys(&mut result);
     RpcResponse {
         jsonrpc: "2.0",
         id,
@@ -995,12 +1060,31 @@ fn rpc_result(id: Box<RawValue>, result: Value) -> RpcResponse {
     }
 }
 
-fn rpc_tools_result(id: Box<RawValue>, tools: Vec<ToolDescriptionWire>) -> RpcResponse {
+fn rpc_tools_result(id: Box<RawValue>, mut tools: Vec<ToolDescriptionWire>) -> RpcResponse {
+    for tool in &mut tools {
+        if let Some(schema) = tool.input_schema.as_mut() {
+            sort_object_keys(schema);
+        }
+    }
     RpcResponse {
         jsonrpc: "2.0",
         id,
         result: Some(ResponseResult::Tools(ToolsListResult { tools })),
         error: None,
+    }
+}
+
+/// Sorts every JSON object by key, like Go's `encoding/json` does for maps.
+/// Without this the output order would follow insertion order whenever any
+/// crate in the consumer's build enables `serde_json/preserve_order`.
+fn sort_object_keys(value: &mut Value) {
+    match value {
+        Value::Object(object) => {
+            object.sort_keys();
+            object.values_mut().for_each(sort_object_keys);
+        }
+        Value::Array(items) => items.iter_mut().for_each(sort_object_keys),
+        _ => {}
     }
 }
 
@@ -1847,6 +1931,93 @@ mod tests {
         let output = run(&server, input.into_bytes());
         assert_eq!(output.iter().filter(|byte| **byte == b'\n').count(), 64);
         assert!(maximum.load(Ordering::SeqCst) <= MAX_CONCURRENT_TOOL_CALLS);
+    }
+
+    #[derive(Clone, Default)]
+    struct SharedOutput(Arc<Mutex<Vec<u8>>>);
+
+    impl Write for SharedOutput {
+        fn write(&mut self, bytes: &[u8]) -> io::Result<usize> {
+            self.0.lock().unwrap().extend_from_slice(bytes);
+            Ok(bytes.len())
+        }
+
+        fn flush(&mut self) -> io::Result<()> {
+            Ok(())
+        }
+    }
+
+    #[test]
+    fn ping_is_answered_while_every_tool_slot_is_busy() {
+        let gate = Arc::new((Mutex::new(false), Condvar::new()));
+        let server = Server::new("test", "1.0");
+        let handler_gate = Arc::clone(&gate);
+        server
+            .register_tool(Tool::new("wait", "wait").handler(move |_, _| {
+                let (released, changed) = &*handler_gate;
+                let mut released = released.lock().unwrap();
+                while !*released {
+                    released = changed.wait(released).unwrap();
+                }
+                Ok(ToolOutput::from("done"))
+            }))
+            .unwrap();
+        let calls = MAX_CONCURRENT_TOOL_CALLS * 3;
+        let mut input = (0..calls)
+            .map(|id| format!(r#"{{"jsonrpc":"2.0","id":{id},"method":"tools/call","params":{{"name":"wait","arguments":{{}}}}}}"#) + "\n")
+            .collect::<String>();
+        input.push_str("{\"jsonrpc\":\"2.0\",\"id\":\"ping\",\"method\":\"ping\"}\n");
+        let output = SharedOutput::default();
+        let observed = output.clone();
+        let serving =
+            thread::spawn(move || server.serve_io(Cursor::new(input.into_bytes()), output));
+
+        let deadline = std::time::Instant::now() + Duration::from_secs(5);
+        let mut answered = false;
+        while std::time::Instant::now() < deadline {
+            if String::from_utf8_lossy(&observed.0.lock().unwrap()).contains(r#""id":"ping""#) {
+                answered = true;
+                break;
+            }
+            thread::sleep(Duration::from_millis(5));
+        }
+        let before_release = observed.0.lock().unwrap().clone();
+        let (released, changed) = &*gate;
+        *released.lock().unwrap() = true;
+        changed.notify_all();
+        serving.join().unwrap().unwrap();
+
+        assert!(answered, "ping waited behind blocked tool calls");
+        assert!(
+            !String::from_utf8_lossy(&before_release).contains("done"),
+            "no tool call finished before the gate opened"
+        );
+        let lines = observed
+            .0
+            .lock()
+            .unwrap()
+            .iter()
+            .filter(|byte| **byte == b'\n')
+            .count();
+        assert_eq!(lines, calls + 1);
+    }
+
+    #[test]
+    fn result_objects_are_written_with_sorted_keys() {
+        let mut nested = Map::new();
+        nested.insert("zeta".to_string(), Value::from(1));
+        nested.insert("alpha".to_string(), Value::from(2));
+        let mut result = Map::new();
+        result.insert("z".to_string(), Value::Object(nested));
+        result.insert(
+            "a".to_string(),
+            Value::Array(vec![serde_json::json!({"y": 1, "b": 2})]),
+        );
+        let body = go_json_bytes(&rpc_result(raw_null(), Value::Object(result))).unwrap();
+        assert_eq!(
+            String::from_utf8(body).unwrap(),
+            r#"{"jsonrpc":"2.0","id":null,"result":{"a":[{"b":2,"y":1}],"z":{"alpha":2,"zeta":1}}}"#
+        );
     }
 
     #[test]

@@ -62,6 +62,7 @@ rust-lint:
 
 rust-test:
 	cargo test --workspace --all-features --locked
+	cargo test -p symaira-core-mcp --features serde_json/preserve_order --locked
 
 rust-foundation-contract:
 	python3 scripts/rust-port/frozen_core_replay.py --family foundation
