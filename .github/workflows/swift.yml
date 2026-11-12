@@ -113,7 +113,8 @@ jobs:
   # Regression test for #44: ba4bbb2 removed the iOS platform declaration from
   # Package.swift and the break was invisible because the CI only built for
   # macOS. Builds the package against the iOS Simulator SDK in parallel with
-  # the macOS jobs. Build-only: `swift build --sdk` needs no code signing.
+  # the macOS jobs (`swift build --sdk` needs no code signing), then runs the
+  # SymairaTheme tests on an existing iOS Simulator device.
   ios-build:
     if: github.event_name != 'pull_request'  # full iOS compatibility coverage runs on main and the weekly safety net
     runs-on: [self-hosted, macOS, ARM64, macbook-corekit]  # supported self-hosted runner
@@ -150,3 +151,13 @@ jobs:
           MEM_GB=$(($(sysctl -n hw.memsize) / 1073741824))
           if [ "$MEM_GB" -le 8 ]; then JOBS=2; elif [ "$MEM_GB" -le 16 ]; then JOBS=4; else JOBS=6; fi
           swift build --manifest-cache local --sdk "$(xcrun --sdk iphonesimulator --show-sdk-path)" --triple arm64-apple-ios17.0-simulator -j "$JOBS"
+      - name: Regression-test iOS Simulator selection
+        run: python3 swift/scripts/test_select_ios_simulator.py
+      - name: Test SymairaTheme (iOS Simulator)
+        # Executes the UIKit surface tests (TopoMetalUIKitTests and friends) on
+        # an iOS Simulator (#479). The script picks an existing device on the
+        # runner host and fails instead of creating one.
+        run: |
+          UDID="$(python3 swift/scripts/select_ios_simulator.py)"
+          xcodebuild test -scheme symaira-corekit-Package -destination "id=$UDID" \
+            -only-testing:SymairaThemeTests -derivedDataPath .build/xcode-ios-simulator
