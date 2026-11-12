@@ -2,7 +2,7 @@
 
 The GitHub Releases page is the authoritative source for complete release notes.
 
-## Unreleased
+## v0.22.0 — 2026-11-12
 
 - `symaira-core-mcp`: queued tool calls no longer block the reader. At most 16
   handlers still run at once, but further calls wait in a FIFO (up to 1024)

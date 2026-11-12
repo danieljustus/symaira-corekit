@@ -10,6 +10,31 @@ also preserve historical removals, including `embedkit` in v0.12.0; those
 require migration. Otherwise "check" means a new capability to adopt or a
 behavior change worth confirming.
 
+## v0.22.0
+
+- **Swift consumers:** move the pin to `exact: "0.22.0"` (XcodeGen
+  `exactVersion: 0.22.0`). Check:
+  - New `SymairaStatTile` for dashboard summary values; replace local stat
+    tiles with it.
+  - The empty `SymairaProgressStyle` track is now `raised` with a 1 pt `line`
+    outline instead of `ink3`. Review meters at 0 % in light and dark; pass
+    `track:` to `SymairaProgressStyle.init` only for a deliberate exception.
+  - On iOS and tvOS `SymairaTopoView` renders through `CAMetalLayer` with a
+    `CADisplayLink` instead of a SwiftUI `TimelineView`. Confirm the
+    background still pauses with Reduce Motion, Low Power Mode and a
+    backgrounded scene in the app. Not measured on a physical iPhone.
+- **Rust consumers:** after moving the CoreKit revision:
+  - The workspace requires `serde_json = "1.0.151"` as a caret range, so a
+    consumer workspace may resolve newer 1.0.x releases (#475).
+  - `symaira-core-mcp` keeps answering `ping`, `tools/list` and protocol
+    errors while 16 tool calls run; further calls queue in arrival order (up
+    to 1024). Result objects and input schemas are always written with sorted
+    keys, also when the consumer build enables `serde_json/preserve_order`.
+    Recorded MCP transcripts from such a build change key order (#480).
+  - [`docs/rust-port/go-compatibility.md`](rust-port/go-compatibility.md)
+    lists the differences from the retired Go library that are intended; no
+    Go-compatibility modes are planned.
+
 ## v0.21.0
 
 - **Swift consumers:** move the pin to `exact: "0.21.0"` (XcodeGen

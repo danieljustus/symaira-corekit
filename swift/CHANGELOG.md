@@ -11,6 +11,8 @@ the releases of the former `symaira-appkit` repository.
 
 ## [Unreleased]
 
+## [0.22.0] - 2026-11-12
+
 ### Added
 - `SymairaStatTile`: the shared dashboard summary tile (value in
   `SymairaTypography.stat`, label, optional detail, optional card surface) with
