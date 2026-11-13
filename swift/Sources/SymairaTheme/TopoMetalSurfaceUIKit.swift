@@ -32,7 +32,7 @@ private final class TopoDisplayLinkProxy: NSObject {
             link.invalidate()
             return
         }
-        target.drawFrame()
+        target.tick()
     }
 }
 
@@ -42,9 +42,13 @@ final class TopoMetalView: UIView {
 
     private let driver = TopoMetalDriver()
     private var displayLink: CADisplayLink?
+    /// Whether the scheduled link runs at the display maximum rather than the idle cap.
+    private var fastRate = false
     var framesDrawn: Int { driver.framesDrawn }
     /// Whether a display link is currently scheduled (test hook).
     var isDrawing: Bool { displayLink != nil }
+    /// Whether the scheduled link asks for the display maximum (test hook).
+    var isFast: Bool { displayLink != nil && fastRate }
     private var metalLayer: CAMetalLayer { layer as! CAMetalLayer }
 
     override init(frame: CGRect) {
@@ -54,9 +58,8 @@ final class TopoMetalView: UIView {
         isUserInteractionEnabled = false
         isAccessibilityElement = false
         driver.attach(metalLayer)
-        // Never block the main thread waiting for a free drawable: skip the frame.
-        metalLayer.allowsNextDrawableTimeout = false
         driver.onRefresh = { [weak self] in self?.refresh() }
+        driver.onRedraw = { [weak self] in self?.drawFrame() }
     }
     convenience init() { self.init(frame: .zero) }
     required init?(coder: NSCoder) { nil }
@@ -74,14 +77,29 @@ final class TopoMetalView: UIView {
         guard !driver.stopped else { return }
         driver.observeInputs()
         if TopoFramePacing.runsFrameLoop(paused: driver.paused, hasWindow: window != nil) {
-            let rate = TopoFramePacing.rate(
-                interactive: driver.interactive, displayMaximum: window?.screen.maximumFramesPerSecond ?? 60)
-            let link = displayLink ?? makeDisplayLink()
-            link.preferredFrameRateRange = CAFrameRateRange(
-                minimum: rate.minimum, maximum: rate.maximum, preferred: rate.preferred)
+            schedule(fast: currentlyFast)
         } else {
             invalidateDisplayLink()
         }
+        drawFrame()
+    }
+
+    private var currentlyFast: Bool {
+        TopoFramePacing.runsAtDisplayRate(interactive: driver.interactive, rippling: driver.rippling)
+    }
+
+    private func schedule(fast: Bool) {
+        let rate = TopoFramePacing.rate(
+            interactive: fast, displayMaximum: window?.screen.maximumFramesPerSecond ?? 60)
+        let link = displayLink ?? makeDisplayLink()
+        link.preferredFrameRateRange = CAFrameRateRange(
+            minimum: rate.minimum, maximum: rate.maximum, preferred: rate.preferred)
+        fastRate = fast
+    }
+
+    /// One display-link frame. Ripples are not observed, so their start and end switch the rate here.
+    func tick() {
+        if displayLink != nil, currentlyFast != fastRate { schedule(fast: !fastRate) }
         drawFrame()
     }
 

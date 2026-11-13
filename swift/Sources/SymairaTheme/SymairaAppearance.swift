@@ -66,7 +66,17 @@ public struct SymairaSettingsButton: View {
                 #endif
             }
         } label: {
+            #if os(macOS)
             Label(SymairaStrings.settings, symairaIcon: .settings)
+            #else
+            // iOS toolbars draw only an `Image` icon (IOS-6); with a `SymairaIconView`
+            // the bar falls back to the title and shows the word instead of the gear.
+            Label {
+                Text(SymairaStrings.settings)
+            } icon: {
+                Image(symairaIcon: .settings, size: 20)
+            }
+            #endif
         }
         .labelStyle(.iconOnly)
         .accessibilityLabel(SymairaStrings.settings)

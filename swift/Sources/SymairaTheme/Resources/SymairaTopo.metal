@@ -68,30 +68,30 @@ static float topoHeight(float2 pos, thread const TopoIn &in){
 // p2: warp, think, problem, ask p3: tintAmount, askX, askY, displayScale
 // p4: scale, levels, lineA, idxA p5: unused, maxA, basinOpen, press
 // p6: pointerRadius, pointerStrength, pressDepth, unused
-static half4 topoShade(float2 pos, half4 color,
-    float4 p0, float4 p1, float4 p2, float4 p3, float4 p4, float4 p5, float4 p6,
-    half4 col4, half4 tint4, device const float *rects, int rectCount, device const float *ripples, int rippleCount)
+static TopoIn topoInput(float4 p0, float4 p1, float4 p2, float4 p3, float4 p4, float4 p5, float4 p6,
+    device const float *rects, int rectCount, device const float *ripples, int rippleCount)
 {
-    float2 res = p0.xy; float rt = p0.w; float k = p1.w;
-    float think = p2.y; float tintA = p3.x; float ds = max(p3.w, 1.);
-    TopoIn in = { p1.xy, p1.z, p0.z, rt, p2.x, p2.z, p2.w, p5.w, p3.yz, p4, p6,
+    TopoIn in = { p1.xy, p1.z, p0.z, p0.w, p2.x, p2.z, p2.w, p5.w, p3.yz, p4, p6,
                   rects, rectCount, ripples, rippleCount };
+    return in;
+}
 
-    // Schutzzonen: keine Linien unter Text/Karten, weicher Rand von 2–8 pt.
+// Schutzzonen: keine Linien unter Text/Karten, weicher Rand von 2–8 pt.
+static float topoMask(float2 pos, device const float *rects, int rectCount){
     float mask = 1.;
     for (int i = 0; i < rectCount / 5; i++) {
         float4 r = float4(rects[i*5], rects[i*5+1], rects[i*5+2], rects[i*5+3]);
         mask = min(mask, smoothstep(2., 8., sdBox(pos, r, 12.)));
     }
-    if (mask <= 0.) { return color; }
+    return mask;
+}
 
-    // Finite differences over one device pixel replace fwidth().
-    float px = 1. / ds;
-    float v = topoHeight(pos, in) * p4.y;
-    float vx = topoHeight(pos + float2(px, 0.), in) * p4.y;
-    float vy = topoHeight(pos + float2(0., px), in) * p4.y;
-    float a1 = abs(vx - v) + abs(vy - v);
-
+// Contour lines from the scaled height `v` and its change per device pixel `a1`.
+static half4 topoLines(float2 pos, half4 color, float v, float a1, float mask,
+    float4 p0, float4 p1, float4 p2, float4 p3, float4 p4, float4 p5, half4 col4, half4 tint4)
+{
+    float2 res = p0.xy; float rt = p0.w; float k = p1.w;
+    float think = p2.y; float tintA = p3.x; float ds = max(p3.w, 1.);
     float line = iso(v, a1, .65 * ds, .5), idx = iso(v / 5., a1 / 5., 1. * ds, 1.6);
     float2 e = (pos - float2(res.x * .6, res.y * .55)) / float2(res.x * .36, res.y * .5);
     float vis = mix(1., clamp((length(e) - .78) / .42, 0., 1.), p5.z);
@@ -102,6 +102,25 @@ static half4 topoShade(float2 pos, half4 color,
     half3 c = mix(col4.rgb, tint4.rgb, half(tintA));
     // über die Eingangsfarbe (Canvas) komponieren: SwiftUI überspringt vollständig transparente Layer
     return half4(mix(color.rgb, c, half(a)), color.a);
+}
+
+// Reference shading: the full height field per pixel, three times for the finite differences.
+static half4 topoShade(float2 pos, half4 color,
+    float4 p0, float4 p1, float4 p2, float4 p3, float4 p4, float4 p5, float4 p6,
+    half4 col4, half4 tint4, device const float *rects, int rectCount, device const float *ripples, int rippleCount)
+{
+    float ds = max(p3.w, 1.);
+    TopoIn in = topoInput(p0, p1, p2, p3, p4, p5, p6, rects, rectCount, ripples, rippleCount);
+    float mask = topoMask(pos, rects, rectCount);
+    if (mask <= 0.) { return color; }
+
+    // Finite differences over one device pixel replace fwidth().
+    float px = 1. / ds;
+    float v = topoHeight(pos, in) * p4.y;
+    float vx = topoHeight(pos + float2(px, 0.), in) * p4.y;
+    float vy = topoHeight(pos + float2(0., px), in) * p4.y;
+    float a1 = abs(vx - v) + abs(vy - v);
+    return topoLines(pos, color, v, a1, mask, p0, p1, p2, p3, p4, p5, col4, tint4);
 }
 
 [[ stitchable ]] half4 symairaTopo(float2 pos, half4 color,
@@ -120,9 +139,67 @@ struct TopoUniforms {
     float4 canvas, topo, tint;
     uint4 counts;
 };
+
+// Single-pass reference of the native surface (parity and cost tests).
 fragment half4 topoFragment(float4 position [[position]], constant TopoUniforms &u [[buffer(0)]],
                            device const float *rects [[buffer(1)]], device const float *ripples [[buffer(2)]]) {
     return topoShade(position.xy / max(u.p[3].w, 1.), half4(u.canvas),
                      u.p[0], u.p[1], u.p[2], u.p[3], u.p[4], u.p[5], u.p[6],
                      half4(u.topo), half4(u.tint), rects, u.counts.x, ripples, u.counts.y);
+}
+
+// Two-pass native surface. The height field is smooth (its finest detail spans tens of points),
+// so pass 1 evaluates it once per grid cell instead of three times per device pixel, and pass 2
+// draws the lines per pixel from a cubic B-spline through that grid, with the analytic slope in
+// place of the finite differences.
+// grid: x = cell size in points, y = padding cells before the surface, zw = grid size in samples.
+// Sample (i, j) lies at ((i, j) - padding) * cell in surface points.
+fragment float topoHeightField(float4 position [[position]], constant TopoUniforms &u [[buffer(0)]],
+                               device const float *rects [[buffer(1)]], device const float *ripples [[buffer(2)]],
+                               constant float4 &grid [[buffer(3)]]) {
+    TopoIn in = topoInput(u.p[0], u.p[1], u.p[2], u.p[3], u.p[4], u.p[5], u.p[6],
+                          rects, u.counts.x, ripples, u.counts.y);
+    return topoHeight((floor(position.xy) - grid.y) * grid.x, in);
+}
+
+static float4 bsplineWeights(float t){
+    float s = 1. - t, t2 = t * t, t3 = t2 * t;
+    return float4(s * s * s, 3. * t3 - 6. * t2 + 4., -3. * t3 + 3. * t2 + 3. * t + 1., t3) / 6.;
+}
+static float4 bsplineSlopes(float t){
+    float s = 1. - t;
+    return float4(-s * s, 3. * t * t - 4. * t, -3. * t * t + 2. * t + 1., t * t) / 2.;
+}
+
+fragment half4 topoContour(float4 position [[position]], constant TopoUniforms &u [[buffer(0)]],
+                           device const float *rects [[buffer(1)]], constant float4 &grid [[buffer(3)]],
+                           texture2d<float, access::read> heights [[texture(0)]]) {
+    float ds = max(u.p[3].w, 1.);
+    float2 pos = position.xy / ds;
+    half4 canvas = half4(u.canvas);
+    float mask = topoMask(pos, rects, u.counts.x);
+    if (mask <= 0.) { return canvas; }
+
+    float2 g = pos / grid.x + grid.y;
+    float2 cell = floor(g), t = g - cell;
+    float4 wx = bsplineWeights(t.x), wy = bsplineWeights(t.y);
+    float4 sx = bsplineSlopes(t.x), sy = bsplineSlopes(t.y);
+    int2 base = int2(cell) - 1, last = int2(grid.zw) - 1;
+    float h = 0., hx = 0., hy = 0.;
+    for (int j = 0; j < 4; j++) {
+        float rowH = 0., rowX = 0.;
+        for (int i = 0; i < 4; i++) {
+            float s = heights.read(uint2(clamp(base + int2(i, j), int2(0), last))).r;
+            rowH += wx[i] * s;
+            rowX += sx[i] * s;
+        }
+        h += wy[j] * rowH;
+        hx += wy[j] * rowX;
+        hy += sy[j] * rowH;
+    }
+    // Change of the scaled height over one device pixel, as the finite differences measure it.
+    float levels = u.p[4].y;
+    float a1 = (abs(hx) + abs(hy)) * levels / (grid.x * ds);
+    return topoLines(pos, canvas, h * levels, a1, mask, u.p[0], u.p[1], u.p[2], u.p[3], u.p[4], u.p[5],
+                     half4(u.topo), half4(u.tint));
 }

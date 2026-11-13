@@ -11,6 +11,31 @@ the releases of the former `symaira-appkit` repository.
 
 ## [Unreleased]
 
+## [0.22.1] - 2026-11-13
+
+### Changed
+- The native Liquid Topography (macOS, iOS, tvOS) draws in two passes: the
+  height field once per 4 pt grid cell into a small `r32Float` texture, then
+  the contour lines per device pixel from a cubic B-spline through that grid,
+  with its analytic slope in place of the finite differences. On an Apple M4
+  Pro GPU at iPhone 17 size (1206 × 2622 px, six cards, two ripples) a frame
+  takes 0.26 ms instead of 1.88 ms. Lines stay within one or two device pixels
+  of the per-pixel field (`TopoRenderCostTests`). Not measured on a physical
+  iPhone (#482).
+- Ripples run at the display maximum until they fade; at the 20 fps idle cap
+  they jumped 9 pt per frame. The idle drift stays at 20 fps (#482).
+
+### Fixed
+- The Metal surface no longer blocks the main thread waiting for a drawable:
+  at most two frames are in flight, and a frame beyond that is skipped and
+  redrawn once the GPU frees up. On iOS `allowsNextDrawableTimeout = false`
+  made `nextDrawable()` wait without a time limit (#482).
+- `SymairaSettingsButton` shows the gear on iOS. Toolbars there draw only an
+  `Image` icon, so the bar showed the word "Settings" instead (#482).
+
+### Documentation
+- IOS-6 covers toolbar items as well as tab bar items.
+
 ## [0.22.0] - 2026-11-12
 
 ### Added

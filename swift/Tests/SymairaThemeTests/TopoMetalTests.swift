@@ -15,7 +15,9 @@ final class TopoMetalTests: XCTestCase {
         defer { SymairaTopoView.startPhase = previous }
         let model = SymairaTopoModel()
         model.rects["protected"] = (CGRect(x: 100, y: 60, width: 80, height: 60), true)
-        let pipeline = try TopoMetalPipeline(device: device)
+        // The single-pass reference ports the stitchable shader 1:1; the production two-pass
+        // surface is checked against this reference in TopoRenderCostTests.
+        let pipeline = try TopoMetalPipeline(device: device, reference: true)
         // Check both appearances and Retina point-to-pixel conversion.
         for scheme in [ColorScheme.dark, .light] {
             for scale in [CGFloat(1), 2] {

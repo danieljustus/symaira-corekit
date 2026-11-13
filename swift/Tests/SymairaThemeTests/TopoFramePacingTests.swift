@@ -25,6 +25,12 @@ final class TopoFramePacingTests: XCTestCase {
             "a view removed from its window must drop its frame loop")
     }
 
+    func testPointerOrRipplesRunAtDisplayRate() {
+        XCTAssertFalse(TopoFramePacing.runsAtDisplayRate(interactive: false, rippling: false), "idle drift")
+        XCTAssertTrue(TopoFramePacing.runsAtDisplayRate(interactive: true, rippling: false), "pointer")
+        XCTAssertTrue(TopoFramePacing.runsAtDisplayRate(interactive: false, rippling: true), "travelling ripple")
+    }
+
     func testIdleRunsAtTokenCapRegardlessOfDisplay() {
         for maximum in [0, 60, 120] {
             XCTAssertEqual(

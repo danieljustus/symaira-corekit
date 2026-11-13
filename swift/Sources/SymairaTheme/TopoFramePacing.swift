@@ -26,6 +26,10 @@ enum TopoFramePacing {
     /// A frame loop only runs while unpaused and attached to a window.
     static func runsFrameLoop(paused: Bool, hasWindow: Bool) -> Bool { !paused && hasWindow }
 
+    /// The pointer over the surface and travelling ripples need every display frame; the slow
+    /// contour drift alone moves less than a device pixel per idle frame.
+    static func runsAtDisplayRate(interactive: Bool, rippling: Bool) -> Bool { interactive || rippling }
+
     /// Frames per second for a timer or display link. `displayMaximum` is the
     /// attached screen's `maximumFramesPerSecond`; 0 or negative means unknown.
     static func framesPerSecond(interactive: Bool, displayMaximum: Int) -> Double {

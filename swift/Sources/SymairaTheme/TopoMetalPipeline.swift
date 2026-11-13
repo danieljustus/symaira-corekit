@@ -5,56 +5,142 @@ import QuartzCore
 import SwiftUI
 
 /// Also used by the parity test: the production encoder, not a duplicate shader.
+///
+/// Production draws two passes: the height field once per `cellPoints` grid cell into a small
+/// float texture, then the contour lines per device pixel from a cubic B-spline through it.
+/// `reference: true` draws the original single pass (the full height field three times per
+/// pixel); tests compare both for parity and cost.
 @MainActor
 final class TopoMetalPipeline {
+    /// Grid spacing of the height field in points. Its finest detail (third noise octave,
+    /// ripple rings) spans more than 25 pt, so 4 pt keeps the B-spline within a hair of the
+    /// per-pixel field at a few hundredths of its cost.
+    static let cellPoints: Float = 4
+    /// Grid samples before the surface edge, so the B-spline has support at x or y = 0.
+    static let paddingCells: Float = 1
+
     let device: any MTLDevice
     private let queue: any MTLCommandQueue
-    private let pipeline: any MTLRenderPipelineState
+    private let reference: (any MTLRenderPipelineState)?
+    private let heightField: (any MTLRenderPipelineState)?
+    private let contour: (any MTLRenderPipelineState)?
+    private var heights: (any MTLTexture)?
 
-    init(device: any MTLDevice) throws {
+    init(device: any MTLDevice, reference useReference: Bool = false) throws {
         self.device = device
         guard let queue = device.makeCommandQueue() else { throw CocoaError(.featureUnsupported) }
         self.queue = queue
         let library = try device.makeDefaultLibrary(bundle: SymairaThemeResources.bundle)
-        let descriptor = MTLRenderPipelineDescriptor()
-        descriptor.vertexFunction = library.makeFunction(name: "topoVertex")
-        descriptor.fragmentFunction = library.makeFunction(name: "topoFragment")
+        func state(_ fragment: String, _ format: MTLPixelFormat) throws -> any MTLRenderPipelineState {
+            let descriptor = MTLRenderPipelineDescriptor()
+            descriptor.vertexFunction = library.makeFunction(name: "topoVertex")
+            descriptor.fragmentFunction = library.makeFunction(name: fragment)
+            descriptor.colorAttachments[0].pixelFormat = format
+            return try device.makeRenderPipelineState(descriptor: descriptor)
+        }
         // SwiftUI's default colorEffect works in encoded sRGB. A non-sRGB
         // attachment preserves that interpolation; the layer declares its sRGB
         // colorspace separately. A *_srgb attachment would brighten the lines.
-        descriptor.colorAttachments[0].pixelFormat = .bgra8Unorm
-        pipeline = try device.makeRenderPipelineState(descriptor: descriptor)
+        if useReference {
+            reference = try state("topoFragment", .bgra8Unorm)
+            heightField = nil
+            contour = nil
+        } else {
+            reference = nil
+            heightField = try state("topoHeightField", .r32Float)
+            contour = try state("topoContour", .bgra8Unorm)
+        }
+    }
+
+    /// Grid size in samples for a surface of `size` points: padding before, B-spline support after.
+    static func gridSize(points size: SIMD2<Float>) -> (width: Int, height: Int) {
+        let extra = Int(paddingCells) + 3
+        return (
+            Int((max(size.x, 1) / cellPoints).rounded(.up)) + extra,
+            Int((max(size.y, 1) / cellPoints).rounded(.up)) + extra
+        )
     }
 
     @discardableResult
     func render(
         _ frame: TopoFrame, into texture: any MTLTexture,
-        drawable: (any CAMetalDrawable)? = nil
+        drawable: (any CAMetalDrawable)? = nil,
+        completed: MTLCommandBufferHandler? = nil
     ) -> (any MTLCommandBuffer)? {
         guard let command = queue.makeCommandBuffer() else { return nil }
-        let pass = MTLRenderPassDescriptor()
-        pass.colorAttachments[0].texture = texture
-        pass.colorAttachments[0].loadAction = .clear
-        pass.colorAttachments[0].storeAction = .store
-        pass.colorAttachments[0].clearColor = MTLClearColorMake(0, 0, 0, 0)
-        guard let encoder = command.makeRenderCommandEncoder(descriptor: pass) else { return nil }
-        encoder.setRenderPipelineState(pipeline)
         var uniforms = frame.vectors + [frame.canvas, frame.topo, frame.tint]
         // uint4 occupies the same 16-byte slot as float4, preserving Metal alignment.
         uniforms.append(
             SIMD4(
                 Float(bitPattern: UInt32(frame.rects.count)),
                 Float(bitPattern: UInt32(frame.ripples.count)), 0, 0))
-        uniforms.withUnsafeBytes { encoder.setFragmentBytes($0.baseAddress!, length: $0.count, index: 0) }
-        for (index, array) in [frame.rects, frame.ripples].enumerated() {
-            let values = array.isEmpty ? [Float(0)] : array
-            values.withUnsafeBytes { encoder.setFragmentBytes($0.baseAddress!, length: $0.count, index: index + 1) }
+        let rects = frame.rects.isEmpty ? [Float(0)] : frame.rects
+        let ripples = frame.ripples.isEmpty ? [Float(0)] : frame.ripples
+        func bind(_ encoder: any MTLRenderCommandEncoder, ripplesToo: Bool) {
+            uniforms.withUnsafeBytes { encoder.setFragmentBytes($0.baseAddress!, length: $0.count, index: 0) }
+            rects.withUnsafeBytes { encoder.setFragmentBytes($0.baseAddress!, length: $0.count, index: 1) }
+            if ripplesToo {
+                ripples.withUnsafeBytes { encoder.setFragmentBytes($0.baseAddress!, length: $0.count, index: 2) }
+            }
         }
-        encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 3)
-        encoder.endEncoding()
+
+        if let reference {
+            guard let encoder = command.makeRenderCommandEncoder(descriptor: Self.pass(texture, load: .clear))
+            else { return nil }
+            encoder.setRenderPipelineState(reference)
+            bind(encoder, ripplesToo: true)
+            encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 3)
+            encoder.endEncoding()
+        } else if let heightField, let contour {
+            let points = SIMD2(frame.vectors[0].x, frame.vectors[0].y)
+            let size = Self.gridSize(points: points)
+            guard let heights = heightTexture(width: size.width, height: size.height) else { return nil }
+            var grid = SIMD4(Self.cellPoints, Self.paddingCells, Float(size.width), Float(size.height))
+
+            guard let field = command.makeRenderCommandEncoder(descriptor: Self.pass(heights, load: .dontCare))
+            else { return nil }
+            field.setRenderPipelineState(heightField)
+            bind(field, ripplesToo: true)
+            field.setFragmentBytes(&grid, length: MemoryLayout<SIMD4<Float>>.stride, index: 3)
+            field.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 3)
+            field.endEncoding()
+
+            guard let lines = command.makeRenderCommandEncoder(descriptor: Self.pass(texture, load: .dontCare))
+            else { return nil }
+            lines.setRenderPipelineState(contour)
+            bind(lines, ripplesToo: false)
+            lines.setFragmentBytes(&grid, length: MemoryLayout<SIMD4<Float>>.stride, index: 3)
+            lines.setFragmentTexture(heights, index: 0)
+            lines.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 3)
+            lines.endEncoding()
+        } else {
+            return nil
+        }
         if let drawable { command.present(drawable) }
+        if let completed { command.addCompletedHandler(completed) }
         command.commit()
         return command
+    }
+
+    /// One attachment pass. The full-screen triangle writes every pixel, so nothing needs loading.
+    private static func pass(_ texture: any MTLTexture, load: MTLLoadAction) -> MTLRenderPassDescriptor {
+        let pass = MTLRenderPassDescriptor()
+        pass.colorAttachments[0].texture = texture
+        pass.colorAttachments[0].loadAction = load
+        pass.colorAttachments[0].storeAction = .store
+        pass.colorAttachments[0].clearColor = MTLClearColorMake(0, 0, 0, 0)
+        return pass
+    }
+
+    /// Reused while the surface keeps its size; a new size allocates once.
+    private func heightTexture(width: Int, height: Int) -> (any MTLTexture)? {
+        if let heights, heights.width == width, heights.height == height { return heights }
+        let descriptor = MTLTextureDescriptor.texture2DDescriptor(
+            pixelFormat: .r32Float, width: width, height: height, mipmapped: false)
+        descriptor.usage = [.renderTarget, .shaderRead]
+        descriptor.storageMode = .private
+        heights = device.makeTexture(descriptor: descriptor)
+        return heights
     }
 }
 
@@ -73,6 +159,14 @@ final class TopoMetalDriver {
     private(set) var framesDrawn = 0
     /// Re-evaluates the frame loop and redraws; set by the owning view.
     var onRefresh: (() -> Void)?
+    /// Draws one frame again; set by the owning view. Called when a frame was skipped
+    /// because the GPU was still busy and the surface has no running frame loop to catch up.
+    var onRedraw: (() -> Void)?
+    /// Frames committed but not yet finished by the GPU. Drawing never waits for them:
+    /// at the limit a frame is skipped and redrawn once the GPU frees up.
+    private var inFlight = 0
+    private var skipped = false
+    static let maxFramesInFlight = 2
     private let integrator = TopoFrameIntegrator()
     private var renderer: TopoMetalPipeline?
     private var observing = false
@@ -90,6 +184,8 @@ final class TopoMetalDriver {
     var lowPower: Bool { ProcessInfo.processInfo.isLowPowerModeEnabled }
     var paused: Bool { TopoFramePacing.isPaused(still: still, visible: visible, lowPower: lowPower) }
     var interactive: Bool { model?.interactive == true }
+    /// Ripples travel 180 pt/s; at the 20 fps idle cap they would jump 9 pt per frame.
+    var rippling: Bool { model?.ripples.isEmpty == false }
 
     /// The layer declares sRGB separately from the non-sRGB attachment format
     /// (see `TopoMetalPipeline`) so SwiftUI's encoded-sRGB interpolation holds.
@@ -151,12 +247,30 @@ final class TopoMetalDriver {
             layer.contentsScale = scale
             layer.drawableSize = pixels
         }
+        guard inFlight < Self.maxFramesInFlight else {
+            skipped = true
+            return
+        }
         guard let drawable = layer.nextDrawable() else { return }
+        skipped = false
         let frame = integrator.frame(
             model: model, size: size, origin: origin, now: .now,
             scheme: scheme, displayScale: scale,
             still: TopoFramePacing.isStill(still: still, lowPower: lowPower), paused: paused)
-        if renderer.render(frame, into: drawable.texture, drawable: drawable) != nil { framesDrawn += 1 }
+        let completed: MTLCommandBufferHandler = { [weak self] _ in
+            Task { @MainActor [weak self] in self?.frameFinished() }
+        }
+        guard renderer.render(frame, into: drawable.texture, drawable: drawable, completed: completed) != nil
+        else { return }
+        framesDrawn += 1
+        inFlight += 1
+    }
+
+    private func frameFinished() {
+        inFlight -= 1
+        guard skipped, !stopped else { return }
+        skipped = false
+        onRedraw?()
     }
 
     func stop(layer: CAMetalLayer) {
@@ -164,6 +278,7 @@ final class TopoMetalDriver {
         if let powerObserver { NotificationCenter.default.removeObserver(powerObserver) }
         powerObserver = nil
         onRefresh = nil
+        onRedraw = nil
         model = nil
         renderer = nil
         layer.device = nil

@@ -317,9 +317,10 @@ Six lines, kept in the pull request or issue:
   `.symairaTopography(model)` inside its navigation stack, the iOS counterpart
   of `SymairaWorkspace(topography:)`; dense lists, tables and settings pass
   `nil` or omit it (MOTION-1).
-- **IOS-6** Tab bar items use `Label { Text(title) } icon: { Image(symairaIcon:) }`;
-  the tab bar renders only `Image`, so `Label(_:symairaIcon:)` shows no icon
-  there.
+- **IOS-6** Tab bar and toolbar items use
+  `Label { Text(title) } icon: { Image(symairaIcon:) }`; both bars render only
+  `Image`, so `Label(_:symairaIcon:)` shows no icon there (a toolbar shows the
+  title instead).
 
 ## 13. Review contract
 

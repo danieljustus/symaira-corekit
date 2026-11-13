@@ -21,6 +21,8 @@ struct TopoMetalSurface: NSViewRepresentable {
 final class TopoMetalView: NSView {
     private let driver = TopoMetalDriver()
     private var timer: Timer?
+    /// Whether the running timer ticks at the display maximum rather than the idle cap.
+    private var fastRate = false
     var framesDrawn: Int { driver.framesDrawn }
     private var metalLayer: CAMetalLayer { layer as! CAMetalLayer }
     override var isFlipped: Bool { true }
@@ -32,6 +34,7 @@ final class TopoMetalView: NSView {
         wantsLayer = true
         driver.attach(metalLayer)
         driver.onRefresh = { [weak self] in self?.refresh() }
+        driver.onRedraw = { [weak self] in self?.drawFrame() }
     }
     convenience init() { self.init(frame: .zero) }
     required init?(coder: NSCoder) { nil }
@@ -46,15 +49,29 @@ final class TopoMetalView: NSView {
         timer?.invalidate()
         timer = nil
         if TopoFramePacing.runsFrameLoop(paused: driver.paused, hasWindow: window != nil) {
+            fastRate = currentlyFast
             let fps = TopoFramePacing.framesPerSecond(
-                interactive: driver.interactive, displayMaximum: window?.screen?.maximumFramesPerSecond ?? 60)
+                interactive: fastRate, displayMaximum: window?.screen?.maximumFramesPerSecond ?? 60)
             let timer = Timer(timeInterval: 1 / fps, repeats: true) { [weak self] _ in
-                MainActor.assumeIsolated { self?.drawFrame() }
+                MainActor.assumeIsolated { self?.tick() }
             }
             RunLoop.main.add(timer, forMode: .common)
             self.timer = timer
         }
         drawFrame()
+    }
+
+    private var currentlyFast: Bool {
+        TopoFramePacing.runsAtDisplayRate(interactive: driver.interactive, rippling: driver.rippling)
+    }
+
+    /// One timer frame. Ripples are not observed, so their start and end switch the rate here.
+    private func tick() {
+        if currentlyFast != fastRate {
+            refresh()
+        } else {
+            drawFrame()
+        }
     }
 
     override func viewDidMoveToWindow() {

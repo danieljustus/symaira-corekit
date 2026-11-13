@@ -40,6 +40,24 @@ final class TopoMetalUIKitTests: XCTestCase {
         withExtendedLifetime(window) {}
     }
 
+    func testRipplesRaiseTheRateUntilTheyFade() {
+        guard !ProcessInfo.processInfo.isLowPowerModeEnabled else { return }
+        let model = SymairaTopoModel()
+        let view = TopoMetalView()
+        let window = attached(view)
+        view.configure(model: model, origin: .zero, scheme: .dark, still: false, visible: true)
+        XCTAssertTrue(view.isDrawing)
+        XCTAssertFalse(view.isFast, "idle drift runs at the 20 fps cap")
+        model.ripple(at: CGPoint(x: 100, y: 100))
+        view.tick()
+        XCTAssertTrue(view.isFast, "a travelling ripple runs at the display maximum")
+        model.ripples.removeAll()
+        view.tick()
+        XCTAssertFalse(view.isFast, "back to the idle cap once the ripples are gone")
+        view.stop()
+        withExtendedLifetime(window) {}
+    }
+
     func testStopInvalidatesDisplayLinkAndIgnoresLaterConfigure() {
         let model = SymairaTopoModel()
         let view = TopoMetalView()
