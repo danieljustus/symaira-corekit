@@ -20,7 +20,10 @@ behavior change worth confirming.
   - On iOS `SymairaSettingsButton` shows the gear instead of the word
     "Settings". Product toolbar buttons with a `SymairaIcon` need
     `Label { Text(title) } icon: { Image(symairaIcon:) }` on iOS (IOS-6).
-- **Rust consumers:** no change; moving the revision is optional.
+- **Rust consumers:** no API change. Consumers of `symaira-core-llm` or
+  `symaira-core-update` resolve `quinn-proto` and `quinn-udp` in their own
+  lockfile; update them to 0.11.19 and 0.5.16 (RUSTSEC-2026-0523, -0524,
+  -0538), for example with `cargo update -p quinn-proto -p quinn-udp`.
 
 ## v0.22.0
 

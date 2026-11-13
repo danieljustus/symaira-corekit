@@ -11,6 +11,10 @@ The GitHub Releases page is the authoritative source for complete release notes.
   the surface never blocks the main thread waiting for a drawable (#482).
 - Swift: `SymairaSettingsButton` shows the gear on iOS instead of the word
   "Settings" (#482).
+- The lockfile moves `quinn-proto` to 0.11.19 and `quinn-udp` to 0.5.16
+  (RUSTSEC-2026-0523, -0524, -0538), both reached through `reqwest` in
+  `symaira-core-llm` and `symaira-core-update`. Only the two package entries
+  change; the frozen FS/SEC and SQLite lock-closure digests stay the same.
 
 ## v0.22.0 — 2026-11-12
 
