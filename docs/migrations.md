@@ -10,6 +10,15 @@ also preserve historical removals, including `embedkit` in v0.12.0; those
 require migration. Otherwise "check" means a new capability to adopt or a
 behavior change worth confirming.
 
+## v0.22.3
+
+- **Swift consumers:** move the pin to `exact: "0.22.3"` (XcodeGen
+  `exactVersion: 0.22.3`). No change on macOS and iOS. On tvOS the button
+  roles become the system bordered styles and pages and cards become focus
+  sections; custom `ButtonStyle`s in tvOS views still need their own focus
+  look (read `@Environment(\.isFocused)` inside the style's view).
+- **Rust consumers:** no change; moving the revision is optional.
+
 ## v0.22.2
 
 - **Swift consumers:** move the pin to `exact: "0.22.2"` (XcodeGen

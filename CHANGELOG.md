@@ -2,6 +2,17 @@
 
 The GitHub Releases page is the authoritative source for complete release notes.
 
+## v0.22.3 — 2026-11-13
+
+- Swift, tvOS: `symairaButtonStyle(.primary/.secondary/.toolbar)` uses the
+  system `borderedProminent` and `bordered` styles, so the remote's focus is
+  visible (lift and highlight); the drawn Symaira styles showed none there.
+- Swift, tvOS: `SymairaPage` toolbar and content and every `symairaCard` are
+  focus sections, so the remote reaches a button at the right end of a row
+  below a field or a row of stars.
+- Swift: `SymairaIconView` and `SymairaIconButton` default sizes and the
+  switch track follow `SymairaMetrics.platformScale` (doubled on tvOS only).
+
 ## v0.22.2 — 2026-11-13
 
 - Swift: on tvOS every Symaira size doubles through the new
