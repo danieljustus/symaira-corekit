@@ -10,6 +10,15 @@ also preserve historical removals, including `embedkit` in v0.12.0; those
 require migration. Otherwise "check" means a new capability to adopt or a
 behavior change worth confirming.
 
+## v0.22.2
+
+- **Swift consumers:** move the pin to `exact: "0.22.2"` (XcodeGen
+  `exactVersion: 0.22.2`). No API change on macOS and iOS. On tvOS every
+  `SymairaSpacing`, `SymairaRadius`, `SymairaMetrics` and bundled font size
+  doubles (`SymairaMetrics.platformScale`); check fixed frames in tvOS views
+  that were sized by hand against the old scale.
+- **Rust consumers:** no change; moving the revision is optional.
+
 ## v0.22.1
 
 - **Swift consumers:** move the pin to `exact: "0.22.1"` (XcodeGen

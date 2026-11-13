@@ -2,6 +2,14 @@
 
 The GitHub Releases page is the authoritative source for complete release notes.
 
+## v0.22.2 — 2026-11-13
+
+- Swift: on tvOS every Symaira size doubles through the new
+  `SymairaMetrics.platformScale`: `SymairaSpacing`, `SymairaRadius`,
+  `SymairaMetrics`, `SymairaPageLayout` and the bundled font roles. Body text
+  is 27 pt on the 1920 pt wide screen instead of 13.5 pt, close to the 29 pt
+  of tvOS body text. macOS and iOS are unchanged (factor 1).
+
 ## v0.22.1 — 2026-11-13
 
 - Swift: the native Liquid Topography draws the height field once per 4 pt
