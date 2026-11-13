@@ -19,6 +19,18 @@ final class TypographyTests: XCTestCase {
         XCTAssertEqual(Set(roles).count, roles.count, "scale entries must not collapse onto each other")
     }
 
+    func testPlatformScaleDoublesOnlyOnTheTV() {
+        #if os(tvOS)
+        XCTAssertEqual(SymairaMetrics.platformScale, 2)
+        #else
+        XCTAssertEqual(SymairaMetrics.platformScale, 1)
+        #endif
+        XCTAssertEqual(SymairaSpacing.large, 16 * SymairaMetrics.platformScale)
+        XCTAssertEqual(SymairaRadius.card, 16 * SymairaMetrics.platformScale)
+        XCTAssertEqual(SymairaPageLayout.toolbarHeight, 44 * SymairaMetrics.platformScale)
+        XCTAssertEqual(SymairaMetrics.readableContentWidth, 760 * SymairaMetrics.platformScale)
+    }
+
     func testWeightVariantsOfBodyAreDistinct() {
         XCTAssertNotEqual(SymairaTypography.body, SymairaTypography.bodyEmphasized)
         XCTAssertNotEqual(SymairaTypography.body, SymairaTypography.bodyMedium)

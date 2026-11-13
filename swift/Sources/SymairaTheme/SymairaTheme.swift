@@ -127,39 +127,51 @@ public enum SymairaTheme {
 
 /// Shared spacing scale. Keeping layout values here prevents each client from
 /// inventing subtly different cards and content rhythm.
+/// Spacing, radii, metrics and the bundled font sizes are multiplied by
+/// `SymairaMetrics.platformScale`, so one layout reads at desk distance and from the couch.
 public enum SymairaSpacing {
-    public static let xSmall: CGFloat = 4
-    public static let small: CGFloat = 8
-    public static let medium: CGFloat = 12
-    public static let large: CGFloat = 16
-    public static let xLarge: CGFloat = 24
-    public static let section: CGFloat = 32
-    public static let spacious: CGFloat = 48
+    public static let xSmall: CGFloat = 4 * SymairaMetrics.platformScale
+    public static let small: CGFloat = 8 * SymairaMetrics.platformScale
+    public static let medium: CGFloat = 12 * SymairaMetrics.platformScale
+    public static let large: CGFloat = 16 * SymairaMetrics.platformScale
+    public static let xLarge: CGFloat = 24 * SymairaMetrics.platformScale
+    public static let section: CGFloat = 32 * SymairaMetrics.platformScale
+    public static let spacious: CGFloat = 48 * SymairaMetrics.platformScale
 }
 
 public enum SymairaRadius {
-    public static let control: CGFloat = 10
-    public static let card: CGFloat = 16
-    public static let panel: CGFloat = 20
+    public static let control: CGFloat = 10 * SymairaMetrics.platformScale
+    public static let card: CGFloat = 16 * SymairaMetrics.platformScale
+    public static let panel: CGFloat = 20 * SymairaMetrics.platformScale
 }
 
 public enum SymairaMetrics {
+    /// Factor from the Symaira scale to this platform. The scale is set for desk and hand
+    /// distance; an Apple TV is read from the couch, so every size doubles there: body text is
+    /// 27 pt on the 1920 pt wide screen, close to the 29 pt of tvOS body text, and a layout
+    /// looks like a 960 pt wide window at twice the size.
+    #if os(tvOS)
+    public static let platformScale: CGFloat = 2
+    #else
+    public static let platformScale: CGFloat = 1
+    #endif
+
     #if os(iOS)
     public static let minimumControlHeight: CGFloat = 44
     #else
-    public static let minimumControlHeight: CGFloat = 34
+    public static let minimumControlHeight: CGFloat = 34 * platformScale
     #endif
 
     /// Content-action roles share geometry, including when an action changes state.
-    public static let contentActionHeight: CGFloat = max(minimumControlHeight, 40)
-    public static let contentActionHorizontalPadding: CGFloat = 20
+    public static let contentActionHeight: CGFloat = max(minimumControlHeight, 40 * platformScale)
+    public static let contentActionHorizontalPadding: CGFloat = 20 * platformScale
 
-    public static let readableContentWidth: CGFloat = 760
-    public static let glassGroupSpacing: CGFloat = 12
+    public static let readableContentWidth: CGFloat = 760 * platformScale
+    public static let glassGroupSpacing: CGFloat = 12 * platformScale
 
     /// Symbol size for the illustration above an empty state. Fixed on purpose —
     /// it is a graphic, not text, and must not scale with Dynamic Type.
-    public static let emptyStateSymbolSize: CGFloat = 36
+    public static let emptyStateSymbolSize: CGFloat = 36 * platformScale
 }
 
 extension Color {

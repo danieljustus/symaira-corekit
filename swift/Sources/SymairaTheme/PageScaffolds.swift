@@ -2,8 +2,8 @@ import SwiftUI
 
 /// Shared page geometry. Placeholder states reserve the same content height.
 public enum SymairaPageLayout {
-    public static let stateHeight: CGFloat = 240
-    public static let toolbarHeight: CGFloat = 44
+    public static let stateHeight: CGFloat = 240 * SymairaMetrics.platformScale
+    public static let toolbarHeight: CGFloat = 44 * SymairaMetrics.platformScale
 }
 
 /// Stable header and toolbar, with optional page scrolling. Tables should use `scrolls: false`.

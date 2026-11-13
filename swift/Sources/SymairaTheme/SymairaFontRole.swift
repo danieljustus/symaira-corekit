@@ -46,7 +46,7 @@ private struct SymairaBrandFontModifier: ViewModifier {
         #if os(iOS)
         let pointSize = scaledSize
         #else
-        let pointSize = size
+        let pointSize = size * SymairaMetrics.platformScale
         #endif
         let font = SymairaFont.resolvedFont(size: pointSize, weight: weight, family: family)
         content.font(tabularDigits ? font.monospacedDigit() : font)
