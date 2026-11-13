@@ -56,7 +56,9 @@ public struct SymairaPage<Toolbar: View, Content: View>: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .frame(height: toolbarHeight)
                 .accessibilityIdentifier("symaira.page.toolbar")
+                .symairaFocusSection()
             content
+                .symairaFocusSection()
         }
         .padding(SymairaSpacing.xLarge)
         .frame(maxWidth: maxWidth, maxHeight: scrolls ? nil : .infinity, alignment: .topLeading)
@@ -164,5 +166,22 @@ struct SymairaPageStateFrame<Content: View>: View {
             .frame(maxWidth: .infinity)
             .frame(height: height)
             .accessibilityIdentifier("symaira.page.state")
+    }
+}
+
+extension View {
+    /// tvOS: the remote moves the focus into this area even when nothing in it lies straight
+    /// above or below the focused control (a button at the right end of a row under a field).
+    @ViewBuilder
+    func symairaFocusSection(fillWidth: Bool = true) -> some View {
+        #if os(tvOS)
+        if fillWidth {
+            frame(maxWidth: .infinity, alignment: .leading).focusSection()
+        } else {
+            focusSection()
+        }
+        #else
+        self
+        #endif
     }
 }

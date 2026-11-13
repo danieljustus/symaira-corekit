@@ -16,7 +16,7 @@ public struct SymairaIconView<Trigger: Equatable>: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.symairaIconInteraction) private var host
 
-    public init(_ icon: SymairaIcon, size: CGFloat = 20, trigger: Trigger) {
+    public init(_ icon: SymairaIcon, size: CGFloat = 20 * SymairaMetrics.platformScale, trigger: Trigger) {
         self.icon = icon
         self.size = size
         self.trigger = trigger
@@ -58,7 +58,7 @@ public struct SymairaIconView<Trigger: Equatable>: View {
 
 extension SymairaIconView where Trigger == Int {
     /// Hover-only icon (no click trigger).
-    public init(_ icon: SymairaIcon, size: CGFloat = 20) {
+    public init(_ icon: SymairaIcon, size: CGFloat = 20 * SymairaMetrics.platformScale) {
         self.init(icon, size: size, trigger: 0)
     }
 }
@@ -71,13 +71,18 @@ public struct SymairaIconButton: View {
     private let action: () -> Void
     @State private var taps = 0
 
-    public init(_ title: LocalizedStringKey, icon: SymairaIcon, size: CGFloat = 20, action: @escaping () -> Void) {
+    public init(
+        _ title: LocalizedStringKey, icon: SymairaIcon, size: CGFloat = 20 * SymairaMetrics.platformScale,
+        action: @escaping () -> Void
+    ) {
         self.init(title: Text(title), icon: icon, size: size, action: action)
     }
 
     /// An already-resolved title, shown verbatim (for example a localized string).
     @_disfavoredOverload
-    public init<S: StringProtocol>(_ title: S, icon: SymairaIcon, size: CGFloat = 20, action: @escaping () -> Void) {
+    public init<S: StringProtocol>(
+        _ title: S, icon: SymairaIcon, size: CGFloat = 20 * SymairaMetrics.platformScale, action: @escaping () -> Void
+    ) {
         self.init(title: Text(title), icon: icon, size: size, action: action)
     }
 

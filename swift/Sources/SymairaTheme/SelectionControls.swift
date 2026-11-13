@@ -21,6 +21,9 @@ public struct SymairaCardModifier: ViewModifier {
             .padding(padding)
             .background(SymairaTheme.surfaceOpaque(for: colorScheme), in: shape)
             .overlay(shape.stroke(SymairaTheme.line(for: colorScheme), lineWidth: 1))
+            // tvOS: a card is one stop for the remote; its button at the right end is reachable
+            // from a control above it on the left.
+            .symairaFocusSection(fillWidth: false)
     }
 }
 
@@ -289,10 +292,10 @@ private struct SymairaSwitchButton: View {
             Capsule().fill(isOn ? SymairaTheme.selected(for: colorScheme) : offTrack)
             Circle()
                 .fill(isOn ? SymairaTheme.onSelected(for: colorScheme) : offKnob)
-                .frame(width: 24, height: 24)
-                .padding(4)
+                .frame(width: 24 * SymairaMetrics.platformScale, height: 24 * SymairaMetrics.platformScale)
+                .padding(4 * SymairaMetrics.platformScale)
         }
-        .frame(width: 56, height: 32)
+        .frame(width: 56 * SymairaMetrics.platformScale, height: 32 * SymairaMetrics.platformScale)
         .contentShape(Capsule())
         .animation(reduceMotion ? nil : .easeOut(duration: 0.16), value: isOn)
     }

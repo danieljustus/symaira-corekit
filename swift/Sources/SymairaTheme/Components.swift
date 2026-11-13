@@ -449,6 +449,17 @@ public struct SymairaAdaptiveButtonModifier: ViewModifier {
 
     @ViewBuilder
     public func body(content: Content) -> some View {
+        #if os(tvOS)
+        // The remote moves a focus that only the system styles show (lift, highlight, motion);
+        // the drawn Symaira styles would leave the focused button looking like the others.
+        switch role {
+        case .primary:
+            content.buttonStyle(.borderedProminent).tint(SymairaTokens.primary)
+                .foregroundStyle(SymairaTokens.onPrimary)
+        case .secondary, .toolbar:
+            content.buttonStyle(.bordered)
+        }
+        #else
         switch role {
         case .primary:
             content.buttonStyle(SymairaPrimaryButtonStyle())
@@ -457,6 +468,7 @@ public struct SymairaAdaptiveButtonModifier: ViewModifier {
         case .toolbar:
             toolbarButton(content)
         }
+        #endif
     }
 
     @ViewBuilder
