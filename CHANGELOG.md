@@ -2,6 +2,16 @@
 
 The GitHub Releases page is the authoritative source for complete release notes.
 
+## v0.22.1 — 2026-11-13
+
+- Swift: the native Liquid Topography draws the height field once per 4 pt
+  grid cell and the contour lines per pixel from a B-spline through it, about
+  a seventh of the GPU time per frame (0.26 ms instead of 1.88 ms at iPhone
+  size on an M4 Pro). Ripples run at the display maximum until they fade, and
+  the surface never blocks the main thread waiting for a drawable (#482).
+- Swift: `SymairaSettingsButton` shows the gear on iOS instead of the word
+  "Settings" (#482).
+
 ## v0.22.0 — 2026-11-12
 
 - `symaira-core-mcp`: queued tool calls no longer block the reader. At most 16

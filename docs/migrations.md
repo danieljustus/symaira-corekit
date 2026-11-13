@@ -10,6 +10,18 @@ also preserve historical removals, including `embedkit` in v0.12.0; those
 require migration. Otherwise "check" means a new capability to adopt or a
 behavior change worth confirming.
 
+## v0.22.1
+
+- **Swift consumers:** move the pin to `exact: "0.22.1"` (XcodeGen
+  `exactVersion: 0.22.1`). No API change. Check:
+  - The topography looks as before; it now costs about a seventh of the GPU
+    time per frame, and ripples run at the display rate. Not measured on a
+    physical iPhone.
+  - On iOS `SymairaSettingsButton` shows the gear instead of the word
+    "Settings". Product toolbar buttons with a `SymairaIcon` need
+    `Label { Text(title) } icon: { Image(symairaIcon:) }` on iOS (IOS-6).
+- **Rust consumers:** no change; moving the revision is optional.
+
 ## v0.22.0
 
 - **Swift consumers:** move the pin to `exact: "0.22.0"` (XcodeGen
