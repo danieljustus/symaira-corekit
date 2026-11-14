@@ -2,6 +2,13 @@
 
 The GitHub Releases page is the authoritative source for complete release notes.
 
+## v0.22.4 — 2026-11-14
+
+- Swift: `SymairaTheme` compiles in Xcode 26.6 Release (whole-module)
+  builds again. The topography Metal pipeline no longer captures its render
+  encoder in closures, which that compiler rejected as a data race and which
+  stopped the signed SymDesk archive (#486). Rendering is unchanged.
+
 ## v0.22.3 — 2026-11-13
 
 - Swift, tvOS: `symairaButtonStyle(.primary/.secondary/.toolbar)` uses the

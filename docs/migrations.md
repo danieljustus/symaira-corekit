@@ -10,6 +10,13 @@ also preserve historical removals, including `embedkit` in v0.12.0; those
 require migration. Otherwise "check" means a new capability to adopt or a
 behavior change worth confirming.
 
+## v0.22.4
+
+- **Swift consumers:** move the pin to `exact: "0.22.4"` (XcodeGen
+  `exactVersion: 0.22.4`). Required for apps archived in Release with Xcode
+  26.6; no API or behavior change.
+- **Rust consumers:** no change; moving the revision is optional.
+
 ## v0.22.3
 
 - **Swift consumers:** move the pin to `exact: "0.22.3"` (XcodeGen

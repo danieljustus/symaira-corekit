@@ -11,6 +11,32 @@ the releases of the former `symaira-appkit` repository.
 
 ## [Unreleased]
 
+## [0.22.4] - 2026-11-14
+
+### Fixed
+- `TopoMetalPipeline` compiles in Xcode 26.6 Release (whole-module) builds:
+  the render encoder is no longer captured in `withUnsafeBytes` closures, which
+  that compiler rejected as "sending 'encoder' risks causing data races". The
+  fragment buffers and their byte lengths are unchanged (#486).
+
+## [0.22.3] - 2026-11-13
+
+### Changed
+- tvOS: `symairaButtonStyle(.primary/.secondary/.toolbar)` uses the system
+  `borderedProminent` and `bordered` styles, so the remote's focus is visible.
+- tvOS: `SymairaPage` toolbar and content and every `symairaCard` are focus
+  sections.
+- `SymairaIconView` and `SymairaIconButton` default sizes and the switch track
+  follow `SymairaMetrics.platformScale` (doubled on tvOS only).
+
+## [0.22.2] - 2026-11-13
+
+### Changed
+- tvOS: every Symaira size doubles through the new
+  `SymairaMetrics.platformScale` (`SymairaSpacing`, `SymairaRadius`,
+  `SymairaMetrics`, `SymairaPageLayout` and the bundled font roles). macOS and
+  iOS are unchanged (factor 1).
+
 ## [0.22.1] - 2026-11-13
 
 ### Changed
