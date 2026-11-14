@@ -110,6 +110,28 @@ jobs:
           if [ "$MEM_GB" -le 8 ]; then JOBS=2; elif [ "$MEM_GB" -le 16 ]; then JOBS=4; else JOBS=6; fi
           swift build --manifest-cache local -v -j "$JOBS"
 
+  # The self-hosted jobs select the newest installed Xcode (27.x on the MacBook
+  # runner) and build Debug. Consumers archive Release (whole-module) with
+  # Xcode 26.6 on the hosted macos-26 image, where #486 failed to compile while
+  # every job here stayed green. This job builds every product in Release with
+  # that image's default Xcode so such a diagnostic fails before a tag (#487).
+  release-build-xcode-26:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Verify Xcode 26 toolchain
+        run: |
+          set -euo pipefail
+          XCODE_VERSION="$(xcodebuild -version | sed -n '1p')"
+          echo "$XCODE_VERSION"
+          swift --version
+          case "$XCODE_VERSION" in
+            Xcode\ 26.*) ;;
+            *) echo "::error::Expected the hosted image's Xcode 26.x, got: $XCODE_VERSION"; exit 1 ;;
+          esac
+      - name: Build (Release, whole-module)
+        run: swift build -c release
+
   # Regression test for #44: ba4bbb2 removed the iOS platform declaration from
   # Package.swift and the break was invisible because the CI only built for
   # macOS. Builds the package against the iOS Simulator SDK in parallel with
