@@ -76,11 +76,13 @@ final class TopoMetalPipeline {
                 Float(bitPattern: UInt32(frame.ripples.count)), 0, 0))
         let rects = frame.rects.isEmpty ? [Float(0)] : frame.rects
         let ripples = frame.ripples.isEmpty ? [Float(0)] : frame.ripples
+        // No closure may capture `encoder`: Xcode 26.6 Release builds treat a closure inside this
+        // @MainActor method as main-actor isolated and reject sending the encoder into it (#486).
         func bind(_ encoder: any MTLRenderCommandEncoder, ripplesToo: Bool) {
-            uniforms.withUnsafeBytes { encoder.setFragmentBytes($0.baseAddress!, length: $0.count, index: 0) }
-            rects.withUnsafeBytes { encoder.setFragmentBytes($0.baseAddress!, length: $0.count, index: 1) }
+            encoder.setFragmentBytes(uniforms, length: uniforms.count * MemoryLayout<SIMD4<Float>>.stride, index: 0)
+            encoder.setFragmentBytes(rects, length: rects.count * MemoryLayout<Float>.stride, index: 1)
             if ripplesToo {
-                ripples.withUnsafeBytes { encoder.setFragmentBytes($0.baseAddress!, length: $0.count, index: 2) }
+                encoder.setFragmentBytes(ripples, length: ripples.count * MemoryLayout<Float>.stride, index: 2)
             }
         }
 
