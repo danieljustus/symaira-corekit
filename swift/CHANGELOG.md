@@ -11,6 +11,22 @@ the releases of the former `symaira-appkit` repository.
 
 ## [Unreleased]
 
+### Added
+- 18 `SymairaIcon` cases for meanings SymDesk still drew with SF Symbols:
+  `blocks`, `usage`, `userVerified`, `userUnknown`, `notificationOff`,
+  `journal`, `number`, `previousMatch`, `nextMatch`, `diff`, `embed`,
+  `audioOff`, `language`, `invoice`, `receipt`, `tip`, `quote` and `skipped`
+  (160 cases in total). Other reported gaps map to existing cases (#485).
+
+### Fixed
+- `SymairaIconView`, `Label(_:symairaIcon:)` and `SymairaIconButton` scale
+  their icon with Dynamic Type relative to `.body`; `size` is the base size at
+  the default text size (#484).
+- `SymairaPage` without a toolbar no longer reserves the empty 44 pt toolbar
+  row and its gap (#488).
+- `gui-review.py` STATE-1 accepts an `accessibilityLabel` on the same line as
+  `ProgressView()` (#481).
+
 ## [0.22.4] - 2026-11-14
 
 ### Fixed
