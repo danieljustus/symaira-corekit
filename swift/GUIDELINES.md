@@ -281,7 +281,8 @@ Six lines, kept in the pull request or issue:
 - **A11Y-3** Touch targets are at least 44 pt on iOS; content actions are at
   least 40 pt on macOS (`SymairaMetrics`).
 - **A11Y-4** Dynamic Type scales every role on iOS; never fix a frame height
-  that clips at accessibility sizes.
+  that clips at accessibility sizes. `SymairaIconView` scales its `size`
+  relative to `.body`, so icons grow with the text next to them.
 - **A11Y-5** Increase Contrast strengthens outlines and Reduce Transparency
   replaces glass with opaque `sidebar`; both come from the shared components
   and must not be overridden.

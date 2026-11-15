@@ -5,10 +5,12 @@ import SwiftUI
 
 /// An icon with Symaira micro-interactions: on hover its parts move to a small
 /// preview pose, and whenever `trigger` changes it plays its click motion
-/// (lid lifts, bell rings, check draws …). Honours Reduce Motion.
+/// (lid lifts, bell rings, check draws …). Honours Reduce Motion. The size
+/// scales with Dynamic Type relative to `.body`; `size` is the base size at
+/// the default text size.
 public struct SymairaIconView<Trigger: Equatable>: View {
     private let icon: SymairaIcon
-    private let size: CGFloat
+    @ScaledMetric private var size: CGFloat
     private let trigger: Trigger
     @State private var isHovered = false
     @State private var hoverChange = Date.distantPast
@@ -18,7 +20,7 @@ public struct SymairaIconView<Trigger: Equatable>: View {
 
     public init(_ icon: SymairaIcon, size: CGFloat = 20 * SymairaMetrics.platformScale, trigger: Trigger) {
         self.icon = icon
-        self.size = size
+        _size = ScaledMetric(wrappedValue: size, relativeTo: .body)
         self.trigger = trigger
     }
 
