@@ -135,6 +135,20 @@
 .si:hover .si-open-external .p-arrow{transform:translate(1px,-1px)}
 @keyframes si-open-external-arrow-0{0%{transform:none}35%{transform:translate(2.5px,-2.5px)}100%{transform:none}}
 .si.si-play .si-open-external .p-arrow{animation:si-open-external-arrow-0 0.42s cubic-bezier(0.34,1.56,0.64,1) 0s backwards}
+.si-previous-match .p-bar{transform-origin:12px 12px}
+@keyframes si-previous-match-bar-0{0%{transform:none}25%{transform:none;opacity:0.3}50%{transform:none}75%{transform:none;opacity:0.3}100%{transform:none}}
+.si.si-play .si-previous-match .p-bar{animation:si-previous-match-bar-0 0.8s cubic-bezier(0.45,0,0.2,1) 0.15s backwards}
+.si-previous-match .p-arrow{transform-origin:12px 12px}
+.si:hover .si-previous-match .p-arrow{transform:translate(0px,-1px)}
+@keyframes si-previous-match-arrow-0{0%{transform:none}35%{transform:translate(0px,-2.5px)}100%{transform:none}}
+.si.si-play .si-previous-match .p-arrow{animation:si-previous-match-arrow-0 0.42s cubic-bezier(0.34,1.56,0.64,1) 0s backwards}
+.si-next-match .p-bar{transform-origin:12px 12px}
+@keyframes si-next-match-bar-0{0%{transform:none}25%{transform:none;opacity:0.3}50%{transform:none}75%{transform:none;opacity:0.3}100%{transform:none}}
+.si.si-play .si-next-match .p-bar{animation:si-next-match-bar-0 0.8s cubic-bezier(0.45,0,0.2,1) 0.15s backwards}
+.si-next-match .p-arrow{transform-origin:12px 12px}
+.si:hover .si-next-match .p-arrow{transform:translate(0px,1px)}
+@keyframes si-next-match-arrow-0{0%{transform:none}35%{transform:translate(0px,2.5px)}100%{transform:none}}
+.si.si-play .si-next-match .p-arrow{animation:si-next-match-arrow-0 0.42s cubic-bezier(0.34,1.56,0.64,1) 0s backwards}
 .si-operate .p-hand{transform-origin:12px 20px}
 .si:hover .si-operate .p-hand{transform:translate(0px,-1px)}
 @keyframes si-operate-hand-0{0%{transform:none}35%{transform:translate(1px,0px)}100%{transform:none}}
@@ -255,6 +269,14 @@
 .si:hover .si-merge .p-node{transform:scale(1.2,1.2)}
 @keyframes si-merge-node-0{0%{transform:none}20%{transform:scale(0.82,0.82)}55%{transform:scale(1.3,1.3)}100%{transform:none}}
 .si.si-play .si-merge .p-node{animation:si-merge-node-0 0.45s cubic-bezier(0.2,0.8,0.3,1) 0.35s backwards}
+.si-diff .p-plus{transform-origin:12px 9.2px}
+.si:hover .si-diff .p-plus{transform:rotate(90deg)}
+@keyframes si-diff-plus-0{0%{transform:none}20%{transform:scale(0.82,0.82)}55%{transform:scale(1.3,1.3)}100%{transform:none}}
+.si.si-play .si-diff .p-plus{animation:si-diff-plus-0 0.45s cubic-bezier(0.2,0.8,0.3,1) 0s backwards}
+.si-diff .p-minus{transform-origin:12px 16px}
+.si:hover .si-diff .p-minus{transform:scale(0.7,1)}
+@keyframes si-diff-minus-0{0%{transform:none}20%{transform:scale(0.82,0.82)}55%{transform:scale(1.3,1.3)}100%{transform:none}}
+.si.si-play .si-diff .p-minus{animation:si-diff-minus-0 0.45s cubic-bezier(0.2,0.8,0.3,1) 0.1s backwards}
 .si-branch .p-line{transform-origin:12px 12px}
 @keyframes si-branch-line-0{0%{transform:none;stroke-dashoffset:1}100%{transform:none}}
 .si.si-play .si-branch .p-line [pathLength]{animation:si-branch-line-0 0.5s cubic-bezier(0.45,0,0.2,1) 0s backwards}
@@ -376,6 +398,26 @@
 .si-audio .p-e{transform-origin:12px 12px}
 @keyframes si-audio-e-0{0%{transform:none}40%{transform:scale(1,0.4)}100%{transform:none}}
 .si.si-play .si-audio .p-e{animation:si-audio-e-0 0.55s cubic-bezier(0.34,1.56,0.64,1) 0.24s backwards}
+.si-audio-off .p-a{transform-origin:12px 12px}
+@keyframes si-audio-off-a-0{0%{transform:none}40%{transform:scale(1,0.4)}100%{transform:none}}
+.si.si-play .si-audio-off .p-a{animation:si-audio-off-a-0 0.55s cubic-bezier(0.34,1.56,0.64,1) 0s backwards}
+.si-audio-off .p-b{transform-origin:12px 12px}
+@keyframes si-audio-off-b-0{0%{transform:none}40%{transform:scale(1,0.4)}100%{transform:none}}
+.si.si-play .si-audio-off .p-b{animation:si-audio-off-b-0 0.55s cubic-bezier(0.34,1.56,0.64,1) 0.06s backwards}
+.si-audio-off .p-c{transform-origin:12px 12px}
+.si:hover .si-audio-off .p-c{transform:scale(1,0.8)}
+@keyframes si-audio-off-c-0{0%{transform:none}40%{transform:scale(1,0.4)}100%{transform:none}}
+.si.si-play .si-audio-off .p-c{animation:si-audio-off-c-0 0.55s cubic-bezier(0.34,1.56,0.64,1) 0.12s backwards}
+.si-audio-off .p-d{transform-origin:12px 12px}
+@keyframes si-audio-off-d-0{0%{transform:none}40%{transform:scale(1,0.4)}100%{transform:none}}
+.si.si-play .si-audio-off .p-d{animation:si-audio-off-d-0 0.55s cubic-bezier(0.34,1.56,0.64,1) 0.18s backwards}
+.si-audio-off .p-e{transform-origin:12px 12px}
+@keyframes si-audio-off-e-0{0%{transform:none}40%{transform:scale(1,0.4)}100%{transform:none}}
+.si.si-play .si-audio-off .p-e{animation:si-audio-off-e-0 0.55s cubic-bezier(0.34,1.56,0.64,1) 0.24s backwards}
+.si-audio-off .p-slash{transform-origin:12px 12px}
+.si:hover .si-audio-off .p-slash{transform:scale(1.06,1.06)}
+@keyframes si-audio-off-slash-0{0%{transform:none;stroke-dashoffset:1}100%{transform:none}}
+.si.si-play .si-audio-off .p-slash [pathLength]{animation:si-audio-off-slash-0 0.5s cubic-bezier(0.45,0,0.2,1) 0s backwards}
 .si-microphone .p-capsule{transform-origin:12px 12px}
 .si:hover .si-microphone .p-capsule{transform:translate(0px,-0.6px)}
 @keyframes si-microphone-capsule-0{0%{transform:none}20%{transform:scale(0.82,0.82)}55%{transform:scale(1.1,1.1)}100%{transform:none}}
@@ -417,6 +459,17 @@
 .si-notification .p-clapper{transform-origin:12px 3px}
 @keyframes si-notification-clapper-0{0%{transform:none}10%{transform:rotate(22deg)}25%{transform:rotate(-17.6deg)}40%{transform:rotate(12.1deg)}55%{transform:rotate(-7.7deg)}70%{transform:rotate(3.96deg)}100%{transform:none}}
 .si.si-play .si-notification .p-clapper{animation:si-notification-clapper-0 0.9s cubic-bezier(0.2,0.8,0.3,1) 0.05s backwards}
+.si-notification-off .p-bell{transform-origin:12px 3px}
+.si:hover .si-notification-off .p-bell{transform:rotate(8deg)}
+@keyframes si-notification-off-bell-0{0%{transform:none}10%{transform:rotate(16deg)}25%{transform:rotate(-12.8deg)}40%{transform:rotate(8.8deg)}55%{transform:rotate(-5.6deg)}70%{transform:rotate(2.88deg)}100%{transform:none}}
+.si.si-play .si-notification-off .p-bell{animation:si-notification-off-bell-0 0.9s cubic-bezier(0.2,0.8,0.3,1) 0s backwards}
+.si-notification-off .p-clapper{transform-origin:12px 3px}
+@keyframes si-notification-off-clapper-0{0%{transform:none}10%{transform:rotate(22deg)}25%{transform:rotate(-17.6deg)}40%{transform:rotate(12.1deg)}55%{transform:rotate(-7.7deg)}70%{transform:rotate(3.96deg)}100%{transform:none}}
+.si.si-play .si-notification-off .p-clapper{animation:si-notification-off-clapper-0 0.9s cubic-bezier(0.2,0.8,0.3,1) 0.05s backwards}
+.si-notification-off .p-slash{transform-origin:12px 12px}
+.si:hover .si-notification-off .p-slash{transform:scale(1.06,1.06)}
+@keyframes si-notification-off-slash-0{0%{transform:none;stroke-dashoffset:1}100%{transform:none}}
+.si.si-play .si-notification-off .p-slash [pathLength]{animation:si-notification-off-slash-0 0.5s cubic-bezier(0.45,0,0.2,1) 0s backwards}
 .si-failure .p-x{transform-origin:12px 12px}
 .si:hover .si-failure .p-x{transform:rotate(90deg)}
 @keyframes si-failure-x-0{0%{transform:none}15%{transform:translate(-2px,0px)}35%{transform:translate(2px,0px)}55%{transform:translate(-1.2px,0px)}75%{transform:translate(0.6px,0px)}100%{transform:none}}
@@ -429,6 +482,17 @@
 .si:hover .si-help .p-mark{transform:rotate(-10deg)}
 @keyframes si-help-mark-0{0%{transform:none}10%{transform:rotate(14deg)}25%{transform:rotate(-11.2deg)}40%{transform:rotate(7.7deg)}55%{transform:rotate(-4.9deg)}70%{transform:rotate(2.52deg)}100%{transform:none}}
 .si.si-play .si-help .p-mark{animation:si-help-mark-0 0.9s cubic-bezier(0.2,0.8,0.3,1) 0s backwards}
+.si-tip .p-bulb{transform-origin:12px 14px}
+.si:hover .si-tip .p-bulb{transform:scale(1.05,1.05)}
+@keyframes si-tip-bulb-0{0%{transform:none}20%{transform:scale(0.82,0.82)}55%{transform:scale(1.1,1.1)}100%{transform:none}}
+.si.si-play .si-tip .p-bulb{animation:si-tip-bulb-0 0.45s cubic-bezier(0.2,0.8,0.3,1) 0s backwards}
+.si-tip .p-foot{transform-origin:12px 12px}
+.si:hover .si-tip .p-foot{transform:translate(0px,0.4px)}
+@keyframes si-tip-foot-0{0%{transform:none}35%{transform:translate(0px,0.8px)}100%{transform:none}}
+.si.si-play .si-tip .p-foot{animation:si-tip-foot-0 0.42s cubic-bezier(0.34,1.56,0.64,1) 0s backwards}
+.si-tip .p-gleam{transform-origin:12px 12px}
+@keyframes si-tip-gleam-0{0%{transform:none}25%{transform:none;opacity:0.3}50%{transform:none}75%{transform:none;opacity:0.3}100%{transform:none}}
+.si.si-play .si-tip .p-gleam{animation:si-tip-gleam-0 0.8s cubic-bezier(0.45,0,0.2,1) 0.1s backwards}
 .si-verified .p-seal{transform-origin:12px 12px}
 .si:hover .si-verified .p-seal{transform:rotate(15deg)}
 @keyframes si-verified-seal-0{0%{transform:none}100%{transform:rotate(30deg)}}
@@ -440,6 +504,22 @@
 .si:hover .si-pending .p-glass{transform:rotate(10deg)}
 @keyframes si-pending-glass-0{0%{transform:none}100%{transform:rotate(180deg)}}
 .si.si-play .si-pending .p-glass{animation:si-pending-glass-0 0.75s cubic-bezier(0.34,1.56,0.64,1) 0s backwards}
+.si-usage .p-arc{transform-origin:12px 12px}
+.si:hover .si-usage .p-arc{transform:scale(1.04,1.04)}
+@keyframes si-usage-arc-0{0%{transform:none;stroke-dashoffset:1}100%{transform:none}}
+.si.si-play .si-usage .p-arc [pathLength]{animation:si-usage-arc-0 0.5s cubic-bezier(0.45,0,0.2,1) 0s backwards}
+.si-usage .p-needle{transform-origin:12px 12px}
+.si:hover .si-usage .p-needle{transform:rotate(-15deg)}
+@keyframes si-usage-needle-0{0%{transform:none}10%{transform:rotate(25deg)}25%{transform:rotate(-20deg)}40%{transform:rotate(13.75deg)}55%{transform:rotate(-8.75deg)}70%{transform:rotate(4.5deg)}100%{transform:none}}
+.si.si-play .si-usage .p-needle{animation:si-usage-needle-0 0.9s cubic-bezier(0.2,0.8,0.3,1) 0s backwards}
+.si-skipped .p-a{transform-origin:12px 12px}
+.si:hover .si-skipped .p-a{transform:translate(0.6px,0px)}
+@keyframes si-skipped-a-0{0%{transform:none}35%{transform:translate(1.5px,0px)}100%{transform:none}}
+.si.si-play .si-skipped .p-a{animation:si-skipped-a-0 0.42s cubic-bezier(0.34,1.56,0.64,1) 0s backwards}
+.si-skipped .p-b{transform-origin:12px 12px}
+.si:hover .si-skipped .p-b{transform:translate(-0.6px,0px)}
+@keyframes si-skipped-b-0{0%{transform:none}35%{transform:translate(-1.5px,0px)}100%{transform:none}}
+.si.si-play .si-skipped .p-b{animation:si-skipped-b-0 0.42s cubic-bezier(0.34,1.56,0.64,1) 0.06s backwards}
 .si-loading .p-arc{transform-origin:12px 12px}
 .si:hover .si-loading .p-arc{transform:rotate(45deg)}
 @keyframes si-loading-arc-0{0%{transform:none}100%{transform:rotate(360deg)}}
@@ -524,6 +604,20 @@
 .si:hover .si-user-add .p-plus{transform:rotate(90deg)}
 @keyframes si-user-add-plus-0{0%{transform:none}20%{transform:scale(0.82,0.82)}55%{transform:scale(1.3,1.3)}100%{transform:none}}
 .si.si-play .si-user-add .p-plus{animation:si-user-add-plus-0 0.45s cubic-bezier(0.2,0.8,0.3,1) 0s backwards}
+.si-user-verified .p-head{transform-origin:12px 12px}
+@keyframes si-user-verified-head-0{0%{transform:none}40%{transform:translate(0px,-1.5px)}100%{transform:none}}
+.si.si-play .si-user-verified .p-head{animation:si-user-verified-head-0 0.6s cubic-bezier(0.34,1.56,0.64,1) 0s backwards}
+.si-user-verified .p-tick{transform-origin:18px 11px}
+.si:hover .si-user-verified .p-tick{transform:scale(1.12,1.12)}
+@keyframes si-user-verified-tick-0{0%{transform:none;stroke-dashoffset:1}100%{transform:none}}
+.si.si-play .si-user-verified .p-tick [pathLength]{animation:si-user-verified-tick-0 0.5s cubic-bezier(0.45,0,0.2,1) 0.15s backwards}
+.si-user-unknown .p-head{transform-origin:12px 12px}
+@keyframes si-user-unknown-head-0{0%{transform:none}40%{transform:translate(0px,-1.5px)}100%{transform:none}}
+.si.si-play .si-user-unknown .p-head{animation:si-user-unknown-head-0 0.6s cubic-bezier(0.34,1.56,0.64,1) 0s backwards}
+.si-user-unknown .p-mark{transform-origin:19px 11px}
+.si:hover .si-user-unknown .p-mark{transform:rotate(-10deg)}
+@keyframes si-user-unknown-mark-0{0%{transform:none}10%{transform:rotate(14deg)}25%{transform:rotate(-11.2deg)}40%{transform:rotate(7.7deg)}55%{transform:rotate(-4.9deg)}70%{transform:rotate(2.52deg)}100%{transform:none}}
+.si.si-play .si-user-unknown .p-mark{animation:si-user-unknown-mark-0 0.9s cubic-bezier(0.2,0.8,0.3,1) 0s backwards}
 .si-team .p-a{transform-origin:12px 12px}
 @keyframes si-team-a-0{0%{transform:none}40%{transform:translate(0px,-1.5px)}100%{transform:none}}
 .si.si-play .si-team .p-a{animation:si-team-a-0 0.6s cubic-bezier(0.34,1.56,0.64,1) 0s backwards}
@@ -567,6 +661,30 @@
 .si:hover .si-note .p-lines{transform:translate(0.6px,0px)}
 @keyframes si-note-lines-0{0%{transform:none;stroke-dashoffset:1}100%{transform:none}}
 .si.si-play .si-note .p-lines [pathLength]{animation:si-note-lines-0 0.5s cubic-bezier(0.45,0,0.2,1) 0s backwards}
+.si-journal .p-ribbon{transform-origin:14.5px 3.5px}
+.si:hover .si-journal .p-ribbon{transform:scale(1,1.08)}
+@keyframes si-journal-ribbon-0{0%{transform:none}20%{transform:scale(0.82,0.82)}55%{transform:scale(1.12,1.12)}100%{transform:none}}
+.si.si-play .si-journal .p-ribbon{animation:si-journal-ribbon-0 0.45s cubic-bezier(0.2,0.8,0.3,1) 0s backwards}
+.si-journal .p-line{transform-origin:12px 12px}
+.si:hover .si-journal .p-line{transform:translate(0.6px,0px)}
+@keyframes si-journal-line-0{0%{transform:none;stroke-dashoffset:1}100%{transform:none}}
+.si.si-play .si-journal .p-line [pathLength]{animation:si-journal-line-0 0.5s cubic-bezier(0.45,0,0.2,1) 0.15s backwards}
+.si-number .p-stems{transform-origin:12px 12px}
+.si:hover .si-number .p-stems{transform:translate(-0.6px,0px)}
+@keyframes si-number-stems-0{0%{transform:none}35%{transform:translate(-1.2px,0px)}100%{transform:none}}
+.si.si-play .si-number .p-stems{animation:si-number-stems-0 0.42s cubic-bezier(0.34,1.56,0.64,1) 0s backwards}
+.si-number .p-bars{transform-origin:12px 12px}
+.si:hover .si-number .p-bars{transform:translate(0.6px,0px)}
+@keyframes si-number-bars-0{0%{transform:none}35%{transform:translate(1.2px,0px)}100%{transform:none}}
+.si.si-play .si-number .p-bars{animation:si-number-bars-0 0.42s cubic-bezier(0.34,1.56,0.64,1) 0.06s backwards}
+.si-quote .p-a{transform-origin:12px 12px}
+.si:hover .si-quote .p-a{transform:translate(0px,-0.6px)}
+@keyframes si-quote-a-0{0%{transform:none}40%{transform:translate(0px,-1.5px)}100%{transform:none}}
+.si.si-play .si-quote .p-a{animation:si-quote-a-0 0.6s cubic-bezier(0.34,1.56,0.64,1) 0s backwards}
+.si-quote .p-b{transform-origin:12px 12px}
+.si:hover .si-quote .p-b{transform:translate(0px,-0.6px)}
+@keyframes si-quote-b-0{0%{transform:none}40%{transform:translate(0px,-1.5px)}100%{transform:none}}
+.si.si-play .si-quote .p-b{animation:si-quote-b-0 0.6s cubic-bezier(0.34,1.56,0.64,1) 0.08s backwards}
 .si-folder-add .p-plus{transform-origin:12px 13.5px}
 .si:hover .si-folder-add .p-plus{transform:rotate(90deg)}
 @keyframes si-folder-add-plus-0{0%{transform:none}20%{transform:scale(0.82,0.82)}55%{transform:scale(1.3,1.3)}100%{transform:none}}
@@ -595,6 +713,25 @@
 .si:hover .si-table .p-grid{transform:translate(0.5px,0px)}
 @keyframes si-table-grid-0{0%{transform:none;stroke-dashoffset:1}100%{transform:none}}
 .si.si-play .si-table .p-grid [pathLength]{animation:si-table-grid-0 0.5s cubic-bezier(0.45,0,0.2,1) 0s backwards}
+.si-blocks .p-head{transform-origin:12px 12px}
+.si:hover .si-blocks .p-head{transform:translate(0px,-0.6px)}
+@keyframes si-blocks-head-0{0%{transform:none}40%{transform:translate(0px,-1.5px)}100%{transform:none}}
+.si.si-play .si-blocks .p-head{animation:si-blocks-head-0 0.6s cubic-bezier(0.34,1.56,0.64,1) 0s backwards}
+.si-blocks .p-a{transform-origin:12px 12px}
+@keyframes si-blocks-a-0{0%{transform:none}40%{transform:translate(0px,-1.5px)}100%{transform:none}}
+.si.si-play .si-blocks .p-a{animation:si-blocks-a-0 0.6s cubic-bezier(0.34,1.56,0.64,1) 0.06s backwards}
+.si-blocks .p-b{transform-origin:12px 12px}
+.si:hover .si-blocks .p-b{transform:translate(0.6px,0px)}
+@keyframes si-blocks-b-0{0%{transform:none;stroke-dashoffset:1}100%{transform:none}}
+.si.si-play .si-blocks .p-b [pathLength]{animation:si-blocks-b-0 0.5s cubic-bezier(0.45,0,0.2,1) 0.12s backwards}
+.si-embed .p-line{transform-origin:12px 12px}
+.si:hover .si-embed .p-line{transform:translate(0.6px,0px)}
+@keyframes si-embed-line-0{0%{transform:none;stroke-dashoffset:1}100%{transform:none}}
+.si.si-play .si-embed .p-line [pathLength]{animation:si-embed-line-0 0.5s cubic-bezier(0.45,0,0.2,1) 0s backwards}
+.si-embed .p-card{transform-origin:12px 14px}
+.si:hover .si-embed .p-card{transform:scale(1.08,1.08)}
+@keyframes si-embed-card-0{0%{transform:none}20%{transform:scale(0.82,0.82)}55%{transform:scale(1.15,1.15)}100%{transform:none}}
+.si.si-play .si-embed .p-card{animation:si-embed-card-0 0.45s cubic-bezier(0.2,0.8,0.3,1) 0.1s backwards}
 .si-checklist .p-a{transform-origin:12px 12px}
 @keyframes si-checklist-a-0{0%{transform:none;stroke-dashoffset:1}100%{transform:none}}
 .si.si-play .si-checklist .p-a [pathLength]{animation:si-checklist-a-0 0.5s cubic-bezier(0.45,0,0.2,1) 0s backwards}
@@ -623,6 +760,17 @@
 .si-package .p-tape{transform-origin:12px 12px}
 @keyframes si-package-tape-0{0%{transform:none;stroke-dashoffset:1}100%{transform:none}}
 .si.si-play .si-package .p-tape [pathLength]{animation:si-package-tape-0 0.5s cubic-bezier(0.45,0,0.2,1) 0.2s backwards}
+.si-invoice .p-page{transform-origin:12px 12px}
+.si:hover .si-invoice .p-page{transform:translate(0px,-1px)}
+.si-invoice .p-amount{transform-origin:12px 14.5px}
+.si:hover .si-invoice .p-amount{transform:scale(1.1,1.1)}
+@keyframes si-invoice-amount-0{0%{transform:none;stroke-dashoffset:1}100%{transform:none}}
+.si.si-play .si-invoice .p-amount [pathLength]{animation:si-invoice-amount-0 0.5s cubic-bezier(0.45,0,0.2,1) 0s backwards}
+.si-receipt .p-slip{transform-origin:12px 12px}
+.si:hover .si-receipt .p-slip{transform:translate(0px,-1px)}
+.si-receipt .p-lines{transform-origin:12px 12px}
+@keyframes si-receipt-lines-0{0%{transform:none;stroke-dashoffset:1}100%{transform:none}}
+.si.si-play .si-receipt .p-lines [pathLength]{animation:si-receipt-lines-0 0.5s cubic-bezier(0.45,0,0.2,1) 0s backwards}
 .si-chat .p-bubble{transform-origin:5px 19px}
 .si:hover .si-chat .p-bubble{transform:rotate(-4deg)}
 .si-chat .p-a{transform-origin:12px 12px}
@@ -729,6 +877,15 @@
 .si-network .p-c{transform-origin:18.5px 18px}
 @keyframes si-network-c-0{0%{transform:none}20%{transform:scale(0.82,0.82)}55%{transform:scale(1.3,1.3)}100%{transform:none}}
 .si.si-play .si-network .p-c{animation:si-network-c-0 0.45s cubic-bezier(0.2,0.8,0.3,1) 0.2s backwards}
+.si-language .p-ring{transform-origin:12px 12px}
+.si:hover .si-language .p-ring{transform:scale(1.04,1.04)}
+.si-language .p-lat{transform-origin:12px 12px}
+@keyframes si-language-lat-0{0%{transform:none;stroke-dashoffset:1}100%{transform:none}}
+.si.si-play .si-language .p-lat [pathLength]{animation:si-language-lat-0 0.5s cubic-bezier(0.45,0,0.2,1) 0s backwards}
+.si-language .p-meridian{transform-origin:12px 12px}
+.si:hover .si-language .p-meridian{transform:scale(0.6,1)}
+@keyframes si-language-meridian-0{0%{transform:none}50%{transform:scale(0.12,1)}100%{transform:none}}
+.si.si-play .si-language .p-meridian{animation:si-language-meridian-0 0.8s cubic-bezier(0.45,0,0.2,1) 0s backwards}
 .si-wifi .p-dot{transform-origin:12px 12px}
 @keyframes si-wifi-dot-0{0%{transform:none}25%{transform:none;opacity:0.3}50%{transform:none}75%{transform:none;opacity:0.3}100%{transform:none}}
 .si.si-play .si-wifi .p-dot{animation:si-wifi-dot-0 0.8s cubic-bezier(0.45,0,0.2,1) 0s backwards}

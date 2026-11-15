@@ -36,6 +36,23 @@ final class SymairaIconTests: XCTestCase {
         }
     }
 
+    func testSymDeskGapIconsHaveExpectedNamesAndMotion() {
+        let icons: [(SymairaIcon, String)] = [
+            (.blocks, "blocks"), (.usage, "usage"), (.userVerified, "user-verified"),
+            (.userUnknown, "user-unknown"), (.notificationOff, "notification-off"),
+            (.journal, "journal"), (.number, "number"), (.previousMatch, "previous-match"),
+            (.nextMatch, "next-match"), (.diff, "diff"), (.embed, "embed"),
+            (.audioOff, "audio-off"), (.language, "language"), (.invoice, "invoice"),
+            (.receipt, "receipt"), (.tip, "tip"), (.quote, "quote"), (.skipped, "skipped"),
+        ]
+        for (icon, rawValue) in icons {
+            XCTAssertEqual(icon.rawValue, rawValue)
+            XCTAssertEqual(SymairaIcon(rawValue: rawValue), icon)
+            XCTAssertFalse(icon.label.isEmpty)
+            XCTAssertTrue(icon.spec.contains { !$0.click.isEmpty }, "\(icon) needs click motion")
+        }
+    }
+
     func testMotionsSettleBackToRest() {
         for icon in SymairaIcon.allCases {
             for track in icon.spec.flatMap(\.click) {

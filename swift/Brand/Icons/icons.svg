@@ -115,6 +115,11 @@
   <g id="bell" data-o="12 3" data-hover="r:8" data-click="swing"><path d="M12 3v1.5"/><path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.2 1.5a.6.6 0 0 1-.5 1H5.3a.6.6 0 0 1-.5-1Z"/></g>
   <g id="clapper" data-o="12 3" data-click="swing:22@.05"><path d="M10 21.5a2.2 2.2 0 0 0 4 0"/></g>
 </symbol>
+<symbol id="notification-off" data-label="Notifications off" data-group="Status">
+  <g id="bell" data-o="12 3" data-hover="r:8" data-click="swing"><path d="M12 3v1.5"/><path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.2 1.5a.6.6 0 0 1-.5 1H5.3a.6.6 0 0 1-.5-1Z"/></g>
+  <g id="clapper" data-o="12 3" data-click="swing:22@.05"><path d="M10 21.5a2.2 2.2 0 0 0 4 0"/></g>
+  <g id="slash" data-hover="s:1.06" data-click="draw"><path d="M4 4l16 16"/></g>
+</symbol>
 
 <!-- ============ Security ============ -->
 <symbol id="lock" data-label="Lock" data-group="Security">
@@ -217,6 +222,14 @@
   <path d="M19.5 13.5V17a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V7.5a3 3 0 0 1 3-3h3.5"/>
   <g id="arrow" data-hover="x:1 y:-1" data-click="nudge:2.5,-2.5"><path d="M14 4h6v6"/><path d="M20 4l-8.5 8.5"/></g>
 </symbol>
+<symbol id="previous-match" data-label="Previous match" data-group="Navigation">
+  <g id="bar" data-click="pulse@.15"><path d="M5 4.5h14"/></g>
+  <g id="arrow" data-hover="y:-1" data-click="nudge:0,-2.5"><path d="M12 20V9.5M7.5 14 12 9.5l4.5 4.5"/></g>
+</symbol>
+<symbol id="next-match" data-label="Next match" data-group="Navigation">
+  <g id="bar" data-click="pulse@.15"><path d="M5 19.5h14"/></g>
+  <g id="arrow" data-hover="y:1" data-click="nudge:0,2.5"><path d="M12 4v10.5M7.5 10l4.5 4.5 4.5-4.5"/></g>
+</symbol>
 
 <!-- ============ Actions (cont.) ============ -->
 <symbol id="remove" data-label="Remove" data-group="Actions">
@@ -254,6 +267,11 @@
   <circle cx="7" cy="5" r="2"/><circle cx="7" cy="19" r="2"/><path d="M7 7v10"/>
   <g id="line" data-click="draw"><path d="M7 7c0 3 2.5 5 8 5"/></g>
   <g id="node" data-o="17 12" data-hover="s:1.2" data-click="pop:1.3@.35"><circle cx="17" cy="12" r="2"/></g>
+</symbol>
+<symbol id="diff" data-label="Diff" data-group="Actions">
+  <rect x="3.5" y="3.5" width="17" height="17" rx="3.5"/>
+  <g id="plus" data-o="12 9.2" data-hover="r:90" data-click="pop:1.3"><path d="M12 6.7v5M9.5 9.2h5"/></g>
+  <g id="minus" data-o="12 16" data-hover="sx:.7" data-click="pop:1.3@.1"><path d="M9.5 16h5"/></g>
 </symbol>
 <symbol id="branch" data-label="Branch" data-group="Actions">
   <circle cx="6" cy="5" r="2"/><circle cx="6" cy="19" r="2"/><path d="M6 7v10"/>
@@ -341,6 +359,14 @@
   <g id="d" data-click="flex:.4@.18"><path d="M16 7.5v9"/></g>
   <g id="e" data-click="flex:.4@.24"><path d="M20 10.5v3"/></g>
 </symbol>
+<symbol id="audio-off" data-label="Audio off" data-group="Media">
+  <g id="a" data-click="flex:.4"><path d="M4 10v4"/></g>
+  <g id="b" data-click="flex:.4@.06"><path d="M8 6.5v11"/></g>
+  <g id="c" data-hover="sy:.8" data-click="flex:.4@.12"><path d="M12 3.5v5.5M12 14.5v6"/></g>
+  <g id="d" data-click="flex:.4@.18"><path d="M16 7.5v5.5"/></g>
+  <g id="e" data-click="flex:.4@.24"><path d="M20 10.5v3"/></g>
+  <g id="slash" data-hover="s:1.06" data-click="draw"><path d="M4 4l16 16"/></g>
+</symbol>
 <symbol id="microphone" data-label="Microphone" data-group="Media">
   <g id="capsule" data-hover="y:-.6" data-click="pop:1.1"><rect x="8.5" y="3" width="7" height="11.5" rx="3.5"/></g>
   <path d="M5 11a7 7 0 0 0 14 0"/><path d="M12 18v3"/>
@@ -367,6 +393,11 @@
   <circle cx="12" cy="12" r="9"/>
   <g id="mark" data-o="12 13" data-hover="r:-10" data-click="swing:14"><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6v.3"/><circle cx="12" cy="17" r="1.1" fill="currentColor" stroke="none"/></g>
 </symbol>
+<symbol id="tip" data-label="Tip" data-group="Status">
+  <g id="bulb" data-o="12 14" data-hover="s:1.05" data-click="pop:1.1"><path d="M9.2 14.8a6 6 0 1 1 5.6 0c-.5.7-.8 1.2-.8 2.2H10c0-1-.3-1.5-.8-2.2Z"/></g>
+  <g id="foot" data-hover="y:.4" data-click="nudge:0,.8"><path d="M10 20h4"/></g>
+  <g id="gleam" data-click="pulse@.1"><path d="M9.5 8.5a3 3 0 0 1 2-2"/></g>
+</symbol>
 <symbol id="verified" data-label="Verified" data-group="Status">
   <g id="seal" data-hover="r:15" data-click="turn:30"><path d="M12.00 2.80 L14.02 4.47 L16.60 4.03 L17.52 6.48 L19.97 7.40 L19.53 9.98 L21.20 12.00 L19.53 14.02 L19.97 16.60 L17.52 17.52 L16.60 19.97 L14.02 19.53 L12.00 21.20 L9.98 19.53 L7.40 19.97 L6.48 17.52 L4.03 16.60 L4.47 14.02 L2.80 12.00 L4.47 9.98 L4.03 7.40 L6.48 6.48 L7.40 4.03 L9.98 4.47Z"/></g>
   <g id="tick" data-click="draw@.2"><path d="M8.5 12.2l2.4 2.4 4.6-4.6"/></g>
@@ -374,6 +405,16 @@
 <symbol id="pending" data-label="Pending" data-group="Status">
   <path d="M6.5 3.5h11M6.5 20.5h11"/>
   <g id="glass" data-hover="r:10" data-click="turn:180"><path d="M7.5 3.5v2.2a4 4 0 0 0 1.6 3.2L12 12l-2.9 3.1a4 4 0 0 0-1.6 3.2v2.2M16.5 3.5v2.2a4 4 0 0 1-1.6 3.2L12 12l2.9 3.1a4 4 0 0 1 1.6 3.2v2.2"/></g>
+</symbol>
+<symbol id="usage" data-label="Usage" data-group="Status">
+  <g id="arc" data-hover="s:1.04" data-click="draw"><path d="M5.6 18.4a9 9 0 1 1 12.8 0"/></g>
+  <g id="needle" data-o="12 12" data-hover="r:-15" data-click="swing:25"><path d="M12 12l3.5-3.5"/></g>
+  <circle cx="12" cy="12" r="1.3" fill="currentColor" stroke="none"/>
+</symbol>
+<symbol id="skipped" data-label="Skipped" data-group="Status">
+  <circle cx="12" cy="12" r="9"/>
+  <g id="a" data-hover="x:.6" data-click="nudge:1.5"><path d="M8.5 10h7"/></g>
+  <g id="b" data-hover="x:-.6" data-click="nudge:-1.5@.06"><path d="M8.5 14h7"/></g>
 </symbol>
 <symbol id="loading" data-label="Loading" data-group="Status">
   <g id="arc" data-hover="r:45" data-click="turn:360"><path d="M12 3a9 9 0 1 0 9 9"/></g>
@@ -432,6 +473,16 @@
   <path d="M3.5 20a6.5 6.5 0 0 1 13 0"/>
   <g id="plus" data-o="19 11" data-hover="r:90" data-click="pop:1.3"><path d="M19 8v6M16 11h6"/></g>
 </symbol>
+<symbol id="user-verified" data-label="Identified user" data-group="Security">
+  <g id="head" data-click="lift:1.5"><circle cx="10" cy="8.5" r="3.8"/></g>
+  <path d="M3.5 20a6.5 6.5 0 0 1 13 0"/>
+  <g id="tick" data-o="18 11" data-hover="s:1.12" data-click="draw@.15"><path d="M15.5 11.5l2.2 2.2L21 10.2"/></g>
+</symbol>
+<symbol id="user-unknown" data-label="Unknown user" data-group="Security">
+  <g id="head" data-click="lift:1.5"><circle cx="10" cy="8.5" r="3.8"/></g>
+  <path d="M3.5 20a6.5 6.5 0 0 1 13 0"/>
+  <g id="mark" data-o="19 11" data-hover="r:-10" data-click="swing:14"><path d="M16.5 7a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6v.3"/><circle cx="19" cy="14.5" r="1.1" fill="currentColor" stroke="none"/></g>
+</symbol>
 <symbol id="team" data-label="Team" data-group="Security">
   <g id="a" data-click="lift:1.5"><circle cx="9" cy="8.5" r="3.3"/><path d="M3 19.5a6 6 0 0 1 12 0"/></g>
   <g id="b" data-hover="x:.6" data-click="lift:1.5@.1"><circle cx="17" cy="9.5" r="2.6"/><path d="M16.8 14.5a4.8 4.8 0 0 1 4.2 5"/></g>
@@ -449,6 +500,20 @@
 <symbol id="note" data-label="Note" data-group="Documents">
   <path d="M20 14.5V7a3 3 0 0 0-3-3H7a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h7.5Z"/><path d="M14.5 20v-3.5a2 2 0 0 1 2-2H20"/>
   <g id="lines" data-hover="x:.6" data-click="draw"><path d="M8 9h8"/><path d="M8 13h4.5"/></g>
+</symbol>
+<symbol id="journal" data-label="Journal" data-group="Documents">
+  <rect x="4" y="3.5" width="16" height="17" rx="2.5"/>
+  <path d="M8.5 3.5v17"/>
+  <g id="ribbon" data-o="14.5 3.5" data-hover="sy:1.08" data-click="pop:1.12"><path d="M12.5 3.5v7l2-1.5 2 1.5v-7"/></g>
+  <g id="line" data-hover="x:.6" data-click="draw@.15"><path d="M12.5 15h4"/></g>
+</symbol>
+<symbol id="number" data-label="Number" data-group="Documents">
+  <g id="stems" data-hover="x:-.6" data-click="nudge:-1.2"><path d="M10 4 8.5 20M15.5 4 14 20"/></g>
+  <g id="bars" data-hover="x:.6" data-click="nudge:1.2@.06"><path d="M4.5 9h15M4 15h15"/></g>
+</symbol>
+<symbol id="quote" data-label="Quote" data-group="Documents">
+  <g id="a" data-hover="y:-.6" data-click="lift:1.5"><path d="M5.8 15.5v-2c0-2.8 1.4-4.7 4-5.5"/><circle cx="7.8" cy="15.5" r="2" fill="currentColor" stroke="none"/></g>
+  <g id="b" data-hover="y:-.6" data-click="lift:1.5@.08"><path d="M14.8 15.5v-2c0-2.8 1.4-4.7 4-5.5"/><circle cx="16.8" cy="15.5" r="2" fill="currentColor" stroke="none"/></g>
 </symbol>
 <symbol id="folder-add" data-label="New folder" data-group="Documents">
   <path d="M3.5 7.5A2.5 2.5 0 0 1 6 5h3.4a2 2 0 0 1 1.5.7l1.2 1.4a2 2 0 0 0 1.5.7H18a2.5 2.5 0 0 1 2.5 2.5V17a3 3 0 0 1-3 3h-11a3 3 0 0 1-3-3Z"/>
@@ -468,6 +533,16 @@
   <rect x="3.5" y="4.5" width="17" height="15" rx="3"/>
   <g id="grid" data-hover="x:.5" data-click="draw"><path d="M3.5 9.5h17"/><path d="M9.5 9.5v10"/></g>
 </symbol>
+<symbol id="blocks" data-label="Blocks" data-group="Documents">
+  <g id="head" data-hover="y:-.6" data-click="lift:1.5"><rect x="4" y="4" width="16" height="6" rx="2"/></g>
+  <g id="a" data-click="lift:1.5@.06"><rect x="4" y="13.5" width="6.5" height="6.5" rx="2"/></g>
+  <g id="b" data-hover="x:.6" data-click="draw@.12"><path d="M14.5 15.5H20M14.5 18.5H18"/></g>
+</symbol>
+<symbol id="embed" data-label="Embed" data-group="Documents">
+  <rect x="3.5" y="3.5" width="17" height="17" rx="3.5"/>
+  <g id="line" data-hover="x:.6" data-click="draw"><path d="M7.5 7.5h9"/></g>
+  <g id="card" data-o="12 14" data-hover="s:1.08" data-click="pop:1.15@.1"><rect x="7.5" y="11" width="9" height="6" rx="1.5"/></g>
+</symbol>
 <symbol id="checklist" data-label="Checklist" data-group="Documents">
   <g id="a" data-click="draw"><path d="M4 6.5l1.5 1.5L8.5 5"/></g>
   <g id="b" data-click="draw@.15"><path d="M4 12.5l1.5 1.5 3-3"/></g>
@@ -482,6 +557,14 @@
 <symbol id="package" data-label="Package" data-group="Documents">
   <g id="box" data-o="12 20" data-hover="y:-.6" data-click="pop:1.08"><path d="M11 3.5a2 2 0 0 1 2 0l6 3.4a2 2 0 0 1 1 1.7v6.8a2 2 0 0 1-1 1.7l-6 3.4a2 2 0 0 1-2 0l-6-3.4a2 2 0 0 1-1-1.7V8.6a2 2 0 0 1 1-1.7Z"/><path d="M4.3 7.6 12 12l7.7-4.4M12 12v8.7"/></g>
   <g id="tape" data-click="draw@.2"><path d="M8 5.3l7.8 4.5"/></g>
+</symbol>
+<symbol id="invoice" data-label="Invoice" data-group="Documents">
+  <g id="page" data-hover="y:-1"><path d="M14 3H8a3 3 0 0 0-3 3v12a3 3 0 0 0 3 3h8a3 3 0 0 0 3-3V8Z"/><path d="M14 3v3.5A1.5 1.5 0 0 0 15.5 8H19"/></g>
+  <g id="amount" data-o="12 14.5" data-hover="s:1.1" data-click="draw"><path d="M15.1 11.7a4 4 0 1 0 0 5.6"/><path d="M7.9 14.5h4.6"/></g>
+</symbol>
+<symbol id="receipt" data-label="Receipt" data-group="Documents">
+  <g id="slip" data-hover="y:-1"><path d="M5 6a2.5 2.5 0 0 1 2.5-2.5h9A2.5 2.5 0 0 1 19 6v14.5l-2.33-1.5-2.34 1.5L12 19l-2.33 1.5L7.33 19 5 20.5Z"/></g>
+  <g id="lines" data-click="draw"><path d="M9 8.5h6"/><path d="M9 12h6"/><path d="M9 15.5h3"/></g>
 </symbol>
 
 <!-- ============ Communication (cont.) ============ -->
@@ -535,6 +618,11 @@
   <g id="a" data-o="12 5" data-hover="y:-.6" data-click="pop:1.3"><circle cx="12" cy="5" r="2"/></g>
   <g id="b" data-o="5.5 18" data-click="pop:1.3@.1"><circle cx="5.5" cy="18" r="2"/></g>
   <g id="c" data-o="18.5 18" data-click="pop:1.3@.2"><circle cx="18.5" cy="18" r="2"/></g>
+</symbol>
+<symbol id="language" data-label="Language" data-group="System">
+  <g id="ring" data-hover="s:1.04"><circle cx="12" cy="12" r="9"/></g>
+  <g id="lat" data-click="draw"><path d="M3.8 8.5h16.4M3.8 15.5h16.4"/></g>
+  <g id="meridian" data-hover="sx:.6" data-click="spinx"><ellipse cx="12" cy="12" rx="4" ry="9"/></g>
 </symbol>
 <symbol id="wifi" data-label="Wi-Fi" data-group="System">
   <g id="dot" data-click="pulse"><circle cx="12" cy="18" r="1.2" fill="currentColor" stroke="none"/></g>

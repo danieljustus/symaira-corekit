@@ -1,6 +1,6 @@
 # Symaira Icons
 
-135 icons drawn in-house for every Symaira product. They are owned by Symaira, so
+160 icons drawn in-house for every Symaira product. They are owned by Symaira, so
 they can be used on any platform and commercially, including in Swift, web and
 Android apps.
 

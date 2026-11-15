@@ -27,6 +27,8 @@ public enum SymairaIcon: String, CaseIterable, Sendable {
     case menu = "menu"
     case fullscreen = "fullscreen"
     case openExternal = "open-external"
+    case previousMatch = "previous-match"
+    case nextMatch = "next-match"
     // MARK: Actions
     case operate = "operate"
     case restart = "restart"
@@ -52,6 +54,7 @@ public enum SymairaIcon: String, CaseIterable, Sendable {
     case undo = "undo"
     case history = "history"
     case merge = "merge"
+    case diff = "diff"
     case branch = "branch"
     case filter = "filter"
     case sort = "sort"
@@ -74,6 +77,7 @@ public enum SymairaIcon: String, CaseIterable, Sendable {
     case record = "record"
     case run = "run"
     case audio = "audio"
+    case audioOff = "audio-off"
     case microphone = "microphone"
     case camera = "camera"
     case video = "video"
@@ -83,11 +87,15 @@ public enum SymairaIcon: String, CaseIterable, Sendable {
     case warning = "warning"
     case info = "info"
     case notification = "notification"
+    case notificationOff = "notification-off"
     case failure = "failure"
     case error = "error"
     case help = "help"
+    case tip = "tip"
     case verified = "verified"
     case pending = "pending"
+    case usage = "usage"
+    case skipped = "skipped"
     case loading = "loading"
     case announcement = "announcement"
     case live = "live"
@@ -105,6 +113,8 @@ public enum SymairaIcon: String, CaseIterable, Sendable {
     case fingerprint = "fingerprint"
     case user = "user"
     case userAdd = "user-add"
+    case userVerified = "user-verified"
+    case userUnknown = "user-unknown"
     case team = "team"
     // MARK: Documents
     case document = "document"
@@ -115,13 +125,20 @@ public enum SymairaIcon: String, CaseIterable, Sendable {
     case documentSearch = "document-search"
     case documentAdd = "document-add"
     case note = "note"
+    case journal = "journal"
+    case number = "number"
+    case quote = "quote"
     case folderAdd = "folder-add"
     case library = "library"
     case stack = "stack"
     case table = "table"
+    case blocks = "blocks"
+    case embed = "embed"
     case checklist = "checklist"
     case chart = "chart"
     case package = "package"
+    case invoice = "invoice"
+    case receipt = "receipt"
     // MARK: Communication
     case chat = "chat"
     case mail = "mail"
@@ -141,6 +158,7 @@ public enum SymairaIcon: String, CaseIterable, Sendable {
     case cpu = "cpu"
     case storage = "storage"
     case network = "network"
+    case language = "language"
     case wifi = "wifi"
     case offline = "offline"
     case cloud = "cloud"
@@ -182,6 +200,8 @@ extension SymairaIcon {
         case .menu: "Menu"
         case .fullscreen: "Full screen"
         case .openExternal: "Open externally"
+        case .previousMatch: "Previous match"
+        case .nextMatch: "Next match"
         case .operate: "Bedienen"
         case .restart: "Neustarten"
         case .add: "Add"
@@ -206,6 +226,7 @@ extension SymairaIcon {
         case .undo: "Undo"
         case .history: "History"
         case .merge: "Merge"
+        case .diff: "Diff"
         case .branch: "Branch"
         case .filter: "Filter"
         case .sort: "Sort"
@@ -227,6 +248,7 @@ extension SymairaIcon {
         case .record: "Record"
         case .run: "Run"
         case .audio: "Audio"
+        case .audioOff: "Audio off"
         case .microphone: "Microphone"
         case .camera: "Camera"
         case .video: "Video"
@@ -235,11 +257,15 @@ extension SymairaIcon {
         case .warning: "Warning"
         case .info: "Info"
         case .notification: "Notifications"
+        case .notificationOff: "Notifications off"
         case .failure: "Failure"
         case .error: "Error"
         case .help: "Help"
+        case .tip: "Tip"
         case .verified: "Verified"
         case .pending: "Pending"
+        case .usage: "Usage"
+        case .skipped: "Skipped"
         case .loading: "Loading"
         case .announcement: "Announcement"
         case .live: "Live"
@@ -256,6 +282,8 @@ extension SymairaIcon {
         case .fingerprint: "Privacy"
         case .user: "User"
         case .userAdd: "Add user"
+        case .userVerified: "Identified user"
+        case .userUnknown: "Unknown user"
         case .team: "Team"
         case .document: "Document"
         case .folder: "Folder"
@@ -265,13 +293,20 @@ extension SymairaIcon {
         case .documentSearch: "Find in documents"
         case .documentAdd: "New document"
         case .note: "Note"
+        case .journal: "Journal"
+        case .number: "Number"
+        case .quote: "Quote"
         case .folderAdd: "New folder"
         case .library: "Library"
         case .stack: "Stack"
         case .table: "Table"
+        case .blocks: "Blocks"
+        case .embed: "Embed"
         case .checklist: "Checklist"
         case .chart: "Chart"
         case .package: "Package"
+        case .invoice: "Invoice"
+        case .receipt: "Receipt"
         case .chat: "Chat"
         case .mail: "Mail"
         case .phone: "Phone"
@@ -289,6 +324,7 @@ extension SymairaIcon {
         case .cpu: "Processor"
         case .storage: "Storage"
         case .network: "Network"
+        case .language: "Language"
         case .wifi: "Wi-Fi"
         case .offline: "Offline"
         case .cloud: "Cloud"
@@ -393,6 +429,14 @@ extension SymairaIcon {
             IconPart(origin: CGPoint(x: 12, y: 12), strokes: [[0, 19.5, 13.5, 1, 19.5, 17, 2, 19.5, 18.657, 18.157, 20, 16.5, 20, 1, 7, 20, 2, 5.343, 20, 4, 18.657, 4, 17, 1, 4, 7.5, 2, 4, 5.843, 5.343, 4.5, 7, 4.5, 1, 10.5, 4.5]], fills: [], hover: .identity, click: []),
             IconPart(origin: CGPoint(x: 12, y: 12), strokes: [[0, 14, 4, 1, 20, 4, 1, 20, 10], [0, 20, 4, 1, 11.5, 12.5]], fills: [], hover: IconPose(x: 1, y: -1), click: [IconTrack(duration: 0.42, delay: 0, ease: (0.34, 1.56, 0.64, 1), draws: false, frames: [(0, .identity), (0.35, IconPose(x: 2.5, y: -2.5)), (1, .identity)])]),
         ]
+        case .previousMatch: [
+            IconPart(origin: CGPoint(x: 12, y: 12), strokes: [[0, 5, 4.5, 1, 19, 4.5]], fills: [], hover: .identity, click: [IconTrack(duration: 0.8, delay: 0.15, ease: (0.45, 0, 0.2, 1), draws: false, frames: [(0, .identity), (0.25, IconPose(o: 0.3)), (0.5, .identity), (0.75, IconPose(o: 0.3)), (1, .identity)])]),
+            IconPart(origin: CGPoint(x: 12, y: 12), strokes: [[0, 12, 20, 1, 12, 9.5, 0, 7.5, 14, 1, 12, 9.5, 1, 16.5, 14]], fills: [], hover: IconPose(y: -1), click: [IconTrack(duration: 0.42, delay: 0, ease: (0.34, 1.56, 0.64, 1), draws: false, frames: [(0, .identity), (0.35, IconPose(x: 0, y: -2.5)), (1, .identity)])]),
+        ]
+        case .nextMatch: [
+            IconPart(origin: CGPoint(x: 12, y: 12), strokes: [[0, 5, 19.5, 1, 19, 19.5]], fills: [], hover: .identity, click: [IconTrack(duration: 0.8, delay: 0.15, ease: (0.45, 0, 0.2, 1), draws: false, frames: [(0, .identity), (0.25, IconPose(o: 0.3)), (0.5, .identity), (0.75, IconPose(o: 0.3)), (1, .identity)])]),
+            IconPart(origin: CGPoint(x: 12, y: 12), strokes: [[0, 12, 4, 1, 12, 14.5, 0, 7.5, 10, 1, 12, 14.5, 1, 16.5, 10]], fills: [], hover: IconPose(y: 1), click: [IconTrack(duration: 0.42, delay: 0, ease: (0.34, 1.56, 0.64, 1), draws: false, frames: [(0, .identity), (0.35, IconPose(x: 0, y: 2.5)), (1, .identity)])]),
+        ]
         case .operate: [
             IconPart(origin: CGPoint(x: 12, y: 20), strokes: [[0, 8, 20, 1, 5, 16, 2, 4.726, 15.426, 4.843, 14.742, 5.293, 14.293, 2, 5.742, 13.843, 6.426, 13.726, 7, 14, 1, 9, 15, 1, 9, 8, 2, 9, 7.172, 9.672, 6.5, 10.5, 6.5, 2, 11.328, 6.5, 12, 7.172, 12, 8, 1, 12, 12, 1, 16, 12, 2, 17.657, 12, 19, 13.343, 19, 15, 1, 19, 17, 2, 19, 19.209, 17.209, 21, 15, 21, 1, 11, 21, 2, 9.905, 21.093, 8.82, 20.731, 8, 20, 3]], fills: [], hover: IconPose(y: -1), click: [IconTrack(duration: 0.42, delay: 0, ease: (0.34, 1.56, 0.64, 1), draws: false, frames: [(0, .identity), (0.35, IconPose(x: 1, y: 0)), (1, .identity)])]),
             IconPart(origin: CGPoint(x: 10.5, y: 5), strokes: [[0, 7, 4, 1, 6, 3, 0, 14, 4, 1, 15, 3, 0, 10.5, 4, 1, 10.5, 2]], fills: [], hover: IconPose(s: 1.1), click: [IconTrack(duration: 0.8, delay: 0, ease: (0.45, 0, 0.2, 1), draws: false, frames: [(0, .identity), (0.25, IconPose(o: 0.3)), (0.5, .identity), (0.75, IconPose(o: 0.3)), (1, .identity)])]),
@@ -480,6 +524,11 @@ extension SymairaIcon {
             IconPart(origin: CGPoint(x: 12, y: 12), strokes: [[0, 7, 7, 2, 7, 10, 9.5, 12, 15, 12]], fills: [], hover: .identity, click: [IconTrack(duration: 0.5, delay: 0, ease: (0.45, 0, 0.2, 1), draws: true, frames: [(0, IconPose(d: 0)), (1, .identity)])]),
             IconPart(origin: CGPoint(x: 17, y: 12), strokes: [[0, 15, 12, 2, 15, 13.105, 15.895, 14, 17, 14, 2, 18.105, 14, 19, 13.105, 19, 12, 2, 19, 10.895, 18.105, 10, 17, 10, 2, 15.895, 10, 15, 10.895, 15, 12, 3]], fills: [], hover: IconPose(s: 1.2), click: [IconTrack(duration: 0.45, delay: 0.35, ease: (0.2, 0.8, 0.3, 1), draws: false, frames: [(0, .identity), (0.2, IconPose(s: 0.82)), (0.55, IconPose(s: 1.3)), (1, .identity)])]),
         ]
+        case .diff: [
+            IconPart(origin: CGPoint(x: 12, y: 12), strokes: [[0, 7, 3.5, 1, 17, 3.5, 2, 18.933, 3.5, 20.5, 5.067, 20.5, 7, 1, 20.5, 17, 2, 20.5, 18.933, 18.933, 20.5, 17, 20.5, 1, 7, 20.5, 2, 5.067, 20.5, 3.5, 18.933, 3.5, 17, 1, 3.5, 7, 2, 3.5, 5.067, 5.067, 3.5, 7, 3.5, 3]], fills: [], hover: .identity, click: []),
+            IconPart(origin: CGPoint(x: 12, y: 9.2), strokes: [[0, 12, 6.7, 1, 12, 11.7, 0, 9.5, 9.2, 1, 14.5, 9.2]], fills: [], hover: IconPose(r: 90), click: [IconTrack(duration: 0.45, delay: 0, ease: (0.2, 0.8, 0.3, 1), draws: false, frames: [(0, .identity), (0.2, IconPose(s: 0.82)), (0.55, IconPose(s: 1.3)), (1, .identity)])]),
+            IconPart(origin: CGPoint(x: 12, y: 16), strokes: [[0, 9.5, 16, 1, 14.5, 16]], fills: [], hover: IconPose(sx: 0.7), click: [IconTrack(duration: 0.45, delay: 0.1, ease: (0.2, 0.8, 0.3, 1), draws: false, frames: [(0, .identity), (0.2, IconPose(s: 0.82)), (0.55, IconPose(s: 1.3)), (1, .identity)])]),
+        ]
         case .branch: [
             IconPart(origin: CGPoint(x: 12, y: 12), strokes: [[0, 4, 5, 2, 4, 6.105, 4.895, 7, 6, 7, 2, 7.105, 7, 8, 6.105, 8, 5, 2, 8, 3.895, 7.105, 3, 6, 3, 2, 4.895, 3, 4, 3.895, 4, 5, 3], [0, 4, 19, 2, 4, 20.105, 4.895, 21, 6, 21, 2, 7.105, 21, 8, 20.105, 8, 19, 2, 8, 17.895, 7.105, 17, 6, 17, 2, 4.895, 17, 4, 17.895, 4, 19, 3], [0, 6, 7, 1, 6, 17]], fills: [], hover: .identity, click: []),
             IconPart(origin: CGPoint(x: 12, y: 12), strokes: [[0, 18, 9, 2, 18, 11.761, 15.761, 14, 13, 14, 1, 9, 14, 2, 7.343, 14, 6, 15.343, 6, 17]], fills: [], hover: .identity, click: [IconTrack(duration: 0.5, delay: 0, ease: (0.45, 0, 0.2, 1), draws: true, frames: [(0, IconPose(d: 0)), (1, .identity)])]),
@@ -562,6 +611,14 @@ extension SymairaIcon {
             IconPart(origin: CGPoint(x: 12, y: 12), strokes: [[0, 16, 7.5, 1, 16, 16.5]], fills: [], hover: .identity, click: [IconTrack(duration: 0.55, delay: 0.18, ease: (0.34, 1.56, 0.64, 1), draws: false, frames: [(0, .identity), (0.4, IconPose(sy: 0.4)), (1, .identity)])]),
             IconPart(origin: CGPoint(x: 12, y: 12), strokes: [[0, 20, 10.5, 1, 20, 13.5]], fills: [], hover: .identity, click: [IconTrack(duration: 0.55, delay: 0.24, ease: (0.34, 1.56, 0.64, 1), draws: false, frames: [(0, .identity), (0.4, IconPose(sy: 0.4)), (1, .identity)])]),
         ]
+        case .audioOff: [
+            IconPart(origin: CGPoint(x: 12, y: 12), strokes: [[0, 4, 10, 1, 4, 14]], fills: [], hover: .identity, click: [IconTrack(duration: 0.55, delay: 0, ease: (0.34, 1.56, 0.64, 1), draws: false, frames: [(0, .identity), (0.4, IconPose(sy: 0.4)), (1, .identity)])]),
+            IconPart(origin: CGPoint(x: 12, y: 12), strokes: [[0, 8, 6.5, 1, 8, 17.5]], fills: [], hover: .identity, click: [IconTrack(duration: 0.55, delay: 0.06, ease: (0.34, 1.56, 0.64, 1), draws: false, frames: [(0, .identity), (0.4, IconPose(sy: 0.4)), (1, .identity)])]),
+            IconPart(origin: CGPoint(x: 12, y: 12), strokes: [[0, 12, 3.5, 1, 12, 9, 0, 12, 14.5, 1, 12, 20.5]], fills: [], hover: IconPose(sy: 0.8), click: [IconTrack(duration: 0.55, delay: 0.12, ease: (0.34, 1.56, 0.64, 1), draws: false, frames: [(0, .identity), (0.4, IconPose(sy: 0.4)), (1, .identity)])]),
+            IconPart(origin: CGPoint(x: 12, y: 12), strokes: [[0, 16, 7.5, 1, 16, 13]], fills: [], hover: .identity, click: [IconTrack(duration: 0.55, delay: 0.18, ease: (0.34, 1.56, 0.64, 1), draws: false, frames: [(0, .identity), (0.4, IconPose(sy: 0.4)), (1, .identity)])]),
+            IconPart(origin: CGPoint(x: 12, y: 12), strokes: [[0, 20, 10.5, 1, 20, 13.5]], fills: [], hover: .identity, click: [IconTrack(duration: 0.55, delay: 0.24, ease: (0.34, 1.56, 0.64, 1), draws: false, frames: [(0, .identity), (0.4, IconPose(sy: 0.4)), (1, .identity)])]),
+            IconPart(origin: CGPoint(x: 12, y: 12), strokes: [[0, 4, 4, 1, 20, 20]], fills: [], hover: IconPose(s: 1.06), click: [IconTrack(duration: 0.5, delay: 0, ease: (0.45, 0, 0.2, 1), draws: true, frames: [(0, IconPose(d: 0)), (1, .identity)])]),
+        ]
         case .microphone: [
             IconPart(origin: CGPoint(x: 12, y: 12), strokes: [[0, 5, 11, 2, 5, 14.866, 8.134, 18, 12, 18, 2, 15.866, 18, 19, 14.866, 19, 11], [0, 12, 18, 1, 12, 21]], fills: [], hover: .identity, click: []),
             IconPart(origin: CGPoint(x: 12, y: 12), strokes: [[0, 12, 3, 1, 12, 3, 2, 13.933, 3, 15.5, 4.567, 15.5, 6.5, 1, 15.5, 11, 2, 15.5, 12.933, 13.933, 14.5, 12, 14.5, 1, 12, 14.5, 2, 10.067, 14.5, 8.5, 12.933, 8.5, 11, 1, 8.5, 6.5, 2, 8.5, 4.567, 10.067, 3, 12, 3, 3]], fills: [], hover: IconPose(y: -0.6), click: [IconTrack(duration: 0.45, delay: 0, ease: (0.2, 0.8, 0.3, 1), draws: false, frames: [(0, .identity), (0.2, IconPose(s: 0.82)), (0.55, IconPose(s: 1.1)), (1, .identity)])]),
@@ -594,6 +651,11 @@ extension SymairaIcon {
             IconPart(origin: CGPoint(x: 12, y: 3), strokes: [[0, 12, 3, 1, 12, 4.5], [0, 6, 16.5, 1, 6, 11, 2, 6, 7.686, 8.686, 5, 12, 5, 2, 15.314, 5, 18, 7.686, 18, 11, 1, 18, 16.5, 1, 19.2, 18, 2, 19.366, 18.183, 19.402, 18.45, 19.292, 18.671, 2, 19.181, 18.892, 18.946, 19.023, 18.7, 19, 1, 5.3, 19, 2, 5.054, 19.023, 4.819, 18.892, 4.708, 18.671, 2, 4.598, 18.45, 4.634, 18.183, 4.8, 18, 3]], fills: [], hover: IconPose(r: 8), click: [IconTrack(duration: 0.9, delay: 0, ease: (0.2, 0.8, 0.3, 1), draws: false, frames: [(0, .identity), (0.1, IconPose(r: 16)), (0.25, IconPose(r: -12.8)), (0.4, IconPose(r: 8.8)), (0.55, IconPose(r: -5.6)), (0.7, IconPose(r: 2.88)), (1, .identity)])]),
             IconPart(origin: CGPoint(x: 12, y: 3), strokes: [[0, 10, 21.5, 2, 10.358, 22.282, 11.14, 22.783, 12, 22.783, 2, 12.86, 22.783, 13.642, 22.282, 14, 21.5]], fills: [], hover: .identity, click: [IconTrack(duration: 0.9, delay: 0.05, ease: (0.2, 0.8, 0.3, 1), draws: false, frames: [(0, .identity), (0.1, IconPose(r: 22)), (0.25, IconPose(r: -17.6)), (0.4, IconPose(r: 12.1)), (0.55, IconPose(r: -7.7)), (0.7, IconPose(r: 3.96)), (1, .identity)])]),
         ]
+        case .notificationOff: [
+            IconPart(origin: CGPoint(x: 12, y: 3), strokes: [[0, 12, 3, 1, 12, 4.5], [0, 6, 16.5, 1, 6, 11, 2, 6, 7.686, 8.686, 5, 12, 5, 2, 15.314, 5, 18, 7.686, 18, 11, 1, 18, 16.5, 1, 19.2, 18, 2, 19.366, 18.183, 19.402, 18.45, 19.292, 18.671, 2, 19.181, 18.892, 18.946, 19.023, 18.7, 19, 1, 5.3, 19, 2, 5.054, 19.023, 4.819, 18.892, 4.708, 18.671, 2, 4.598, 18.45, 4.634, 18.183, 4.8, 18, 3]], fills: [], hover: IconPose(r: 8), click: [IconTrack(duration: 0.9, delay: 0, ease: (0.2, 0.8, 0.3, 1), draws: false, frames: [(0, .identity), (0.1, IconPose(r: 16)), (0.25, IconPose(r: -12.8)), (0.4, IconPose(r: 8.8)), (0.55, IconPose(r: -5.6)), (0.7, IconPose(r: 2.88)), (1, .identity)])]),
+            IconPart(origin: CGPoint(x: 12, y: 3), strokes: [[0, 10, 21.5, 2, 10.358, 22.282, 11.14, 22.783, 12, 22.783, 2, 12.86, 22.783, 13.642, 22.282, 14, 21.5]], fills: [], hover: .identity, click: [IconTrack(duration: 0.9, delay: 0.05, ease: (0.2, 0.8, 0.3, 1), draws: false, frames: [(0, .identity), (0.1, IconPose(r: 22)), (0.25, IconPose(r: -17.6)), (0.4, IconPose(r: 12.1)), (0.55, IconPose(r: -7.7)), (0.7, IconPose(r: 3.96)), (1, .identity)])]),
+            IconPart(origin: CGPoint(x: 12, y: 12), strokes: [[0, 4, 4, 1, 20, 20]], fills: [], hover: IconPose(s: 1.06), click: [IconTrack(duration: 0.5, delay: 0, ease: (0.45, 0, 0.2, 1), draws: true, frames: [(0, IconPose(d: 0)), (1, .identity)])]),
+        ]
         case .failure: [
             IconPart(origin: CGPoint(x: 12, y: 12), strokes: [[0, 3, 12, 2, 3, 16.971, 7.029, 21, 12, 21, 2, 16.971, 21, 21, 16.971, 21, 12, 2, 21, 7.029, 16.971, 3, 12, 3, 2, 7.029, 3, 3, 7.029, 3, 12, 3]], fills: [], hover: .identity, click: []),
             IconPart(origin: CGPoint(x: 12, y: 12), strokes: [[0, 9, 9, 1, 15, 15, 0, 15, 9, 1, 9, 15]], fills: [], hover: IconPose(r: 90), click: [IconTrack(duration: 0.45, delay: 0, ease: (0.45, 0, 0.2, 1), draws: false, frames: [(0, .identity), (0.15, IconPose(x: -2)), (0.35, IconPose(x: 2)), (0.55, IconPose(x: -1.2)), (0.75, IconPose(x: 0.6)), (1, .identity)])]),
@@ -606,6 +668,11 @@ extension SymairaIcon {
             IconPart(origin: CGPoint(x: 12, y: 12), strokes: [[0, 3, 12, 2, 3, 16.971, 7.029, 21, 12, 21, 2, 16.971, 21, 21, 16.971, 21, 12, 2, 21, 7.029, 16.971, 3, 12, 3, 2, 7.029, 3, 3, 7.029, 3, 12, 3]], fills: [], hover: .identity, click: []),
             IconPart(origin: CGPoint(x: 12, y: 13), strokes: [[0, 9.5, 9.5, 2, 9.504, 8.253, 10.428, 7.199, 11.664, 7.031, 2, 12.9, 6.864, 14.071, 7.633, 14.407, 8.834, 2, 14.744, 10.035, 14.143, 11.301, 13, 11.8, 2, 12.4, 12.1, 12, 12.7, 12, 13.4, 1, 12, 13.7]], fills: [[0, 10.9, 17, 2, 10.9, 17.393, 11.11, 17.756, 11.45, 17.953, 2, 11.79, 18.149, 12.21, 18.149, 12.55, 17.953, 2, 12.89, 17.756, 13.1, 17.393, 13.1, 17, 2, 13.1, 16.607, 12.89, 16.244, 12.55, 16.047, 2, 12.21, 15.851, 11.79, 15.851, 11.45, 16.047, 2, 11.11, 16.244, 10.9, 16.607, 10.9, 17, 3]], hover: IconPose(r: -10), click: [IconTrack(duration: 0.9, delay: 0, ease: (0.2, 0.8, 0.3, 1), draws: false, frames: [(0, .identity), (0.1, IconPose(r: 14)), (0.25, IconPose(r: -11.2)), (0.4, IconPose(r: 7.7)), (0.55, IconPose(r: -4.9)), (0.7, IconPose(r: 2.52)), (1, .identity)])]),
         ]
+        case .tip: [
+            IconPart(origin: CGPoint(x: 12, y: 14), strokes: [[0, 9.2, 14.8, 2, 6.761, 13.513, 5.513, 10.728, 6.176, 8.051, 2, 6.839, 5.374, 9.242, 3.493, 12, 3.493, 2, 14.758, 3.493, 17.161, 5.374, 17.824, 8.051, 2, 18.487, 10.728, 17.239, 13.513, 14.8, 14.8, 2, 14.3, 15.5, 14, 16, 14, 17, 1, 10, 17, 2, 10, 16, 9.7, 15.5, 9.2, 14.8, 3]], fills: [], hover: IconPose(s: 1.05), click: [IconTrack(duration: 0.45, delay: 0, ease: (0.2, 0.8, 0.3, 1), draws: false, frames: [(0, .identity), (0.2, IconPose(s: 0.82)), (0.55, IconPose(s: 1.1)), (1, .identity)])]),
+            IconPart(origin: CGPoint(x: 12, y: 12), strokes: [[0, 10, 20, 1, 14, 20]], fills: [], hover: IconPose(y: 0.4), click: [IconTrack(duration: 0.42, delay: 0, ease: (0.34, 1.56, 0.64, 1), draws: false, frames: [(0, .identity), (0.35, IconPose(x: 0, y: 0.8)), (1, .identity)])]),
+            IconPart(origin: CGPoint(x: 12, y: 12), strokes: [[0, 9.5, 8.5, 2, 9.791, 7.541, 10.541, 6.791, 11.5, 6.5]], fills: [], hover: .identity, click: [IconTrack(duration: 0.8, delay: 0.1, ease: (0.45, 0, 0.2, 1), draws: false, frames: [(0, .identity), (0.25, IconPose(o: 0.3)), (0.5, .identity), (0.75, IconPose(o: 0.3)), (1, .identity)])]),
+        ]
         case .verified: [
             IconPart(origin: CGPoint(x: 12, y: 12), strokes: [[0, 12, 2.8, 1, 14.02, 4.47, 1, 16.6, 4.03, 1, 17.52, 6.48, 1, 19.97, 7.4, 1, 19.53, 9.98, 1, 21.2, 12, 1, 19.53, 14.02, 1, 19.97, 16.6, 1, 17.52, 17.52, 1, 16.6, 19.97, 1, 14.02, 19.53, 1, 12, 21.2, 1, 9.98, 19.53, 1, 7.4, 19.97, 1, 6.48, 17.52, 1, 4.03, 16.6, 1, 4.47, 14.02, 1, 2.8, 12, 1, 4.47, 9.98, 1, 4.03, 7.4, 1, 6.48, 6.48, 1, 7.4, 4.03, 1, 9.98, 4.47, 3]], fills: [], hover: IconPose(r: 15), click: [IconTrack(duration: 0.75, delay: 0, ease: (0.34, 1.56, 0.64, 1), draws: false, frames: [(0, .identity), (1, IconPose(r: 30))])]),
             IconPart(origin: CGPoint(x: 12, y: 12), strokes: [[0, 8.5, 12.2, 1, 10.9, 14.6, 1, 15.5, 10]], fills: [], hover: .identity, click: [IconTrack(duration: 0.5, delay: 0.2, ease: (0.45, 0, 0.2, 1), draws: true, frames: [(0, IconPose(d: 0)), (1, .identity)])]),
@@ -613,6 +680,16 @@ extension SymairaIcon {
         case .pending: [
             IconPart(origin: CGPoint(x: 12, y: 12), strokes: [[0, 6.5, 3.5, 1, 17.5, 3.5, 0, 6.5, 20.5, 1, 17.5, 20.5]], fills: [], hover: .identity, click: []),
             IconPart(origin: CGPoint(x: 12, y: 12), strokes: [[0, 7.5, 3.5, 1, 7.5, 5.7, 2, 7.5, 6.959, 8.093, 8.145, 9.1, 8.9, 1, 12, 12, 1, 9.1, 15.1, 2, 8.093, 15.855, 7.5, 17.041, 7.5, 18.3, 1, 7.5, 20.5, 0, 16.5, 3.5, 1, 16.5, 5.7, 2, 16.5, 6.959, 15.907, 8.145, 14.9, 8.9, 1, 12, 12, 1, 14.9, 15.1, 2, 15.907, 15.855, 16.5, 17.041, 16.5, 18.3, 1, 16.5, 20.5]], fills: [], hover: IconPose(r: 10), click: [IconTrack(duration: 0.75, delay: 0, ease: (0.34, 1.56, 0.64, 1), draws: false, frames: [(0, .identity), (1, IconPose(r: 180))])]),
+        ]
+        case .usage: [
+            IconPart(origin: CGPoint(x: 12, y: 12), strokes: [], fills: [[0, 10.7, 12, 2, 10.7, 12.718, 11.282, 13.3, 12, 13.3, 2, 12.718, 13.3, 13.3, 12.718, 13.3, 12, 2, 13.3, 11.282, 12.718, 10.7, 12, 10.7, 2, 11.282, 10.7, 10.7, 11.282, 10.7, 12, 3]], hover: .identity, click: []),
+            IconPart(origin: CGPoint(x: 12, y: 12), strokes: [[0, 5.6, 18.4, 2, 2.115, 14.875, 2.136, 9.195, 5.648, 5.696, 2, 9.16, 2.198, 14.84, 2.198, 18.352, 5.696, 2, 21.864, 9.195, 21.885, 14.875, 18.4, 18.4]], fills: [], hover: IconPose(s: 1.04), click: [IconTrack(duration: 0.5, delay: 0, ease: (0.45, 0, 0.2, 1), draws: true, frames: [(0, IconPose(d: 0)), (1, .identity)])]),
+            IconPart(origin: CGPoint(x: 12, y: 12), strokes: [[0, 12, 12, 1, 15.5, 8.5]], fills: [], hover: IconPose(r: -15), click: [IconTrack(duration: 0.9, delay: 0, ease: (0.2, 0.8, 0.3, 1), draws: false, frames: [(0, .identity), (0.1, IconPose(r: 25)), (0.25, IconPose(r: -20)), (0.4, IconPose(r: 13.75)), (0.55, IconPose(r: -8.75)), (0.7, IconPose(r: 4.5)), (1, .identity)])]),
+        ]
+        case .skipped: [
+            IconPart(origin: CGPoint(x: 12, y: 12), strokes: [[0, 3, 12, 2, 3, 16.971, 7.029, 21, 12, 21, 2, 16.971, 21, 21, 16.971, 21, 12, 2, 21, 7.029, 16.971, 3, 12, 3, 2, 7.029, 3, 3, 7.029, 3, 12, 3]], fills: [], hover: .identity, click: []),
+            IconPart(origin: CGPoint(x: 12, y: 12), strokes: [[0, 8.5, 10, 1, 15.5, 10]], fills: [], hover: IconPose(x: 0.6), click: [IconTrack(duration: 0.42, delay: 0, ease: (0.34, 1.56, 0.64, 1), draws: false, frames: [(0, .identity), (0.35, IconPose(x: 1.5, y: 0)), (1, .identity)])]),
+            IconPart(origin: CGPoint(x: 12, y: 12), strokes: [[0, 8.5, 14, 1, 15.5, 14]], fills: [], hover: IconPose(x: -0.6), click: [IconTrack(duration: 0.42, delay: 0.06, ease: (0.34, 1.56, 0.64, 1), draws: false, frames: [(0, .identity), (0.35, IconPose(x: -1.5, y: 0)), (1, .identity)])]),
         ]
         case .loading: [
             IconPart(origin: CGPoint(x: 12, y: 12), strokes: [[0, 12, 3, 2, 7.029, 3, 3, 7.029, 3, 12, 2, 3, 16.971, 7.029, 21, 12, 21, 2, 16.971, 21, 21, 16.971, 21, 12]], fills: [], hover: IconPose(r: 45), click: [IconTrack(duration: 0.75, delay: 0, ease: (0.45, 0, 0.2, 1), draws: false, frames: [(0, .identity), (1, IconPose(r: 360))])]),
@@ -677,6 +754,16 @@ extension SymairaIcon {
             IconPart(origin: CGPoint(x: 12, y: 12), strokes: [[0, 6.2, 8.5, 2, 6.2, 10.599, 7.901, 12.3, 10, 12.3, 2, 12.099, 12.3, 13.8, 10.599, 13.8, 8.5, 2, 13.8, 6.401, 12.099, 4.7, 10, 4.7, 2, 7.901, 4.7, 6.2, 6.401, 6.2, 8.5, 3]], fills: [], hover: .identity, click: [IconTrack(duration: 0.6, delay: 0, ease: (0.34, 1.56, 0.64, 1), draws: false, frames: [(0, .identity), (0.4, IconPose(r: 0, y: -1.5)), (1, .identity)])]),
             IconPart(origin: CGPoint(x: 19, y: 11), strokes: [[0, 19, 8, 1, 19, 14, 0, 16, 11, 1, 22, 11]], fills: [], hover: IconPose(r: 90), click: [IconTrack(duration: 0.45, delay: 0, ease: (0.2, 0.8, 0.3, 1), draws: false, frames: [(0, .identity), (0.2, IconPose(s: 0.82)), (0.55, IconPose(s: 1.3)), (1, .identity)])]),
         ]
+        case .userVerified: [
+            IconPart(origin: CGPoint(x: 12, y: 12), strokes: [[0, 3.5, 20, 2, 3.5, 16.41, 6.41, 13.5, 10, 13.5, 2, 13.59, 13.5, 16.5, 16.41, 16.5, 20]], fills: [], hover: .identity, click: []),
+            IconPart(origin: CGPoint(x: 12, y: 12), strokes: [[0, 6.2, 8.5, 2, 6.2, 10.599, 7.901, 12.3, 10, 12.3, 2, 12.099, 12.3, 13.8, 10.599, 13.8, 8.5, 2, 13.8, 6.401, 12.099, 4.7, 10, 4.7, 2, 7.901, 4.7, 6.2, 6.401, 6.2, 8.5, 3]], fills: [], hover: .identity, click: [IconTrack(duration: 0.6, delay: 0, ease: (0.34, 1.56, 0.64, 1), draws: false, frames: [(0, .identity), (0.4, IconPose(r: 0, y: -1.5)), (1, .identity)])]),
+            IconPart(origin: CGPoint(x: 18, y: 11), strokes: [[0, 15.5, 11.5, 1, 17.7, 13.7, 1, 21, 10.2]], fills: [], hover: IconPose(s: 1.12), click: [IconTrack(duration: 0.5, delay: 0.15, ease: (0.45, 0, 0.2, 1), draws: true, frames: [(0, IconPose(d: 0)), (1, .identity)])]),
+        ]
+        case .userUnknown: [
+            IconPart(origin: CGPoint(x: 12, y: 12), strokes: [[0, 3.5, 20, 2, 3.5, 16.41, 6.41, 13.5, 10, 13.5, 2, 13.59, 13.5, 16.5, 16.41, 16.5, 20]], fills: [], hover: .identity, click: []),
+            IconPart(origin: CGPoint(x: 12, y: 12), strokes: [[0, 6.2, 8.5, 2, 6.2, 10.599, 7.901, 12.3, 10, 12.3, 2, 12.099, 12.3, 13.8, 10.599, 13.8, 8.5, 2, 13.8, 6.401, 12.099, 4.7, 10, 4.7, 2, 7.901, 4.7, 6.2, 6.401, 6.2, 8.5, 3]], fills: [], hover: .identity, click: [IconTrack(duration: 0.6, delay: 0, ease: (0.34, 1.56, 0.64, 1), draws: false, frames: [(0, .identity), (0.4, IconPose(r: 0, y: -1.5)), (1, .identity)])]),
+            IconPart(origin: CGPoint(x: 19, y: 11), strokes: [[0, 16.5, 7, 2, 16.504, 5.753, 17.428, 4.699, 18.664, 4.531, 2, 19.9, 4.364, 21.071, 5.133, 21.407, 6.334, 2, 21.744, 7.535, 21.143, 8.801, 20, 9.3, 2, 19.4, 9.6, 19, 10.2, 19, 10.9, 1, 19, 11.2]], fills: [[0, 17.9, 14.5, 2, 17.9, 15.108, 18.392, 15.6, 19, 15.6, 2, 19.608, 15.6, 20.1, 15.108, 20.1, 14.5, 2, 20.1, 13.892, 19.608, 13.4, 19, 13.4, 2, 18.392, 13.4, 17.9, 13.892, 17.9, 14.5, 3]], hover: IconPose(r: -10), click: [IconTrack(duration: 0.9, delay: 0, ease: (0.2, 0.8, 0.3, 1), draws: false, frames: [(0, .identity), (0.1, IconPose(r: 14)), (0.25, IconPose(r: -11.2)), (0.4, IconPose(r: 7.7)), (0.55, IconPose(r: -4.9)), (0.7, IconPose(r: 2.52)), (1, .identity)])]),
+        ]
         case .team: [
             IconPart(origin: CGPoint(x: 12, y: 12), strokes: [[0, 5.7, 8.5, 2, 5.7, 10.323, 7.177, 11.8, 9, 11.8, 2, 10.823, 11.8, 12.3, 10.323, 12.3, 8.5, 2, 12.3, 6.677, 10.823, 5.2, 9, 5.2, 2, 7.177, 5.2, 5.7, 6.677, 5.7, 8.5, 3], [0, 3, 19.5, 2, 3, 16.186, 5.686, 13.5, 9, 13.5, 2, 12.314, 13.5, 15, 16.186, 15, 19.5]], fills: [], hover: .identity, click: [IconTrack(duration: 0.6, delay: 0, ease: (0.34, 1.56, 0.64, 1), draws: false, frames: [(0, .identity), (0.4, IconPose(r: 0, y: -1.5)), (1, .identity)])]),
             IconPart(origin: CGPoint(x: 12, y: 12), strokes: [[0, 14.4, 9.5, 2, 14.4, 10.936, 15.564, 12.1, 17, 12.1, 2, 18.436, 12.1, 19.6, 10.936, 19.6, 9.5, 2, 19.6, 8.064, 18.436, 6.9, 17, 6.9, 2, 15.564, 6.9, 14.4, 8.064, 14.4, 9.5, 3], [0, 16.8, 14.5, 2, 19.293, 14.811, 21.124, 16.991, 21, 19.5]], fills: [], hover: IconPose(x: 0.6), click: [IconTrack(duration: 0.6, delay: 0.1, ease: (0.34, 1.56, 0.64, 1), draws: false, frames: [(0, .identity), (0.4, IconPose(r: 0, y: -1.5)), (1, .identity)])]),
@@ -714,6 +801,19 @@ extension SymairaIcon {
             IconPart(origin: CGPoint(x: 12, y: 12), strokes: [[0, 20, 14.5, 1, 20, 7, 2, 20, 5.343, 18.657, 4, 17, 4, 1, 7, 4, 2, 5.343, 4, 4, 5.343, 4, 7, 1, 4, 17, 2, 4, 18.657, 5.343, 20, 7, 20, 1, 14.5, 20, 3], [0, 14.5, 20, 1, 14.5, 16.5, 2, 14.5, 15.395, 15.395, 14.5, 16.5, 14.5, 1, 20, 14.5]], fills: [], hover: .identity, click: []),
             IconPart(origin: CGPoint(x: 12, y: 12), strokes: [[0, 8, 9, 1, 16, 9], [0, 8, 13, 1, 12.5, 13]], fills: [], hover: IconPose(x: 0.6), click: [IconTrack(duration: 0.5, delay: 0, ease: (0.45, 0, 0.2, 1), draws: true, frames: [(0, IconPose(d: 0)), (1, .identity)])]),
         ]
+        case .journal: [
+            IconPart(origin: CGPoint(x: 12, y: 12), strokes: [[0, 6.5, 3.5, 1, 17.5, 3.5, 2, 18.881, 3.5, 20, 4.619, 20, 6, 1, 20, 18, 2, 20, 19.381, 18.881, 20.5, 17.5, 20.5, 1, 6.5, 20.5, 2, 5.119, 20.5, 4, 19.381, 4, 18, 1, 4, 6, 2, 4, 4.619, 5.119, 3.5, 6.5, 3.5, 3], [0, 8.5, 3.5, 1, 8.5, 20.5]], fills: [], hover: .identity, click: []),
+            IconPart(origin: CGPoint(x: 14.5, y: 3.5), strokes: [[0, 12.5, 3.5, 1, 12.5, 10.5, 1, 14.5, 9, 1, 16.5, 10.5, 1, 16.5, 3.5]], fills: [], hover: IconPose(sy: 1.08), click: [IconTrack(duration: 0.45, delay: 0, ease: (0.2, 0.8, 0.3, 1), draws: false, frames: [(0, .identity), (0.2, IconPose(s: 0.82)), (0.55, IconPose(s: 1.12)), (1, .identity)])]),
+            IconPart(origin: CGPoint(x: 12, y: 12), strokes: [[0, 12.5, 15, 1, 16.5, 15]], fills: [], hover: IconPose(x: 0.6), click: [IconTrack(duration: 0.5, delay: 0.15, ease: (0.45, 0, 0.2, 1), draws: true, frames: [(0, IconPose(d: 0)), (1, .identity)])]),
+        ]
+        case .number: [
+            IconPart(origin: CGPoint(x: 12, y: 12), strokes: [[0, 10, 4, 1, 8.5, 20, 0, 15.5, 4, 1, 14, 20]], fills: [], hover: IconPose(x: -0.6), click: [IconTrack(duration: 0.42, delay: 0, ease: (0.34, 1.56, 0.64, 1), draws: false, frames: [(0, .identity), (0.35, IconPose(x: -1.2, y: 0)), (1, .identity)])]),
+            IconPart(origin: CGPoint(x: 12, y: 12), strokes: [[0, 4.5, 9, 1, 19.5, 9, 0, 4, 15, 1, 19, 15]], fills: [], hover: IconPose(x: 0.6), click: [IconTrack(duration: 0.42, delay: 0.06, ease: (0.34, 1.56, 0.64, 1), draws: false, frames: [(0, .identity), (0.35, IconPose(x: 1.2, y: 0)), (1, .identity)])]),
+        ]
+        case .quote: [
+            IconPart(origin: CGPoint(x: 12, y: 12), strokes: [[0, 5.8, 15.5, 1, 5.8, 13.5, 2, 5.8, 10.7, 7.2, 8.8, 9.8, 8]], fills: [[0, 5.8, 15.5, 2, 5.8, 16.605, 6.695, 17.5, 7.8, 17.5, 2, 8.905, 17.5, 9.8, 16.605, 9.8, 15.5, 2, 9.8, 14.395, 8.905, 13.5, 7.8, 13.5, 2, 6.695, 13.5, 5.8, 14.395, 5.8, 15.5, 3]], hover: IconPose(y: -0.6), click: [IconTrack(duration: 0.6, delay: 0, ease: (0.34, 1.56, 0.64, 1), draws: false, frames: [(0, .identity), (0.4, IconPose(r: 0, y: -1.5)), (1, .identity)])]),
+            IconPart(origin: CGPoint(x: 12, y: 12), strokes: [[0, 14.8, 15.5, 1, 14.8, 13.5, 2, 14.8, 10.7, 16.2, 8.8, 18.8, 8]], fills: [[0, 14.8, 15.5, 2, 14.8, 16.605, 15.695, 17.5, 16.8, 17.5, 2, 17.905, 17.5, 18.8, 16.605, 18.8, 15.5, 2, 18.8, 14.395, 17.905, 13.5, 16.8, 13.5, 2, 15.695, 13.5, 14.8, 14.395, 14.8, 15.5, 3]], hover: IconPose(y: -0.6), click: [IconTrack(duration: 0.6, delay: 0.08, ease: (0.34, 1.56, 0.64, 1), draws: false, frames: [(0, .identity), (0.4, IconPose(r: 0, y: -1.5)), (1, .identity)])]),
+        ]
         case .folderAdd: [
             IconPart(origin: CGPoint(x: 12, y: 12), strokes: [[0, 3.5, 7.5, 2, 3.5, 6.119, 4.619, 5, 6, 5, 1, 9.4, 5, 2, 9.978, 5.006, 10.525, 5.261, 10.9, 5.7, 1, 12.1, 7.1, 2, 12.475, 7.539, 13.022, 7.794, 13.6, 7.8, 1, 18, 7.8, 2, 18.663, 7.8, 19.299, 8.063, 19.768, 8.532, 2, 20.237, 9.001, 20.5, 9.637, 20.5, 10.3, 1, 20.5, 17, 2, 20.5, 18.657, 19.157, 20, 17.5, 20, 1, 6.5, 20, 2, 4.843, 20, 3.5, 18.657, 3.5, 17, 3]], fills: [], hover: .identity, click: []),
             IconPart(origin: CGPoint(x: 12, y: 13.5), strokes: [[0, 12, 11, 1, 12, 16, 0, 9.5, 13.5, 1, 14.5, 13.5]], fills: [], hover: IconPose(r: 90), click: [IconTrack(duration: 0.45, delay: 0, ease: (0.2, 0.8, 0.3, 1), draws: false, frames: [(0, .identity), (0.2, IconPose(s: 0.82)), (0.55, IconPose(s: 1.3)), (1, .identity)])]),
@@ -732,6 +832,16 @@ extension SymairaIcon {
             IconPart(origin: CGPoint(x: 12, y: 12), strokes: [[0, 6.5, 4.5, 1, 17.5, 4.5, 2, 19.157, 4.5, 20.5, 5.843, 20.5, 7.5, 1, 20.5, 16.5, 2, 20.5, 18.157, 19.157, 19.5, 17.5, 19.5, 1, 6.5, 19.5, 2, 4.843, 19.5, 3.5, 18.157, 3.5, 16.5, 1, 3.5, 7.5, 2, 3.5, 5.843, 4.843, 4.5, 6.5, 4.5, 3]], fills: [], hover: .identity, click: []),
             IconPart(origin: CGPoint(x: 12, y: 12), strokes: [[0, 3.5, 9.5, 1, 20.5, 9.5], [0, 9.5, 9.5, 1, 9.5, 19.5]], fills: [], hover: IconPose(x: 0.5), click: [IconTrack(duration: 0.5, delay: 0, ease: (0.45, 0, 0.2, 1), draws: true, frames: [(0, IconPose(d: 0)), (1, .identity)])]),
         ]
+        case .blocks: [
+            IconPart(origin: CGPoint(x: 12, y: 12), strokes: [[0, 6, 4, 1, 18, 4, 2, 19.105, 4, 20, 4.895, 20, 6, 1, 20, 8, 2, 20, 9.105, 19.105, 10, 18, 10, 1, 6, 10, 2, 4.895, 10, 4, 9.105, 4, 8, 1, 4, 6, 2, 4, 4.895, 4.895, 4, 6, 4, 3]], fills: [], hover: IconPose(y: -0.6), click: [IconTrack(duration: 0.6, delay: 0, ease: (0.34, 1.56, 0.64, 1), draws: false, frames: [(0, .identity), (0.4, IconPose(r: 0, y: -1.5)), (1, .identity)])]),
+            IconPart(origin: CGPoint(x: 12, y: 12), strokes: [[0, 6, 13.5, 1, 8.5, 13.5, 2, 9.605, 13.5, 10.5, 14.395, 10.5, 15.5, 1, 10.5, 18, 2, 10.5, 19.105, 9.605, 20, 8.5, 20, 1, 6, 20, 2, 4.895, 20, 4, 19.105, 4, 18, 1, 4, 15.5, 2, 4, 14.395, 4.895, 13.5, 6, 13.5, 3]], fills: [], hover: .identity, click: [IconTrack(duration: 0.6, delay: 0.06, ease: (0.34, 1.56, 0.64, 1), draws: false, frames: [(0, .identity), (0.4, IconPose(r: 0, y: -1.5)), (1, .identity)])]),
+            IconPart(origin: CGPoint(x: 12, y: 12), strokes: [[0, 14.5, 15.5, 1, 20, 15.5, 0, 14.5, 18.5, 1, 18, 18.5]], fills: [], hover: IconPose(x: 0.6), click: [IconTrack(duration: 0.5, delay: 0.12, ease: (0.45, 0, 0.2, 1), draws: true, frames: [(0, IconPose(d: 0)), (1, .identity)])]),
+        ]
+        case .embed: [
+            IconPart(origin: CGPoint(x: 12, y: 12), strokes: [[0, 7, 3.5, 1, 17, 3.5, 2, 18.933, 3.5, 20.5, 5.067, 20.5, 7, 1, 20.5, 17, 2, 20.5, 18.933, 18.933, 20.5, 17, 20.5, 1, 7, 20.5, 2, 5.067, 20.5, 3.5, 18.933, 3.5, 17, 1, 3.5, 7, 2, 3.5, 5.067, 5.067, 3.5, 7, 3.5, 3]], fills: [], hover: .identity, click: []),
+            IconPart(origin: CGPoint(x: 12, y: 12), strokes: [[0, 7.5, 7.5, 1, 16.5, 7.5]], fills: [], hover: IconPose(x: 0.6), click: [IconTrack(duration: 0.5, delay: 0, ease: (0.45, 0, 0.2, 1), draws: true, frames: [(0, IconPose(d: 0)), (1, .identity)])]),
+            IconPart(origin: CGPoint(x: 12, y: 14), strokes: [[0, 9, 11, 1, 15, 11, 2, 15.828, 11, 16.5, 11.672, 16.5, 12.5, 1, 16.5, 15.5, 2, 16.5, 16.328, 15.828, 17, 15, 17, 1, 9, 17, 2, 8.172, 17, 7.5, 16.328, 7.5, 15.5, 1, 7.5, 12.5, 2, 7.5, 11.672, 8.172, 11, 9, 11, 3]], fills: [], hover: IconPose(s: 1.08), click: [IconTrack(duration: 0.45, delay: 0.1, ease: (0.2, 0.8, 0.3, 1), draws: false, frames: [(0, .identity), (0.2, IconPose(s: 0.82)), (0.55, IconPose(s: 1.15)), (1, .identity)])]),
+        ]
         case .checklist: [
             IconPart(origin: CGPoint(x: 12, y: 12), strokes: [[0, 4, 6.5, 1, 5.5, 8, 1, 8.5, 5]], fills: [], hover: .identity, click: [IconTrack(duration: 0.5, delay: 0, ease: (0.45, 0, 0.2, 1), draws: true, frames: [(0, IconPose(d: 0)), (1, .identity)])]),
             IconPart(origin: CGPoint(x: 12, y: 12), strokes: [[0, 4, 12.5, 1, 5.5, 14, 1, 8.5, 11]], fills: [], hover: .identity, click: [IconTrack(duration: 0.5, delay: 0.15, ease: (0.45, 0, 0.2, 1), draws: true, frames: [(0, IconPose(d: 0)), (1, .identity)])]),
@@ -746,6 +856,14 @@ extension SymairaIcon {
         case .package: [
             IconPart(origin: CGPoint(x: 12, y: 20), strokes: [[0, 11, 3.5, 2, 11.619, 3.143, 12.381, 3.143, 13, 3.5, 1, 19, 6.9, 2, 19.609, 7.251, 19.989, 7.897, 20, 8.6, 1, 20, 15.4, 2, 19.989, 16.103, 19.609, 16.749, 19, 17.1, 1, 13, 20.5, 2, 12.381, 20.857, 11.619, 20.857, 11, 20.5, 1, 5, 17.1, 2, 4.391, 16.749, 4.011, 16.103, 4, 15.4, 1, 4, 8.6, 2, 4.011, 7.897, 4.391, 7.251, 5, 6.9, 3], [0, 4.3, 7.6, 1, 12, 12, 1, 19.7, 7.6, 0, 12, 12, 1, 12, 20.7]], fills: [], hover: IconPose(y: -0.6), click: [IconTrack(duration: 0.45, delay: 0, ease: (0.2, 0.8, 0.3, 1), draws: false, frames: [(0, .identity), (0.2, IconPose(s: 0.82)), (0.55, IconPose(s: 1.08)), (1, .identity)])]),
             IconPart(origin: CGPoint(x: 12, y: 12), strokes: [[0, 8, 5.3, 1, 15.8, 9.8]], fills: [], hover: .identity, click: [IconTrack(duration: 0.5, delay: 0.2, ease: (0.45, 0, 0.2, 1), draws: true, frames: [(0, IconPose(d: 0)), (1, .identity)])]),
+        ]
+        case .invoice: [
+            IconPart(origin: CGPoint(x: 12, y: 12), strokes: [[0, 14, 3, 1, 8, 3, 2, 6.343, 3, 5, 4.343, 5, 6, 1, 5, 18, 2, 5, 19.657, 6.343, 21, 8, 21, 1, 16, 21, 2, 17.657, 21, 19, 19.657, 19, 18, 1, 19, 8, 3], [0, 14, 3, 1, 14, 6.5, 2, 14, 7.328, 14.672, 8, 15.5, 8, 1, 19, 8]], fills: [], hover: IconPose(y: -1), click: []),
+            IconPart(origin: CGPoint(x: 12, y: 14.5), strokes: [[0, 15.1, 11.7, 2, 13.962, 10.539, 12.236, 10.182, 10.731, 10.797, 2, 9.227, 11.411, 8.243, 12.875, 8.243, 14.5, 2, 8.243, 16.125, 9.227, 17.589, 10.731, 18.203, 2, 12.236, 18.818, 13.962, 18.461, 15.1, 17.3], [0, 7.9, 14.5, 1, 12.5, 14.5]], fills: [], hover: IconPose(s: 1.1), click: [IconTrack(duration: 0.5, delay: 0, ease: (0.45, 0, 0.2, 1), draws: true, frames: [(0, IconPose(d: 0)), (1, .identity)])]),
+        ]
+        case .receipt: [
+            IconPart(origin: CGPoint(x: 12, y: 12), strokes: [[0, 5, 6, 2, 5, 4.619, 6.119, 3.5, 7.5, 3.5, 1, 16.5, 3.5, 2, 17.881, 3.5, 19, 4.619, 19, 6, 1, 19, 20.5, 1, 16.67, 19, 1, 14.33, 20.5, 1, 12, 19, 1, 9.67, 20.5, 1, 7.33, 19, 1, 5, 20.5, 3]], fills: [], hover: IconPose(y: -1), click: []),
+            IconPart(origin: CGPoint(x: 12, y: 12), strokes: [[0, 9, 8.5, 1, 15, 8.5], [0, 9, 12, 1, 15, 12], [0, 9, 15.5, 1, 12, 15.5]], fills: [], hover: .identity, click: [IconTrack(duration: 0.5, delay: 0, ease: (0.45, 0, 0.2, 1), draws: true, frames: [(0, IconPose(d: 0)), (1, .identity)])]),
         ]
         case .chat: [
             IconPart(origin: CGPoint(x: 5, y: 19), strokes: [[0, 20.5, 11.5, 2, 20.5, 15.6, 16.7, 19, 12, 19, 2, 10.8, 19, 9.7, 18.8, 8.7, 18.4, 1, 4, 19.5, 1, 5.3, 15.9, 2, 4.212, 14.684, 3.577, 13.13, 3.5, 11.5, 2, 3.5, 7.4, 7.3, 4, 12, 4, 2, 16.7, 4, 20.5, 7.4, 20.5, 11.5, 3]], fills: [], hover: IconPose(r: -4), click: []),
@@ -820,6 +938,11 @@ extension SymairaIcon {
             IconPart(origin: CGPoint(x: 12, y: 5), strokes: [[0, 10, 5, 2, 10, 6.105, 10.895, 7, 12, 7, 2, 13.105, 7, 14, 6.105, 14, 5, 2, 14, 3.895, 13.105, 3, 12, 3, 2, 10.895, 3, 10, 3.895, 10, 5, 3]], fills: [], hover: IconPose(y: -0.6), click: [IconTrack(duration: 0.45, delay: 0, ease: (0.2, 0.8, 0.3, 1), draws: false, frames: [(0, .identity), (0.2, IconPose(s: 0.82)), (0.55, IconPose(s: 1.3)), (1, .identity)])]),
             IconPart(origin: CGPoint(x: 5.5, y: 18), strokes: [[0, 3.5, 18, 2, 3.5, 19.105, 4.395, 20, 5.5, 20, 2, 6.605, 20, 7.5, 19.105, 7.5, 18, 2, 7.5, 16.895, 6.605, 16, 5.5, 16, 2, 4.395, 16, 3.5, 16.895, 3.5, 18, 3]], fills: [], hover: .identity, click: [IconTrack(duration: 0.45, delay: 0.1, ease: (0.2, 0.8, 0.3, 1), draws: false, frames: [(0, .identity), (0.2, IconPose(s: 0.82)), (0.55, IconPose(s: 1.3)), (1, .identity)])]),
             IconPart(origin: CGPoint(x: 18.5, y: 18), strokes: [[0, 16.5, 18, 2, 16.5, 19.105, 17.395, 20, 18.5, 20, 2, 19.605, 20, 20.5, 19.105, 20.5, 18, 2, 20.5, 16.895, 19.605, 16, 18.5, 16, 2, 17.395, 16, 16.5, 16.895, 16.5, 18, 3]], fills: [], hover: .identity, click: [IconTrack(duration: 0.45, delay: 0.2, ease: (0.2, 0.8, 0.3, 1), draws: false, frames: [(0, .identity), (0.2, IconPose(s: 0.82)), (0.55, IconPose(s: 1.3)), (1, .identity)])]),
+        ]
+        case .language: [
+            IconPart(origin: CGPoint(x: 12, y: 12), strokes: [[0, 3, 12, 2, 3, 16.971, 7.029, 21, 12, 21, 2, 16.971, 21, 21, 16.971, 21, 12, 2, 21, 7.029, 16.971, 3, 12, 3, 2, 7.029, 3, 3, 7.029, 3, 12, 3]], fills: [], hover: IconPose(s: 1.04), click: []),
+            IconPart(origin: CGPoint(x: 12, y: 12), strokes: [[0, 3.8, 8.5, 1, 20.2, 8.5, 0, 3.8, 15.5, 1, 20.2, 15.5]], fills: [], hover: .identity, click: [IconTrack(duration: 0.5, delay: 0, ease: (0.45, 0, 0.2, 1), draws: true, frames: [(0, IconPose(d: 0)), (1, .identity)])]),
+            IconPart(origin: CGPoint(x: 12, y: 12), strokes: [[0, 8, 12, 2, 8, 16.971, 9.791, 21, 12, 21, 2, 14.209, 21, 16, 16.971, 16, 12, 2, 16, 7.029, 14.209, 3, 12, 3, 2, 9.791, 3, 8, 7.029, 8, 12, 3]], fills: [], hover: IconPose(sx: 0.6), click: [IconTrack(duration: 0.8, delay: 0, ease: (0.45, 0, 0.2, 1), draws: false, frames: [(0, .identity), (0.5, IconPose(sx: 0.12)), (1, .identity)])]),
         ]
         case .wifi: [
             IconPart(origin: CGPoint(x: 12, y: 12), strokes: [], fills: [[0, 10.8, 18, 2, 10.8, 18.429, 11.029, 18.825, 11.4, 19.039, 2, 11.771, 19.254, 12.229, 19.254, 12.6, 19.039, 2, 12.971, 18.825, 13.2, 18.429, 13.2, 18, 2, 13.2, 17.571, 12.971, 17.175, 12.6, 16.961, 2, 12.229, 16.746, 11.771, 16.746, 11.4, 16.961, 2, 11.029, 17.175, 10.8, 17.571, 10.8, 18, 3]], hover: .identity, click: [IconTrack(duration: 0.8, delay: 0, ease: (0.45, 0, 0.2, 1), draws: false, frames: [(0, .identity), (0.25, IconPose(o: 0.3)), (0.5, .identity), (0.75, IconPose(o: 0.3)), (1, .identity)])]),
