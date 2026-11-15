@@ -171,7 +171,8 @@ def review_text(text: str, display: str) -> list[dict]:
             if pattern.search(line):
                 findings.append({"file": display, "line": index, "rule": rule, "severity": severity, "message": message})
         if BARE_PROGRESS.search(line):
-            following = lines[index : index + PROGRESS_WINDOW]
+            # Include the matching line: a same-line .accessibilityLabel labels the spinner.
+            following = lines[index - 1 : index + PROGRESS_WINDOW]
             if not any(PROGRESS_LABEL.search(l) for l in following):
                 findings.append(
                     {
@@ -282,6 +283,9 @@ struct Fixture: View {
         problems.append(f"clean lines flagged: {leaked}")
     if comment_hits:
         problems.append(f"comment line flagged: {comment_hits}")
+    same_line = 'ProgressView().controlSize(.small).accessibilityLabel(String(localized: "Syncing…"))\n}\n'
+    if any(item["rule"] == "STATE-1" for item in review_text(same_line, "same-line.swift")):
+        problems.append("same-line labelled ProgressView() flagged as STATE-1")
     if set(project) != {r for r, _, _, _ in PROJECT_RULES}:
         problems.append(f"project rules: {project}")
     shell_rules = {"KEY-1", "SHELL-7", "SHELL-9"}
