@@ -143,7 +143,8 @@ convention, with no forced action when none is possible.
 
 All placeholders share one implementation and the fixed
 `SymairaPageLayout.stateHeight` (240 pt); toolbar height is
-`SymairaPageLayout.toolbarHeight` (44 pt). Both scale with Dynamic Type and
+`SymairaPageLayout.toolbarHeight` (44 pt); a page without a toolbar reserves no
+toolbar row. Both scale with Dynamic Type and
 remain identical across state changes at the same text size. Loaded content
 is not constrained to that height. Keep state messages concise; review long
 localized copy at narrow widths and accessibility text sizes in the consumer.

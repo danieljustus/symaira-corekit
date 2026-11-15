@@ -7,6 +7,7 @@ public enum SymairaPageLayout {
 }
 
 /// Stable header and toolbar, with optional page scrolling. Tables should use `scrolls: false`.
+/// Pages without a toolbar (`Toolbar == EmptyView`) reserve no toolbar row.
 public struct SymairaPage<Toolbar: View, Content: View>: View {
     private let title: String
     private let subtitle: String?
@@ -14,6 +15,7 @@ public struct SymairaPage<Toolbar: View, Content: View>: View {
     private let maxWidth: CGFloat
     private let toolbar: Toolbar
     private let content: Content
+    private let showsToolbar: Bool
     @ScaledMetric private var toolbarHeight = SymairaPageLayout.toolbarHeight
 
     public init(
@@ -27,6 +29,7 @@ public struct SymairaPage<Toolbar: View, Content: View>: View {
         self.maxWidth = maxWidth
         self.toolbar = toolbar()
         self.content = content()
+        self.showsToolbar = Toolbar.self != EmptyView.self
     }
 
     public var body: some View {
@@ -52,11 +55,13 @@ public struct SymairaPage<Toolbar: View, Content: View>: View {
                     .topoProtected()
                     .accessibilityHidden(subtitle == nil)
             }
-            HStack(spacing: SymairaSpacing.medium) { toolbar }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .frame(height: toolbarHeight)
-                .accessibilityIdentifier("symaira.page.toolbar")
-                .symairaFocusSection()
+            if showsToolbar {
+                HStack(spacing: SymairaSpacing.medium) { toolbar }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .frame(height: toolbarHeight)
+                    .accessibilityIdentifier("symaira.page.toolbar")
+                    .symairaFocusSection()
+            }
             content
                 .symairaFocusSection()
         }

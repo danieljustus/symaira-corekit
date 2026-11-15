@@ -62,6 +62,19 @@ final class PageScaffoldTests: XCTestCase {
             })
     }
 
+    func testPageWithoutToolbarReservesNoToolbarRow() throws {
+        let content = { Text("Content").frame(height: 80) }
+        let withToolbar = try height(
+            SymairaPage(title: "Requests", scrolls: false) {
+                Button("Refresh") {}
+            } content: {
+                content()
+            })
+        let withoutToolbar = try height(SymairaPage(title: "Requests", scrolls: false) { content() })
+        XCTAssertEqual(
+            withToolbar - withoutToolbar, SymairaPageLayout.toolbarHeight + SymairaSpacing.large, accuracy: 1)
+    }
+
     func testGeometryUsesSharedActionBudget() {
         XCTAssertEqual(SymairaPageLayout.toolbarHeight, 44)
         XCTAssertGreaterThanOrEqual(SymairaPageLayout.toolbarHeight, SymairaMetrics.contentActionHeight)
