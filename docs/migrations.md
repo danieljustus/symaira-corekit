@@ -20,6 +20,11 @@ behavior change worth confirming.
   fixed height at accessibility text sizes. `SymairaPage` without a toolbar
   starts its content about 60 pt higher; remove any local workaround for the
   old gap.
+- **Swift typography:** Figtree replaces Inter everywhere except the largest
+  headings and the wordmark. Check dense layouts for changed text widths.
+  Migrate `SymairaFont.Family.opticalSize` consumers to `Double?` and replace
+  `SymairaFont.textOpticalSize` with `SymairaFont.Family.opticalSize`; the old
+  property and bundled Inter files are removed.
 - **Rust consumers:** no change; moving the revision is optional.
 
 ## v0.22.4

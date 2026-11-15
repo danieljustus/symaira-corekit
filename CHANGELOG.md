@@ -4,6 +4,13 @@ The GitHub Releases page is the authoritative source for complete release notes.
 
 ## v0.23.0 — 2026-11-15
 
+- Swift: Figtree replaces Inter for all running text, labels, captions and
+  readouts. Google Sans Flex remains only on the largest headings and the
+  wordmark. Sizes, weights and tabular digits stay unchanged; text widths can
+  differ. Secondary and caption text gain slight tracking in dark appearance.
+- Swift API: `SymairaFont.Family.opticalSize` is now `Double?` because Figtree
+  has no optical-size axis. `SymairaFont.textOpticalSize` and the bundled Inter
+  files are removed.
 - Swift: 18 new `SymairaIcon` cases for meanings SymDesk still drew with SF
   Symbols: `blocks`, `usage`, `userVerified`, `userUnknown`,
   `notificationOff`, `journal`, `number`, `previousMatch`, `nextMatch`,

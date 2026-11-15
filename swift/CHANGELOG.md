@@ -11,6 +11,8 @@ the releases of the former `symaira-appkit` repository.
 
 ## [Unreleased]
 
+## [0.23.0] - 2026-11-15
+
 ### Added
 - `SymairaTextRole.tracking(for:)`: `.secondary` and `.caption` open by
   +0.01em in dark appearance (0.125 pt and 0.115 pt); `.symairaText(_:)`
@@ -18,6 +20,11 @@ the releases of the former `symaira-appkit` repository.
   `.sym-type-caption` and the new `.sym-text-quiet`; `tokens.css` sets
   grayscale antialiasing (`-webkit-font-smoothing: antialiased`,
   `-moz-osx-font-smoothing: grayscale`) on `body`.
+- 18 `SymairaIcon` cases for meanings SymDesk still drew with SF Symbols:
+  `blocks`, `usage`, `userVerified`, `userUnknown`, `notificationOff`,
+  `journal`, `number`, `previousMatch`, `nextMatch`, `diff`, `embed`,
+  `audioOff`, `language`, `invoice`, `receipt`, `tip`, `quote` and `skipped`
+  (160 cases in total). Other reported gaps map to existing cases (#485).
 
 ### Changed
 - Figtree (SIL Open Font License 1.1, unmodified original `Figtree[wght].ttf`
@@ -35,15 +42,6 @@ the releases of the former `symaira-appkit` repository.
 
 ### Removed
 - `Inter.ttf`, `Inter-OFL.txt` and `SymairaFont.textOpticalSize`.
-
-## [0.23.0] - 2026-11-15
-
-### Added
-- 18 `SymairaIcon` cases for meanings SymDesk still drew with SF Symbols:
-  `blocks`, `usage`, `userVerified`, `userUnknown`, `notificationOff`,
-  `journal`, `number`, `previousMatch`, `nextMatch`, `diff`, `embed`,
-  `audioOff`, `language`, `invoice`, `receipt`, `tip`, `quote` and `skipped`
-  (160 cases in total). Other reported gaps map to existing cases (#485).
 
 ### Fixed
 - `SymairaIconView`, `Label(_:symairaIcon:)` and `SymairaIconButton` scale
