@@ -320,7 +320,6 @@ extension ToggleStyle where Self == SymairaSwitchToggleStyle {
 /// "Locked" marker (localized) next to a control that cannot be used right now (missing
 /// sensor data, no permission). Opacity alone is not a disabled cue.
 public struct SymairaLockedLabel: View {
-    @Environment(\.colorScheme) private var colorScheme
     let text: String
 
     public init(_ text: String = SymairaStrings.locked) {
@@ -334,7 +333,6 @@ public struct SymairaLockedLabel: View {
             SymairaIconView(.lock)
         }
         .labelStyle(.titleAndIcon)
-        .font(SymairaTypography.caption)
-        .foregroundStyle(SymairaTheme.foregroundMuted(for: colorScheme))
+        .symairaText(.caption)
     }
 }

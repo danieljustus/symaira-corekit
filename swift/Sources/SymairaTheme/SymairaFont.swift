@@ -10,22 +10,24 @@ import UIKit
 
 /// The two bundled Symaira typefaces.
 ///
-/// Google Sans Flex carries the brand: display, titles, headings and metrics.
-/// Inter carries running text, labels and captions, where it stays more legible
-/// at 11 to 14 pt. Both variable fonts ship unmodified in this module's bundle
-/// (SIL Open Font License 1.1, see `Resources/Fonts`), so they may be used
-/// commercially and on every platform. They are registered for the current
-/// process on first use, so apps need no `Info.plist` entry.
+/// Google Sans Flex carries the brand: the wordmark, display copy and screen
+/// titles, the largest headings only. Figtree carries every other text:
+/// headings, metrics, running text, labels and captions. Both variable fonts
+/// ship unmodified in this module's bundle (SIL Open Font License 1.1, see
+/// `Resources/Fonts`), so they may be used commercially and on every platform.
+/// They are registered for the current process on first use, so apps need no
+/// `Info.plist` entry.
 ///
-/// Every font is built with a fixed optical size per family. Core Text would
-/// otherwise derive the optical size from the point size, which makes Google
-/// Sans Flex below 14 pt about 5 to 8 % wider and look letter-spaced.
+/// Google Sans Flex is built with a fixed optical size. Core Text would
+/// otherwise derive the optical size from the point size, which makes it below
+/// 14 pt about 5 to 8 % wider and look letter-spaced. Figtree has no optical
+/// size axis, only weight.
 public enum SymairaFont {
     /// Which bundled typeface a role uses.
     public enum Family: Hashable, Sendable {
-        /// Google Sans Flex: display, titles, headings, metrics.
+        /// Google Sans Flex: wordmark, display copy, screen titles.
         case brand
-        /// Inter: running text, labels, captions.
+        /// Figtree: headings, metrics, running text, labels, captions.
         case text
 
         /// Family name as registered with Core Text.
@@ -36,18 +38,19 @@ public enum SymairaFont {
             }
         }
 
-        /// Fixed optical size used for every role of this family.
-        public var opticalSize: Double {
+        /// Fixed optical size used for every role of this family; `nil` when
+        /// the typeface has no optical size axis.
+        public var opticalSize: Double? {
             switch self {
             case .brand: SymairaFont.opticalSize
-            case .text: SymairaFont.textOpticalSize
+            case .text: nil
             }
         }
 
         var resource: String {
             switch self {
             case .brand: "GoogleSansFlex"
-            case .text: "Inter"
+            case .text: "Figtree"
             }
         }
     }
@@ -55,9 +58,7 @@ public enum SymairaFont {
     public static let familyName = "Google Sans Flex"
     /// Optical size of Google Sans Flex. Approved in the Cockpit design pilot.
     public static let opticalSize: Double = 18
-    public static let textFamilyName = "Inter"
-    /// Optical size of Inter: its text cut, the small end of the axis (14 to 32).
-    public static let textOpticalSize: Double = 14
+    public static let textFamilyName = "Figtree"
 
     /// Registers both bundled fonts once per process. Returns `false` when
     /// either is neither bundled nor already available (that family then falls
@@ -90,9 +91,10 @@ public enum SymairaFont {
         return CTFontCopyFamilyName(probe) as String == family.name
     }
 
-    /// A Core Text font with the family's fixed optical size and the given weight axis.
+    /// A Core Text font with the family's fixed optical size (if any) and the given weight axis.
     public static func ctFont(size: CGFloat, weight: Double, family: Family = .brand) -> CTFont {
-        let variation: [NSNumber: Double] = [axis("wght"): weight, axis("opsz"): family.opticalSize]
+        var variation: [NSNumber: Double] = [axis("wght"): weight]
+        if let opticalSize = family.opticalSize { variation[axis("opsz")] = opticalSize }
         let attributes: [CFString: Any] = [
             kCTFontFamilyNameAttribute: family.name,
             kCTFontVariationAttribute: variation,

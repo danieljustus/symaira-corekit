@@ -21,7 +21,7 @@ point-sized fonts, since that reintroduces the live-scaling bug.
 On iOS the modifier uses public `@ScaledMetric` in the receiving view's
 Dynamic Type environment. Only then does it construct the Core Text font
 with the approved family, weight and fixed optical size (`opsz` 18 for
-Google Sans Flex, 14 for Inter). The absent-font system fallback uses
+Google Sans Flex; Figtree has no optical size axis). The absent-font system fallback uses
 the same live point size. Monospaced roles retain semantic system fonts.
 macOS retains the original fixed sizes and font construction. Both font
 resources ship unmodified; no private font provider or modified asset is used.

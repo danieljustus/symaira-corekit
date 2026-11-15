@@ -11,6 +11,31 @@ the releases of the former `symaira-appkit` repository.
 
 ## [Unreleased]
 
+### Added
+- `SymairaTextRole.tracking(for:)`: `.secondary` and `.caption` open by
+  +0.01em in dark appearance (0.125 pt and 0.115 pt); `.symairaText(_:)`
+  applies it. Web: `--sym-tracking-quiet` (0 light, 0.01em dark) on
+  `.sym-type-caption` and the new `.sym-text-quiet`; `tokens.css` sets
+  grayscale antialiasing (`-webkit-font-smoothing: antialiased`,
+  `-moz-osx-font-smoothing: grayscale`) on `body`.
+
+### Changed
+- Figtree (SIL Open Font License 1.1, unmodified original `Figtree[wght].ttf`
+  2.002) replaces Inter for every text except the largest headings:
+  `heading`, `subheading`, `readout`, `stat` and all running text, label and
+  caption roles. Google Sans Flex (`opsz` 18) stays only on `display`,
+  `title` and the wordmark. Same sizes, weights and tabular digits; text
+  widths change, so check dense layouts after the pin bump. Web tokens
+  (`headline`, `title`, `readout`, `stat`) and the catalogue follow (H1 stays
+  Google Sans Flex).
+- `SymairaFont.Family.opticalSize` is now `Double?` (`nil` for Figtree, which
+  has no optical size axis). `SymairaFont.textFamilyName` is `"Figtree"`.
+- `SymairaNotice`, `SymairaLoadingState` and `SymairaLockedLabel` set their
+  gray text through `.symairaText(.secondary/.caption)` (same font and colour).
+
+### Removed
+- `Inter.ttf`, `Inter-OFL.txt` and `SymairaFont.textOpticalSize`.
+
 ## [0.23.0] - 2026-11-15
 
 ### Added

@@ -2,53 +2,55 @@ import SwiftUI
 
 /// Canonical Symaira type scale (see ``SymairaFont``).
 ///
-/// Display, titles, headings and metrics are set in Google Sans Flex with the
-/// fixed optical size `opsz` 18. Running text, labels and captions are set in
-/// Inter with its text optical size `opsz` 14, which stays more legible at
-/// small sizes. Sizes and weights follow `design/liquid-topography/DESIGN.md`. On iOS
-/// each role scales with Dynamic Type relative to its text style; macOS has no
-/// Dynamic Type. If a bundled font cannot be registered, the system font with
+/// Only the largest headings, display copy and screen titles, are set in Google
+/// Sans Flex with the fixed optical size `opsz` 18. Every other role (headings,
+/// metrics, running text, labels and captions) is set in Figtree. Sizes and
+/// weights follow `design/liquid-topography/DESIGN.md`. On iOS each role
+/// scales with Dynamic Type relative to its text style; macOS has no Dynamic
+/// Type. If a bundled font cannot be registered, the system font with
 /// the same size and weight is used. Monospaced roles stay on SF Mono.
 /// Values are `SymairaFontRole` recipes; `.font(role)` resolves them in the view.
 public enum SymairaTypography {
-    /// Hero copy on empty states and onboarding. One per screen at most. 26 / 700.
+    /// Hero copy on empty states and onboarding. One per screen at most. Google Sans Flex 26 / 700.
     public static let display = SymairaFont.font(size: 26, weight: 700, relativeTo: .largeTitle)
 
-    /// Primary screen title. 20 / 700.
+    /// Primary screen title (H1). Google Sans Flex 20 / 700.
     public static let title = SymairaFont.font(size: 20, weight: 700, relativeTo: .title)
 
-    /// Section or card heading. 16 / 700.
-    public static let heading = SymairaFont.font(size: 16, weight: 700, relativeTo: .title3)
+    /// Section or card heading. Figtree 16 / 700.
+    public static let heading = SymairaFont.font(size: 16, weight: 700, relativeTo: .title3, family: .text)
 
-    /// Sub-heading above a group of rows. 14 / 650.
-    public static let subheading = SymairaFont.font(size: 14, weight: 650, relativeTo: .headline)
+    /// Sub-heading above a group of rows. Figtree 14 / 650.
+    public static let subheading = SymairaFont.font(size: 14, weight: 650, relativeTo: .headline, family: .text)
 
-    /// Default running text. Inter 13.5 / 450.
+    /// Default running text. Figtree 13.5 / 450.
     public static let body = SymairaFont.font(size: 13.5, weight: 450, relativeTo: .body, family: .text)
 
-    /// Running text that carries the weight of a decision (selected row, active value). Inter 13.5 / 600.
+    /// Running text that carries the weight of a decision (selected row, active value). Figtree 13.5 / 600.
     public static let bodyEmphasized = SymairaFont.font(size: 13.5, weight: 600, relativeTo: .body, family: .text)
 
-    /// Running text on a secondary control. Inter 13.5 / 550.
+    /// Running text on a secondary control. Figtree 13.5 / 550.
     public static let bodyMedium = SymairaFont.font(size: 13.5, weight: 550, relativeTo: .body, family: .text)
 
-    /// Badge, pill, button and control label text. Inter 12.5 / 550.
+    /// Badge, pill, button and control label text. Figtree 12.5 / 550.
     public static let label = SymairaFont.font(size: 12.5, weight: 550, relativeTo: .caption, family: .text)
 
-    /// Secondary text next to a control or inside a row. Inter 12.5 / 450.
+    /// Secondary text next to a control or inside a row. Figtree 12.5 / 450.
     public static let callout = SymairaFont.font(size: 12.5, weight: 450, relativeTo: .callout, family: .text)
 
-    /// Helper text, timestamps, counts, scale labels. Inter 11.5 / 450.
+    /// Helper text, timestamps, counts, scale labels. Figtree 11.5 / 450.
     public static let caption = SymairaFont.font(size: 11.5, weight: 450, relativeTo: .caption, family: .text)
 
-    /// Uppercase group labels. The smallest role that still has to stay legible. Inter 11.5 / 600.
+    /// Uppercase group labels. The smallest role that still has to stay legible. Figtree 11.5 / 600.
     public static let micro = SymairaFont.font(size: 11.5, weight: 600, relativeTo: .caption2, family: .text)
 
-    /// Live value next to a control (brightness, fan speed). 18 / 700, tabular digits.
-    public static let readout = SymairaFont.font(size: 18, weight: 700, relativeTo: .title3).monospacedDigit()
+    /// Live value next to a control (brightness, fan speed). Figtree 18 / 700, tabular digits.
+    public static let readout = SymairaFont.font(size: 18, weight: 700, relativeTo: .title3, family: .text)
+        .monospacedDigit()
 
-    /// Summary metric in a stat card. 27 / 700, tabular digits.
-    public static let stat = SymairaFont.font(size: 27, weight: 700, relativeTo: .largeTitle).monospacedDigit()
+    /// Summary metric in a stat card. Figtree 27 / 700, tabular digits.
+    public static let stat = SymairaFont.font(size: 27, weight: 700, relativeTo: .largeTitle, family: .text)
+        .monospacedDigit()
 
     /// Command output, paths, hashes, identifiers.
     public static let mono = SymairaFontRole(source: .system(.system(.body, design: .monospaced, weight: .regular)))
@@ -110,8 +112,8 @@ public enum SymairaTextRole: Sendable {
         }
     }
 
-    /// Letter spacing in points. Large roles are tightened as specified in
-    /// DESIGN.md; only the uppercase section label is opened up.
+    /// Letter spacing in points in light appearance. Large roles are tightened
+    /// as specified in DESIGN.md; only the uppercase section label is opened up.
     public var tracking: CGFloat {
         switch self {
         case .display: -0.65  // -0.025em at 26 pt
@@ -119,6 +121,18 @@ public enum SymairaTextRole: Sendable {
         case .heading: -0.16  // -0.01em at 16 pt
         case .sectionLabel: 0.6
         default: 0
+        }
+    }
+
+    /// Letter spacing in points for the given appearance. Small gray text
+    /// (``secondary`` and ``caption``) opens by +0.01em in dark appearance,
+    /// where light-on-dark glyphs otherwise run together.
+    public func tracking(for colorScheme: ColorScheme) -> CGFloat {
+        guard colorScheme == .dark else { return tracking }
+        switch self {
+        case .secondary: return 0.125  // +0.01em at 12.5 pt
+        case .caption: return 0.115  // +0.01em at 11.5 pt
+        default: return tracking
         }
     }
 }
@@ -133,7 +147,7 @@ private struct SymairaTextRoleModifier: ViewModifier {
         let styled =
             content
             .font(role.font)
-            .tracking(role.tracking)
+            .tracking(role.tracking(for: colorScheme))
         if respectsForeground {
             styled.foregroundStyle(role.foreground(for: colorScheme))
         } else {

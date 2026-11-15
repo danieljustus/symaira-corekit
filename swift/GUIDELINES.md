@@ -218,14 +218,19 @@ Six lines, kept in the pull request or issue:
 - **COLOR-4** In light appearance, controls placed directly on the canvas carry
   the 1 pt `SymairaTheme.raisedOutline(for:)`; never rely on fill alone.
 - **TYPE-1** Fonts come from `SymairaTypography` roles or `.symairaText(_:)`
-  (Google Sans Flex `opsz` 18 for display, titles, headings and metrics;
-  Inter `opsz` 14 for running text, labels and captions); no `.font(.system(size:))` and no
+  (Google Sans Flex `opsz` 18 only for the wordmark, display and screen titles;
+  Figtree for every other text: headings, metrics, running text, labels and
+  captions); no `.font(.system(size:))` and no
   `.font(.headline)` or other system text styles.
 - **TYPE-2** Numbers that update use tabular digits (`SymairaTypography.stat`,
   `.readout`, or `.monospacedDigit()`); numeric table columns align trailing.
-- **TYPE-3** Weights: Inter body and captions 450, labels and buttons 550,
-  emphasis and section labels 600; Google Sans Flex titles 650, headings and
-  metrics 700; no other weights.
+- **TYPE-3** Weights: Figtree body and captions 450, labels and buttons 550,
+  emphasis and section labels 600, sub-headings 650, headings and metrics 700;
+  Google Sans Flex display and titles 700; no other weights.
+- **TYPE-4** Small gray text (secondary text, captions) goes through
+  `.symairaText(.secondary)` or `.symairaText(.caption)`, not `.font(...)` plus
+  a muted foreground: the role opens tracking by +0.01em in dark appearance.
+  Never disable text antialiasing.
 - **ICON-1** Icons are `SymairaIcon` cases through `SymairaIconView`,
   `SymairaIconButton`, `Label(_:symairaIcon:)` and the `icon:` initializers of
   the shared components. An SF Symbol string is acceptable only where no case

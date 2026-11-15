@@ -6,7 +6,7 @@
 <title>Symaira Komponentenkatalog · DEMO</title>
 <link rel="icon" href="data:,">
 <link rel="stylesheet" href="../dist/tokens.css">
-<style id="sym-font-face">@font-face{font-family:"Google Sans Flex";src:url("../../../Sources/SymairaTheme/Resources/Fonts/GoogleSansFlex.ttf") format("truetype");font-weight:1 1000;font-display:block}@font-face{font-family:"Inter";src:url("../../../Sources/SymairaTheme/Resources/Fonts/Inter.ttf") format("truetype");font-weight:100 900;font-display:block}</style>
+<style id="sym-font-face">@font-face{font-family:"Google Sans Flex";src:url("../../../Sources/SymairaTheme/Resources/Fonts/GoogleSansFlex.ttf") format("truetype");font-weight:1 1000;font-display:block}@font-face{font-family:"Figtree";src:url("../../../Sources/SymairaTheme/Resources/Fonts/Figtree.ttf") format("truetype");font-weight:300 900;font-display:block}</style>
 <style>
 *{box-sizing:border-box}
 [hidden]{display:none!important}
@@ -14,9 +14,9 @@ html{-webkit-text-size-adjust:100%}
 body{margin:0;font:450 13.5px/1.5 var(--sym-font-text);-webkit-font-smoothing:antialiased;background:var(--sym-canvas);color:var(--sym-ink)}
 h1,h2,h3,h4,p,ul,ol,dl,dd,figure{margin:0}
 h1{font:700 22px/1.2 var(--sym-font);--sym-opsz:18;letter-spacing:-0.02em}
-h2{font:700 16px/1.3 var(--sym-font);--sym-opsz:18;letter-spacing:-0.01em}
-h3{font:650 14px/1.35 var(--sym-font);--sym-opsz:18}
-h4{font:650 14px/1.35 var(--sym-font);--sym-opsz:18}
+h2{font:700 16px/1.3 var(--sym-font-text);letter-spacing:-0.01em}
+h3{font:650 14px/1.35 var(--sym-font-text)}
+h4{font:650 14px/1.35 var(--sym-font-text)}
 .muted{color:var(--sym-ink-2)}
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 :focus-visible{outline:2px solid var(--sym-focus);outline-offset:2px}
@@ -44,7 +44,7 @@ section > p.muted{max-width:62ch}
 .row{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
 .actions{display:flex;flex-wrap:wrap;gap:12px;justify-content:flex-end;align-items:center}
 .status{min-height:1.5em;color:var(--sym-ink-2);font:550 12.5px/1.4 var(--sym-font-text)}
-.caption{font:550 11.5px/1.4 var(--sym-font-text);color:var(--sym-ink-3);margin-bottom:8px}
+.caption{font:550 11.5px/1.4 var(--sym-font-text);color:var(--sym-ink-3);letter-spacing:var(--sym-tracking-quiet);margin-bottom:8px}
 .state-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:18px}
 .code{font:500 12.5px/1.65 var(--sym-font-mono);color:var(--sym-ink-2)}
 
@@ -65,7 +65,7 @@ section > p.muted{max-width:62ch}
 /* Fields */
 .field{display:grid;gap:6px;min-width:0}
 label,.label{font:550 12.5px/1.4 var(--sym-font-text)}
-.hint{font:450 12px/1.45 var(--sym-font-text);color:var(--sym-ink-2)}
+.hint{font:450 12px/1.45 var(--sym-font-text);color:var(--sym-ink-2);letter-spacing:var(--sym-tracking-quiet)}
 .error{font:550 12px/1.4 var(--sym-font-text);color:var(--sym-critical)}
 .input{width:100%;min-height:40px;padding:8px 12px;font:450 13.5px/1.5 var(--sym-font-text);color:var(--sym-ink);background:var(--sym-canvas);border:1px solid var(--sym-ink-3);border-radius:var(--sym-radius-md)}
 textarea.input{resize:vertical}
@@ -74,7 +74,7 @@ textarea.input{resize:vertical}
 .toolbar{display:flex;flex-wrap:wrap;gap:12px;padding:16px 20px;border-bottom:1px solid var(--sym-line);align-items:end}
 .toolbar .field{flex:1 1 180px;min-width:0}
 fieldset.group{border:0;padding:0;margin:0;display:grid;gap:12px;min-width:0}
-legend{font:650 13px/1.4 var(--sym-font);--sym-opsz:18;padding:0 0 6px}
+legend{font:650 13px/1.4 var(--sym-font-text);padding:0 0 6px}
 .setting{display:flex;justify-content:space-between;align-items:center;gap:16px;min-height:44px}
 .setting > span:first-child{display:grid;gap:2px;min-width:0}
 .choice{display:flex;align-items:center;gap:10px;min-height:40px;cursor:pointer}

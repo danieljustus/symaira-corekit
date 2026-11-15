@@ -68,12 +68,16 @@ def run(p):
     page.evaluate("document.fonts.ready")
     check("type: Google Sans Flex loaded from the bundled original file",
           page.evaluate("document.fonts.check('600 13px \\\"Google Sans Flex\\\"') && [...document.fonts].some(f=>f.family.includes('Google Sans Flex') && f.status==='loaded')"))
-    check("type: Inter loaded from the bundled original file",
-          page.evaluate("document.fonts.check('450 13px \\\"Inter\\\"') && [...document.fonts].some(f=>f.family.includes('Inter') && f.status==='loaded')"))
-    check("type: body text in Inter with fixed optical size opsz 14",
-          page.evaluate("(()=>{const s=getComputedStyle(document.querySelector('.hint')||document.body);return s.fontFamily.startsWith('Inter')&&s.fontOpticalSizing==='none'&&s.fontVariationSettings.replace(/\\s/g,'')===\"\\\"opsz\\\"14\"})()"))
-    check("type: headings in Google Sans Flex with fixed optical size opsz 18",
-          page.evaluate("(()=>{const s=getComputedStyle(document.querySelector('h2'));return s.fontFamily.includes('Google Sans Flex')&&s.fontVariationSettings.replace(/\\s/g,'')===\"\\\"opsz\\\"18\"})()"))
+    check("type: Figtree loaded from the bundled original file",
+          page.evaluate("document.fonts.check('450 13px \\\"Figtree\\\"') && [...document.fonts].some(f=>f.family.includes('Figtree') && f.status==='loaded')"))
+    check("type: body text and section headings in Figtree",
+          page.evaluate("['.hint','h2','h3'].every(q=>getComputedStyle(document.querySelector(q)).fontFamily.startsWith('Figtree'))"))
+    check("type: H1 in Google Sans Flex with fixed optical size opsz 18",
+          page.evaluate("(()=>{const s=getComputedStyle(document.querySelector('h1'));return s.fontFamily.includes('Google Sans Flex')&&s.fontOpticalSizing==='none'&&s.fontVariationSettings.replace(/\\s/g,'')===\"\\\"opsz\\\"18\"})()"))
+    check("type: grayscale antialiasing on body",
+          page.evaluate("getComputedStyle(document.body).webkitFontSmoothing") == "antialiased")
+    check("type: quiet text keeps normal tracking in light appearance",
+          page.evaluate("getComputedStyle(document.querySelector('.hint')).letterSpacing") in ("normal", "0px"))
     check("desktop: no horizontal overflow", page.evaluate("document.documentElement.scrollWidth <= window.innerWidth"))
 
     # Theme toggle
@@ -84,6 +88,8 @@ def run(p):
     check("theme: toggle -> dark data-theme", page.evaluate("document.documentElement.dataset.theme") == "dark")
     check("theme: toggle -> aria-pressed=true", page.get_attribute("#theme-toggle", "aria-pressed") == "true")
     check("theme: background actually changes", bg_light != bg_dark, f"{bg_light} -> {bg_dark}")
+    check("theme: quiet text opens by +0.01em in dark (12px hint -> 0.12px)",
+          abs(float(page.evaluate("getComputedStyle(document.querySelector('.hint')).letterSpacing").removesuffix("px")) - 0.12) < 0.005)
     page.click("#theme-toggle")
     check("theme: toggle back -> light", page.evaluate("document.documentElement.dataset.theme") == "light")
 

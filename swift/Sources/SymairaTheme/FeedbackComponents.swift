@@ -132,8 +132,7 @@ public struct SymairaNotice: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 Text(message)
-                    .font(SymairaTypography.callout)
-                    .foregroundStyle(SymairaTheme.foregroundSecondary(for: colorScheme))
+                    .symairaText(.secondary)
                     .multilineTextAlignment(.leading)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
@@ -246,8 +245,7 @@ public struct SymairaLoadingState: View {
                 .tint(SymairaTheme.selected(for: colorScheme))
                 .controlSize(.regular)
             Text(message)
-                .font(SymairaTypography.callout)
-                .foregroundStyle(SymairaTheme.foregroundSecondary(for: colorScheme))
+                .symairaText(.secondary)
         }
         .topoProtected()
         .padding(SymairaSpacing.xLarge)

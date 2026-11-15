@@ -74,8 +74,21 @@ final class TypographyTests: XCTestCase {
         XCTAssertEqual(SymairaTextRole.sectionLabel.tracking, 0.6)
         XCTAssertLessThan(SymairaTextRole.display.tracking, 0)
         XCTAssertLessThan(SymairaTextRole.title.tracking, 0)
-        for role in [SymairaTextRole.body, .callout, .caption, .mono] {
+        for role in [SymairaTextRole.body, .callout, .secondary, .caption, .mono] {
             XCTAssertEqual(role.tracking, 0, "\(role) must not add tracking")
+            XCTAssertEqual(role.tracking(for: .light), 0, "\(role) must not add tracking in light appearance")
+        }
+    }
+
+    /// Small gray text opens by +0.01em in dark appearance only; everything else keeps its tracking.
+    func testDarkAppearanceOpensOnlySmallGrayText() {
+        XCTAssertEqual(SymairaTextRole.secondary.tracking(for: .dark), 12.5 * 0.01, accuracy: 0.0001)
+        XCTAssertEqual(SymairaTextRole.caption.tracking(for: .dark), 11.5 * 0.01, accuracy: 0.0001)
+        let unchanged: [SymairaTextRole] = [
+            .display, .title, .heading, .subheading, .body, .bodyEmphasized, .callout, .sectionLabel, .mono, .monoSmall,
+        ]
+        for role in unchanged {
+            XCTAssertEqual(role.tracking(for: .dark), role.tracking, "\(role) must not change tracking in dark")
         }
     }
 
@@ -96,33 +109,31 @@ final class TypographyTests: XCTestCase {
         }
     }
 
-    func testBundledInterRegistersWithTextOpticalSize() throws {
-        XCTAssertTrue(SymairaFont.register(), "Inter.ttf must ship in the SymairaTheme bundle")
+    func testBundledFigtreeRegistersWithoutOpticalSize() throws {
+        XCTAssertTrue(SymairaFont.register(), "Figtree.ttf must ship in the SymairaTheme bundle")
         XCTAssertTrue(SymairaFont.isAvailable(.text))
+        XCTAssertNil(SymairaFont.Family.text.opticalSize)
         let license = try XCTUnwrap(
-            Bundle.module.url(forResource: "Inter-OFL", withExtension: "txt"), "OFL must ship next to the font")
+            Bundle.module.url(forResource: "Figtree-OFL", withExtension: "txt"), "OFL must ship next to the font")
         XCTAssertTrue(try String(contentsOf: license, encoding: .utf8).contains("SIL OPEN FONT LICENSE"))
-        for size in [11.5, 13.5] as [CGFloat] {
+        for size in [11.5, 13.5, 27] as [CGFloat] {
             let font = SymairaFont.ctFont(size: size, weight: 550, family: .text)
-            XCTAssertEqual(CTFontCopyFamilyName(font) as String, "Inter")
+            XCTAssertEqual(CTFontCopyFamilyName(font) as String, "Figtree")
             let variation = CTFontCopyVariation(font) as? [NSNumber: Double] ?? [:]
             XCTAssertEqual(variation[SymairaFont.axis("wght")], 550)
-            // 14 is Inter's default optical size, so Core Text may omit it.
-            if let opsz = variation[SymairaFont.axis("opsz")] { XCTAssertEqual(opsz, 14) }
+            XCTAssertNil(variation[SymairaFont.axis("opsz")], "Figtree has no optical size axis")
         }
     }
 
-    /// Headings carry the brand; running text, labels and captions use Inter.
+    /// Only the largest headings (display, screen title) carry the brand; every other role uses Figtree.
     func testRolesSplitBetweenBrandAndTextFamilies() {
         func family(_ role: SymairaFontRole) -> SymairaFont.Family? {
             if case .bundled(let family, _, _, _) = role.source { return family }
             return nil
         }
-        let brand = [
-            SymairaTypography.display, SymairaTypography.title, SymairaTypography.heading,
-            SymairaTypography.subheading, SymairaTypography.readout, SymairaTypography.stat,
-        ]
+        let brand = [SymairaTypography.display, SymairaTypography.title]
         let text = [
+            SymairaTypography.heading, SymairaTypography.subheading, SymairaTypography.readout, SymairaTypography.stat,
             SymairaTypography.body, SymairaTypography.bodyEmphasized, SymairaTypography.bodyMedium,
             SymairaTypography.label, SymairaTypography.callout, SymairaTypography.caption, SymairaTypography.micro,
         ]
@@ -142,8 +153,8 @@ final class TypographyTests: XCTestCase {
         let font = try XCTUnwrap(resolved.url(forResource: "GoogleSansFlex", withExtension: "ttf"))
         XCTAssertTrue(font.path.hasPrefix(shipped.path + "/"))
         XCTAssertNotNil(resolved.url(forResource: "GoogleSansFlex-OFL", withExtension: "txt"))
-        XCTAssertNotNil(resolved.url(forResource: "Inter", withExtension: "ttf"))
-        XCTAssertNotNil(resolved.url(forResource: "Inter-OFL", withExtension: "txt"))
+        XCTAssertNotNil(resolved.url(forResource: "Figtree", withExtension: "ttf"))
+        XCTAssertNotNil(resolved.url(forResource: "Figtree-OFL", withExtension: "txt"))
         XCTAssertNil(SymairaThemeResources.packagedBundle(in: nil))
     }
 

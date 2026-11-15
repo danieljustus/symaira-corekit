@@ -79,26 +79,33 @@ def css(d, r, topo):
     lines += [f"  --sym-radius-{k}: {v};" for k, v in d["rounded"].items()]
     lines += [f"  --sym-space-{k}: {v};" for k, v in d["spacing"].items()]
     lines += ['  --sym-font: "Google Sans Flex", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;',
-              '  --sym-font-text: "Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;',
+              '  --sym-font-text: "Figtree", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;',
               "  --sym-opsz: 14;",
+              "  --sym-tracking-quiet: 0;",
               '  --sym-font-mono: ui-monospace, "SF Mono", Menlo, monospace;',
               "  --sym-icon-stroke: 2;",
               "  --sym-shadow-float: 0 1px 2px rgba(0,0,0,.05), 0 10px 28px rgba(0,0,0,.10);",
               "  color-scheme: light;", "}",
-              "/* Feste optische Größe je Schrift (Inter 14, Google Sans Flex 18): automatisch wird kleine Schrift von",
-              "   Google Sans Flex 5–8 % breiter. Jede font-Kurzschreibweise setzt beides zurück und schlägt über",
-              "   Spezifität jede normale Regel. Daher bewusst !important (DESIGN.md › Typography). */",
+              "/* Feste optische Größe für Google Sans Flex (18): automatisch wird kleine Schrift 5–8 % breiter.",
+              "   Figtree hat keine opsz-Achse und ignoriert den Wert. Jede font-Kurzschreibweise setzt beides zurück",
+              "   und schlägt über Spezifität jede normale Regel. Daher bewusst !important (DESIGN.md › Typography). */",
               "body, body * { font-optical-sizing: none !important; font-variation-settings: 'opsz' var(--sym-opsz) !important; }",
+              "/* Graustufen-Antialiasing statt Subpixel: hell auf dunkel sonst zu fett und unscharf. */",
+              "body { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }",
               ".sym-font-brand { font-family: var(--sym-font); --sym-opsz: 18; }",
-              ".sym-font-text { font-family: var(--sym-font-text); --sym-opsz: 14; }"]
-    families = {"Google Sans Flex": ("var(--sym-font)", 18), "Inter": ("var(--sym-font-text)", 14),
+              ".sym-font-text { font-family: var(--sym-font-text); }",
+              "/* Kleine graue Sekundärtexte: im Dunkelmodus +0.01em Laufweite (--sym-tracking-quiet). */",
+              ".sym-text-quiet { letter-spacing: var(--sym-tracking-quiet); }"]
+    families = {"Google Sans Flex": ("var(--sym-font)", 18), "Figtree": ("var(--sym-font-text)", None),
                 "SF Mono": ("var(--sym-font-mono)", None)}
+    quiet = {"caption"}  # kleine graue Rollen, siehe DESIGN.md › Typography
     for k, t in d["typography"].items():
         family, opsz = families[t["fontFamily"]]
+        spacing = t.get("letterSpacing", "var(--sym-tracking-quiet)" if k in quiet else None)
         lines.append(f".sym-type-{k} {{ font: {t['fontWeight']} {t['fontSize']}/{t['lineHeight']} {family};"
                      + (f" --sym-opsz: {opsz};" if opsz else "")
-                     + (f" letter-spacing: {t['letterSpacing']};" if "letterSpacing" in t else "") + " }")
-    dark = block(1) + "\n  color-scheme: dark;"
+                     + (f" letter-spacing: {spacing};" if spacing else "") + " }")
+    dark = block(1) + "\n  --sym-tracking-quiet: 0.01em;\n  color-scheme: dark;"
     lines += ["@media (prefers-color-scheme: dark) {", ":root:not([data-theme=\"light\"]) {", dark, "}", "}",
               ":root[data-theme=\"dark\"] {", dark, "}"]
     return "\n".join(lines) + "\n"
