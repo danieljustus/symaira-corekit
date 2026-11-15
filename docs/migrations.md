@@ -10,6 +10,18 @@ also preserve historical removals, including `embedkit` in v0.12.0; those
 require migration. Otherwise "check" means a new capability to adopt or a
 behavior change worth confirming.
 
+## v0.23.0
+
+- **Swift consumers:** move the pin to `exact: "0.23.0"` (XcodeGen
+  `exactVersion: 0.23.0`). `SymairaIcon` gains 18 cases: an exhaustive
+  `switch` over `SymairaIcon` needs the new cases or a `default`. On iOS,
+  icons from `SymairaIconView`, `Label(_:symairaIcon:)` and
+  `SymairaIconButton` now grow with Dynamic Type; check rows or buttons with a
+  fixed height at accessibility text sizes. `SymairaPage` without a toolbar
+  starts its content about 60 pt higher; remove any local workaround for the
+  old gap.
+- **Rust consumers:** no change; moving the revision is optional.
+
 ## v0.22.4
 
 - **Swift consumers:** move the pin to `exact: "0.22.4"` (XcodeGen

@@ -2,6 +2,22 @@
 
 The GitHub Releases page is the authoritative source for complete release notes.
 
+## v0.23.0 — 2026-11-15
+
+- Swift: 18 new `SymairaIcon` cases for meanings SymDesk still drew with SF
+  Symbols: `blocks`, `usage`, `userVerified`, `userUnknown`,
+  `notificationOff`, `journal`, `number`, `previousMatch`, `nextMatch`,
+  `diff`, `embed`, `audioOff`, `language`, `invoice`, `receipt`, `tip`,
+  `quote` and `skipped` (160 cases). The other reported gaps map to existing
+  cases (#485).
+- Swift: `SymairaIconView`, `Label(_:symairaIcon:)` and `SymairaIconButton`
+  scale their icon with Dynamic Type relative to `.body` on iOS, so icons grow
+  with the text next to them; `size` stays the base size (#484).
+- Swift: `SymairaPage` without a toolbar no longer reserves an empty 44 pt
+  toolbar row and its gap above the first section (#488).
+- `gui-review.py` STATE-1 accepts an `accessibilityLabel` on the same line as
+  `ProgressView()` (#481).
+
 ## v0.22.4 — 2026-11-14
 
 - Swift: `SymairaTheme` compiles in Xcode 26.6 Release (whole-module)

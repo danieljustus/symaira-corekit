@@ -11,6 +11,8 @@ the releases of the former `symaira-appkit` repository.
 
 ## [Unreleased]
 
+## [0.23.0] - 2026-11-15
+
 ### Added
 - 18 `SymairaIcon` cases for meanings SymDesk still drew with SF Symbols:
   `blocks`, `usage`, `userVerified`, `userUnknown`, `notificationOff`,
