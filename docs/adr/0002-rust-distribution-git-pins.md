@@ -91,5 +91,11 @@ Conditions:
   (`patterns: ["symaira-core-*"]`) so one pull request moves them together.
   Excluding them from Dependabot's default 3-day cooldown reports a release at
   once; third-party crates keep the cooldown.
+- For a pin declared under `[workspace.dependencies]`, Dependabot rewrites only
+  `Cargo.lock` (its workspace manifest updater handles version requirements,
+  not Git refs), so `cargo --locked` fails until `Cargo.toml` names the new tag.
+  Observed on symaira-brain#1076 (v0.22.0 to v0.23.0); editing that one line
+  made `cargo metadata --locked` pass without further lock changes. Consumers
+  run `scripts/check-corekit-pins.sh` in CI to name the line to fix.
 - A Dependabot pull request is a notice, not a verified bump: the consumer's
   own test suite still decides, as in the consumer bump ownership rules.

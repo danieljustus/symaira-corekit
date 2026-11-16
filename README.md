@@ -125,7 +125,9 @@ or deleted (repository ruleset).
 Dependabot reports a new CoreKit release to a consumer when the pin is a Cargo
 `tag`, a `Package.swift` exact version, or a tracked Xcode project
 (`project.pbxproj` + `Package.resolved`). It never bumps a Cargo `rev` pin or an
-XcodeGen `project.yml`; see [ADR 0002](docs/adr/0002-rust-distribution-git-pins.md).
+XcodeGen `project.yml`, and for a tag under `[workspace.dependencies]` it updates
+only `Cargo.lock`, so those lines are synced by hand in the Dependabot PR; see
+[ADR 0002](docs/adr/0002-rust-distribution-git-pins.md).
 
 Run `make consumer-drift` (or `scripts/consumer-drift.sh`) from this repo to run
 the consumer verifier and list every CoreKit pin (Cargo, SwiftPM, XcodeGen,
