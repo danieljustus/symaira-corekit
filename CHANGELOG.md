@@ -2,6 +2,17 @@
 
 The GitHub Releases page is the authoritative source for complete release notes.
 
+## Unreleased
+
+- `make consumer-drift` lists every CoreKit pin of the sibling checkouts
+  (Cargo `rev`/`tag`, `Package.swift`, XcodeGen `project.yml`, Xcode
+  `project.pbxproj`/`Package.resolved`, Go) with the releases each trails and
+  flags repositories that mix pins; it previously listed Go pins only (#490).
+- ADR 0002 amendment: Rust consumers may pin CoreKit by immutable release tag
+  (`tag = "vX.Y.Z"`) so Dependabot can bump it; `port/consumer/verify.py`
+  accepts `rust.tag` records and checks tag, manifest and `Cargo.lock` source.
+  Release tags `v*` are protected against deletion and moves.
+
 ## v0.23.0 — 2026-11-15
 
 - Swift: Figtree replaces Inter for all running text, labels, captions and

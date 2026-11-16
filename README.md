@@ -115,13 +115,21 @@ a full Xcode toolchain themselves (see [`swift/README.md`](swift/README.md)).
 
 ## Versioning
 
-Rust consumers pin an exact Git revision; Swift consumers pin an exact tag
-(`exact: "0.23.0"`, SwiftPM accepts the `v` prefix). Repository tags after
-`v0.18.3` on `main` describe the Rust workspace and, from `v0.20.0`, the Swift
-package; Go consumers stay on `v0.18.x`.
+Rust consumers pin an immutable release tag (`tag = "v0.23.0"`) or an exact Git
+revision; `Cargo.lock` records the full revision either way. Swift consumers pin
+an exact tag (`exact: "0.23.0"`, SwiftPM accepts the `v` prefix). Repository
+tags after `v0.18.3` on `main` describe the Rust workspace and, from `v0.20.0`,
+the Swift package; Go consumers stay on `v0.18.x`. Release tags cannot be moved
+or deleted (repository ruleset).
+
+Dependabot reports a new CoreKit release to a consumer when the pin is a Cargo
+`tag`, a `Package.swift` exact version, or a tracked Xcode project
+(`project.pbxproj` + `Package.resolved`). It never bumps a Cargo `rev` pin or an
+XcodeGen `project.yml`; see [ADR 0002](docs/adr/0002-rust-distribution-git-pins.md).
 
 Run `make consumer-drift` (or `scripts/consumer-drift.sh`) from this repo to run
-the consumer verifier and list the CoreKit Go pin of every sibling Symaira repo.
+the consumer verifier and list every CoreKit pin (Cargo, SwiftPM, XcodeGen,
+Xcode, Go) of the sibling Symaira checkouts with the releases it trails.
 
 ## Contributing · Security · License
 

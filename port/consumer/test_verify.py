@@ -571,6 +571,34 @@ import (
             self.assertEqual(report["status"], "blocked")
             self.assertTrue(any(item["code"] == "rust.lock.version" for item in report["findings"]))
 
+    def test_git_pin_may_use_a_release_tag_at_the_recorded_revision(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            root = Path(raw)
+            manifest, corekit, consumer, _, adoption = make_fixture(root, status="git")
+            git(corekit, "tag", "-a", "v0.17.1", "-m", "v0.17.1", adoption)
+            for name, old, new in (
+                ("Cargo.toml", f'rev = "{adoption}"', 'tag = "v0.17.1"'),
+                ("Cargo.lock", f"?rev={adoption}#", "?tag=v0.17.1#"),
+            ):
+                path = consumer / name
+                path.write_text(path.read_text(encoding="utf-8").replace(old, new), encoding="utf-8")
+            git(consumer, "commit", "-qam", "pin CoreKit by release tag")
+            document = json.loads(manifest.read_text(encoding="utf-8"))
+            document["consumers"][0]["rust"]["tag"] = "v0.17.1"
+            recapture_build_source(document, consumer)
+            pin_consumer_release(document, consumer)
+            manifest.write_text(json.dumps(document), encoding="utf-8")
+            report = verify.verify_manifest(manifest, workspace_root=root, corekit_root=corekit)
+            self.assertEqual(report["status"], "passed", report)
+
+            # A tag that peels to another commit (here the older release) is rejected.
+            document["consumers"][0]["rust"]["tag"] = "v0.17.0"
+            manifest.write_text(json.dumps(document), encoding="utf-8")
+            codes = {item["code"] for item in verify.verify_manifest(manifest, workspace_root=root, corekit_root=corekit)["findings"]}
+            self.assertIn("rust.pin.tag", codes)
+            self.assertIn("rust.pin.git", codes)
+            self.assertIn("rust.lock.source", codes)
+
     def test_rust_package_must_be_canonical_before_cargo_checks(self) -> None:
         with tempfile.TemporaryDirectory() as raw:
             root = Path(raw)

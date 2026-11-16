@@ -855,6 +855,14 @@ def _check_rust(
     expected_package = rust.get("package", COREKIT_PACKAGE)
     expected_version = rust.get("version")
     expected_revision = rust.get("revision")
+    # ADR 0002 allows `tag = "vX.Y.Z"` instead of `rev` so Dependabot can bump
+    # the pin; the tag must be a stable release tag peeling to the revision.
+    expected_tag = rust.get("tag")
+    if expected_tag is not None and rust.get("status") == "git":
+        code, peeled, _ = _git(["rev-parse", "--verify", "--quiet", f"refs/tags/{expected_tag}^{{commit}}"], corekit_root) \
+            if isinstance(expected_tag, str) and RELEASE_TAG_RE.fullmatch(expected_tag) else (1, "", "")
+        if code or peeled != expected_revision:
+            _add(findings, repository, "rust.pin.tag", f"Git pin tag {expected_tag!r} is not a CoreKit release tag at revision {expected_revision}")
     # A consumer can pin CoreKit from a nested Cargo workspace below its
     # checkout root. ``cargo_root`` names that directory so workspace
     # dependency tables and the lockfile are read from the workspace that
@@ -920,7 +928,9 @@ def _check_rust(
         elif version != recorded_version:
             _add(findings, repository, "rust.pin.version", f"{relative}: dependency version {version!r} != recorded {recorded_version!r}")
         if status == "git":
-            if not isinstance(spec, dict) or spec.get("git") != COREKIT_URL or spec.get("rev") != expected_revision:
+            pinned_ref = ("tag", expected_tag) if expected_tag is not None else ("rev", expected_revision)
+            other_refs = {"rev", "tag", "branch"} - {pinned_ref[0]}
+            if not isinstance(spec, dict) or spec.get("git") != COREKIT_URL or spec.get(pinned_ref[0]) != pinned_ref[1] or other_refs & spec.keys():
                 _add(findings, repository, "rust.pin.git", f"{relative}: Git URL/revision does not match recorded adoption")
             if isinstance(spec, dict) and "path" in spec:
                 _add(findings, repository, "rust.pin.path", f"{relative}: sibling CoreKit path dependency is forbidden")
@@ -953,7 +963,8 @@ def _check_rust(
         return
     package = packages[0]
     if status == "git":
-        expected_source = f"git+{COREKIT_URL}?rev={expected_revision}#{expected_revision}"
+        query = f"tag={expected_tag}" if expected_tag is not None else f"rev={expected_revision}"
+        expected_source = f"git+{COREKIT_URL}?{query}#{expected_revision}"
         matching = [item for item in packages if item.get("source") == expected_source]
         if matching:
             package = matching[0]

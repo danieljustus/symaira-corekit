@@ -1,8 +1,9 @@
 # ADR 0002: Distribute CoreKit Rust crates through exact Git revisions
 
-Status: accepted, 2026-10-03. The maintainer delegated the outstanding decisions
-and requested their reasoning in repository docs. Resolves the distribution
-choice in CoreKit #371 and the conditional registry rollout in #372.
+Status: accepted, 2026-10-03; amended 2026-11-16 (release-tag pins, see
+below). The maintainer delegated the outstanding decisions and requested their
+reasoning in repository docs. Resolves the distribution choice in CoreKit #371
+and the conditional registry rollout in #372.
 
 ## Decision
 
@@ -61,3 +62,34 @@ package retrieval demonstrably impedes supported consumers. That proposal must
 provide demand, explicit versions/order and a registry baseline, and preserve
 the released-consumer, source/artifact, ownership and rollback gates. Reopening
 publication does not silently reopen or change existing exact consumer pins.
+
+## Amendment 2026-11-16: release-tag pins
+
+A consumer may write its CoreKit dependency as `tag = "vX.Y.Z"` instead of
+`rev = "<40-hex>"`. `Cargo.lock` still records the full revision
+(`?tag=vX.Y.Z#<40-hex>`) and builds stay `--locked`, so the resolved source and
+rollback are unchanged. New and bumped pins should use the tag form; an
+existing `rev` pin stays valid.
+
+Reason: Dependabot never proposes an update for a Cargo Git dependency pinned
+by `rev`. Its Cargo update checker only moves a pin whose ref looks like a
+version (`dependabot-core` `cargo/update_checker.rb`,
+`latest_git_version_sha`). Rev-pinned consumers therefore fell 5 to 13 releases
+behind without any notice (#490).
+
+Conditions:
+
+- Only stable `vMAJOR.MINOR.PATCH` tags qualify. They are immutable: the
+  repository ruleset "Immutable release tags" blocks deleting or moving
+  `refs/tags/v*` (creation stays allowed). A tag pin is therefore not the
+  "moving tag" rejected above.
+- A `docs/consumers.json` record that pins by tag carries `rust.tag` next to
+  `rust.revision`. `port/consumer/verify.py` requires the tag to peel to that
+  revision, the manifest to name the tag (no `rev`/`branch`), and `Cargo.lock`
+  to carry `?tag=<tag>#<revision>`.
+- Group the CoreKit crates in the consumer's `dependabot.yml`
+  (`patterns: ["symaira-core-*"]`) so one pull request moves them together.
+  Excluding them from Dependabot's default 3-day cooldown reports a release at
+  once; third-party crates keep the cooldown.
+- A Dependabot pull request is a notice, not a verified bump: the consumer's
+  own test suite still decides, as in the consumer bump ownership rules.
