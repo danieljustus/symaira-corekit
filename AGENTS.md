@@ -42,7 +42,7 @@ No gate may require a Go toolchain. Frozen Go fixture provenance reads retired G
 - **No tool-specific business logic**: No vault crypto, no memory PII rules, no seek ranking, no fetch fingerprinting, no scope port scanning.
 - **No cross-tool coupling**: Do not depend on `symaira-vault`, `symaira-memory`, `symaira-seek`, `symaira-fetch`, `symaira-scope`, or any of their internal modules. Optional integrations must remain runtime contracts implemented by consumers.
 - **Cross-language conventions**: CoreKit's Rust crates share conventions (exit codes, XDG paths, env var naming, MCP stdio framing, zero stdout pollution) that also guide the Swift and Python free tools. See `docs/cross-language-conventions.md`.
-- **Exact pins**: Rust consumers pin a full 40-character Git revision plus `Cargo.lock` ([ADR 0002](docs/adr/0002-rust-distribution-git-pins.md)); crates stay `publish = false`. Swift consumers pin an exact tag (`.package(url: "https://github.com/danieljustus/symaira-corekit.git", exact: "X.Y.Z")`, products from `package: "symaira-corekit"`).
+- **Exact pins**: Rust consumers pin an immutable release tag (`tag = "vX.Y.Z"`, preferred so Dependabot can bump it) or a full 40-character Git revision, plus `Cargo.lock` with the full revision ([ADR 0002](docs/adr/0002-rust-distribution-git-pins.md) and its amendment); crates stay `publish = false`. Swift consumers pin an exact tag (`.package(url: "https://github.com/danieljustus/symaira-corekit.git", exact: "X.Y.Z")`, products from `package: "symaira-corekit"`).
 - **GUI handshake contract (`symaira-core-version`)**: every core's `version --json` subcommand must emit the `Info` payload (`{tool, version, schema_version}`). the Swift package's `SymairaToolKit` (`swift/`) performs its schema handshake against exactly these field names — never rename them. Bump the tool's `schema_version` whenever its machine-readable JSON output changes incompatibly. The plain `version` output should stay "tool vX.Y.Z" so appkit's fallback parser keeps working.
 
 ## Consumer Bump Ownership
@@ -59,12 +59,16 @@ behind when nobody owned it.
 - **Trigger:** within two weeks of a corekit release, or immediately before
   cutting a consumer's own release —
   whichever comes first.
-- **Follow-up mechanism:** `make consumer-drift` runs
-  `port/consumer/verify.py` against every record in `docs/consumers.json` and
-  lists each sibling checkout's Go pin.
-- Add new consumers to `docs/consumers.json` when they start depending on
-  corekit; remove or update entries when a consumer is archived, renamed, or
-  cuts over (`go_status: retired`).
+- **Follow-up mechanism:** Dependabot opens a PR in each consumer whose pin it
+  can bump (Cargo `tag`, `Package.swift`, tracked Xcode project; see the ADR
+  0002 amendment). `make consumer-drift` runs `port/consumer/verify.py` against
+  every record in `docs/consumers.json` and lists every CoreKit pin of the
+  sibling checkouts with the releases it trails.
+- `docs/consumers.json` holds the Rust migration evidence records (RUST-016).
+  Add a record only for a consumer whose Git-pinned Rust release enters that
+  gate; `make consumer-drift` finds every other CoreKit dependency, including
+  Swift-only consumers, without a record. Remove or update entries when a
+  consumer is archived, renamed, or cuts over (`go_status: retired`).
 
 ## Key Dependencies
 
