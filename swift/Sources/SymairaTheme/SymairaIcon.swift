@@ -15,6 +15,11 @@ public struct SymairaIconView<Trigger: Equatable>: View {
     @State private var isHovered = false
     @State private var hoverChange = Date.distantPast
     @State private var clickStart = Date.distantPast
+    /// Bumped once a motion has run its course, so `body` re-evaluates and the
+    /// timeline pauses. Without it the pause condition is only checked when a
+    /// hover or click changes state, and every icon that was ever hovered keeps
+    /// redrawing at display rate for the rest of the process.
+    @State private var settleTick = 0
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.symairaIconInteraction) private var host
 
@@ -26,12 +31,14 @@ public struct SymairaIconView<Trigger: Equatable>: View {
 
     public var body: some View {
         let parts = icon.spec
-        let busyUntil = max(
-            hoverChange.addingTimeInterval(IconPart.hoverDuration),
-            clickStart.addingTimeInterval(parts.map(\.clickDuration).max() ?? 0))
-        TimelineView(.animation(paused: reduceMotion || Date() > busyUntil)) { timeline in
+        let busyUntil = IconPart.settleDate(parts, hoverChange: hoverChange, clickStart: clickStart)
+        let _ = settleTick  // read so the settle task can re-run this body
+        let animating = IconPart.isAnimating(at: Date(), settle: busyUntil, reduceMotion: reduceMotion)
+        TimelineView(.animation(paused: !animating)) { timeline in
             Canvas { context, canvasSize in
-                let now = timeline.date
+                // A paused timeline can report the date it last ran; draw the
+                // settled pose rather than a frame from mid-motion.
+                let now = animating ? timeline.date : max(timeline.date, busyUntil)
                 let hover =
                     reduceMotion
                     ? 0
@@ -54,6 +61,12 @@ public struct SymairaIconView<Trigger: Equatable>: View {
         .onChange(of: host?.hovered) { hoverChange = Date() }
         .onChange(of: host?.presses) { clickStart = Date() }
         .onChange(of: trigger) { clickStart = Date() }
+        .task(id: busyUntil) {
+            let remaining = busyUntil.timeIntervalSinceNow
+            guard remaining > 0 else { return }
+            try? await Task.sleep(for: .seconds(remaining + IconPart.settleMargin))
+            if !Task.isCancelled { settleTick &+= 1 }
+        }
         .accessibilityHidden(true)
     }
 }
@@ -252,7 +265,22 @@ struct IconPart: Sendable {
     let click: [IconTrack]
 
     static let hoverDuration = 0.3
+    /// Slack after the last motion ends before the timeline is paused, so the
+    /// final frame is drawn by the running timeline.
+    static let settleMargin = 0.05
     var clickDuration: Double { click.map { $0.delay + $0.duration }.max() ?? 0 }
+
+    /// The moment the latest hover blend and click motion have both finished.
+    static func settleDate(_ parts: [IconPart], hoverChange: Date, clickStart: Date) -> Date {
+        max(
+            hoverChange.addingTimeInterval(hoverDuration),
+            clickStart.addingTimeInterval(parts.map(\.clickDuration).max() ?? 0))
+    }
+
+    /// Whether the icon timeline must run at `now`. An idle icon never runs.
+    static func isAnimating(at now: Date, settle: Date, reduceMotion: Bool) -> Bool {
+        !reduceMotion && now <= settle
+    }
 
     /// 0…1 hover blend with a slight spring overshoot, like the web CSS.
     static func hoverProgress(isHovered: Bool, since: Double) -> Double {

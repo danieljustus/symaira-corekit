@@ -53,6 +53,26 @@ final class SymairaIconTests: XCTestCase {
         }
     }
 
+    func testIconTimelineStopsOnceItsMotionHasSettled() {
+        let parts = SymairaIcon.home.spec
+        let hover = Date(timeIntervalSinceReferenceDate: 1_000)
+        let settle = IconPart.settleDate(parts, hoverChange: hover, clickStart: .distantPast)
+        XCTAssertEqual(settle, hover.addingTimeInterval(IconPart.hoverDuration))
+        XCTAssertTrue(IconPart.isAnimating(at: hover.addingTimeInterval(0.1), settle: settle, reduceMotion: false))
+        // The regression: a hovered icon must stop redrawing after its blend.
+        XCTAssertFalse(IconPart.isAnimating(at: settle.addingTimeInterval(0.01), settle: settle, reduceMotion: false))
+        XCTAssertFalse(IconPart.isAnimating(at: hover, settle: settle, reduceMotion: true))
+
+        let idle = IconPart.settleDate(parts, hoverChange: .distantPast, clickStart: .distantPast)
+        XCTAssertFalse(IconPart.isAnimating(at: Date(), settle: idle, reduceMotion: false))
+
+        let click = hover
+        let longest = parts.map(\.clickDuration).max() ?? 0
+        XCTAssertEqual(
+            IconPart.settleDate(parts, hoverChange: .distantPast, clickStart: click),
+            click.addingTimeInterval(longest))
+    }
+
     func testMotionsSettleBackToRest() {
         for icon in SymairaIcon.allCases {
             for track in icon.spec.flatMap(\.click) {
