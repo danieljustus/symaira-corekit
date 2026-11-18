@@ -4,6 +4,12 @@ The GitHub Releases page is the authoritative source for complete release notes.
 
 ## Unreleased
 
+## v0.23.1 — 2026-11-18
+
+- Swift: `SymairaIconView` pauses its animation timeline once a hover blend
+  or click motion has settled. The pause was only re-checked on the next hover
+  or click, so every icon that had been hovered kept redrawing at display
+  rate; a long-running menu-bar app accumulated tens of percent of CPU.
 - `make consumer-drift` lists every CoreKit pin of the sibling checkouts
   (Cargo `rev`/`tag`, `Package.swift`, XcodeGen `project.yml`, Xcode
   `project.pbxproj`/`Package.resolved`, Go) with the releases each trails and

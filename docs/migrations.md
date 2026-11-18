@@ -10,6 +10,13 @@ also preserve historical removals, including `embedkit` in v0.12.0; those
 require migration. Otherwise "check" means a new capability to adopt or a
 behavior change worth confirming.
 
+## v0.23.1
+
+- **Swift consumers:** move the pin to `exact: "0.23.1"` (XcodeGen
+  `exactVersion: 0.23.1`). No API change: hovered `SymairaIconView` icons stop
+  redrawing once their motion has settled.
+- **Rust consumers:** no change; moving the revision is optional.
+
 ## v0.23.0
 
 - **Swift consumers:** move the pin to `exact: "0.23.0"` (XcodeGen

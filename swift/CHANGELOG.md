@@ -11,6 +11,15 @@ the releases of the former `symaira-appkit` repository.
 
 ## [Unreleased]
 
+## [0.23.1] - 2026-11-18
+
+### Fixed
+- `SymairaIconView` pauses its `TimelineView` once the hover blend or click
+  motion has settled. The pause condition was evaluated only when hover or
+  click state changed, so every hovered icon kept redrawing at display rate
+  until the view was torn down; persistent surfaces such as a notch HUD
+  accumulated sustained CPU load.
+
 ## [0.23.0] - 2026-11-15
 
 ### Added
