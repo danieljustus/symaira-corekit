@@ -1,6 +1,6 @@
 # Symaira product and execution boundaries
 
-**Contract ID: PB-2026-09-09. Revision: 6 (AppKit merged into CoreKit, 2026-11-10). Status: accepted architecture; Browse, Operate and Scope source/consumer cutover completed 2026-09-13; release-distribution migration remains pending.**
+**Contract ID: PB-2026-09-09. Revision: 7 (voice input added to Desktop, 2026-11-18). Status: accepted architecture; Browse, Operate and Scope source/consumer cutover completed 2026-09-13; release-distribution migration remains pending.**
 
 This decision governs product ownership, optional modules, credential UI, distribution and migration gates. Browse, Operate and Scope sources are now in Brain; `symaira-browse` is archived and Cockpit is tune-only. No signed Brain-built module release artifact, package-manager replacement or Vault-management-UI retirement is claimed by this revision. Existing tagged artifacts remain supported migration inputs until their explicit release cutovers.
 
@@ -10,7 +10,7 @@ The canonical workspace text is `docs/product-boundaries.md`. Repository-local c
 
 | Owner | Owns | Does not own |
 |---|---|---|
-| **Symaira Desktop** (`symdesk`) | Documents, notes, document retrieval, ingest/OCR, meeting artifacts, contacts, PDF output and project journals; human knowledge-work UI plus CLI/MCP/API | A universal tool launcher, a duplicate agent-memory store, credential cryptography or Mac hardware control |
+| **Symaira Desktop** (`symdesk`) | Documents, notes, document retrieval, ingest/OCR, meeting artifacts, voice input into the focused application through the Meet agent on macOS and the Desktop keyboard extension on iOS, contacts, PDF output and project journals; human knowledge-work UI plus CLI/MCP/API | A universal tool launcher, a duplicate agent-memory store, credential cryptography or Mac hardware control |
 | **Symaira Brain** (`symbrain`) | Portable agent context, memory/entities, skills, harness profiles/inventory, exposure control, audit and the separate guard layer; human administration UI and CLI; optional Browse, Operate and Scope modules | Document ownership, an autonomous replacement for every harness, compulsory system-wide mediation or credential master-key storage |
 | **Symaira Cockpit** (`symcockpit`) | Mac hardware/system tuning: thermals, power, display and sensors/HUD (formerly Tune) | Long-term ownership of Operate, Scope or harness-configuration inventory |
 | **Symaira Vault** (`symvault`) | Independently usable credential CLI/service, encryption/storage, unlock, authorization, grants, credential execution and recovery | A separate long-term general-purpose management app or a dependency on Brain to use credentials |
@@ -53,6 +53,8 @@ Separate processes are defense-in-depth, not complete isolation against a compro
 ## 4. Desktop, Cockpit and data boundaries
 
 Desktop owns original work artifacts; Brain may store explicitly promoted, provenance-bearing context and references, not a second independently editable document source of truth. Define deletion/refresh behavior for derived context. Secret values must not enter either product's general search index or durable memory.
+
+Voice input is a human-initiated input surface owned by Desktop, not an automation capability. On macOS it is hosted in the Meet agent; on iOS, audio capture and recognition run in the Desktop app and the keyboard extension only sends start and stop requests and inserts returned text. It records only while the user holds or has explicitly toggled the dictation control, keeps no audio or text history unless the user enables it, and respects secure text entry. No raw audio crosses an app group. The permissions needed to insert text stay confined to the Meet agent and the Desktop keyboard extension; no MCP tool, agent profile or Brain module may trigger dictation or text insertion. Dictation settings live as Markdown in the document vault. Optional post-processing by an external model requires a separate, visible opt-in per destination.
 
 Cockpit remains the independent hardware/system-tuning product: thermals, power, display, sensors and HUD. Its functionality does not require Brain or the optional Scope module. Scope owns ports, containers, daemons, local service health and machine diagnostics in Brain; harness inventory remains Brain-owned, not duplicated. Neither Scope nor Operate transfers hardware-control ownership or Cockpit privileged helpers into Brain. Shared facts must use a bounded interface rather than duplicate a domain store.
 
@@ -109,3 +111,5 @@ Brain ADR 0001 remains applicable to controlled MCP forwarding and the distincti
 Revision 5 (2026-11-09, Daniel) adds Symaira Media as a specialized product after its approved architecture plan (`symaira-media/docs/`, decisions D04 and D33). `symaira-watch` is absorbed into Media and is archived after Media milestone M4. No other ownership changes.
 
 Revision 6 (2026-11-10, Daniel) merges the `symaira-appkit` repository into `symaira-corekit` with its full history (CoreKit ADR 0006). AppKit's module rules (two genuine consumers, no product-domain views, no third-party dependencies) are unchanged; Swift consumers switch their exact pin from the archived AppKit repository to the CoreKit repository. No other ownership changes.
+
+Revision 7 (2026-11-18, Daniel) adds voice input (push-to-talk dictation into the focused application) to Desktop, hosted in the Meet agent on macOS and in the Desktop app with its keyboard extension on iOS. It is a human input surface, not an Operate capability, and grants agents no insertion rights. No other ownership changes.
