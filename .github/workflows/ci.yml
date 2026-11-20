@@ -469,10 +469,9 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
       - name: Install pinned nightly and Miri
         run: |
-          rustup toolchain install nightly --profile minimal
-          rustup component add miri --toolchain nightly
+          rustup toolchain install nightly-2026-10-29 --profile minimal --component miri,rust-src
       - name: Run Miri with filesystem isolation disabled
-        run: MIRIFLAGS=-Zmiri-disable-isolation cargo +nightly miri test -p symaira-core-fs -p symaira-core-secretref --all-features
+        run: MIRIFLAGS=-Zmiri-disable-isolation cargo +nightly-2026-10-29 miri test -p symaira-core-fs -p symaira-core-secretref --all-features
   rust-rust013-miri:
     name: Rust RUST-013 Miri gate
     needs: changes
@@ -483,8 +482,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
       - name: Install pinned nightly and Miri
         run: |
-          rustup toolchain install nightly --profile minimal
-          rustup component add miri --toolchain nightly
+          rustup toolchain install nightly-2026-10-29 --profile minimal --component miri,rust-src
       - name: Validate explicit Miri package partition
         run: python3 scripts/rust-port/miri_gate.py --self-test
       - name: Run negative default-isolation probe

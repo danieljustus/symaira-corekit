@@ -91,7 +91,7 @@ rust-fs-secret-frozen-contract:
 rust-fs-secret-contract: rust-fs-secret-frozen-contract
 	cargo audit
 	cargo deny check
-	@command -v cargo-miri >/dev/null 2>&1 && MIRIFLAGS=-Zmiri-disable-isolation cargo +nightly miri test -p symaira-core-fs -p symaira-core-secretref --all-features || { echo "cargo-miri is required for rust-fs-secret-contract"; exit 1; }
+	@command -v cargo-miri >/dev/null 2>&1 && MIRIFLAGS=-Zmiri-disable-isolation cargo +nightly-2026-10-29 miri test -p symaira-core-fs -p symaira-core-secretref --all-features || { echo "cargo-miri is required for rust-fs-secret-contract"; exit 1; }
 
 rust-mcp-contract:
 	cargo fmt --all --check
