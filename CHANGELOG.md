@@ -12,6 +12,10 @@ The GitHub Releases page is the authoritative source for complete release notes.
   the focused item bends the lines and every focus move sends a ripple.
   GUIDELINES gain TV-1 to TV-3. macOS and iOS are unchanged.
 - CI runs the SymairaTheme tests on a tvOS simulator.
+- Rust: the lockfile moves `url` to 2.5.9 and `form_urlencoded` to 1.2.3
+  (RUSTSEC-2026-0592, stack overflow in `Url::origin()` on nested `blob:`
+  URLs), reached through `reqwest` in `symaira-core-llm` and
+  `symaira-core-update`.
 
 ## v0.23.1 — 2026-11-18
 

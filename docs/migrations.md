@@ -20,7 +20,9 @@ behavior change worth confirming.
   follows the focus engine on its own (TV-2) and is drawn at the tvOS
   platform scale, so remove any product-side workaround that rescaled or
   hid the topography on Apple TV (TV-3).
-- **Rust consumers:** no change; moving the revision is optional.
+- **Rust consumers:** no API change. Consumers of `symaira-core-llm` or
+  `symaira-core-update` update `url` to 2.5.9 in their own lockfile
+  (RUSTSEC-2026-0592).
 
 ## v0.23.1
 
