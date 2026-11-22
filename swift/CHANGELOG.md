@@ -11,6 +11,8 @@ the releases of the former `symaira-appkit` repository.
 
 ## [Unreleased]
 
+## [0.24.0] - 2026-11-22
+
 ### Added
 - tvOS: `.symairaTopography(_:animationEnabled:)` mounts the Liquid
   Topography behind a tvOS page, as on iOS (it was iOS-only).

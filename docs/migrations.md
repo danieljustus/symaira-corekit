@@ -10,6 +10,18 @@ also preserve historical removals, including `embedkit` in v0.12.0; those
 require migration. Otherwise "check" means a new capability to adopt or a
 behavior change worth confirming.
 
+## v0.24.0
+
+- **Swift consumers:** move the pin to `exact: "0.24.0"` (XcodeGen
+  `exactVersion: 0.24.0`). No change on macOS or iOS.
+- **tvOS:** `.symairaTopography(_:animationEnabled:)` is now available; mount
+  it behind the home screen only (GUIDELINES TV-1) and protect cards and
+  shelf titles with `.topoProtected(hill:)` / `.topoProtected()`. The field
+  follows the focus engine on its own (TV-2) and is drawn at the tvOS
+  platform scale, so remove any product-side workaround that rescaled or
+  hid the topography on Apple TV (TV-3).
+- **Rust consumers:** no change; moving the revision is optional.
+
 ## v0.23.1
 
 - **Swift consumers:** move the pin to `exact: "0.23.1"` (XcodeGen

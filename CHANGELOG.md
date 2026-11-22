@@ -4,6 +4,8 @@ The GitHub Releases page is the authoritative source for complete release notes.
 
 ## Unreleased
 
+## v0.24.0 — 2026-11-22
+
 - Swift (tvOS): `.symairaTopography(_:)` is available on tvOS. The Liquid
   Topography is drawn at the tvOS platform scale (terrain, lines and ripples
   twice their point size) and follows the focus engine instead of a pointer:
