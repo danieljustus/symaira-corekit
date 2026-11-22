@@ -60,6 +60,11 @@ final class TopoMetalView: UIView {
         driver.attach(metalLayer)
         driver.onRefresh = { [weak self] in self?.refresh() }
         driver.onRedraw = { [weak self] in self?.drawFrame() }
+        #if os(tvOS)
+        // Selector observers are removed with the view; focus updates arrive on the main thread.
+        NotificationCenter.default.addObserver(
+            self, selector: #selector(focusDidUpdate(_:)), name: UIFocusSystem.didUpdateNotification, object: nil)
+        #endif
     }
     convenience init() { self.init(frame: .zero) }
     required init?(coder: NSCoder) { nil }
@@ -135,5 +140,40 @@ final class TopoMetalView: UIView {
         invalidateDisplayLink()
         driver.stop(layer: metalLayer)
     }
+
+    #if os(tvOS)
+    @objc private func focusDidUpdate(_ note: Notification) {
+        let context = note.userInfo?[UIFocusSystem.focusUpdateContextUserInfoKey] as? UIFocusUpdateContext
+        focusMoved(to: context?.nextFocusedItem)
+    }
+
+    /// Hands the newly focused item to the model (TV-2). Ignored while the surface is paused,
+    /// stopped or outside a window; an item in another window or off this surface clears the
+    /// focus point.
+    func focusMoved(to item: (any UIFocusItem)?) {
+        guard let model = driver.model, !driver.paused, window != nil else { return }
+        let rect = item.flatMap(focusFrame(of:))
+        model.focusMoved(
+            to: rect.map { $0.offsetBy(dx: driver.origin.x, dy: driver.origin.y) })
+        // Ripples are unobserved: switch to the display rate now rather than on the next idle tick.
+        if displayLink != nil, currentlyFast != fastRate { schedule(fast: currentlyFast) }
+    }
+
+    /// Frame of a focus item in this view's coordinates, or `nil` when it lies elsewhere.
+    /// SwiftUI focus items need not be views; their `frame` is in the coordinate space of
+    /// the enclosing focus item container.
+    func focusFrame(of item: any UIFocusItem) -> CGRect? {
+        let rect: CGRect
+        if let view = item as? UIView {
+            guard view.window === window else { return nil }
+            rect = view.convert(view.bounds, to: self)
+        } else if let space = item.parentFocusEnvironment?.focusItemContainer?.coordinateSpace {
+            rect = space.convert(item.frame, to: self)
+        } else {
+            return nil
+        }
+        return rect.intersects(bounds) ? rect : nil
+    }
+    #endif
 }
 #endif

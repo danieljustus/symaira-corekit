@@ -76,9 +76,9 @@ final class PageScaffoldTests: XCTestCase {
     }
 
     func testGeometryUsesSharedActionBudget() {
-        XCTAssertEqual(SymairaPageLayout.toolbarHeight, 44)
+        XCTAssertEqual(SymairaPageLayout.toolbarHeight, 44 * SymairaMetrics.platformScale)
         XCTAssertGreaterThanOrEqual(SymairaPageLayout.toolbarHeight, SymairaMetrics.contentActionHeight)
-        XCTAssertEqual(SymairaMetrics.contentActionHorizontalPadding, 20)
+        XCTAssertEqual(SymairaMetrics.contentActionHorizontalPadding, 20 * SymairaMetrics.platformScale)
     }
 
     private func height(_ view: some View) throws -> CGFloat {

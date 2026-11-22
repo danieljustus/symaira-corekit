@@ -11,6 +11,24 @@ the releases of the former `symaira-appkit` repository.
 
 ## [Unreleased]
 
+### Added
+- tvOS: `.symairaTopography(_:animationEnabled:)` mounts the Liquid
+  Topography behind a tvOS page, as on iOS (it was iOS-only).
+- tvOS: the topography follows the focus engine. The focused item bends the
+  contour lines like a pointer and each focus move sends a ripple from it,
+  throttled like layout ripples; focus never pins the display rate (TV-2).
+- GUIDELINES TV-1 to TV-3: where the tvOS topography goes, focus as the
+  pointer, no product-side rescaling.
+
+### Changed
+- tvOS: the topography is drawn at `SymairaMetrics.platformScale`: terrain,
+  line width, ripples, pointer radius and protection margins are twice their
+  point size, matching every other Symaira size from the couch. macOS and iOS
+  render unchanged.
+- CI runs the SymairaTheme tests on a tvOS simulator as well;
+  `scripts/select_ios_simulator.py --platform tvOS` picks an existing Apple TV
+  device.
+
 ## [0.23.1] - 2026-11-18
 
 ### Fixed

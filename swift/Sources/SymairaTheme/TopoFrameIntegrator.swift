@@ -34,10 +34,19 @@ final class TopoFrameIntegrator {
     private var a = Animated()
     func reset() { a.last = nil }
 
+    /// `unit` is the number of points per topography point: the shader works in the Symaira
+    /// scale, so `SymairaMetrics.platformScale` (2 on tvOS) enlarges terrain, line width,
+    /// ripples and protection margins together, as for every other Symaira size. Model
+    /// coordinates (`SymairaTopo.space`) stay in points; only the frame values are converted.
+    /// The stitchable SwiftUI shader receives positions in points and must pass 1.
     func frame(
-        model: SymairaTopoModel, size: CGSize, origin o: CGPoint, now: Date,
-        scheme: ColorScheme, displayScale: CGFloat, still: Bool, paused: Bool
+        model: SymairaTopoModel, size pointSize: CGSize, origin o: CGPoint, now: Date,
+        scheme: ColorScheme, displayScale: CGFloat, still: Bool, paused: Bool,
+        unit: CGFloat = SymairaMetrics.platformScale
     ) -> TopoFrame {
+        let u = unit > 0 ? unit : 1
+        let size = CGSize(width: pointSize.width / u, height: pointSize.height / u)
+        func local(_ p: CGPoint) -> CGPoint { CGPoint(x: (p.x - o.x) / u, y: (p.y - o.y) / u) }
         // Zeitintegration (Zustände gleiten mit transitionSeconds)
         var a = self.a
         let dt = min(0.06, a.last.map { now.timeIntervalSince($0) } ?? 0)
@@ -57,7 +66,7 @@ final class TopoFrameIntegrator {
             model.ripple(at: s, strength: 0.8)
             a.nextThink = a.rt + 1.4
         }
-        let target = still ? nil : model.pointer.map { CGPoint(x: $0.x - o.x, y: $0.y - o.y) }
+        let target = still ? nil : model.pointer.map(local)
         if let p = target {
             let m = 1 - exp(-dt / 0.12)
             a.mouse =
@@ -70,27 +79,28 @@ final class TopoFrameIntegrator {
         a.press += ((still || !model.pressed ? 0 : 1) - a.press) * (1 - exp(-dt / SymairaTokens.Topo.pressSeconds))
         // Fläche verschoben/verkleinert (z. B. Seitenleiste auf/zu) → Welle von der Kante
         if let lo = a.lastOrigin, let ls = a.lastSize,
-            abs(lo.x - o.x) + abs(lo.y - o.y) + abs(ls.width - size.width) > 1
+            abs(lo.x - o.x) + abs(lo.y - o.y) + abs(ls.width - pointSize.width) > 1
         {
             model.ripple(
-                at: CGPoint(x: 0, y: o.y + size.height / 2), strength: SymairaTokens.Topo.layoutEdgeRipple,
+                at: CGPoint(x: 0, y: o.y + pointSize.height / 2), strength: SymairaTokens.Topo.layoutEdgeRipple,
                 key: "layout.edge")
         }
         a.lastOrigin = o
-        a.lastSize = size
+        a.lastSize = pointSize
         model.ripples.removeAll { now.timeIntervalSince($0.1) > 2.4 }
         self.a = a
 
-        let rects = model.protectedRects(in: CGRect(origin: o, size: size))
+        let rects = model.protectedRects(in: CGRect(origin: o, size: pointSize), unit: u)
         let rip: [Float] =
             still
             ? []
             : model.ripples.flatMap { r -> [Float] in
-                [Float(r.0.x - o.x), Float(r.0.y - o.y), Float(max(0, now.timeIntervalSince(r.1))), Float(r.2)]
+                let p = local(r.0)
+                return [Float(p.x), Float(p.y), Float(max(0, now.timeIntervalSince(r.1))), Float(r.2)]
             }
         let dark = scheme == .dark
         let ask =
-            model.askPoint.map { CGPoint(x: $0.x - o.x, y: $0.y - o.y) }
+            model.askPoint.map(local)
             ?? CGPoint(x: size.width / 2, y: size.height - 60)
         let tokens = SymairaTokens.Topo.self
         func vector(_ x: Double, _ y: Double, _ z: Double, _ w: Double) -> SIMD4<Float> {
@@ -107,7 +117,7 @@ final class TopoFrameIntegrator {
                 vector(size.width, size.height, a.flowT, a.rt),
                 vector(a.mouse.x, a.mouse.y, a.mouseAmt, dark ? 1 : tokens.lightModeFactor),
                 vector(a.cur.warp, a.cur.think, a.cur.problem, a.cur.ask),
-                vector(a.cur.tintAmount, ask.x, ask.y, displayScale),
+                vector(a.cur.tintAmount, ask.x, ask.y, displayScale * u),
                 vector(tokens.scale, tokens.levels, tokens.lineAlpha, tokens.indexAlpha),
                 vector(0, tokens.maxAlpha, tokens.basinOpen, a.press),
                 vector(tokens.pointerRadius, tokens.pointerStrength, tokens.pressDepth, 0),

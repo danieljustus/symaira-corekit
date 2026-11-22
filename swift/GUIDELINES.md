@@ -249,8 +249,8 @@ Six lines, kept in the pull request or issue:
 
 - **MOTION-1** Topography sits behind the main overview only, passed as
   `topography:` to `SymairaWorkspace` (macOS) or `.symairaTopography(_:)`
-  (iOS, IOS-5); never behind settings, tables or dense lists, and never
-  mounted directly in a product.
+  (iOS and tvOS, IOS-5, TV-1); never behind settings, tables or dense lists,
+  and never mounted directly in a product.
 - **MOTION-2** Every text-bearing element in a topography area is
   `.topoProtected()`; cards protect their whole surface (`hill: true`);
   headers protect each text, not the whole stack.
@@ -328,6 +328,21 @@ Six lines, kept in the pull request or issue:
   `Image`, so `Label(_:symairaIcon:)` shows no icon there (a toolbar shows the
   title instead).
 
+tvOS follows the iOS rules unless a TV rule says otherwise:
+
+- **TV-1** The home screen mounts the topography with
+  `.symairaTopography(model)` behind its shelves, as IOS-5 does; the
+  full-screen player, artwork-filled detail pages, lists and settings pass
+  `nil` (MOTION-1). Posters and cards over the field are
+  `.topoProtected(hill: true)`, shelf titles `.topoProtected()` (MOTION-2).
+- **TV-2** Focus stands in for the pointer: the field bends around the focused
+  item and every focus move sends a ripple from it. The product adds nothing
+  for this; focus feedback itself stays with the native controls (card or lift
+  style), the topography never replaces it.
+- **TV-3** The topography follows `SymairaMetrics.platformScale` like every
+  other size (terrain, line width, ripples, protection margins); never rescale
+  or retune its tokens in a product.
+
 ## 13. Review contract
 
 Report per file, VS Code clickable, terse:
@@ -391,10 +406,11 @@ Listed so that nobody invents a rule or a component:
 
 - The `battery` glyph is static; level-specific and charging variants or a
   level parameter are not yet available.
-- tvOS builds cover SymairaTheme and SymairaKeychain, but no consumer screen
-  has yet been verified on a tvOS simulator (Symaira Media spike S8). Use
-  focus rather than hover and a native top tab bar; dense content has no
-  topography. The macOS workspace and Settings scene remain macOS-only.
+- tvOS builds cover SymairaTheme and SymairaKeychain; the SymairaTheme tests,
+  including the topography's focus and display-link tests, also run on a tvOS
+  simulator in CI. No consumer screen has been verified on tvOS yet (Symaira
+  Media is the first, TV-1 to TV-3), and topography cost on Apple TV hardware
+  is unmeasured. The macOS workspace and Settings scene remain macOS-only.
 - Other Swift modules are not yet covered by tvOS CI. SymairaCLIRunner and
   SymairaDaemonKit process execution, SymairaToolKit binary discovery, the
   SymairaIngestContract CLI adapters, and SymairaUpdateCheck installation and

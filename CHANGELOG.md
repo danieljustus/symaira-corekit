@@ -4,6 +4,13 @@ The GitHub Releases page is the authoritative source for complete release notes.
 
 ## Unreleased
 
+- Swift (tvOS): `.symairaTopography(_:)` is available on tvOS. The Liquid
+  Topography is drawn at the tvOS platform scale (terrain, lines and ripples
+  twice their point size) and follows the focus engine instead of a pointer:
+  the focused item bends the lines and every focus move sends a ripple.
+  GUIDELINES gain TV-1 to TV-3. macOS and iOS are unchanged.
+- CI runs the SymairaTheme tests on a tvOS simulator.
+
 ## v0.23.1 — 2026-11-18
 
 - Swift: `SymairaIconView` pauses its animation timeline once a hover blend

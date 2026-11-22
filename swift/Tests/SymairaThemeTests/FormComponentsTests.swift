@@ -6,7 +6,7 @@ import XCTest
 @MainActor
 final class FormComponentsTests: XCTestCase {
     func testSwitchLabelVisibilityDecision() {
-        if #available(macOS 15, iOS 18, *) {
+        if #available(macOS 15, iOS 18, tvOS 18, *) {
             XCTAssertTrue(SymairaSwitchBody.showsLabel(.automatic))
             XCTAssertTrue(SymairaSwitchBody.showsLabel(.visible))
             XCTAssertFalse(SymairaSwitchBody.showsLabel(.hidden))

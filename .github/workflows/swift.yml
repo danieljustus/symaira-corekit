@@ -183,3 +183,9 @@ jobs:
           UDID="$(python3 swift/scripts/select_ios_simulator.py)"
           xcodebuild test -scheme symaira-corekit-Package -destination "id=$UDID" \
             -only-testing:SymairaThemeTests -derivedDataPath .build/xcode-ios-simulator
+      - name: Test SymairaTheme (tvOS Simulator)
+        # Same UIKit surface tests plus the tvOS focus tests of the topography.
+        run: |
+          UDID="$(python3 swift/scripts/select_ios_simulator.py --platform tvOS)"
+          xcodebuild test -scheme symaira-corekit-Package -destination "id=$UDID" \
+            -only-testing:SymairaThemeTests -derivedDataPath .build/xcode-tvos-simulator

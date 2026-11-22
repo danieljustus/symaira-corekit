@@ -67,7 +67,8 @@ public final class SymairaTopoModel {
     public init() {}
     /// Never drop a protected element. If the bounded shader budget is exceeded,
     /// conservatively protect their union (decoration gives way to readability).
-    func protectedRects(in viewport: CGRect) -> [Float] {
+    /// `unit`: points per topography point (see `TopoFrameIntegrator.frame`).
+    func protectedRects(in viewport: CGRect, unit: CGFloat = 1) -> [Float] {
         let visible = rects.values.filter { $0.0.intersects(viewport.insetBy(dx: -22, dy: -22)) }
             .sorted { a, b in
                 a.0.minY == b.0.minY ? a.0.minX < b.0.minX : a.0.minY < b.0.minY
@@ -80,8 +81,8 @@ public final class SymairaTopoModel {
         }
         return selected.flatMap { r -> [Float] in
             [
-                Float(r.0.minX - viewport.minX), Float(r.0.minY - viewport.minY),
-                Float(r.0.width), Float(r.0.height), r.1 ? 1 : 0,
+                Float((r.0.minX - viewport.minX) / unit), Float((r.0.minY - viewport.minY) / unit),
+                Float(r.0.width / unit), Float(r.0.height / unit), r.1 ? 1 : 0,
             ]
         }
     }
@@ -109,6 +110,23 @@ public final class SymairaTopoModel {
             ripple(at: CGPoint(x: rect.midX, y: rect.midY), strength: 0.6, key: id)
         }
     }
+    #if os(tvOS)
+    /// tvOS has no pointer; the focus engine stands in for it. The focused item's frame in
+    /// `SymairaTopo.space` (`nil`: focus left the surface) bends the field around it, and each
+    /// move sends a ripple from the new item, throttled like a layout ripple so scrolling a
+    /// shelf does not stack waves. Never sets `interactive`: something is always focused on a
+    /// TV, so the idle cap stays; the ripple itself raises the rate until it fades.
+    func focusMoved(to rect: CGRect?) {
+        guard let rect else {
+            pointer = nil
+            return
+        }
+        let center = CGPoint(x: rect.midX, y: rect.midY)
+        if pointer != center { ripple(at: center, strength: 0.6, key: "focus") }
+        pointer = center
+    }
+    #endif
+
     #if os(macOS)
     /// Pointer im Raum `SymairaTopo.space`; `nil` = außerhalb. Beim Ziehen gelten die Deltas aus `handle`.
     func move(to p: CGPoint?) {
@@ -277,7 +295,7 @@ struct TopoSwiftUIRenderer: View {
     private func shader(size: CGSize, origin: CGPoint, now: Date) -> Shader {
         clock.frame(
             model: model, size: size, origin: origin, now: now, scheme: scheme,
-            displayScale: displayScale, still: still, paused: paused
+            displayScale: displayScale, still: still, paused: paused, unit: 1
         ).shader
     }
 

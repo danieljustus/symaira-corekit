@@ -92,6 +92,11 @@ never depend on a sibling checkout.
   hover or the macOS workspace. Keep topography off dense content. Keyboard
   shortcuts and hover effects are unavailable; focus feedback belongs to the
   native controls. Liquid Glass falls back on tvOS before version 26.
+- The tvOS home screen mounts the topography with `.symairaTopography(_:)`.
+  The field is drawn at `SymairaMetrics.platformScale` (terrain, lines and
+  ripples twice their point size) and follows the focus engine instead of a
+  pointer: the focused item bends the lines, each focus move sends a ripple
+  (GUIDELINES TV-1 to TV-3).
 
 ## Accessibility defaults
 

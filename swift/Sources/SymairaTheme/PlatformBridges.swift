@@ -46,14 +46,15 @@ struct SymairaIconStill: View {
     }
 }
 
-#if os(iOS)
+#if os(iOS) || os(tvOS)
 extension View {
-    /// Mounts the topography behind an iOS page, the counterpart of passing
+    /// Mounts the topography behind an iOS or tvOS page, the counterpart of passing
     /// `topography:` to the macOS `SymairaWorkspace`: renderer behind the content,
     /// the shared coordinate space and the `.topoProtected()` environment.
     /// Use it only for the main overview; pass `nil` behind dense lists, tables
     /// and settings (MOTION-1). Low Power Mode, Reduce Motion and the background
-    /// scene phase pause the renderer (IOS-4).
+    /// scene phase pause the renderer (IOS-4). On tvOS the field follows the focus
+    /// engine (TV-2) and is drawn at `SymairaMetrics.platformScale`.
     public func symairaTopography(_ model: SymairaTopoModel?, animationEnabled: Bool = true) -> some View {
         modifier(SymairaTopographyBackground(model: model, animationEnabled: animationEnabled))
     }

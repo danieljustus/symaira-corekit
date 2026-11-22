@@ -98,5 +98,37 @@ final class TopoMetalUIKitTests: XCTestCase {
         view.stop()
         withExtendedLifetime(window) {}
     }
+
+    #if os(tvOS)
+    func testFocusStandsInForThePointer() {
+        let model = SymairaTopoModel()
+        let view = TopoMetalView()
+        let window = attached(view)
+        let first = UIButton(frame: CGRect(x: 100, y: 50, width: 60, height: 40))
+        let second = UIButton(frame: CGRect(x: 200, y: 100, width: 40, height: 40))
+        let outside = UIButton(frame: CGRect(x: 400, y: 0, width: 40, height: 40))
+        [first, second, outside].forEach(window.addSubview)
+        view.configure(model: model, origin: CGPoint(x: 5, y: 7), scheme: .dark, still: false, visible: true)
+
+        view.focusMoved(to: first)
+        XCTAssertEqual(model.pointer, CGPoint(x: 135, y: 77), "focus centre in SymairaTopo.space")
+        XCTAssertEqual(model.ripples.count, 1, "a focus move sends a ripple")
+        XCTAssertTrue(view.isFast, "the ripple raises the rate at once")
+        XCTAssertFalse(model.interactive, "focus never pins the display rate")
+        view.focusMoved(to: first)
+        XCTAssertEqual(model.ripples.count, 1, "unchanged focus sends no second ripple")
+        view.focusMoved(to: second)
+        XCTAssertEqual(model.pointer, CGPoint(x: 225, y: 127))
+        XCTAssertEqual(model.ripples.count, 1, "rapid moves are throttled like layout ripples")
+        view.focusMoved(to: outside)
+        XCTAssertNil(model.pointer, "focus off the surface releases the field")
+
+        view.configure(model: model, origin: .zero, scheme: .dark, still: true, visible: true)
+        view.focusMoved(to: first)
+        XCTAssertNil(model.pointer, "a still surface ignores focus")
+        view.stop()
+        withExtendedLifetime(window) {}
+    }
+    #endif
 }
 #endif

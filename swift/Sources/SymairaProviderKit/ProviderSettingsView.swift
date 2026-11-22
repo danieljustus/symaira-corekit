@@ -53,7 +53,9 @@ public struct SymairaProviderCredentialField: View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
                 SecureField(title, text: $value)
-                    .textFieldStyle(.roundedBorder)
+                    #if !os(tvOS)
+                .textFieldStyle(.roundedBorder)
+                    #endif
                     .onSubmit(save)
                 if saved {
                     Text(ProviderStrings.saved)

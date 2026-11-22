@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Regression tests for CI iOS Simulator device selection."""
+"""Regression tests for CI iOS and tvOS Simulator device selection."""
 
 from __future__ import annotations
 
@@ -50,6 +50,21 @@ class SelectIOSSimulatorTests(unittest.TestCase):
         }
         with self.assertRaisesRegex(RuntimeError, "No available iOS Simulator device"):
             select_device(listing)
+
+    def test_tvos_prefers_newest_runtime_then_apple_tv(self) -> None:
+        listing = {
+            "devices": {
+                PREFIX + "tvOS-26-0": [device("Apple TV", "old")],
+                PREFIX + "tvOS-27-2": [
+                    device("Apple TV 4K (4th generation) (at 1080p)", "b"),
+                    device("Apple TV 4K (4th generation)", "a"),
+                ],
+                PREFIX + "iOS-27-2": [device("iPhone 17", "phone")],
+            }
+        }
+        self.assertEqual(select_device(listing, "tvOS"), "a")
+        with self.assertRaisesRegex(RuntimeError, "No available tvOS Simulator device"):
+            select_device({"devices": {PREFIX + "iOS-27-2": [device("iPhone 17", "phone")]}}, "tvOS")
 
     def test_runtime_without_devices_is_not_selectable(self) -> None:
         with self.assertRaises(RuntimeError):

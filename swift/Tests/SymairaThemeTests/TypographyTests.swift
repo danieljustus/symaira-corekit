@@ -183,7 +183,7 @@ final class TypographyTests: XCTestCase {
     }
 
     func testEmptyStateSymbolSizeIsAToken() {
-        XCTAssertEqual(SymairaMetrics.emptyStateSymbolSize, 36)
+        XCTAssertEqual(SymairaMetrics.emptyStateSymbolSize, 36 * SymairaMetrics.platformScale)
     }
 
     #if os(macOS)
