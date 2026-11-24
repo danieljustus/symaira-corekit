@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "source": "components.html",
+  "components": [
+    "button-primary",
+    "button-secondary",
+    "notice",
+    "status"
+  ],
+  "scope": "family reference"
+}

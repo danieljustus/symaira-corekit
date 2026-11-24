@@ -1,0 +1,53 @@
+{
+  "project": "symaira-corekit",
+  "rule": "Repository assets remain canonical; OpenDesign copies are handoff/reference material.",
+  "items": [
+    {
+      "asset": "assets/brand/product-logo.png",
+      "source": "/Users/daniel/Dev/Symaira Dev/symaira-corekit/assets/branding/product-logo.png",
+      "sha256": "c8e52fc675e67e369e6a01936bae28c14f4a830e2c74f48b2c1d94584b50b558",
+      "kind": "canonical repository source"
+    },
+    {
+      "asset": "assets/source/repository-social-preview.png",
+      "source": "/Users/daniel/Dev/Symaira Dev/symaira-corekit/docs/assets/social-preview.png",
+      "sha256": "0d57edcba6886b49a569f3ec2e86a7a42db21c9cc4bb3cacfdc2eff2cfe0aa00",
+      "kind": "canonical repository source"
+    },
+    {
+      "asset": "assets/social/github-social-en.svg",
+      "source": "deterministic OpenDesign template + project canonical mark",
+      "kind": "generated editable source"
+    },
+    {
+      "asset": "assets/social/open-graph-de.svg",
+      "source": "deterministic OpenDesign template + project canonical mark",
+      "kind": "generated editable source"
+    },
+    {
+      "asset": "assets/social/square-de.svg",
+      "source": "deterministic OpenDesign template + project canonical mark",
+      "kind": "generated editable source"
+    },
+    {
+      "asset": "assets/social/portrait-de.svg",
+      "source": "deterministic OpenDesign template + project canonical mark",
+      "kind": "generated editable source"
+    },
+    {
+      "asset": "assets/social/story-de.svg",
+      "source": "deterministic OpenDesign template + project canonical mark",
+      "kind": "generated editable source"
+    },
+    {
+      "asset": "assets/release/release-card-en.svg",
+      "source": "deterministic OpenDesign template + project canonical mark",
+      "kind": "generated editable source"
+    },
+    {
+      "asset": "assets/readme/readme-hero-de.svg",
+      "source": "deterministic OpenDesign template + project canonical mark",
+      "kind": "generated editable source"
+    }
+  ]
+}

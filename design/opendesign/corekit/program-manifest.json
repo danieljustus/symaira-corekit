@@ -1,0 +1,38 @@
+{
+  "project": "symaira-corekit",
+  "repository": "symaira-corekit",
+  "role": "Library, docs & release",
+  "entry": "symaira-corekit-complete-program.html",
+  "journeys": [
+    {
+      "id": "K1",
+      "title": "Library-Identität und Dokumentation",
+      "steps": 5,
+      "states": 5
+    },
+    {
+      "id": "K2",
+      "title": "Verträge und Kompatibilität",
+      "steps": 6,
+      "states": 5
+    },
+    {
+      "id": "K3",
+      "title": "Consumer-Integration",
+      "steps": 6,
+      "states": 5
+    },
+    {
+      "id": "K4",
+      "title": "Release und Supply Chain",
+      "steps": 6,
+      "states": 5
+    },
+    {
+      "id": "K5",
+      "title": "Audit- und SQLite-Evidenz",
+      "steps": 5,
+      "states": 5
+    }
+  ]
+}
