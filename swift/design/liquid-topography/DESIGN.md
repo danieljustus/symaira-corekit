@@ -329,7 +329,7 @@ Jede Rolle gibt es hell (Standardwert) und dunkel (Suffix `-dark`). Code nutzt i
 - **selected / on-selected:** Auswahlzustand für Segmente, Schalter (an), Häkchen und Reglergriffe. Dunkel: Champagner mit dunkler Schrift. Hell: Tinte `#141413` mit heller Schrift (Variante A, 15,7:1 gegen die Schiene). Code nutzt immer `selected`, nie `primary`, für Zustände.
 - **focus:** 2px-Fokusring. Dunkel Champagner, hell Tinte.
 - **Primäraktion:** gefüllte Tinte mit Flächenfarbe als Schrift (`button-primary`), in beiden Modi. Höchstens eine Primäraktion pro Ansicht.
-- **critical / warning / positive:** nur für Status, immer zusätzlich mit Text oder Symbol, nie allein über die Farbe. Der helle Modus hat eigene, dunklere Töne (mindestens 4,5:1 auf `surface`). Grün nur für echte Live-Messwerte; Beispiel- oder Testdaten bekommen ein neutrales Symbol und den Text „Beispiel“.
+- **critical / warning / positive:** nur für Status, immer zusätzlich mit Text oder Symbol, nie allein über die Farbe. Der helle Modus hat eigene, dunklere Töne (mindestens 4,5:1 auf `surface`). Grün nur für echte Live-Messwerte; Beispiel- oder Testdaten bekommen ein neutrales Symbol und den Text „Beispiel“. Eine eigene Info-Farbe (etwa Blau) gibt es nicht: Hinweise ohne Status sind neutral, `ink-2` plus Info-Symbol.
 - **Gesperrte Bedienelemente:** zusätzlich zum ausgegrauten Zustand den Text „Gesperrt“ zeigen. Reine Transparenz ist kein Sperrsignal.
 - **topo:** Farbe der Höhenlinien. Sie wird nur mit sehr geringer Deckkraft verwendet (siehe Liquid Topography).
 
@@ -343,7 +343,7 @@ Jede Rolle gibt es hell (Standardwert) und dunkel (Suffix `-dark`). Code nutzt i
 - **Antialiasing:** Graustufen statt Subpixel. Web: `tokens.css` setzt `-webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale` auf `body`. Apple: macOS (seit 10.14) und iOS glätten Schrift bereits in Graustufen; nichts deaktivieren (`CGContext.setShouldAntialias(false)` o. ä. ist verboten).
 - **Ziffern** in Messwerten tabellarisch (`tnum` bzw. `.monospacedDigit()`).
 - **Dynamic Type:** Größen skalieren relativ zum zugehörigen Textstil.
-- **Keine Symbole als Schriftzeichen.** Die Schriften enthalten nicht jedes Symbol (Google Sans Flex etwa kein ⓘ → ✓ ✕ ⌥); der Browser würde eine Ersatzschrift einsetzen. Symbole sind SVG bzw. SF Symbols.
+- **Keine Symbole als Schriftzeichen.** Die Schriften enthalten nicht jedes Symbol (Google Sans Flex etwa kein ⓘ → ✓ ✕ ⌥); der Browser würde eine Ersatzschrift einsetzen. Symbole sind SVG bzw. auf Apple-Plattformen `SymairaIcon`.
 - Web-Fallback-Ketten: `--sym-font` `"Google Sans Flex", -apple-system, BlinkMacSystemFont, system-ui, sans-serif`; `--sym-font-text` `"Figtree", -apple-system, BlinkMacSystemFont, system-ui, sans-serif`.
 
 ## Layout
@@ -371,7 +371,7 @@ Zwei Ebenen mit getrennten Aufgaben: **Liquid Glass ist die Bedienschicht, Liqui
 
 ## Shapes
 
-Radien: 6px für Code-Inline, 10px für Buttons und Einträge, 14px für Karten, 20px für Eingabebox und Blasen sowie 999px für Pills und Chips. Icons sind Linien-Icons mit 2.0 Strichstärke, runden Enden und 16–17px Größe. Der Senden-Pfeil hat 2.4. Auf Apple-Plattformen werden SF Symbols mit Gewicht `.semibold` verwendet.
+Radien: 6px für Code-Inline, 10px für Einträge, Eingabefelder, Segmente und Toolbar-Buttons, 14px für Inhaltsaktionen (Primär und Sekundär), Karten und Segmentschienen, 20px für Eingabebox, Blasen und das Hauptpanel sowie 999px für Pills und Chips. Icons sind die eigenen Symaira-Icons aus `Brand/Icons/icons.svg` (Apple: `SymairaIcon`): Linien mit 2.0 Strichstärke, runden Enden und 16–17px Größe. Der Senden-Pfeil hat 2.4. SF Symbols sind nur eine Übergangslösung, solange für eine Bedeutung noch kein Symaira-Icon existiert; dann mit Gewicht `.semibold` (`SymairaTokens.iconWeight`), und das fehlende Icon wird in `icons.svg` ergänzt.
 
 ## Components
 
@@ -381,8 +381,8 @@ Siehe `components:` oben. Varianten sind eigene Einträge (`button-primary-dark`
 - **Navigation:** Auswahl über `selection`-Fläche und Gewicht 700 in beiden Modi; die Fläche allein ist kein Zustandsmerkmal.
 - **Schalter:** 56 × 32px Spur, 24px Knopf, an = `selected`. Trefferfläche mindestens 44px auf Touch-Geräten.
 - **Messwerte** in `ink`, unabhängig davon, ob sie sich ändern. Champagner gehört zu Auswahl, aktiven Bedienelementen und Fokus.
-- **Balken und Regler:** gemeinsame neutrale Schiene `ink-3` und Füllung `ink` in beiden Modi. Speicher-, Nutzungs- und Prozessbalken verwenden dieselben Rollen wie native Regler. Warnungen bleiben als Text/Symbol sichtbar.
-- **Darstellung:** `System / Light / Dark` ist über denselben Auswahltyp in Toolbar und Einstellungen erreichbar. „System“ entfernt die Vorgabe und folgt macOS weiter live, statt dessen aktuellen Zustand einzufrieren. Produkte behalten ihre bisherigen Speicherschlüssel; passive Vorschauen schreiben keine Einstellungen.
+- **Balken und Regler:** die leere Schiene ist eine ruhige Rinne in `raised` mit 1px-Kontur in `line`, die Füllung ist `ink`, in beiden Modi. So liest sich 0 % nie als voller Balken; `ink-3` ist eine Textrolle und für Schienen zu hell. Speicher-, Nutzungs- und Prozessbalken verwenden dieselben Rollen wie native Regler. Warnungen bleiben als Text/Symbol sichtbar.
+- **Darstellung:** `System / Light / Dark` steht nur im Einstellungsfenster, neben den übrigen Einstellungen. Das Zahnrad in der Toolbar öffnet dieses Fenster direkt, ohne Zwischenmenü; eine Darstellungsauswahl in der Toolbar gibt es nicht. „System“ entfernt die Vorgabe und folgt macOS weiter live, statt dessen aktuellen Zustand einzufrieren. Produkte behalten ihre bisherigen Speicherschlüssel; passive Vorschauen schreiben keine Einstellungen.
 - **Karten:** `surface` mit 1px `line`, 14px Radius. Die Fläche hebt sich nur schwach vom Hintergrund ab (1,1:1); die Linie trägt die Abgrenzung.
 
 ## Liquid Topography (Topografie-Ebene)
@@ -439,3 +439,4 @@ Die Hintergrundebene ist ein Shader. Im Web läuft er über WebGL2 (`web/symaira
 - Figtree für alle Texte außer den größten Überschriften ist neu (15.11.2026) und noch nicht im vollständigen Cockpit-Piloten abgenommen; die von Inter übernommenen Gewichte 450/550/600 sind ein Startwert.
 - Google Sans Flex ist in SwiftUI und im Web nur in Chrome (Pilot) geprüft. Safari/WebKit-Darstellung und VoiceOver bleiben offen.
 - Die Navigationsauswahl erreicht als Fläche weniger als 3:1 und wird zusätzlich über Fettdruck markiert.
+- Konturen von Bedienelementen liegen bewusst unter WCAG 1.4.11 (3:1), damit die Flächen ruhig bleiben: `line` erreicht auf `surface` 1,68:1 hell und 1,39:1 dunkel; im Dunkelmodus hebt sich die `raised`-Füllung eines Feldes nur etwa 1,3:1 von `surface` ab. „Kontrast erhöhen“ verstärkt die Konturen. Ob `line` angehoben wird, ist offen.

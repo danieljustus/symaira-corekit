@@ -21,7 +21,7 @@ struct Workspace: View {
             navigation: { showsLabels in
                 VStack {
                     SymairaNavigationButton(
-                        "Overview", systemImage: "house", isSelected: true,
+                        "Overview", icon: .home, isSelected: true,
                         showsLabel: showsLabels, action: {}
                     )
                     Spacer()
@@ -274,8 +274,8 @@ not Swift imports.
   reviewed/tagged and each consumer explicitly adopts the new exact version.
 
 For local integration, editable dependencies are scoped to the SwiftPM scratch
-directory. A `Packages/symaira-appkit` link alone does not prove the build uses
-it. Configure edit mode and inspect `swift package --scratch-path <build-dir>
+directory. A local package link (for example `Packages/symaira-corekit`) alone
+does not prove the build uses it. Configure edit mode and inspect `swift package --scratch-path <build-dir>
 show-dependencies --format json` using the same build directory as the test and
 app-assembly commands. Require the resolved AppKit path to equal the intended
 worktree; otherwise the build can silently use the old remote pin. Preserve the

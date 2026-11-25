@@ -16,7 +16,7 @@ Where this file is silent, Apple's Human Interface Guidelines apply.
 
 Every rule has an ID for reviews (`STATE-1`), one imperative sentence and the
 `SymairaTheme` API that implements it. "Product" means an app repository that
-consumes `symaira-appkit` through an exact pin.
+consumes `symaira-corekit` through an exact pin.
 
 ## How to use
 
@@ -214,7 +214,9 @@ Six lines, kept in the pull request or issue:
   reserved for the brand accents the shared controls already apply.
 - **COLOR-3** Status colors always pair with `SymairaTone` text or icon. Live
   measured values are `ink`; sample data gets a neutral icon and the word
-  "Example".
+  "Example". There is no informational hue: a message without a status is
+  `.neutral` (`ink-2` plus the info icon), the default of `SymairaNotice`;
+  `.informative` remains only as a neutral alias.
 - **COLOR-4** In light appearance, controls placed directly on the canvas carry
   the 1 pt `SymairaTheme.raisedOutline(for:)`; never rely on fill alone.
 - **TYPE-1** Fonts come from `SymairaTypography` roles or `.symairaText(_:)`

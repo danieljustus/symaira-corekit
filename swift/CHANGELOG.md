@@ -11,6 +11,22 @@ the releases of the former `symaira-appkit` repository.
 
 ## [Unreleased]
 
+### Changed
+- `SymairaNotice` defaults to `.neutral`, and `SymairaTone.informative` now
+  renders exactly like `.neutral` (`ink-2` plus the info icon). The blue
+  `#245C86`/`#8CC8F2` informational hue was not part of the Liquid Topography
+  tokens, which allow champagne as the only accent (#505). The case stays for
+  source compatibility.
+
+### Fixed
+- Design documents agree with each other and with the code again (#505): the
+  token specification now describes the `raised` meter groove, the appearance
+  control inside Settings only, 14 pt content-action radii and the in-house
+  `SymairaIcon` set (SF Symbols only as a stopgap); GUIDELINES COLOR-3 states
+  that there is no informational hue; stale `symaira-appkit` names and an SF
+  Symbol sample were updated. The control-outline contrast below WCAG 1.4.11
+  is recorded as a known gap.
+
 ## [0.24.0] - 2026-11-22
 
 ### Added

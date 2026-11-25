@@ -5,15 +5,17 @@ public enum SymairaTone: Sendable {
     case positive
     case warning
     case critical
+    /// Kept for source compatibility; renders exactly like ``neutral``.
+    /// Liquid Topography has no informational hue: champagne is the only
+    /// accent, and an informational message is neutral text plus the info icon.
     case informative
 
     public var foreground: Color {
         switch self {
-        case .neutral: SymairaTheme.textSecondary
+        case .neutral, .informative: SymairaTheme.textSecondary
         case .positive: SymairaTheme.positive
         case .warning: SymairaTheme.warning
         case .critical: SymairaTheme.critical
-        case .informative: SymairaTheme.informative
         }
     }
 
@@ -22,11 +24,10 @@ public enum SymairaTone: Sendable {
     public func foreground(for colorScheme: ColorScheme) -> Color {
         let dark = colorScheme == .dark
         switch self {
-        case .neutral: return SymairaTheme.foregroundSecondary(for: colorScheme)
+        case .neutral, .informative: return SymairaTheme.foregroundSecondary(for: colorScheme)
         case .positive: return Color(hex: dark ? "93C49F" : "34694A")
         case .warning: return Color(hex: dark ? "E9BC73" : "7E5310")
         case .critical: return Color(hex: dark ? "E39C8A" : "9A4634")
-        case .informative: return Color(hex: dark ? "8CC8F2" : "245C86")
         }
     }
 
@@ -104,7 +105,7 @@ public struct SymairaNotice: View {
     public init(
         title: String? = nil,
         message: String,
-        tone: SymairaTone = .informative,
+        tone: SymairaTone = .neutral,
         onDismiss: (() -> Void)? = nil
     ) {
         self.title = title

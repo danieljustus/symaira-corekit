@@ -57,10 +57,18 @@ final class FormComponentsTests: XCTestCase {
     }
 
     func testStatusTonesResolveToDistinctColours() {
-        let tones: [SymairaTone] = [.neutral, .positive, .warning, .critical, .informative]
+        let tones: [SymairaTone] = [.neutral, .positive, .warning, .critical]
         let dark = Set(tones.map { $0.foreground(for: .dark) })
         let light = Set(tones.map { $0.foreground(for: .light) })
         XCTAssertEqual(dark.count, tones.count)
         XCTAssertEqual(light.count, tones.count)
+    }
+
+    /// Liquid Topography has no informational hue (#505): `.informative` is neutral.
+    func testInformativeToneIsNeutral() {
+        for scheme in [ColorScheme.light, .dark] {
+            XCTAssertEqual(SymairaTone.informative.foreground(for: scheme), SymairaTone.neutral.foreground(for: scheme))
+        }
+        XCTAssertEqual(SymairaTone.informative.foreground, SymairaTone.neutral.foreground)
     }
 }
