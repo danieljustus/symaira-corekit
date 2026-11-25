@@ -83,7 +83,13 @@ LINE_RULES = [
         r"\b(SymairaBackdrop|BlueprintGrid|AmbientGlows)\b|\.glassCard\(|\.glassmorphicPanel\(|Color\.symaira[A-Z]",
         "legacy compatibility API; use the current Liquid Topography components",
     ),
-    ("FORM-1", "info", r"^\s*(Form\s*\{|GroupBox\b)", "native Form/GroupBox; use SymairaFormSection/SymairaFormRow"),
+    (
+        "NATIVE-1",
+        "warn",
+        r"\b(SymairaFormSection|SymairaSegmentedControl|SymairaFilterMenu|SymairaIconButton|SymairaProgressStyle"
+        r"|SymairaLoadingState|SymairaSheetScaffold|SymairaStatTile|SymairaSwitchToggleStyle)\b|\.symairaSwitch\b",
+        "deprecated Symaira control; use the native control from the UI catalog (GUIDELINES NATIVE-1)",
+    ),
     (
         "SHELL-1",
         "info",
@@ -180,7 +186,7 @@ def review_text(text: str, display: str) -> list[dict]:
                         "line": index,
                         "rule": "STATE-1",
                         "severity": "warn",
-                        "message": 'bare ProgressView(); use SymairaLoadingState("Loading <noun>…") or add a label',
+                        "message": 'bare ProgressView(); use ProgressView("Loading <noun>…") or add a label',
                     }
                 )
         if ICON_ONLY.search(line):
@@ -261,14 +267,16 @@ struct Fixture: View {
         Label("Settings", systemImage: "gearshape").labelStyle(.iconOnly)
         SymairaBadge("ok", tone: .positive, systemImage: "checkmark")
         Text("fine").symairaText(.body).foregroundStyle(SymairaTokens.ink)
-        SymairaLoadingState("Loading jobs…")
+        ProgressView("Loading jobs…")
+        Form { Toggle("Sync", isOn: $sync).toggleStyle(.switch).tint(SymairaTokens.selected) }
+        SymairaSegmentedControl("Mode", selection: $mode, options: options)
     }
 }
 """
     found = review_text(fixture, "fixture.swift")
-    expected = {"COLOR-1", "COPY-3", "ICON-1", "TYPE-1", "STATE-1", "ACTION-1", "MOTION-4", "ICON-2"}
+    expected = {"COLOR-1", "COPY-3", "ICON-1", "TYPE-1", "STATE-1", "ACTION-1", "MOTION-4", "ICON-2", "NATIVE-1"}
     got = {item["rule"] for item in found}
-    clean_lines = {17, 18}
+    clean_lines = {16, 17, 18}
     leaked = [item for item in found if item["line"] in clean_lines]
     comment_hits = [item for item in found if item["line"] == 3]
     project = [

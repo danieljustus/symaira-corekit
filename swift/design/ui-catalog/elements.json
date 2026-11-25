@@ -1,0 +1,1410 @@
+{
+ "version": 1,
+ "updated": "2026-11-25",
+ "legend": {
+  "apple-native": "Apple nativ (System-Optik)",
+  "native-tinted": "Apple nativ + Symaira-Tint/Modifier",
+  "apple-glass": "Apple Liquid Glass",
+  "symaira": "Symaira-Eigenbau heute",
+  "web-native": "Browser-nativ ohne Gestaltung",
+  "web-tokens": "Natives HTML-Element mit Symaira-Tokens",
+  "web-custom": "Eigenbau-Komponente"
+ },
+ "elements": [
+  {
+   "id": "E01",
+   "group": "Aktionen",
+   "title": "Primär-Button",
+   "job": "Hauptaktion eines Bereichs",
+   "glass": true,
+   "modal": false,
+   "apple": [
+    {
+     "id": "A",
+     "title": "Apple nativ, Systemakzent",
+     "kind": "apple-native",
+     "code": ".buttonStyle(.borderedProminent)"
+    },
+    {
+     "id": "B",
+     "title": "Nativ mit Symaira-Tint",
+     "kind": "native-tinted",
+     "code": ".borderedProminent + .tint(SymairaTokens.selected)"
+    },
+    {
+     "id": "C",
+     "title": "Liquid Glass prominent",
+     "kind": "apple-glass",
+     "code": ".buttonStyle(.glassProminent)"
+    },
+    {
+     "id": "D",
+     "title": "Symaira heute",
+     "kind": "symaira",
+     "code": ".symairaButtonStyle(.primary)"
+    }
+   ],
+   "web": [
+    {
+     "id": "W1",
+     "title": "Browser-nativ",
+     "kind": "web-native",
+     "code": "<button> + accent-color"
+    },
+    {
+     "id": "W2",
+     "title": "Natives <button> mit Symaira-Tokens",
+     "kind": "web-tokens",
+     "code": "button.sym-primary"
+    }
+   ],
+   "notes": ""
+  },
+  {
+   "id": "E02",
+   "group": "Aktionen",
+   "title": "Sekundär-Button",
+   "job": "Nebenaktion neben der Hauptaktion",
+   "glass": true,
+   "modal": false,
+   "apple": [
+    {
+     "id": "A",
+     "title": "Apple nativ",
+     "kind": "apple-native",
+     "code": ".buttonStyle(.bordered)"
+    },
+    {
+     "id": "B",
+     "title": "Liquid Glass",
+     "kind": "apple-glass",
+     "code": ".buttonStyle(.glass)"
+    },
+    {
+     "id": "C",
+     "title": "Ohne Rahmen",
+     "kind": "apple-native",
+     "code": ".buttonStyle(.borderless)"
+    },
+    {
+     "id": "D",
+     "title": "Symaira heute",
+     "kind": "symaira",
+     "code": ".symairaButtonStyle(.secondary)"
+    }
+   ],
+   "web": [
+    {
+     "id": "W1",
+     "title": "Browser-nativ",
+     "kind": "web-native",
+     "code": "<button>"
+    },
+    {
+     "id": "W2",
+     "title": "Natives <button> mit Symaira-Tokens",
+     "kind": "web-tokens",
+     "code": "button.sym-secondary"
+    },
+    {
+     "id": "W3",
+     "title": "Textlink-Button",
+     "kind": "web-tokens",
+     "code": "button.sym-link"
+    }
+   ],
+   "notes": ""
+  },
+  {
+   "id": "E03",
+   "group": "Aktionen",
+   "title": "Destruktiv-Button",
+   "job": "Löschen, Entfernen, Abmelden",
+   "glass": false,
+   "modal": false,
+   "apple": [
+    {
+     "id": "A",
+     "title": "Apple nativ, Rolle destructive",
+     "kind": "apple-native",
+     "code": "Button(role: .destructive) + .bordered"
+    },
+    {
+     "id": "B",
+     "title": "Prominent rot",
+     "kind": "apple-native",
+     "code": ".borderedProminent + .tint(.red)"
+    },
+    {
+     "id": "C",
+     "title": "Symaira-Tokens (kein eigenes Control vorhanden)",
+     "kind": "native-tinted",
+     "code": ".bordered + .tint(SymairaTokens.critical)"
+    }
+   ],
+   "web": [
+    {
+     "id": "W1",
+     "title": "Browser-nativ",
+     "kind": "web-native",
+     "code": "<button> rot"
+    },
+    {
+     "id": "W2",
+     "title": "Symaira-Tokens",
+     "kind": "web-tokens",
+     "code": "button.sym-danger"
+    }
+   ],
+   "notes": ""
+  },
+  {
+   "id": "E04",
+   "group": "Aktionen",
+   "title": "Icon-Button",
+   "job": "Kompakte Aktion ohne Text (mit Tooltip/AX-Label)",
+   "glass": true,
+   "modal": false,
+   "apple": [
+    {
+     "id": "A",
+     "title": "Apple nativ, rund",
+     "kind": "apple-native",
+     "code": "Label(...).labelStyle(.iconOnly) + .bordered + .buttonBorderShape(.circle)"
+    },
+    {
+     "id": "B",
+     "title": "Liquid Glass, rund",
+     "kind": "apple-glass",
+     "code": ".buttonStyle(.glass) + .buttonBorderShape(.circle)"
+    },
+    {
+     "id": "C",
+     "title": "Symaira heute",
+     "kind": "symaira",
+     "code": "SymairaIconButton(_, icon:)"
+    }
+   ],
+   "web": [
+    {
+     "id": "W1",
+     "title": "Browser-nativ",
+     "kind": "web-native",
+     "code": "<button aria-label>"
+    },
+    {
+     "id": "W2",
+     "title": "Symaira-Tokens",
+     "kind": "web-tokens",
+     "code": "button.sym-icon"
+    }
+   ],
+   "notes": ""
+  },
+  {
+   "id": "E05",
+   "group": "Aktionen",
+   "title": "Toolbar-Gruppe",
+   "job": "Zusammengehörige Werkzeuge in der Fensterleiste",
+   "glass": true,
+   "modal": false,
+   "apple": [
+    {
+     "id": "A",
+     "title": "Native Glasgruppe",
+     "kind": "apple-glass",
+     "code": "GlassEffectContainer { Buttons .glass }"
+    },
+    {
+     "id": "B",
+     "title": "ControlGroup",
+     "kind": "apple-native",
+     "code": "ControlGroup { ... }"
+    },
+    {
+     "id": "C",
+     "title": "Symaira heute",
+     "kind": "symaira",
+     "code": "SymairaGlassEffectContainer + SymairaIconButton"
+    }
+   ],
+   "web": [
+    {
+     "id": "W1",
+     "title": "Browser-nativ",
+     "kind": "web-native",
+     "code": "<div role=toolbar> + <button>"
+    },
+    {
+     "id": "W2",
+     "title": "Symaira-Tokens, deckend",
+     "kind": "web-tokens",
+     "code": ".sym-toolbar"
+    }
+   ],
+   "notes": ""
+  },
+  {
+   "id": "E06",
+   "group": "Aktionen",
+   "title": "Menü / Filter",
+   "job": "Aktionen oder Filter in einem Aufklappmenü",
+   "glass": false,
+   "modal": false,
+   "apple": [
+    {
+     "id": "A",
+     "title": "Apple nativ",
+     "kind": "apple-native",
+     "code": "Menu(\"Filter\") { ... }"
+    },
+    {
+     "id": "B",
+     "title": "Picker als Menü",
+     "kind": "apple-native",
+     "code": "Picker(...).pickerStyle(.menu)"
+    },
+    {
+     "id": "C",
+     "title": "Symaira heute",
+     "kind": "symaira",
+     "code": "SymairaFilterMenu"
+    }
+   ],
+   "web": [
+    {
+     "id": "W1",
+     "title": "Browser-nativ",
+     "kind": "web-native",
+     "code": "<select>"
+    },
+    {
+     "id": "W2",
+     "title": "Natives <select> mit Tokens",
+     "kind": "web-tokens",
+     "code": "select.sym-select"
+    },
+    {
+     "id": "W3",
+     "title": "Popover-Menü",
+     "kind": "web-custom",
+     "code": "<button popovertarget> + [popover]"
+    }
+   ],
+   "notes": ""
+  },
+  {
+   "id": "E07",
+   "group": "Auswahl",
+   "title": "Segmentauswahl",
+   "job": "2 bis 5 gleichrangige Optionen",
+   "glass": false,
+   "modal": false,
+   "apple": [
+    {
+     "id": "A",
+     "title": "Apple nativ",
+     "kind": "apple-native",
+     "code": "Picker(...).pickerStyle(.segmented)"
+    },
+    {
+     "id": "B",
+     "title": "Nativ mit Symaira-Tint",
+     "kind": "native-tinted",
+     "code": ".segmented + .tint(SymairaTokens.selected)"
+    },
+    {
+     "id": "C",
+     "title": "Symaira heute",
+     "kind": "symaira",
+     "code": "SymairaSegmentedControl"
+    }
+   ],
+   "web": [
+    {
+     "id": "W1",
+     "title": "Browser-nativ (Radiogruppe)",
+     "kind": "web-native",
+     "code": "<fieldset> + <input type=radio>"
+    },
+    {
+     "id": "W2",
+     "title": "Radiogruppe als Segmentschiene",
+     "kind": "web-tokens",
+     "code": ".sym-segment"
+    }
+   ],
+   "notes": ""
+  },
+  {
+   "id": "E08",
+   "group": "Auswahl",
+   "title": "Schalter",
+   "job": "Ein/Aus mit sofortiger Wirkung",
+   "glass": false,
+   "modal": false,
+   "apple": [
+    {
+     "id": "A",
+     "title": "Apple nativ",
+     "kind": "apple-native",
+     "code": "Toggle(...).toggleStyle(.switch)"
+    },
+    {
+     "id": "B",
+     "title": "Nativ mit Symaira-Tint",
+     "kind": "native-tinted",
+     "code": ".switch + .tint(SymairaTokens.selected)"
+    },
+    {
+     "id": "C",
+     "title": "Checkbox (nur macOS)",
+     "kind": "apple-native",
+     "code": ".toggleStyle(.checkbox)"
+    },
+    {
+     "id": "D",
+     "title": "Symaira heute",
+     "kind": "symaira",
+     "code": ".toggleStyle(.symairaSwitch)"
+    }
+   ],
+   "web": [
+    {
+     "id": "W1",
+     "title": "Browser-nativ Checkbox",
+     "kind": "web-native",
+     "code": "<input type=checkbox>"
+    },
+    {
+     "id": "W2",
+     "title": "Checkbox als Schalter (switch)",
+     "kind": "web-tokens",
+     "code": "<input type=checkbox switch>, Fallback .sym-switch"
+    },
+    {
+     "id": "W3",
+     "title": "Eigenbau-Schalter heute",
+     "kind": "web-custom",
+     "code": ".sym-switch-custom"
+    }
+   ],
+   "notes": ""
+  },
+  {
+   "id": "E09",
+   "group": "Auswahl",
+   "title": "Auswahlliste",
+   "job": "Eine Option aus vielen",
+   "glass": false,
+   "modal": false,
+   "apple": [
+    {
+     "id": "A",
+     "title": "Apple nativ, Popup",
+     "kind": "apple-native",
+     "code": "Picker(...).pickerStyle(.menu)"
+    },
+    {
+     "id": "B",
+     "title": "Radiogruppe (macOS) / Inline (iOS)",
+     "kind": "apple-native",
+     "code": ".pickerStyle(.radioGroup) bzw. .inline"
+    },
+    {
+     "id": "C",
+     "title": "Symaira-Formularzeile",
+     "kind": "symaira",
+     "code": "SymairaFormRow { Picker .menu }"
+    }
+   ],
+   "web": [
+    {
+     "id": "W1",
+     "title": "Browser-nativ",
+     "kind": "web-native",
+     "code": "<select>"
+    },
+    {
+     "id": "W2",
+     "title": "Radiogruppe mit Tokens",
+     "kind": "web-tokens",
+     "code": ".sym-radio"
+    }
+   ],
+   "notes": ""
+  },
+  {
+   "id": "E10",
+   "group": "Auswahl",
+   "title": "Regler",
+   "job": "Kontinuierlicher Wert",
+   "glass": false,
+   "modal": false,
+   "apple": [
+    {
+     "id": "A",
+     "title": "Apple nativ",
+     "kind": "apple-native",
+     "code": "Slider(value:in:)"
+    },
+    {
+     "id": "B",
+     "title": "Nativ mit Symaira-Tint",
+     "kind": "native-tinted",
+     "code": "Slider + .tint(SymairaTokens.ink)"
+    }
+   ],
+   "web": [
+    {
+     "id": "W1",
+     "title": "Browser-nativ",
+     "kind": "web-native",
+     "code": "<input type=range>"
+    },
+    {
+     "id": "W2",
+     "title": "Range mit Tokens",
+     "kind": "web-tokens",
+     "code": "input.sym-range"
+    }
+   ],
+   "notes": ""
+  },
+  {
+   "id": "E11",
+   "group": "Auswahl",
+   "title": "Stepper",
+   "job": "Ganzzahl in kleinen Schritten",
+   "glass": false,
+   "modal": false,
+   "apple": [
+    {
+     "id": "A",
+     "title": "Apple nativ",
+     "kind": "apple-native",
+     "code": "Stepper(value:)"
+    }
+   ],
+   "web": [
+    {
+     "id": "W1",
+     "title": "Browser-nativ",
+     "kind": "web-native",
+     "code": "<input type=number>"
+    },
+    {
+     "id": "W2",
+     "title": "Number mit −/+ Buttons",
+     "kind": "web-tokens",
+     "code": ".sym-stepper"
+    }
+   ],
+   "notes": ""
+  },
+  {
+   "id": "E12",
+   "group": "Auswahl",
+   "title": "Datum/Uhrzeit",
+   "job": "Datum oder Zeit wählen",
+   "glass": false,
+   "modal": false,
+   "apple": [
+    {
+     "id": "A",
+     "title": "Apple nativ, kompakt",
+     "kind": "apple-native",
+     "code": "DatePicker(...)  // .automatic"
+    },
+    {
+     "id": "B",
+     "title": "Feld (macOS) / Rad (iOS)",
+     "kind": "apple-native",
+     "code": ".datePickerStyle(.field) bzw. .wheel"
+    },
+    {
+     "id": "C",
+     "title": "Kalender",
+     "kind": "apple-native",
+     "code": ".datePickerStyle(.graphical)"
+    }
+   ],
+   "web": [
+    {
+     "id": "W1",
+     "title": "Browser-nativ",
+     "kind": "web-native",
+     "code": "<input type=date>"
+    },
+    {
+     "id": "W2",
+     "title": "Natives Feld mit Tokens",
+     "kind": "web-tokens",
+     "code": "input.sym-input[type=date]"
+    }
+   ],
+   "notes": ""
+  },
+  {
+   "id": "E13",
+   "group": "Eingabe",
+   "title": "Textfeld",
+   "job": "Einzeilige Eingabe",
+   "glass": false,
+   "modal": false,
+   "apple": [
+    {
+     "id": "A",
+     "title": "Apple nativ",
+     "kind": "apple-native",
+     "code": "TextField(...).textFieldStyle(.roundedBorder)"
+    },
+    {
+     "id": "B",
+     "title": "In nativer Form",
+     "kind": "apple-native",
+     "code": "Form { TextField(\"Name\", text:) }"
+    },
+    {
+     "id": "C",
+     "title": "Symaira heute",
+     "kind": "symaira",
+     "code": ".textFieldStyle(.symaira)"
+    }
+   ],
+   "web": [
+    {
+     "id": "W1",
+     "title": "Browser-nativ",
+     "kind": "web-native",
+     "code": "<input>"
+    },
+    {
+     "id": "W2",
+     "title": "Natives <input> mit Tokens",
+     "kind": "web-tokens",
+     "code": "input.sym-input"
+    }
+   ],
+   "notes": ""
+  },
+  {
+   "id": "E14",
+   "group": "Eingabe",
+   "title": "Passwortfeld",
+   "job": "Verdeckte Eingabe",
+   "glass": false,
+   "modal": false,
+   "apple": [
+    {
+     "id": "A",
+     "title": "Apple nativ",
+     "kind": "apple-native",
+     "code": "SecureField + .roundedBorder"
+    },
+    {
+     "id": "B",
+     "title": "Symaira heute",
+     "kind": "symaira",
+     "code": "SecureField + .symaira"
+    }
+   ],
+   "web": [
+    {
+     "id": "W1",
+     "title": "Browser-nativ",
+     "kind": "web-native",
+     "code": "<input type=password>"
+    },
+    {
+     "id": "W2",
+     "title": "Mit Tokens + Anzeigen-Button",
+     "kind": "web-tokens",
+     "code": "input.sym-input + button"
+    }
+   ],
+   "notes": ""
+  },
+  {
+   "id": "E15",
+   "group": "Eingabe",
+   "title": "Suche",
+   "job": "Inhalte filtern",
+   "glass": false,
+   "modal": false,
+   "apple": [
+    {
+     "id": "A",
+     "title": "Apple nativ (Toolbar/Navigationsleiste)",
+     "kind": "apple-native",
+     "code": ".searchable(text:)"
+    },
+    {
+     "id": "B",
+     "title": "Textfeld mit Lupe",
+     "kind": "apple-native",
+     "code": "TextField + Image(systemName: \"magnifyingglass\")"
+    },
+    {
+     "id": "C",
+     "title": "Symaira-Textfeld mit Lupe",
+     "kind": "symaira",
+     "code": ".textFieldStyle(.symaira) + SymairaIconView(.search)"
+    }
+   ],
+   "web": [
+    {
+     "id": "W1",
+     "title": "Browser-nativ",
+     "kind": "web-native",
+     "code": "<input type=search>"
+    },
+    {
+     "id": "W2",
+     "title": "Search mit Tokens",
+     "kind": "web-tokens",
+     "code": "input.sym-input[type=search]"
+    }
+   ],
+   "notes": ""
+  },
+  {
+   "id": "E16",
+   "group": "Eingabe",
+   "title": "Mehrzeiliger Text",
+   "job": "Notizen, Nachrichten",
+   "glass": false,
+   "modal": false,
+   "apple": [
+    {
+     "id": "A",
+     "title": "Apple nativ",
+     "kind": "apple-native",
+     "code": "TextEditor + .scrollContentBackground + Rahmen"
+    },
+    {
+     "id": "B",
+     "title": "TextField mit axis",
+     "kind": "apple-native",
+     "code": "TextField(..., axis: .vertical)"
+    },
+    {
+     "id": "C",
+     "title": "In Symaira-Karte",
+     "kind": "symaira",
+     "code": "TextEditor in .symairaCard()"
+    }
+   ],
+   "web": [
+    {
+     "id": "W1",
+     "title": "Browser-nativ",
+     "kind": "web-native",
+     "code": "<textarea>"
+    },
+    {
+     "id": "W2",
+     "title": "Mit Tokens",
+     "kind": "web-tokens",
+     "code": "textarea.sym-input"
+    }
+   ],
+   "notes": ""
+  },
+  {
+   "id": "E17",
+   "group": "Formulare & Flächen",
+   "title": "Formular",
+   "job": "Einstellungen und Eingabemasken",
+   "glass": false,
+   "modal": false,
+   "apple": [
+    {
+     "id": "A",
+     "title": "Apple nativ, gruppiert",
+     "kind": "apple-native",
+     "code": "Form { Section { ... } }.formStyle(.grouped)"
+    },
+    {
+     "id": "B",
+     "title": "Spalten (macOS-Einstellungsstil)",
+     "kind": "apple-native",
+     "code": ".formStyle(.columns)"
+    },
+    {
+     "id": "C",
+     "title": "Symaira heute",
+     "kind": "symaira",
+     "code": "SymairaFormSection + SymairaFormRow"
+    }
+   ],
+   "web": [
+    {
+     "id": "W1",
+     "title": "Browser-nativ",
+     "kind": "web-native",
+     "code": "<form> + <fieldset> + <label>"
+    },
+    {
+     "id": "W2",
+     "title": "Tokens, Zeilen in Karte",
+     "kind": "web-tokens",
+     "code": ".sym-form .sym-row"
+    }
+   ],
+   "notes": ""
+  },
+  {
+   "id": "E18",
+   "group": "Formulare & Flächen",
+   "title": "Gruppe / Karte",
+   "job": "Zusammengehörige Inhalte abgrenzen",
+   "glass": false,
+   "modal": false,
+   "apple": [
+    {
+     "id": "A",
+     "title": "GroupBox",
+     "kind": "apple-native",
+     "code": "GroupBox(\"Titel\") { ... }"
+    },
+    {
+     "id": "B",
+     "title": "Liste inset",
+     "kind": "apple-native",
+     "code": "List { Section }.listStyle(.inset)"
+    },
+    {
+     "id": "C",
+     "title": "Symaira heute",
+     "kind": "symaira",
+     "code": ".symairaCard()"
+    }
+   ],
+   "web": [
+    {
+     "id": "W1",
+     "title": "Browser-nativ",
+     "kind": "web-native",
+     "code": "<fieldset> / <section>"
+    },
+    {
+     "id": "W2",
+     "title": "Symaira-Karte",
+     "kind": "web-tokens",
+     "code": ".sym-card"
+    }
+   ],
+   "notes": ""
+  },
+  {
+   "id": "E19",
+   "group": "Rückmeldung",
+   "title": "Fortschritt",
+   "job": "Bekannter Fortschritt oder Füllstand",
+   "glass": false,
+   "modal": false,
+   "apple": [
+    {
+     "id": "A",
+     "title": "Apple nativ, linear",
+     "kind": "apple-native",
+     "code": "ProgressView(value:)"
+    },
+    {
+     "id": "B",
+     "title": "Gauge",
+     "kind": "apple-native",
+     "code": "Gauge(value:).gaugeStyle(.accessoryLinearCapacity)"
+    },
+    {
+     "id": "C",
+     "title": "Kreis-Gauge",
+     "kind": "apple-native",
+     "code": ".gaugeStyle(.accessoryCircularCapacity)"
+    },
+    {
+     "id": "D",
+     "title": "Symaira heute",
+     "kind": "symaira",
+     "code": ".progressViewStyle(SymairaProgressStyle())"
+    }
+   ],
+   "web": [
+    {
+     "id": "W1",
+     "title": "Browser-nativ",
+     "kind": "web-native",
+     "code": "<progress> / <meter>"
+    },
+    {
+     "id": "W2",
+     "title": "Mit Tokens (Rinne + Tinte)",
+     "kind": "web-tokens",
+     "code": "progress.sym-progress"
+    }
+   ],
+   "notes": ""
+  },
+  {
+   "id": "E20",
+   "group": "Rückmeldung",
+   "title": "Hinweis-Banner",
+   "job": "Inline-Hinweis, Warnung, Fehler",
+   "glass": false,
+   "modal": false,
+   "apple": [
+    {
+     "id": "A",
+     "title": "GroupBox mit Label",
+     "kind": "apple-native",
+     "code": "GroupBox { Label(..., systemImage:) }"
+    },
+    {
+     "id": "B",
+     "title": "Material-Fläche",
+     "kind": "apple-native",
+     "code": "HStack { Image; Text }.background(.regularMaterial)"
+    },
+    {
+     "id": "C",
+     "title": "Symaira heute",
+     "kind": "symaira",
+     "code": "SymairaNotice(title:message:tone:)"
+    }
+   ],
+   "web": [
+    {
+     "id": "W1",
+     "title": "Browser-nativ",
+     "kind": "web-native",
+     "code": "<div role=status> ohne Stil"
+    },
+    {
+     "id": "W2",
+     "title": "Symaira-Hinweis",
+     "kind": "web-tokens",
+     "code": ".sym-notice[data-tone]"
+    }
+   ],
+   "notes": ""
+  },
+  {
+   "id": "E21",
+   "group": "Rückmeldung",
+   "title": "Badge",
+   "job": "Kurzer Status oder Zähler",
+   "glass": false,
+   "modal": false,
+   "apple": [
+    {
+     "id": "A",
+     "title": "Nativer Listen-Badge",
+     "kind": "apple-native",
+     "code": "Text(...).badge(3)"
+    },
+    {
+     "id": "B",
+     "title": "Kapsel mit Tint",
+     "kind": "native-tinted",
+     "code": "Text.background(.tint.opacity(0.15), in: .capsule)"
+    },
+    {
+     "id": "C",
+     "title": "Symaira heute",
+     "kind": "symaira",
+     "code": "SymairaBadge(_, tone:)"
+    }
+   ],
+   "web": [
+    {
+     "id": "W1",
+     "title": "Browser-nativ",
+     "kind": "web-native",
+     "code": "<mark> / <output>"
+    },
+    {
+     "id": "W2",
+     "title": "Symaira-Pill",
+     "kind": "web-tokens",
+     "code": ".sym-badge[data-tone]"
+    }
+   ],
+   "notes": ""
+  },
+  {
+   "id": "E22",
+   "group": "Rückmeldung",
+   "title": "Statusanzeige",
+   "job": "Läuft / Warnung / Fehler einer Komponente",
+   "glass": false,
+   "modal": false,
+   "apple": [
+    {
+     "id": "A",
+     "title": "Label mit SF Symbol",
+     "kind": "apple-native",
+     "code": "Label(\"Läuft\", systemImage: \"checkmark.circle.fill\")"
+    },
+    {
+     "id": "B",
+     "title": "Punkt + Text nativ",
+     "kind": "apple-native",
+     "code": "Image(systemName: \"circle.fill\").font(.caption2) + Text"
+    },
+    {
+     "id": "C",
+     "title": "Symaira heute",
+     "kind": "symaira",
+     "code": "SymairaStatusLabel(_, tone:)"
+    }
+   ],
+   "web": [
+    {
+     "id": "W1",
+     "title": "Browser-nativ (Text)",
+     "kind": "web-native",
+     "code": "<span>● Läuft</span>"
+    },
+    {
+     "id": "W2",
+     "title": "Symaira-Status",
+     "kind": "web-tokens",
+     "code": ".sym-status[data-tone]"
+    }
+   ],
+   "notes": ""
+  },
+  {
+   "id": "E23",
+   "group": "Rückmeldung",
+   "title": "Leerzustand",
+   "job": "Keine Daten, Erstnutzung, Fehler mit Aktion",
+   "glass": false,
+   "modal": false,
+   "apple": [
+    {
+     "id": "A",
+     "title": "Apple nativ",
+     "kind": "apple-native",
+     "code": "ContentUnavailableView"
+    },
+    {
+     "id": "B",
+     "title": "Symaira heute",
+     "kind": "symaira",
+     "code": "SymairaEmptyState"
+    }
+   ],
+   "web": [
+    {
+     "id": "W1",
+     "title": "Browser-nativ",
+     "kind": "web-native",
+     "code": "<section> mit <h2>/<p>/<button>"
+    },
+    {
+     "id": "W2",
+     "title": "Symaira-Leerzustand",
+     "kind": "web-tokens",
+     "code": ".sym-empty"
+    }
+   ],
+   "notes": ""
+  },
+  {
+   "id": "E24",
+   "group": "Rückmeldung",
+   "title": "Laden",
+   "job": "Unbekannte Wartezeit",
+   "glass": false,
+   "modal": false,
+   "apple": [
+    {
+     "id": "A",
+     "title": "Apple nativ",
+     "kind": "apple-native",
+     "code": "ProgressView(\"Lädt …\")"
+    },
+    {
+     "id": "B",
+     "title": "Symaira heute",
+     "kind": "symaira",
+     "code": "SymairaLoadingState(_)"
+    }
+   ],
+   "web": [
+    {
+     "id": "W1",
+     "title": "Browser-nativ",
+     "kind": "web-native",
+     "code": "<progress> ohne value"
+    },
+    {
+     "id": "W2",
+     "title": "Spinner mit Tokens",
+     "kind": "web-tokens",
+     "code": ".sym-spinner"
+    }
+   ],
+   "notes": ""
+  },
+  {
+   "id": "E25",
+   "group": "Rückmeldung",
+   "title": "Bestätigungsdialog",
+   "job": "Rückfrage vor folgenreicher Aktion",
+   "glass": false,
+   "modal": true,
+   "apple": [
+    {
+     "id": "A",
+     "title": "Alert",
+     "kind": "apple-native",
+     "code": ".alert(_, isPresented:) { Button(role: .destructive) }"
+    },
+    {
+     "id": "B",
+     "title": "Confirmation Dialog",
+     "kind": "apple-native",
+     "code": ".confirmationDialog(...)"
+    },
+    {
+     "id": "C",
+     "title": "Eigene Karte (heutiges Web-Muster)",
+     "kind": "symaira",
+     "code": "Karte mit SymairaButtons"
+    }
+   ],
+   "web": [
+    {
+     "id": "W1",
+     "title": "Browser-nativ",
+     "kind": "web-native",
+     "code": "<dialog> + showModal()"
+    },
+    {
+     "id": "W2",
+     "title": "<dialog> mit Tokens",
+     "kind": "web-tokens",
+     "code": "dialog.sym-dialog"
+    }
+   ],
+   "notes": ""
+  },
+  {
+   "id": "E26",
+   "group": "Rückmeldung",
+   "title": "Sheet",
+   "job": "Eigene Aufgabe in einem Modal",
+   "glass": false,
+   "modal": true,
+   "apple": [
+    {
+     "id": "A",
+     "title": "Natives Sheet mit Toolbar",
+     "kind": "apple-native",
+     "code": ".sheet { NavigationStack { Form }.toolbar { cancel/confirm } }"
+    },
+    {
+     "id": "B",
+     "title": "Symaira heute",
+     "kind": "symaira",
+     "code": "SymairaSheetScaffold"
+    }
+   ],
+   "web": [
+    {
+     "id": "W1",
+     "title": "Browser-nativ",
+     "kind": "web-native",
+     "code": "<dialog>"
+    },
+    {
+     "id": "W2",
+     "title": "Seitenpanel mit Tokens",
+     "kind": "web-tokens",
+     "code": "dialog.sym-sheet"
+    }
+   ],
+   "notes": ""
+  },
+  {
+   "id": "E27",
+   "group": "Navigation & Daten",
+   "title": "Seitenleiste",
+   "job": "Hauptnavigation zwischen Bereichen",
+   "glass": false,
+   "modal": false,
+   "apple": [
+    {
+     "id": "A",
+     "title": "Apple nativ",
+     "kind": "apple-native",
+     "code": "NavigationSplitView { List(selection:).listStyle(.sidebar) }"
+    },
+    {
+     "id": "B",
+     "title": "Symaira heute",
+     "kind": "symaira",
+     "code": "SymairaWorkspace + SymairaNavigationButton"
+    }
+   ],
+   "web": [
+    {
+     "id": "W1",
+     "title": "Browser-nativ",
+     "kind": "web-native",
+     "code": "<nav> + Links"
+    },
+    {
+     "id": "W2",
+     "title": "Symaira-Seitenleiste",
+     "kind": "web-tokens",
+     "code": ".sym-sidebar"
+    }
+   ],
+   "notes": ""
+  },
+  {
+   "id": "E28",
+   "group": "Navigation & Daten",
+   "title": "Tabs",
+   "job": "Gleichrangige Bereiche (vor allem iOS)",
+   "glass": false,
+   "modal": false,
+   "apple": [
+    {
+     "id": "A",
+     "title": "Apple nativ",
+     "kind": "apple-native",
+     "code": "TabView { Tab(...) }"
+    },
+    {
+     "id": "B",
+     "title": "Segment statt Tabs",
+     "kind": "apple-native",
+     "code": "Picker(.segmented) über dem Inhalt"
+    },
+    {
+     "id": "C",
+     "title": "Symaira-Segment",
+     "kind": "symaira",
+     "code": "SymairaSegmentedControl"
+    }
+   ],
+   "web": [
+    {
+     "id": "W1",
+     "title": "Browser-nativ",
+     "kind": "web-native",
+     "code": "<nav> Links mit aria-current"
+    },
+    {
+     "id": "W2",
+     "title": "Tabs mit Tokens",
+     "kind": "web-tokens",
+     "code": ".sym-tabs [role=tab]"
+    }
+   ],
+   "notes": ""
+  },
+  {
+   "id": "E29",
+   "group": "Navigation & Daten",
+   "title": "Darstellung (System/Hell/Dunkel)",
+   "job": "Erscheinungsbild in den Einstellungen",
+   "glass": false,
+   "modal": false,
+   "apple": [
+    {
+     "id": "A",
+     "title": "Apple nativ",
+     "kind": "apple-native",
+     "code": "Picker(\"Darstellung\", ...).pickerStyle(.segmented)"
+    },
+    {
+     "id": "B",
+     "title": "Symaira heute",
+     "kind": "symaira",
+     "code": "SymairaAppearancePicker"
+    }
+   ],
+   "web": [
+    {
+     "id": "W1",
+     "title": "Browser-nativ",
+     "kind": "web-native",
+     "code": "<select> / prefers-color-scheme"
+    },
+    {
+     "id": "W2",
+     "title": "Segment mit Tokens",
+     "kind": "web-tokens",
+     "code": ".sym-segment"
+    }
+   ],
+   "notes": ""
+  },
+  {
+   "id": "E30",
+   "group": "Navigation & Daten",
+   "title": "Liste",
+   "job": "Gleichartige Einträge",
+   "glass": false,
+   "modal": false,
+   "apple": [
+    {
+     "id": "A",
+     "title": "Apple nativ, inset",
+     "kind": "apple-native",
+     "code": "List { }.listStyle(.inset)"
+    },
+    {
+     "id": "B",
+     "title": "Gruppiert (iOS) / Plain (macOS)",
+     "kind": "apple-native",
+     "code": ".insetGrouped bzw. .plain"
+    },
+    {
+     "id": "C",
+     "title": "Symaira-Kartenzeilen",
+     "kind": "symaira",
+     "code": "VStack { rows }.symairaCard()"
+    }
+   ],
+   "web": [
+    {
+     "id": "W1",
+     "title": "Browser-nativ",
+     "kind": "web-native",
+     "code": "<ul>"
+    },
+    {
+     "id": "W2",
+     "title": "Symaira-Liste",
+     "kind": "web-tokens",
+     "code": ".sym-list"
+    }
+   ],
+   "notes": ""
+  },
+  {
+   "id": "E31",
+   "group": "Navigation & Daten",
+   "title": "Tabelle",
+   "job": "Mehrspaltige, sortierbare Daten (macOS)",
+   "glass": false,
+   "modal": false,
+   "apple": [
+    {
+     "id": "A",
+     "title": "Apple nativ",
+     "kind": "apple-native",
+     "code": "Table(rows) { TableColumn ... }"
+    },
+    {
+     "id": "B",
+     "title": "Symaira-Raster",
+     "kind": "symaira",
+     "code": "Grid in .symairaCard()"
+    }
+   ],
+   "web": [
+    {
+     "id": "W1",
+     "title": "Browser-nativ",
+     "kind": "web-native",
+     "code": "<table>"
+    },
+    {
+     "id": "W2",
+     "title": "Tabelle mit Tokens",
+     "kind": "web-tokens",
+     "code": "table.sym-table"
+    }
+   ],
+   "notes": ""
+  },
+  {
+   "id": "E32",
+   "group": "Navigation & Daten",
+   "title": "Aufklapper",
+   "job": "Details bei Bedarf",
+   "glass": false,
+   "modal": false,
+   "apple": [
+    {
+     "id": "A",
+     "title": "Apple nativ",
+     "kind": "apple-native",
+     "code": "DisclosureGroup(\"Details\") { }"
+    },
+    {
+     "id": "B",
+     "title": "In Symaira-Karte",
+     "kind": "symaira",
+     "code": "DisclosureGroup in .symairaCard()"
+    }
+   ],
+   "web": [
+    {
+     "id": "W1",
+     "title": "Browser-nativ",
+     "kind": "web-native",
+     "code": "<details><summary>"
+    },
+    {
+     "id": "W2",
+     "title": "Mit Tokens",
+     "kind": "web-tokens",
+     "code": "details.sym-details"
+    }
+   ],
+   "notes": ""
+  },
+  {
+   "id": "E33",
+   "group": "Navigation & Daten",
+   "title": "Kennzahl",
+   "job": "Dashboard-Wert mit Label",
+   "glass": false,
+   "modal": false,
+   "apple": [
+    {
+     "id": "A",
+     "title": "LabeledContent",
+     "kind": "apple-native",
+     "code": "LabeledContent(\"Speicher\", value: \"412 GB\")"
+    },
+    {
+     "id": "B",
+     "title": "Gauge mit Wert",
+     "kind": "apple-native",
+     "code": "Gauge(value:) { } currentValueLabel: { }"
+    },
+    {
+     "id": "C",
+     "title": "Symaira heute",
+     "kind": "symaira",
+     "code": "SymairaStatTile(value:label:detail:)"
+    }
+   ],
+   "web": [
+    {
+     "id": "W1",
+     "title": "Browser-nativ",
+     "kind": "web-native",
+     "code": "<dl><dt><dd>"
+    },
+    {
+     "id": "W2",
+     "title": "Symaira-Kachel",
+     "kind": "web-tokens",
+     "code": ".sym-stat"
+    }
+   ],
+   "notes": ""
+  }
+ ]
+}

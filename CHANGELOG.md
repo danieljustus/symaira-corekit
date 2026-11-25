@@ -4,6 +4,14 @@ The GitHub Releases page is the authoritative source for complete release notes.
 
 ## Unreleased
 
+- Swift: Apple platforms move to native controls per the UI catalog decision
+  of 2026-11-25 (`swift/design/ui-catalog/`, 33 elements with real macOS and
+  iPhone screenshots). Nine Symaira controls are deprecated with named native
+  replacements (forms, segments, switch, filter menu, icon button, progress,
+  loading, sheet scaffold, stat tile); the appearance picker, badge and status
+  label keep their API with the chosen look. GUIDELINES gain NATIVE-1, checked
+  by `gui-review.py`.
+
 ## v0.24.0 — 2026-11-22
 
 - Swift (tvOS): `.symairaTopography(_:)` is available on tvOS. The Liquid

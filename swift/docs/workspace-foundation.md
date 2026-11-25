@@ -168,6 +168,8 @@ SymairaPageEmpty<Actions>(
     icon: SymairaIcon, title: String, message: String, actions: () -> Actions
 )
 // Convenience initializer omits actions when Actions == EmptyView.
+// Deprecated (UI catalog 2026-11-25, E26): use a native .sheet with NavigationStack
+// and cancellationAction/confirmationAction toolbar items.
 SymairaSheetScaffold<Content>(
     title: String, dismissTitle: String = "Cancel", dismiss: @escaping () -> Void,
     primaryTitle: String? = nil, primaryDisabled: Bool = false,
@@ -187,7 +189,10 @@ SymairaSheetScaffold(
 }
 ```
 
-Sheets provide a named **Close** icon, scrolling content and a footer with
+`SymairaSheetScaffold` is deprecated since the UI catalog decision of 2026-11-25:
+new sheets use `.sheet { NavigationStack { Form { … } } }` with
+`ToolbarItem(placement: .cancellationAction)` and `.confirmationAction`. The scaffold
+stays source-compatible for existing consumers. Its behavior: sheets provide a named **Close** icon, scrolling content and a footer with
 secondary dismiss left of the optional primary action. Esc invokes dismiss;
 Return invokes the enabled primary action. Omit `primaryTitle` for a read-only
 sheet and use `dismissTitle: "Close"`. When supplying a primary title, also
@@ -230,12 +235,13 @@ consumer or update dependency pins; EraseMe adoption is a separate follow-up.
 | Keep mounted content and last chosen width on toolbar toggles | Workspace + sidebar state | Avoid identity-reset workarounds |
 | Native splitter semantics, arrow keys and toolbar shortcut | Sidebar adapter + `SymairaSidebarToggle` | Localized labels/focus in product rows |
 | Stable action geometry across primary/secondary state | Button styles + `SymairaMetrics.contentAction*` | Stable label area, title and action callback |
-| Neutral slider/meter rails and fills (`raised` groove + `line` outline, `ink` fill) | `SymairaBarColors`, `SymairaProgressStyle` | Native slider mechanics, units, warning text/icons |
-| Dashboard summary tile (stat value, label, detail) | `SymairaStatTile` | Values, labels and which tiles appear |
+| Neutral rails and fills for product-drawn meters (`raised` groove + `line` outline, `ink` fill) | `SymairaBarColors` | Native `ProgressView(value:)` and `Slider` with `.tint(SymairaTokens.ink)`, units, warning text/icons |
+| Dashboard summary value | Native `Gauge` / `LabeledContent` (`SymairaStatTile` deprecated) | Values, labels and which values appear |
 | Navigation geometry, selection/hover/pressed colors, focus and AX | `SymairaNavigationButton` | Destination, clear label, symbol, selection and action |
 | System/Light/Dark control inside settings | `SymairaAppearance`, `SymairaAppearancePicker` | Existing persistence namespace; no writes from previews |
 | One trailing native gear, direct action with no submenu | `SymairaSettingsButton` inside shared toolbar | Open/reuse native settings window; no duplicate sidebar/parent-toolbar entry |
-| Opaque forms/notices; bounded empty/loading text protection | `SymairaFormSection`, `SymairaNotice`, `SymairaEmptyState`, `SymairaLoadingState` | Domain fields, messages and retry actions |
+| Forms and settings | Native `Form { Section }.formStyle(.grouped)` (`SymairaFormSection` deprecated) | Domain fields and sections |
+| Opaque notices; bounded empty/loading text protection | `SymairaNotice`, `SymairaEmptyState`, `SymairaPageState` (native `ProgressView`) | Messages and retry actions |
 
 Button roles use the same font and 20 pt horizontal padding. Changing text can
 still change an unconstrained intrinsic width; reserve the label area or make a

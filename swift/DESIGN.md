@@ -43,8 +43,9 @@ never depend on a sibling checkout.
    rounded inset content panel. `symairaGlassChrome`, toolbar buttons and
    `SymairaGlassEffectContainer` use native Liquid Glass on macOS/iOS 26+,
    with material/opaque fallbacks.
-4. **Feedback:** `SymairaBadge`, `SymairaNotice`, `SymairaEmptyState` and
-   `SymairaLoadingState` retain shared semantic states.
+4. **Feedback:** `SymairaBadge`, `SymairaStatusLabel`, `SymairaNotice` and
+   `SymairaEmptyState` retain shared semantic states; loading and progress are
+   native `ProgressView`s.
 
 ## Platform behavior
 
@@ -62,15 +63,16 @@ never depend on a sibling checkout.
   a stable full-width or explicitly reserved label area.
 - `.toolbar` remains the compact, native glass button role. Group adjacent glass
   controls in `SymairaGlassEffectContainer` rather than glassing every card.
-- `SymairaBarColors` and `SymairaProgressStyle` share neutral meter/slider colors.
-  Warnings remain explicit text/icons, not an unrelated meter palette. The
-  empty track is a groove: `raised` fill with a 1 pt `line` outline
-  (`SymairaBarColors.track`, `.trackOutline`); the fill is `ink`. `ink3` is a
-  text role, too bright for a rail.
-- `SymairaStatTile` is the dashboard summary tile (value in
-  `SymairaTypography.stat`, label, optional detail) on an opaque card.
-- `SymairaAppearance` and `SymairaAppearancePicker` provide System/Light/Dark
-  inside the settings form, alongside the other preferences, never in the gear.
+- Progress is a native `ProgressView(value:)`; sliders are native with
+  `.tint(SymairaTokens.ink)`. `SymairaBarColors` stays for product-drawn
+  meters: the empty track is a groove (`raised` fill, 1 pt `line` outline),
+  the fill is `ink`. Warnings remain explicit text/icons.
+- Dashboard summary values are `Gauge(value:)` with a `currentValueLabel` for
+  bounded values and `LabeledContent` otherwise (`SymairaStatTile` is
+  deprecated).
+- `SymairaAppearance` and `SymairaAppearancePicker` (a native segmented picker
+  with the Symaira selection tint) provide System/Light/Dark inside the settings
+  form, alongside the other preferences, never in the gear.
   macOS `.apply()` affects existing/new native surfaces; System clears the
   override. iOS uses `.preferredColorScheme(selection.colorScheme)`.
 - Workspace toolbars use one trailing `SymairaSettingsButton`: clicking the
@@ -111,6 +113,19 @@ never depend on a sibling checkout.
 - Hosts still supply meaningful localized labels, selection traits, error text
   and keyboard focus. Native tests do not substitute for VoiceOver acceptance.
 
+## Native controls (UI catalog 2026-11-25)
+
+Daniel chose one variant per element in the UI catalog
+([`design/ui-catalog/ui-catalog.md`](design/ui-catalog/ui-catalog.md), screenshots via
+`design/ui-catalog/board.py`). On Apple platforms 22 of 33 elements are native controls,
+4 of them with the Symaira selection tint (`.tint(SymairaTokens.selected)`, sliders
+`.tint(SymairaTokens.ink)`) and 2 with Liquid Glass (icon buttons, toolbar groups). Symaira
+keeps its own primary/secondary buttons, text fields outside forms, cards, notices, empty
+states, badge, status label and the workspace shell. On the web, native HTML elements carry the
+Symaira base (Figtree, token colours, `accent-color`); buttons, menus, sliders, notices, empty
+states, sheets and disclosures use the full Symaira styling. The replaced Swift components are
+deprecated, not removed (GUIDELINES NATIVE-1).
+
 ## Migration from app-local styles
 
 See [shared workspace usage and ownership](docs/workspace-foundation.md) for
@@ -127,16 +142,17 @@ SPM dependencies are development state, not a published fleet upgrade.
 | Navigation hover/selection palette | `SymairaNavigationButtonStyle` |
 | Text-protection environment wrapper | `.topoProtected()` in a shared workspace |
 | Stateful prominent/secondary button | `.symairaButtonStyle(.primary/.secondary)` |
-| Native slider and meter palette | `SymairaBarColors` + `SymairaProgressStyle` |
-| Dashboard summary tile | `SymairaStatTile` |
+| Product-drawn meter palette | `SymairaBarColors` (progress itself: native `ProgressView(value:)`) |
+| Dashboard summary value | `Gauge(value:)` or `LabeledContent` (`SymairaStatTile` deprecated) |
 | Direct settings-window action | `SymairaSettingsButton` |
 | Appearance mapping/control inside settings | `SymairaAppearance` + `SymairaAppearancePicker` |
 | Text-bearing content card | `.symairaCard()` |
-| Settings/form sections, rows, fields and dividers | `SymairaFormSection`, `SymairaFormRow`, `.symaira`, `SymairaFormDivider` |
+| Settings and forms | Native `Form { Section }.formStyle(.grouped)`; `SymairaFormRow`/`SymairaFormDivider` only for list rows in a card |
+| Segments, switches, menus | `Picker(.segmented)`/`Toggle(.switch)` with `.tint(SymairaTokens.selected)`, `Picker(.menu)` |
 | Group of floating controls | `SymairaGlassEffectContainer` |
 | Custom toolbar glass background | `.symairaGlassChrome(isInteractive: true)` |
 | Status pill, error/info banner | `SymairaBadge`, `SymairaNotice` |
-| Empty/loading placeholder | `SymairaEmptyState`, `SymairaLoadingState` |
+| Empty/loading placeholder | `SymairaEmptyState`, native `ProgressView("…")` |
 
 Legacy `SymairaBackdrop`, `BlueprintGrid`, `AmbientGlows`, `.glassCard()`,
 `.glassmorphicPanel()` and fixed `Color.symaira*` aliases remain source-compatible.

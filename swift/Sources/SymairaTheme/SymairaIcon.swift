@@ -79,12 +79,16 @@ extension SymairaIconView where Trigger == Int {
 }
 
 /// A plain icon button that plays the icon's motion on every press.
+@available(
+    *, deprecated,
+    message:
+        "Use Button { } label: { Label(...).labelStyle(.iconOnly) }.symairaButtonStyle(.toolbar).buttonBorderShape(.circle), E04 (UI catalog 2026-11-25)."
+)
 public struct SymairaIconButton: View {
     private let title: Text
     private let icon: SymairaIcon
     private let size: CGFloat
     private let action: () -> Void
-    @State private var taps = 0
 
     public init(
         _ title: LocalizedStringKey, icon: SymairaIcon, size: CGFloat = 20 * SymairaMetrics.platformScale,
@@ -109,6 +113,20 @@ public struct SymairaIconButton: View {
     }
 
     public var body: some View {
+        SymairaPlainIconButton(title: title, icon: icon, size: size, action: action)
+    }
+}
+
+/// Borderless icon button for small in-content controls (for example a notice's dismiss
+/// button), where Liquid Glass does not belong.
+struct SymairaPlainIconButton: View {
+    let title: Text
+    let icon: SymairaIcon
+    let size: CGFloat
+    let action: () -> Void
+    @State private var taps = 0
+
+    var body: some View {
         Button {
             taps += 1
             action()

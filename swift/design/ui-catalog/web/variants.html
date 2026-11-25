@@ -1,0 +1,114 @@
+<!-- Web-Varianten: ein <template data-v="<Element>-<Variante>"> je Eintrag aus ../elements.json. W1-Inhalte stehen in .raw (Browser-Standard). -->
+<template data-v="E01-W1"><div class="raw"><button>Speichern</button> <button disabled>Deaktiviert</button></div></template>
+<template data-v="E01-W2"><div class="demo row"><button class="sym-primary">Speichern</button><button class="sym-primary" disabled>Deaktiviert</button></div></template>
+
+<template data-v="E02-W1"><div class="raw"><button>Abbrechen</button> <button disabled>Deaktiviert</button></div></template>
+<template data-v="E02-W2"><div class="demo row"><button class="sym-secondary">Abbrechen</button><button class="sym-secondary" disabled>Deaktiviert</button></div></template>
+<template data-v="E02-W3"><div class="demo row"><button class="sym-link">Abbrechen</button></div></template>
+
+<template data-v="E03-W1"><div class="raw"><button style="color:#b00020">Projekt löschen</button></div></template>
+<template data-v="E03-W2"><div class="demo row"><button class="sym-danger">Projekt löschen</button></div></template>
+
+<template data-v="E04-W1"><div class="raw"><button aria-label="Aktualisieren" title="Aktualisieren">⟳</button> <button aria-label="Teilen" title="Teilen">⇪</button> <button aria-label="Löschen" title="Löschen">🗑</button></div></template>
+<template data-v="E04-W2"><div class="demo row">
+<button class="sym-icon" aria-label="Aktualisieren" title="Aktualisieren"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg></button>
+<button class="sym-icon" aria-label="Teilen" title="Teilen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3v12M7 8l5-5 5 5M5 14v6h14v-6"/></svg></button>
+<button class="sym-icon" aria-label="Löschen" title="Löschen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg></button></div></template>
+
+<template data-v="E05-W1"><div class="raw" role="toolbar" aria-label="Werkzeuge"><button>Seitenleiste</button><button>Aktualisieren</button><button>Einstellungen</button></div></template>
+<template data-v="E05-W2"><div class="demo"><div class="sym-toolbar" role="toolbar" aria-label="Werkzeuge">
+<button class="sym-icon" aria-label="Seitenleiste"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M9 4v16"/></svg></button>
+<button class="sym-icon" aria-label="Aktualisieren"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg></button>
+<button class="sym-icon" aria-label="Einstellungen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/></svg></button>
+</div></div></template>
+
+<template data-v="E06-W1"><div class="raw"><label>Status <select><option>Alle Status</option><option>Läuft</option><option>Warnung</option><option>Fehler</option></select></label></div></template>
+<template data-v="E06-W2"><div class="demo"><select class="sym-select" aria-label="Status"><option>Alle Status</option><option>Läuft</option><option>Warnung</option><option>Fehler</option></select></div></template>
+<template data-v="E06-W3"><div class="demo"><button class="sym-secondary" popovertarget="pop-e06">Filter ▾</button>
+<div id="pop-e06" popover class="sym-popover"><button>Alle Status</button><button>Läuft</button><button>Warnung</button><button>Fehler</button></div></div></template>
+
+<template data-v="E07-W1"><div class="raw"><fieldset><legend>Lüfterprofil</legend><label><input type="radio" name="e07a"> Leise</label> <label><input type="radio" name="e07a" checked> Auto</label> <label><input type="radio" name="e07a"> Maximal</label></fieldset></div></template>
+<template data-v="E07-W2"><div class="demo"><fieldset class="sym-segment" aria-label="Lüfterprofil"><label><input type="radio" name="e07b">Leise</label><label><input type="radio" name="e07b" checked>Auto</label><label><input type="radio" name="e07b">Maximal</label></fieldset></div></template>
+
+<template data-v="E08-W1"><div class="raw"><label><input type="checkbox" checked> Automatisch sichern</label><br><label><input type="checkbox"> Beim Anmelden starten</label></div></template>
+<template data-v="E08-W2"><div class="demo"><label class="sym-toggle"><input type="checkbox" switch checked> Automatisch sichern</label><label class="sym-toggle"><input type="checkbox" switch> Beim Anmelden starten</label><small class="sym-muted">Safari: echter Schalter, andere Browser: Checkbox</small></div></template>
+<template data-v="E08-W3"><div class="demo"><label class="sym-toggle"><input class="sym-switch-custom" type="checkbox" role="switch" checked> Automatisch sichern</label><label class="sym-toggle"><input class="sym-switch-custom" type="checkbox" role="switch"> Beim Anmelden starten</label></div></template>
+
+<template data-v="E09-W1"><div class="raw"><label>Modell <select><option>Lokal</option><option>Schnell</option><option>Gründlich</option></select></label></div></template>
+<template data-v="E09-W2"><div class="demo"><fieldset class="sym-radio"><legend class="sym-label">Modell</legend><label><input type="radio" name="e09" checked>Lokal</label><label><input type="radio" name="e09">Schnell</label><label><input type="radio" name="e09">Gründlich</label></fieldset></div></template>
+
+<template data-v="E10-W1"><div class="raw"><label>Lautstärke <input type="range" value="62"></label></div></template>
+<template data-v="E10-W2"><div class="demo"><label>Lautstärke 62 %</label><input class="sym-range" type="range" value="62" aria-label="Lautstärke"></div></template>
+
+<template data-v="E11-W1"><div class="raw"><label>Parallele Läufe <input type="number" value="3" min="1" max="8"></label></div></template>
+<template data-v="E11-W2"><div class="demo"><span>Parallele Läufe</span><div class="sym-stepper"><button aria-label="Weniger">−</button><input type="number" value="3" aria-label="Parallele Läufe"><button aria-label="Mehr">+</button></div></div></template>
+
+<template data-v="E12-W1"><div class="raw"><label>Termin <input type="datetime-local" value="2026-11-18T09:30"></label></div></template>
+<template data-v="E12-W2"><div class="demo"><label for="e12">Termin</label><input id="e12" class="sym-input" type="datetime-local" value="2026-11-18T09:30"></div></template>
+
+<template data-v="E13-W1"><div class="raw"><label>Name <input value="Symaira Vault"></label><br><label>Beschreibung <input placeholder="optional"></label></div></template>
+<template data-v="E13-W2"><div class="demo"><label for="e13a">Name</label><input id="e13a" class="sym-input" value="Symaira Vault"><label for="e13b">Beschreibung</label><input id="e13b" class="sym-input" placeholder="optional"></div></template>
+
+<template data-v="E14-W1"><div class="raw"><label>Passwort <input type="password" value="geheim123"></label></div></template>
+<template data-v="E14-W2"><div class="demo"><label for="e14">Passwort</label><div class="row"><input id="e14" class="sym-input" type="password" value="geheim123" style="width:200px"><button class="sym-secondary" onclick="const i=this.previousElementSibling;i.type=i.type==='password'?'text':'password'">Anzeigen</button></div></div></template>
+
+<template data-v="E15-W1"><div class="raw"><input type="search" placeholder="Suchen"></div></template>
+<template data-v="E15-W2"><div class="demo"><input class="sym-input" type="search" placeholder="Suchen" aria-label="Suchen"></div></template>
+
+<template data-v="E16-W1"><div class="raw"><textarea rows="3" cols="32">Notiz zum Lauf vom Dienstag.</textarea></div></template>
+<template data-v="E16-W2"><div class="demo"><textarea class="sym-input" aria-label="Notiz">Notiz zum Lauf vom Dienstag.
+Alles grün bis auf den Sync.</textarea></div></template>
+
+<template data-v="E17-W1"><div class="raw"><form><fieldset><legend>Synchronisation</legend><label><input type="checkbox" checked> Automatisch synchronisieren</label><br><label>Intervall <select><option>15 Min.</option></select></label></fieldset></form></div></template>
+<template data-v="E17-W2"><div class="demo"><span class="sym-label">Synchronisation</span><div class="sym-form">
+<label class="sym-row">Automatisch synchronisieren <input class="sym-switch-custom" type="checkbox" role="switch" checked></label>
+<label class="sym-row">Intervall <select class="sym-select" style="width:auto"><option>15 Min.</option><option>1 Std.</option></select></label>
+<div class="sym-row">Letzter Lauf <span class="sym-muted">vor 3 Min.</span></div></div></div></template>
+
+<template data-v="E18-W1"><div class="raw"><fieldset><legend>Speicher</legend>Belegt 412 GB<br>Frei 88 GB</fieldset></div></template>
+<template data-v="E18-W2"><div class="demo"><section class="sym-card"><span class="sym-label">Speicher</span><div class="sym-kv"><span>Belegt</span><span>412 GB</span></div><div class="sym-kv"><span>Frei</span><span>88 GB</span></div></section></div></template>
+
+<template data-v="E19-W1"><div class="raw"><progress value="0" max="100"></progress><br><progress value="42" max="100"></progress><br><meter value="0.82">82 %</meter></div></template>
+<template data-v="E19-W2"><div class="demo"><span>Import 0 %</span><progress class="sym-progress" value="0" max="100"></progress><span>Import 42 %</span><progress class="sym-progress" value="42" max="100"></progress><span>Import 100 %</span><progress class="sym-progress" value="100" max="100"></progress></div></template>
+
+<template data-v="E20-W1"><div class="raw"><div role="status"><b>Update verfügbar</b> Version 0.27 kann installiert werden.</div><div role="status"><b>Sync verzögert</b> Der Server antwortet langsam.</div></div></template>
+<template data-v="E20-W2"><div class="demo"><div class="sym-notice" role="status"><span class="ico">ⓘ</span><div><strong>Update verfügbar</strong>Version 0.27 kann installiert werden.</div></div><div class="sym-notice" data-tone="warning" role="status"><span class="ico">⚠</span><div><strong>Sync verzögert</strong>Der Server antwortet langsam.</div></div></div></template>
+
+<template data-v="E21-W1"><div class="raw">Posteingang <output>3</output> · <mark>neu</mark></div></template>
+<template data-v="E21-W2"><div class="demo row"><span class="sym-badge" data-tone="positive">Aktiv</span><span class="sym-badge" data-tone="warning">Warnung</span><span class="sym-badge" data-tone="critical">Fehler</span><span class="sym-badge">Neutral</span></div></template>
+
+<template data-v="E22-W1"><div class="raw"><span>● Läuft</span><br><span>● Verzögert</span><br><span>● Gestoppt</span></div></template>
+<template data-v="E22-W2"><div class="demo"><span class="sym-status" data-tone="positive">Läuft</span><span class="sym-status" data-tone="warning">Verzögert</span><span class="sym-status" data-tone="critical">Gestoppt</span></div></template>
+
+<template data-v="E23-W1"><div class="raw"><section><h2>Noch keine Einträge</h2><p>Lege deinen ersten Eintrag an.</p><button>Eintrag anlegen</button></section></div></template>
+<template data-v="E23-W2"><div class="demo"><section class="sym-empty"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 13h5l1 3h6l1-3h5M5 5h14l2 8v6H3v-6z"/></svg><h3>Noch keine Einträge</h3><p>Lege deinen ersten Eintrag an.</p><button class="sym-primary">Eintrag anlegen</button></section></div></template>
+
+<template data-v="E24-W1"><div class="raw"><progress></progress> Lädt Einträge …</div></template>
+<template data-v="E24-W2"><div class="demo"><span class="sym-spinner" role="status">Lädt Einträge …</span></div></template>
+
+<template data-v="E25-W1"><div class="raw"><dialog open><p><b>Projekt wirklich löschen?</b></p><p>Das lässt sich nicht rückgängig machen.</p><form method="dialog"><button>Abbrechen</button> <button>Löschen</button></form></dialog></div></template>
+<template data-v="E25-W2"><div class="demo"><div class="sym-dialog" role="alertdialog" aria-label="Projekt löschen"><h3>Projekt wirklich löschen?</h3><p class="sym-muted" style="margin:0">Das lässt sich nicht rückgängig machen.</p><div class="acts"><button class="sym-secondary">Abbrechen</button><button class="sym-danger">Löschen</button></div></div></div></template>
+
+<template data-v="E26-W1"><div class="raw"><dialog open><h3>Neues Projekt</h3><label>Name <input value="Neues Projekt"></label><form method="dialog"><button>Abbrechen</button> <button>Anlegen</button></form></dialog></div></template>
+<template data-v="E26-W2"><div class="demo"><div class="sym-dialog sym-sheet" role="dialog" aria-label="Neues Projekt"><h3>Neues Projekt</h3><label for="e26">Name</label><input id="e26" class="sym-input" value="Neues Projekt"><div class="acts"><button class="sym-secondary">Abbrechen</button><button class="sym-primary">Anlegen</button></div></div></div></template>
+
+<template data-v="E27-W1"><div class="raw"><nav><a href="#" aria-current="page">Übersicht</a> | <a href="#">Dokumente</a> | <a href="#">Einstellungen</a></nav></div></template>
+<template data-v="E27-W2"><div class="demo"><div class="sym-sidebar"><nav><a href="#" aria-current="page">Übersicht</a><a href="#">Dokumente</a><a href="#">Einstellungen</a></nav><main>Übersicht</main></div></div></template>
+
+<template data-v="E28-W1"><div class="raw"><nav><a href="#" aria-current="page"><b>Start</b></a> · <a href="#">Verlauf</a> · <a href="#">Profil</a></nav></div></template>
+<template data-v="E28-W2"><div class="demo"><div class="sym-tabs" role="tablist"><button role="tab" aria-selected="true">Start</button><button role="tab" aria-selected="false">Verlauf</button><button role="tab" aria-selected="false">Profil</button></div></div></template>
+
+<template data-v="E29-W1"><div class="raw"><label>Darstellung <select><option>System</option><option>Hell</option><option>Dunkel</option></select></label></div></template>
+<template data-v="E29-W2"><div class="demo"><fieldset class="sym-segment" aria-label="Darstellung"><label><input type="radio" name="e29" checked>System</label><label><input type="radio" name="e29">Hell</label><label><input type="radio" name="e29">Dunkel</label></fieldset></div></template>
+
+<template data-v="E30-W1"><div class="raw"><ul><li>Vault: Läuft</li><li>Brain: Läuft</li><li>Desk: Pausiert</li></ul></div></template>
+<template data-v="E30-W2"><div class="demo"><ul class="sym-list"><li>Vault <span class="sym-muted">Läuft</span></li><li>Brain <span class="sym-muted">Läuft</span></li><li>Desk <span class="sym-muted">Pausiert</span></li></ul></div></template>
+
+<template data-v="E31-W1"><div class="raw"><table border="1"><tr><th>Name</th><th>Größe</th><th>Geändert</th></tr><tr><td>rechnung.pdf</td><td>1,2 MB</td><td>Heute</td></tr><tr><td>vertrag.pdf</td><td>640 KB</td><td>Gestern</td></tr></table></div></template>
+<template data-v="E31-W2"><div class="demo"><table class="sym-table"><thead><tr><th>Name</th><th>Größe</th><th>Geändert</th></tr></thead><tbody><tr><td>rechnung.pdf</td><td class="sym-muted">1,2 MB</td><td class="sym-muted">Heute</td></tr><tr><td>vertrag.pdf</td><td class="sym-muted">640 KB</td><td class="sym-muted">Gestern</td></tr><tr><td>notizen.md</td><td class="sym-muted">4 KB</td><td class="sym-muted">Mo.</td></tr></tbody></table></div></template>
+
+<template data-v="E32-W1"><div class="raw"><details open><summary>Technische Details</summary>Version 0.27.0 · Schema 3</details></div></template>
+<template data-v="E32-W2"><div class="demo"><details class="sym-details" open><summary>Technische Details</summary><div class="sym-kv"><span>Version</span><span>0.27.0</span></div><div class="sym-kv"><span>Schema</span><span>3</span></div></details></div></template>
+
+<template data-v="E33-W1"><div class="raw"><dl><dt>Speicher belegt</dt><dd>412 GB</dd><dt>Dokumente</dt><dd>1.284</dd></dl></div></template>
+<template data-v="E33-W2"><div class="demo row"><div class="sym-stat"><div class="v">412 GB</div><div class="l">Speicher belegt</div><div class="d">von 500 GB</div></div><div class="sym-stat"><div class="v">1.284</div><div class="l">Dokumente</div></div></div></template>

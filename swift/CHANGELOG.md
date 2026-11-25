@@ -12,11 +12,24 @@ the releases of the former `symaira-appkit` repository.
 ## [Unreleased]
 
 ### Changed
+- Native Apple controls per the UI catalog decision of 2026-11-25
+  (`swift/design/ui-catalog/`): `SymairaAppearancePicker` is a native segmented
+  picker with the `selected` tint, `SymairaBadge` drops its outline (tinted
+  capsule), `SymairaStatusLabel` shows primary text, `SymairaPageState` loads with
+  a native labelled `ProgressView`. GUIDELINES FORM-1/2/5, STATE-1/7, ACTION-4/5,
+  LAYOUT-8 and ICON-1/2 now point to native controls; new rule NATIVE-1, enforced
+  by `gui-review.py` (replaces the old FORM-1 check).
 - `SymairaNotice` defaults to `.neutral`, and `SymairaTone.informative` now
   renders exactly like `.neutral` (`ink-2` plus the info icon). The blue
   `#245C86`/`#8CC8F2` informational hue was not part of the Liquid Topography
   tokens, which allow champagne as the only accent (#505). The case stays for
   source compatibility.
+
+### Deprecated
+- `SymairaFormSection`, `SymairaSegmentedControl`, `SymairaFilterMenu`,
+  `SymairaSwitchToggleStyle`/`.symairaSwitch`, `SymairaIconButton`,
+  `SymairaProgressStyle`, `SymairaLoadingState`, `SymairaSheetScaffold` and
+  `SymairaStatTile`. Each deprecation message names the native replacement.
 
 ### Fixed
 - Design documents agree with each other and with the code again (#505): the

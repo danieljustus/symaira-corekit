@@ -1,0 +1,59 @@
+name: SymairaUICatalog
+options:
+  bundleIdPrefix: dev.symaira.uicatalog
+  deploymentTarget:
+    macOS: "26.0"
+    iOS: "26.0"
+  createIntermediateGroups: true
+packages:
+  CoreKit:
+    path: ../../../..
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    CODE_SIGN_IDENTITY: "-"
+    CODE_SIGN_STYLE: Manual
+    DEVELOPMENT_TEAM: ""
+    GENERATE_INFOPLIST_FILE: YES
+    INFOPLIST_KEY_CFBundleDisplayName: Symaira UI-Katalog
+    CURRENT_PROJECT_VERSION: 1
+    MARKETING_VERSION: "0.1"
+targets:
+  UICatalogMac:
+    type: application
+    platform: macOS
+    sources:
+      - path: Sources
+      - path: ../elements.json
+        buildPhase: resources
+      - path: ../selection.json
+        buildPhase: resources
+    dependencies:
+      - package: CoreKit
+        product: SymairaTheme
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: dev.symaira.uicatalog.mac
+        PRODUCT_NAME: SymairaUICatalog
+        ENABLE_HARDENED_RUNTIME: NO
+        INFOPLIST_KEY_NSPrincipalClass: TourApplication
+  UICatalogiOS:
+    type: application
+    platform: iOS
+    sources:
+      - path: Sources
+      - path: ../elements.json
+        buildPhase: resources
+      - path: ../selection.json
+        buildPhase: resources
+    dependencies:
+      - package: CoreKit
+        product: SymairaTheme
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: dev.symaira.uicatalog.ios
+        PRODUCT_NAME: SymairaUICatalog
+        TARGETED_DEVICE_FAMILY: "1,2"
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UISupportedInterfaceOrientations: UIInterfaceOrientationPortrait
+        CODE_SIGNING_ALLOWED: NO

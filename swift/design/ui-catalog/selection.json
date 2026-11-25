@@ -1,0 +1,303 @@
+{
+ "decided": "2026-11-25",
+ "by": "Daniel (Board)",
+ "elements": {
+  "E01": {
+   "apple": "D",
+   "web": "W2",
+   "apple_title": "Symaira heute",
+   "apple_code": ".symairaButtonStyle(.primary)",
+   "apple_kind": "symaira",
+   "web_title": "Natives <button> mit Symaira-Tokens",
+   "web_code": "button.sym-primary"
+  },
+  "E02": {
+   "apple": "D",
+   "web": "W2",
+   "apple_title": "Symaira heute",
+   "apple_code": ".symairaButtonStyle(.secondary)",
+   "apple_kind": "symaira",
+   "web_title": "Natives <button> mit Symaira-Tokens",
+   "web_code": "button.sym-secondary"
+  },
+  "E03": {
+   "apple": "B",
+   "web": "W1",
+   "apple_title": "Prominent rot",
+   "apple_code": ".borderedProminent + .tint(.red)",
+   "apple_kind": "apple-native",
+   "web_title": "Browser-nativ",
+   "web_code": "<button> rot"
+  },
+  "E04": {
+   "apple": "B",
+   "web": "W1",
+   "apple_title": "Liquid Glass, rund",
+   "apple_code": ".buttonStyle(.glass) + .buttonBorderShape(.circle)",
+   "apple_kind": "apple-glass",
+   "web_title": "Browser-nativ",
+   "web_code": "<button aria-label>"
+  },
+  "E05": {
+   "apple": "A",
+   "web": "W1",
+   "apple_title": "Native Glasgruppe",
+   "apple_code": "GlassEffectContainer { Buttons .glass }",
+   "apple_kind": "apple-glass",
+   "web_title": "Browser-nativ",
+   "web_code": "<div role=toolbar> + <button>"
+  },
+  "E06": {
+   "apple": "B",
+   "web": "W2",
+   "apple_title": "Picker als Menü",
+   "apple_code": "Picker(...).pickerStyle(.menu)",
+   "apple_kind": "apple-native",
+   "web_title": "Natives <select> mit Tokens",
+   "web_code": "select.sym-select"
+  },
+  "E07": {
+   "apple": "B",
+   "web": "W1",
+   "apple_title": "Nativ mit Symaira-Tint",
+   "apple_code": ".segmented + .tint(SymairaTokens.selected)",
+   "apple_kind": "native-tinted",
+   "web_title": "Browser-nativ (Radiogruppe)",
+   "web_code": "<fieldset> + <input type=radio>"
+  },
+  "E08": {
+   "apple": "B",
+   "web": "W1",
+   "apple_title": "Nativ mit Symaira-Tint",
+   "apple_code": ".switch + .tint(SymairaTokens.selected)",
+   "apple_kind": "native-tinted",
+   "web_title": "Browser-nativ Checkbox",
+   "web_code": "<input type=checkbox>"
+  },
+  "E09": {
+   "apple": "A",
+   "web": "W1",
+   "apple_title": "Apple nativ, Popup",
+   "apple_code": "Picker(...).pickerStyle(.menu)",
+   "apple_kind": "apple-native",
+   "web_title": "Browser-nativ",
+   "web_code": "<select>"
+  },
+  "E10": {
+   "apple": "B",
+   "web": "W2",
+   "apple_title": "Nativ mit Symaira-Tint",
+   "apple_code": "Slider + .tint(SymairaTokens.ink)",
+   "apple_kind": "native-tinted",
+   "web_title": "Range mit Tokens",
+   "web_code": "input.sym-range"
+  },
+  "E11": {
+   "apple": "A",
+   "web": "W1",
+   "apple_title": "Apple nativ",
+   "apple_code": "Stepper(value:)",
+   "apple_kind": "apple-native",
+   "web_title": "Browser-nativ",
+   "web_code": "<input type=number>"
+  },
+  "E12": {
+   "apple": "A",
+   "web": "W1",
+   "apple_title": "Apple nativ, kompakt",
+   "apple_code": "DatePicker(...)  // .automatic",
+   "apple_kind": "apple-native",
+   "web_title": "Browser-nativ",
+   "web_code": "<input type=date>"
+  },
+  "E13": {
+   "apple": "C",
+   "web": "W1",
+   "apple_title": "Symaira heute",
+   "apple_code": ".textFieldStyle(.symaira)",
+   "apple_kind": "symaira",
+   "web_title": "Browser-nativ",
+   "web_code": "<input>"
+  },
+  "E14": {
+   "apple": "B",
+   "web": "W1",
+   "apple_title": "Symaira heute",
+   "apple_code": "SecureField + .symaira",
+   "apple_kind": "symaira",
+   "web_title": "Browser-nativ",
+   "web_code": "<input type=password>"
+  },
+  "E15": {
+   "apple": "A",
+   "web": "W1",
+   "apple_title": "Apple nativ (Toolbar/Navigationsleiste)",
+   "apple_code": ".searchable(text:)",
+   "apple_kind": "apple-native",
+   "web_title": "Browser-nativ",
+   "web_code": "<input type=search>"
+  },
+  "E16": {
+   "apple": "C",
+   "web": "W1",
+   "apple_title": "In Symaira-Karte",
+   "apple_code": "TextEditor in .symairaCard()",
+   "apple_kind": "symaira",
+   "web_title": "Browser-nativ",
+   "web_code": "<textarea>"
+  },
+  "E17": {
+   "apple": "A",
+   "web": "W1",
+   "apple_title": "Apple nativ, gruppiert",
+   "apple_code": "Form { Section { ... } }.formStyle(.grouped)",
+   "apple_kind": "apple-native",
+   "web_title": "Browser-nativ",
+   "web_code": "<form> + <fieldset> + <label>"
+  },
+  "E18": {
+   "apple": "C",
+   "web": "W1",
+   "apple_title": "Symaira heute",
+   "apple_code": ".symairaCard()",
+   "apple_kind": "symaira",
+   "web_title": "Browser-nativ",
+   "web_code": "<fieldset> / <section>"
+  },
+  "E19": {
+   "apple": "A",
+   "web": "W1",
+   "apple_title": "Apple nativ, linear",
+   "apple_code": "ProgressView(value:)",
+   "apple_kind": "apple-native",
+   "web_title": "Browser-nativ",
+   "web_code": "<progress> / <meter>"
+  },
+  "E20": {
+   "apple": "C",
+   "web": "W2",
+   "apple_title": "Symaira heute",
+   "apple_code": "SymairaNotice(title:message:tone:)",
+   "apple_kind": "symaira",
+   "web_title": "Symaira-Hinweis",
+   "web_code": ".sym-notice[data-tone]"
+  },
+  "E21": {
+   "apple": "B",
+   "web": "W1",
+   "apple_title": "Kapsel mit Tint",
+   "apple_code": "Text.background(.tint.opacity(0.15), in: .capsule)",
+   "apple_kind": "native-tinted",
+   "web_title": "Browser-nativ",
+   "web_code": "<mark> / <output>"
+  },
+  "E22": {
+   "apple": "B",
+   "web": "W1",
+   "apple_title": "Punkt + Text nativ",
+   "apple_code": "Image(systemName: \"circle.fill\").font(.caption2) + Text",
+   "apple_kind": "apple-native",
+   "web_title": "Browser-nativ (Text)",
+   "web_code": "<span>● Läuft</span>"
+  },
+  "E23": {
+   "apple": "B",
+   "web": "W2",
+   "apple_title": "Symaira heute",
+   "apple_code": "SymairaEmptyState",
+   "apple_kind": "symaira",
+   "web_title": "Symaira-Leerzustand",
+   "web_code": ".sym-empty"
+  },
+  "E24": {
+   "apple": "A",
+   "web": "W1",
+   "apple_title": "Apple nativ",
+   "apple_code": "ProgressView(\"Lädt …\")",
+   "apple_kind": "apple-native",
+   "web_title": "Browser-nativ",
+   "web_code": "<progress> ohne value"
+  },
+  "E25": {
+   "apple": "A",
+   "web": "W1",
+   "apple_title": "Alert",
+   "apple_code": ".alert(_, isPresented:) { Button(role: .destructive) }",
+   "apple_kind": "apple-native",
+   "web_title": "Browser-nativ",
+   "web_code": "<dialog> + showModal()"
+  },
+  "E26": {
+   "apple": "A",
+   "web": "W2",
+   "apple_title": "Natives Sheet mit Toolbar",
+   "apple_code": ".sheet { NavigationStack { Form }.toolbar { cancel/confirm } }",
+   "apple_kind": "apple-native",
+   "web_title": "Seitenpanel mit Tokens",
+   "web_code": "dialog.sym-sheet"
+  },
+  "E27": {
+   "apple": "B",
+   "web": "W1",
+   "apple_title": "Symaira heute",
+   "apple_code": "SymairaWorkspace + SymairaNavigationButton",
+   "apple_kind": "symaira",
+   "web_title": "Browser-nativ",
+   "web_code": "<nav> + Links"
+  },
+  "E28": {
+   "apple": "A",
+   "web": "W1",
+   "apple_title": "Apple nativ",
+   "apple_code": "TabView { Tab(...) }",
+   "apple_kind": "apple-native",
+   "web_title": "Browser-nativ",
+   "web_code": "<nav> Links mit aria-current"
+  },
+  "E29": {
+   "apple": "A",
+   "web": "W1",
+   "apple_title": "Apple nativ",
+   "apple_code": "Picker(\"Darstellung\", ...).pickerStyle(.segmented)",
+   "apple_kind": "apple-native",
+   "web_title": "Browser-nativ",
+   "web_code": "<select> / prefers-color-scheme"
+  },
+  "E30": {
+   "apple": "C",
+   "web": "W1",
+   "apple_title": "Symaira-Kartenzeilen",
+   "apple_code": "VStack { rows }.symairaCard()",
+   "apple_kind": "symaira",
+   "web_title": "Browser-nativ",
+   "web_code": "<ul>"
+  },
+  "E31": {
+   "apple": "A",
+   "web": "W1",
+   "apple_title": "Apple nativ",
+   "apple_code": "Table(rows) { TableColumn ... }",
+   "apple_kind": "apple-native",
+   "web_title": "Browser-nativ",
+   "web_code": "<table>"
+  },
+  "E32": {
+   "apple": "B",
+   "web": "W2",
+   "apple_title": "In Symaira-Karte",
+   "apple_code": "DisclosureGroup in .symairaCard()",
+   "apple_kind": "symaira",
+   "web_title": "Mit Tokens",
+   "web_code": "details.sym-details"
+  },
+  "E33": {
+   "apple": "B",
+   "web": "W1",
+   "apple_title": "Gauge mit Wert",
+   "apple_code": "Gauge(value:) { } currentValueLabel: { }",
+   "apple_kind": "apple-native",
+   "web_title": "Browser-nativ",
+   "web_code": "<dl><dt><dd>"
+  }
+ }
+}

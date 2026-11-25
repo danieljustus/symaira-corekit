@@ -2,6 +2,11 @@ import SwiftUI
 
 /// Heading, scrolling form content and a stable secondary/primary action footer.
 /// The caller owns presentation, validation and any asynchronous task lifecycle.
+@available(
+    *, deprecated,
+    message:
+        "Use .sheet { NavigationStack { Form { } }.toolbar { cancellationAction, confirmationAction } }, E26 (UI catalog 2026-11-25)."
+)
 public struct SymairaSheetScaffold<Content: View>: View {
     private let title: String
     private let dismissTitle: String

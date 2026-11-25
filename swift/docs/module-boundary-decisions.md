@@ -192,6 +192,26 @@ lifting `symaira-terminal`'s provider onboarding into appkit. Tracked separately
 
 ---
 
+## 2026-11-25 — Native Apple controls replace nine Symaira controls
+
+**Question.** Should Symaira keep drawing its own controls, or use Apple's native
+controls on macOS and iOS?
+
+**Decision.** Daniel chose one variant per element in the UI catalog
+(`design/ui-catalog/`, 33 elements, real macOS and iPhone screenshots). Native controls
+replace `SymairaFormSection`, `SymairaSegmentedControl`, `SymairaFilterMenu`,
+`SymairaSwitchToggleStyle`, `SymairaIconButton`, `SymairaProgressStyle`,
+`SymairaLoadingState`, `SymairaSheetScaffold` and `SymairaStatTile`; they are deprecated,
+not removed, so consumers migrate through their exact pin. `SymairaAppearancePicker`,
+`SymairaBadge` and `SymairaStatusLabel` keep their API and adopt the chosen look. Symaira
+keeps its primary/secondary buttons, text field style outside forms, cards, notice,
+empty state and workspace shell.
+
+**Not moved here.** No new wrapper API: the native controls plus
+`.tint(SymairaTokens.selected)` are the shared rule (GUIDELINES FORM-5, NATIVE-1).
+
+---
+
 ## 2026-08-26 — `SymairaProviderKit` belongs in appkit; provider behavior stays with hosts
 
 **Question.** Provider settings, credential storage, endpoint configuration and

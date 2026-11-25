@@ -115,7 +115,11 @@ public struct SymairaPageState<Value, Loaded: View>: View {
         switch state {
         case .idle, .loading:
             SymairaPageStateFrame {
-                SymairaLoadingState(loading)
+                // Native labelled spinner (UI catalog E24 A).
+                ProgressView(loading)
+                    .topoProtected()
+                    .padding(SymairaSpacing.xLarge)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         case .failed(let message):
             SymairaPageStateFrame {

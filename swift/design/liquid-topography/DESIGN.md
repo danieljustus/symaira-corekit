@@ -377,9 +377,10 @@ Radien: 6px für Code-Inline, 10px für Einträge, Eingabefelder, Segmente und T
 
 Siehe `components:` oben. Varianten sind eigene Einträge (`button-primary-dark`). Fokus wird immer mit einem 2px-Ring in `focus` und 2px Abstand dargestellt (`:focus-visible`), nie nur durch eine Farbänderung.
 
-- **Auswahl** über Füllung (`selected`) plus Gewicht 700, ohne Rahmen oder Schatten. Segmentschiene `raised`, 14px Radius, 4px Innenabstand.
+- **Native Controls (UI-Katalog 2026-11-25):** Apple nutzt für Segmente, Schalter, Menüs, Regler, Formulare, Fortschritt, Sheets und Dialoge die nativen Controls; Segmente und Schalter mit Tint `selected`, Regler mit `ink`. Im Web tragen native HTML-Elemente die Symaira-Grundlage (Figtree, Tokenfarben, `accent-color: selected`); Buttons, Menü, Regler, Hinweis, Leerzustand, Sheet und Aufklapper sind voll gestaltet. Entscheidungen je Element: `../ui-catalog/ui-catalog.md`.
+- **Auswahl** (gestaltete Varianten) über Füllung (`selected`) plus Gewicht 700, ohne Rahmen oder Schatten. Segmentschiene `raised`, 14px Radius, 4px Innenabstand.
 - **Navigation:** Auswahl über `selection`-Fläche und Gewicht 700 in beiden Modi; die Fläche allein ist kein Zustandsmerkmal.
-- **Schalter:** 56 × 32px Spur, 24px Knopf, an = `selected`. Trefferfläche mindestens 44px auf Touch-Geräten.
+- **Schalter:** nativ (Apple `Toggle(.switch)`, Web `<input type=checkbox switch>`), an = `selected`. Trefferfläche mindestens 44px auf Touch-Geräten.
 - **Messwerte** in `ink`, unabhängig davon, ob sie sich ändern. Champagner gehört zu Auswahl, aktiven Bedienelementen und Fokus.
 - **Balken und Regler:** die leere Schiene ist eine ruhige Rinne in `raised` mit 1px-Kontur in `line`, die Füllung ist `ink`, in beiden Modi. So liest sich 0 % nie als voller Balken; `ink-3` ist eine Textrolle und für Schienen zu hell. Speicher-, Nutzungs- und Prozessbalken verwenden dieselben Rollen wie native Regler. Warnungen bleiben als Text/Symbol sichtbar.
 - **Darstellung:** `System / Light / Dark` steht nur im Einstellungsfenster, neben den übrigen Einstellungen. Das Zahnrad in der Toolbar öffnet dieses Fenster direkt, ohne Zwischenmenü; eine Darstellungsauswahl in der Toolbar gibt es nicht. „System“ entfernt die Vorgabe und folgt macOS weiter live, statt dessen aktuellen Zustand einzufrieren. Produkte behalten ihre bisherigen Speicherschlüssel; passive Vorschauen schreiben keine Einstellungen.

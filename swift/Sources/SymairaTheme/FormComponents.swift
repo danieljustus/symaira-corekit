@@ -71,6 +71,10 @@ extension TextFieldStyle where Self == SymairaTextFieldStyle {
 /// Five client apps build their own settings scaffold. The differences between
 /// them are accidental — heading size, gap above the card, whether a footer is
 /// muted — and they are exactly what makes the apps look unrelated.
+@available(
+    *, deprecated,
+    message: "Use Form { Section { ... } }.formStyle(.grouped) with native fields, E17 (UI catalog 2026-11-25)."
+)
 public struct SymairaFormSection<Content: View>: View {
     private let title: String?
     private let footer: String?
@@ -214,8 +218,9 @@ public struct SymairaStatusLabel: View {
         HStack(spacing: SymairaSpacing.small) {
             SymairaStatusDot(tone: tone, accessibilityLabel: text)
                 .accessibilityHidden(true)
+            // Primary text next to the dot (UI catalog E22 B); colour never carries the state alone.
             Text(text)
-                .symairaText(.secondary)
+                .symairaText(.body)
         }
         .accessibilityElement(children: .combine)
     }

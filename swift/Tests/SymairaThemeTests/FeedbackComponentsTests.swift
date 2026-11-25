@@ -31,6 +31,16 @@ final class FeedbackComponentsTests: XCTestCase {
         ThemeRenderHost.render(SymairaBadge("Beta", systemImage: "flame"))
     }
 
+    #if os(macOS)
+    /// A pill must not wrap mid-word in a tight row ("Warnu / ng", UI catalog E21).
+    func testBadgeStaysOnOneLineWhenSpaceIsTight() {
+        let host = NSHostingController(rootView: SymairaBadge("Warnung", tone: .warning))
+        let free = host.sizeThatFits(in: CGSize(width: 1000, height: 1000))
+        let tight = host.sizeThatFits(in: CGSize(width: 12, height: 1000))
+        XCTAssertEqual(tight.height, free.height, accuracy: 0.5)
+    }
+    #endif
+
     func testBadgeRendersAllTonesWithAndWithoutIcon() {
         for tone in [SymairaTone.neutral, .positive, .warning, .critical, .informative] {
             ThemeRenderHost.render(SymairaBadge("Tag", tone: tone))

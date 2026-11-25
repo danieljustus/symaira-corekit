@@ -36,11 +36,14 @@ extension View {
 
 // MARK: - Segmented control
 
-/// Single-choice segmented control. Replaces `Picker(.segmented)`, whose native
-/// selection on light surfaces is too faint for the Symaira palette.
+/// Single-choice segmented control.
 ///
 /// Each segment is a button with the `isSelected` accessibility trait, so
 /// VoiceOver announces the choice and keyboard focus moves between segments.
+@available(
+    *, deprecated,
+    message: "Use Picker(...).pickerStyle(.segmented).tint(SymairaTokens.selected), E07 (UI catalog 2026-11-25)."
+)
 public struct SymairaSegmentedControl<Value: Hashable>: View {
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.isEnabled) private var isEnabled
@@ -91,6 +94,7 @@ public struct SymairaSegmentedControl<Value: Hashable>: View {
 /// as one control set. The native popup button brings its own chrome instead.
 /// The first option is the unfiltered default; any other choice is active and
 /// carries the `selected` border, like every other active control.
+@available(*, deprecated, message: "Use Picker(...).pickerStyle(.menu), E06/E09 (UI catalog 2026-11-25).")
 public struct SymairaFilterMenu<Value: Hashable>: View {
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.colorSchemeContrast) private var contrast
@@ -222,6 +226,9 @@ extension View {
 /// Switch with the approved silhouette: 56 × 32 pt track, 24 pt knob. On uses
 /// the `selected` role. Keeps native toggle semantics for accessibility. On
 /// macOS 14, iOS 17 and tvOS 17, uses the native toggle to honor hidden labels.
+@available(
+    *, deprecated, message: "Use .toggleStyle(.switch).tint(SymairaTokens.selected), E08 (UI catalog 2026-11-25)."
+)
 public struct SymairaSwitchToggleStyle: ToggleStyle {
     public init() {}
 
@@ -311,7 +318,13 @@ private struct SymairaSwitchButton: View {
     }
 }
 
+@available(
+    *, deprecated, message: "Use .toggleStyle(.switch).tint(SymairaTokens.selected), E08 (UI catalog 2026-11-25)."
+)
 extension ToggleStyle where Self == SymairaSwitchToggleStyle {
+    @available(
+        *, deprecated, message: "Use .toggleStyle(.switch).tint(SymairaTokens.selected), E08 (UI catalog 2026-11-25)."
+    )
     public static var symairaSwitch: SymairaSwitchToggleStyle { SymairaSwitchToggleStyle() }
 }
 

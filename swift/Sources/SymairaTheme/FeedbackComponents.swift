@@ -85,11 +85,14 @@ public struct SymairaBadge: View {
             }
         }
         .font(SymairaTypography.label)
+        // A pill never wraps: in a tight row it keeps its one-line width (UI catalog E21).
+        .lineLimit(1)
+        .fixedSize()
         .padding(.horizontal, SymairaSpacing.small)
         .padding(.vertical, SymairaSpacing.xSmall)
         .foregroundStyle(toneColor)
-        .background(toneColor.opacity(0.12), in: Capsule())
-        .overlay(Capsule().stroke(toneColor.opacity(0.26), lineWidth: 1))
+        // Tinted capsule without an outline (UI catalog E21 B), in the contrast-checked tone colours.
+        .background(toneColor.opacity(0.15), in: Capsule())
         .accessibilityElement(children: .combine)
     }
 }
@@ -139,7 +142,7 @@ public struct SymairaNotice: View {
             }
 
             if let onDismiss {
-                SymairaIconButton(SymairaStrings.dismiss, icon: .close, size: 16, action: onDismiss)
+                SymairaPlainIconButton(title: Text(SymairaStrings.dismiss), icon: .close, size: 16, action: onDismiss)
                     .frame(minWidth: 24, minHeight: 24)
                     .foregroundStyle(SymairaTheme.foregroundMuted(for: colorScheme))
             }
@@ -231,6 +234,7 @@ extension SymairaEmptyState where Actions == EmptyView {
     }
 }
 
+@available(*, deprecated, message: "Use ProgressView(\"Loading <noun>…\"), E24 (UI catalog 2026-11-25).")
 public struct SymairaLoadingState: View {
     @Environment(\.colorScheme) private var colorScheme
 

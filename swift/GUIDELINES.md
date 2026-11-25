@@ -122,15 +122,15 @@ Six lines, kept in the pull request or issue:
   `xLarge`, gaps between cards `medium`, inside cards `small`.
 - **LAYOUT-7** A toolbar row inside a page has a fixed height, so switching
   pages does not shift the content below it.
-- **LAYOUT-8** Dashboards order summary tiles (`SymairaStatTile`, value in
-  `SymairaTypography.stat`) first, then charts, then tables, then event logs;
-  at most five tiles in one row. Use `showsCard: false` for a tile that sits
-  inside a card or sheet.
+- **LAYOUT-8** Dashboards order summary values first (bounded values as
+  `Gauge(value:)` with a `currentValueLabel`, other figures as
+  `LabeledContent`), then charts, then tables, then event logs; at most five
+  summary values in one row.
 
 ## 5. States and feedback
 
-- **STATE-1** Loading: `SymairaLoadingState("Loading campaigns…")` with a
-  specific noun and the ellipsis character; never a bare `ProgressView()`.
+- **STATE-1** Loading: `ProgressView("Loading campaigns…")` with a specific
+  noun and the ellipsis character; never a bare `ProgressView()`.
 - **STATE-2** Empty: `SymairaEmptyState(icon:title:message:actions:)` with a
   title that names what is missing, a message that says how it gets filled,
   and at most one action that does exactly that. A nested empty section may
@@ -146,11 +146,10 @@ Six lines, kept in the pull request or issue:
   so state changes do not shift the page toolbar.
 - **STATE-6** A disabled control carries `SymairaLockedLabel` or a caption
   that says why; opacity alone is not a signal.
-- **STATE-7** Progress with a known duration uses `SymairaProgressStyle`;
-  unknown duration uses `SymairaLoadingState`; both keep the layout size
-  stable. The empty track is a quiet groove (`SymairaBarColors.track` =
-  `raised` with a 1 pt `trackOutline` = `line`) and the fill is `ink`, so 0 %
-  never reads as full in either appearance; do not draw a track from `ink3`.
+- **STATE-7** Progress with a known duration is a native
+  `ProgressView(value:)`; unknown duration is a labelled `ProgressView("…")`;
+  both keep the layout size stable. Product-drawn meters keep the quiet groove
+  (`SymairaBarColors.track` with `trackOutline`, `ink` fill).
 - **STATE-8** Counts and summaries render only from loaded data; after a
   failed load the error appears where content would start, not zero values.
 - **STATE-9** Topography follows the app state through `SymairaTopoModel`:
@@ -162,7 +161,7 @@ Six lines, kept in the pull request or issue:
 - **ACTION-1** Button labels are specific verbs ("Execute Campaign",
   "Save API Key"); never "OK", "Continue", "Yes", "Submit".
 - **ACTION-2** Primary and secondary content actions share geometry through
-  `.symairaButtonStyle(.primary/.secondary)` and `SymairaSheetScaffold`
+  `.symairaButtonStyle(.primary/.secondary)`
   (`SymairaMetrics.contentActionHeight`, 20 pt horizontal padding). Switching
   role or label must not change size; reserve width for stateful labels.
 - **ACTION-3** Confirm consequential or irreversible actions with
@@ -170,10 +169,12 @@ Six lines, kept in the pull request or issue:
   message states the consequence in one sentence, `Cancel` has
   `role: .cancel`.
 - **ACTION-4** Prefer undo (`UndoManager`, ⌘Z) over confirmation for local,
-  reversible deletes; mark the control with `role: .destructive`.
-- **ACTION-5** Sheets share one scaffold: heading, scrolling content, footer
-  with the secondary dismiss button left of the primary action, Esc cancels
-  (`.cancelAction`), Return confirms (`.defaultAction`).
+  reversible deletes; mark the control with `role: .destructive`. A visible
+  destructive button is `Button(role: .destructive)` with
+  `.buttonStyle(.borderedProminent).tint(.red)`.
+- **ACTION-5** Sheets are native: `.sheet { NavigationStack { Form { … } } }`
+  with `ToolbarItem(placement: .cancellationAction)` and
+  `.confirmationAction`; the system maps Esc and Return.
 - **ACTION-6** Sheets are for multi-step or multi-field work; a single toggle
   or small choice is inline or a popover.
 - **ACTION-7** Long-running actions disable their trigger, show progress where
@@ -184,19 +185,31 @@ Six lines, kept in the pull request or issue:
 
 ## 7. Forms and settings
 
-- **FORM-1** Build forms from `SymairaFormSection(_:footer:content:)`,
-  `SymairaFormRow(_:description:trailing:)` and `SymairaFormDivider()`; not
-  from `Form`, `GroupBox` or ad-hoc stacks.
-- **FORM-2** Fields use `.textFieldStyle(.symaira)`; the row carries the
-  label, the placeholder shows an example or the default ("Auto-detect",
-  "Default (~/Library/…)").
+- **FORM-1** Build forms and settings from the native
+  `Form { Section { … } }.formStyle(.grouped)` with `LabeledContent`, `Toggle`,
+  `Picker` and native fields. `SymairaFormRow` and `SymairaFormDivider` remain
+  for list rows inside a `.symairaCard()` (UI catalog E30), not for forms.
+- **FORM-2** Inside a `Form`, fields are native. Outside a form (search bar,
+  inline field on a card) a field uses `.textFieldStyle(.symaira)`. The label
+  names the field; the placeholder shows an example or the default
+  ("Auto-detect", "Default (~/Library/…)").
 - **FORM-3** Validate inline below the field (`.caption` in `critical`) and
   move focus to the first error on submit; never block paste.
 - **FORM-4** Secrets use `SecureField`, are stored through `SymairaKeychain`,
   and never appear in error text or logs.
-- **FORM-5** Two to four options are a `SymairaSegmentedControl`; longer lists
-  are a `SymairaFilterMenu` whose first option is the unfiltered default;
-  on/off is `.toggleStyle(.symairaSwitch)`.
+- **FORM-5** Two to four options are a `Picker(.segmented)` with
+  `.tint(SymairaTokens.selected)`; longer lists and filters are a
+  `Picker(.menu)` whose first option is the unfiltered default; on/off is
+  `Toggle(.switch)` with `.tint(SymairaTokens.selected)`; numbers use
+  `Stepper`, dates a compact `DatePicker`, sliders `.tint(SymairaTokens.ink)`.
+- **NATIVE-1** Apple platforms use the native control wherever the UI catalog
+  (`design/ui-catalog/ui-catalog.md`, decided 2026-11-25) chose it: search
+  `.searchable`, tabs `TabView` (iOS), tables `Table`, details
+  `DisclosureGroup`, confirmation `.alert`, sheets as in ACTION-5. Deprecated
+  Symaira controls (`SymairaFormSection`, `SymairaSegmentedControl`,
+  `SymairaFilterMenu`, `.symairaSwitch`, `SymairaIconButton`,
+  `SymairaProgressStyle`, `SymairaLoadingState`, `SymairaSheetScaffold`,
+  `SymairaStatTile`) are flagged by `gui-review.py`.
 - **FORM-6** Settings persist under the product's existing keys; previews and
   tests write nothing.
 - **FORM-7** Group settings by task (Connection, Configuration, Appearance,
@@ -234,14 +247,16 @@ Six lines, kept in the pull request or issue:
   a muted foreground: the role opens tracking by +0.01em in dark appearance.
   Never disable text antialiasing.
 - **ICON-1** Icons are `SymairaIcon` cases through `SymairaIconView`,
-  `SymairaIconButton`, `Label(_:symairaIcon:)` and the `icon:` initializers of
-  the shared components. An SF Symbol string is acceptable only where no case
+  `Label(_:symairaIcon:)` and the `icon:` initializers of the shared
+  components. An SF Symbol string is acceptable only where no case
   exists, and then the case is added to `Brand/Icons/icons.svg` instead of
   staying in the product.
   Shared cases include `operate`, `restart`, `memory`, `battery`, `keepAwake`,
   `expired` and `externalDrive`.
-- **ICON-2** Icon-only controls carry `.accessibilityLabel` and `.help(...)`;
-  `SymairaIconButton` does both.
+- **ICON-2** Icon-only controls carry `.accessibilityLabel` and `.help(...)`.
+  An icon button is `Button { } label: { Label(_:symairaIcon:)
+  .labelStyle(.iconOnly) }` with `.symairaButtonStyle(.toolbar)` and
+  `.buttonBorderShape(.circle)` (Liquid Glass, UI catalog E04).
 - **ICON-3** Toolbar controls use `.symairaButtonStyle(.toolbar)` (glass);
   content actions never do.
 - **ICON-4** Use `Image(symairaIcon:)` rather than `SymairaIconView` in a
@@ -351,7 +366,7 @@ Report per file, VS Code clickable, terse:
 
 ```text
 ## Sources/App/Views/RequestsView.swift
-Sources/App/Views/RequestsView.swift:152 - STATE-1 warn bare ProgressView(); use SymairaLoadingState("Loading events…")
+Sources/App/Views/RequestsView.swift:152 - STATE-1 warn bare ProgressView(); use ProgressView("Loading events…")
 
 ## project
 project - POINTER-2 info no context menus on rows or cards

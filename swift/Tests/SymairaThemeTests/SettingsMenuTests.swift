@@ -24,7 +24,7 @@ final class SettingsMenuTests: XCTestCase {
         XCTAssertEqual(settingsOpened, 1)
     }
 
-    func testAppearancePickerUsesSharedSegmentsInsteadOfNativeControl() async throws {
+    func testAppearancePickerIsNativeSegmentedControl() async throws {
         _ = NSApplication.shared
         XCTAssertEqual(SymairaAppearancePicker.options.map(\.value), SymairaAppearance.allCases)
         XCTAssertEqual(SymairaAppearancePicker.options.map(\.label), SymairaAppearance.allCases.map(\.title))
@@ -35,7 +35,10 @@ final class SettingsMenuTests: XCTestCase {
         func controls(_ view: NSView) -> [NSSegmentedControl] {
             (view as? NSSegmentedControl).map { [$0] } ?? view.subviews.flatMap(controls)
         }
-        XCTAssertTrue(controls(host).isEmpty, "The native segmented control brings the system accent colour")
+        // UI catalog 2026-11-25 (E29): one native segmented control with one segment per appearance.
+        let segmented = controls(host)
+        XCTAssertEqual(segmented.count, 1)
+        XCTAssertEqual(segmented.first?.segmentCount, SymairaAppearance.allCases.count)
     }
 }
 #endif

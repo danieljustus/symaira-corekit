@@ -18,6 +18,7 @@ public enum SymairaBarColors {
 
 /// Determinate, neutral meter. Native linear progress styles do not reliably
 /// honor tint. A missing fraction displays an empty track, not simulated progress.
+@available(*, deprecated, message: "Use ProgressView(value:), E19 (UI catalog 2026-11-25).")
 public struct SymairaProgressStyle: ProgressViewStyle {
     private let height: CGFloat
     private let track: Color

@@ -11,6 +11,11 @@ import SwiftUI
 /// A tile without `detail` keeps the line reserved, so tiles in one row share
 /// one height. VoiceOver reads one element: the label, then the value (and the
 /// detail when present).
+@available(
+    *, deprecated,
+    message:
+        "Use Gauge(value:) with currentValueLabel for bounded values, LabeledContent otherwise, E33 (UI catalog 2026-11-25)."
+)
 public struct SymairaStatTile: View {
     private let value: String
     private let label: String
@@ -62,16 +67,4 @@ public struct SymairaStatTile: View {
         guard let detail, !detail.isEmpty else { return value }
         return "\(value), \(detail)"
     }
-}
-
-#Preview("Stat tiles") {
-    VStack(alignment: .leading, spacing: SymairaSpacing.medium) {
-        HStack(spacing: SymairaSpacing.medium) {
-            SymairaStatTile(value: "12", label: "Profiles")
-            SymairaStatTile(value: "3 of 5", label: "Folders Ready", detail: "2 missing")
-        }
-        SymairaStatTile(value: "7 days", label: "Streak", showsCard: false)
-    }
-    .padding(SymairaSpacing.xLarge)
-    .frame(width: 420)
 }
