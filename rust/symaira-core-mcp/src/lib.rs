@@ -8,6 +8,8 @@
 //! Intended differences from the retired Go `mcpserver` are listed in
 //! `docs/rust-port/go-compatibility.md`.
 
+pub mod catalog_gate;
+
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 use serde_json::{Map, Value, value::RawValue};
@@ -469,6 +471,35 @@ impl Server {
         Ok(())
     }
 
+    /// Returns the compact JSON bytes of the `tools/list` result, without the
+    /// JSON-RPC envelope or transport framing. Measure these bytes to budget
+    /// the catalog independently of request IDs and framing modes.
+    pub fn catalog_json(&self) -> Vec<u8> {
+        go_json_bytes(&self.catalog()).expect("MCP catalog is serializable")
+    }
+
+    fn catalog(&self) -> ToolsListResult {
+        let registry = self.registry.lock().expect("MCP registry mutex poisoned");
+        let tools = registry
+            .order
+            .iter()
+            .filter_map(|name| registry.tools.get(name))
+            .map(|tool| {
+                let mut input_schema = tool.input_schema.clone();
+                if let Some(schema) = input_schema.as_mut() {
+                    sort_object_keys(schema);
+                }
+                ToolDescriptionWire {
+                    annotations: tool.annotations.clone(),
+                    description: tool.description.clone(),
+                    input_schema,
+                    name: tool.name.clone(),
+                }
+            })
+            .collect();
+        ToolsListResult { tools }
+    }
+
     /// Optional seam used by parity fixtures to exercise Go's nil boundary.
     pub fn register_optional_tool(&self, tool: Option<Tool>) -> Result<(), RegistrationError> {
         let Some(tool) = tool else {
@@ -836,25 +867,7 @@ impl Server {
                 Some(rpc_result(request.id, Value::Object(result)))
             }
             "ping" => Some(rpc_result(request.id, Value::Object(Map::new()))),
-            "tools/list" => {
-                let registry = self
-                    .registry
-                    .lock()
-                    .expect("MCP registry mutex poisoned")
-                    .clone();
-                let tools = registry
-                    .order
-                    .iter()
-                    .filter_map(|name| registry.tools.get(name))
-                    .map(|tool| ToolDescriptionWire {
-                        annotations: tool.annotations.clone(),
-                        description: tool.description.clone(),
-                        input_schema: tool.input_schema.clone(),
-                        name: tool.name.clone(),
-                    })
-                    .collect::<Vec<_>>();
-                Some(rpc_tools_result(request.id, tools))
-            }
+            "tools/list" => Some(rpc_tools_result(request.id, self.catalog())),
             "tools/call" => match self.call_tool(&request, token.clone()) {
                 Ok(result) => Some(rpc_result(request.id, result)),
                 Err(error) => Some(rpc_error(request.id, error.code, error.message)),
@@ -1060,16 +1073,11 @@ fn rpc_result(id: Box<RawValue>, mut result: Value) -> RpcResponse {
     }
 }
 
-fn rpc_tools_result(id: Box<RawValue>, mut tools: Vec<ToolDescriptionWire>) -> RpcResponse {
-    for tool in &mut tools {
-        if let Some(schema) = tool.input_schema.as_mut() {
-            sort_object_keys(schema);
-        }
-    }
+fn rpc_tools_result(id: Box<RawValue>, catalog: ToolsListResult) -> RpcResponse {
     RpcResponse {
         jsonrpc: "2.0",
         id,
-        result: Some(ResponseResult::Tools(ToolsListResult { tools })),
+        result: Some(ResponseResult::Tools(catalog)),
         error: None,
     }
 }
@@ -1849,6 +1857,41 @@ mod tests {
         );
         let output = run(&server, input);
         assert!(String::from_utf8(output).unwrap().contains("isError"));
+    }
+
+    #[test]
+    fn catalog_json_matches_live_tools_list_bytes() {
+        #[derive(Deserialize)]
+        struct Response {
+            result: Box<RawValue>,
+        }
+
+        let server = Server::new("test", "1.0");
+        assert_eq!(server.catalog_json(), br#"{"tools":[]}"#);
+        server
+            .register_tool(
+                Tool::new("zulu", "<annotated> & listed first")
+                    .schema(serde_json::json!({"type": "object", "properties": {}}))
+                    .annotations(ToolAnnotations {
+                        title: "Example".to_string(),
+                        read_only_hint: true,
+                        ..ToolAnnotations::default()
+                    }),
+            )
+            .unwrap();
+        server
+            .register_tool(Tool::new("alpha", "listed second"))
+            .unwrap();
+
+        let output = run(
+            &server,
+            line(r#"{"jsonrpc":"2.0","id":1,"method":"tools/list"}"#),
+        );
+        let response: Response = serde_json::from_slice(&output).unwrap();
+        assert_eq!(server.catalog_json(), response.result.get().as_bytes());
+        let result: Value = serde_json::from_str(response.result.get()).unwrap();
+        assert_eq!(result["tools"][0]["name"], "zulu");
+        assert_eq!(result["tools"][1]["name"], "alpha");
     }
 
     #[test]
