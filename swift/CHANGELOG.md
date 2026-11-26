@@ -11,6 +11,8 @@ the releases of the former `symaira-appkit` repository.
 
 ## [Unreleased]
 
+## [0.27.0] - 2026-11-26
+
 ### Added
 - Control tiers (GUIDELINES CTRL-1): `SymairaControlTier` (`page`, `workbench`),
   `.symairaControlTier(_:)` and `SymairaMetrics.workbenchControlHeight`. The

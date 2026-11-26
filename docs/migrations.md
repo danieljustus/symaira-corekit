@@ -10,6 +10,27 @@ also preserve historical removals, including `embedkit` in v0.12.0; those
 require migration. Otherwise "check" means a new capability to adopt or a
 behavior change worth confirming.
 
+## v0.27.0
+
+- **Rust consumers:** no changes.
+- **Swift consumers:** move the pin to `exact: "0.27.0"` (XcodeGen
+  `exactVersion: 0.27.0`) and check every screen once, because sizes change:
+  - Inside `SymairaPage` content, `.symairaButtonStyle`, segmented controls,
+    `.textFieldStyle(.symaira)` and native controls become the 28 pt
+    workbench tier (native solid buttons, no glass). Page toolbars and
+    empty-state actions keep the page tier, now 36 pt capsules (was 40 pt
+    rounded rectangles).
+  - Sheets: add `.symairaControlTier(.page)` on the `NavigationStack` and
+    `.symairaControlTier(.workbench)` on the `Form`, otherwise the footer
+    inherits the presenting page's tier. Settings windows set `.workbench` on
+    their `Form`.
+  - A tools row under the page toolbar (filters, zoom) belongs in the
+    content, not in the `toolbar:` builder.
+  - A segmented control or `SymairaAppearancePicker` in a grouped `Form` row
+    needs `.symairaFormRowControl()` to sit on the row title (FORM-10).
+  - `SymairaSegmentedControl` is no longer deprecated; `gui-review.py` now
+    flags a bare `.pickerStyle(.segmented)` (FORM-5).
+
 ## v0.26.0
 
 - **Rust consumers:** Windows-only code is removed from `symaira-core-fs`,

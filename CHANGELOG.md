@@ -4,6 +4,16 @@ The GitHub Releases page is the authoritative source for complete release notes.
 
 ## Unreleased
 
+## v0.27.0 — 2026-11-26
+
+- Swift: three control tiers (GUIDELINES CTRL-1). `SymairaControlTier` and
+  `.symairaControlTier(_:)` separate page actions (36 pt capsules, glass
+  secondary) from workbench tools (native solid `.large` controls, 28 pt);
+  `SymairaPage` sets both, the workspace shell stays the navigation tier.
+  `SymairaSegmentedControl` is the native segmented picker with the Symaira
+  tint again, secondary buttons are native Liquid Glass, and
+  `.symairaFormRowControl()` centres a tall control on a grouped form row.
+  See `swift/CHANGELOG.md` and `docs/migrations.md`.
 - Swift: the `SymairaIconButton` deprecation message, GUIDELINES ICON-2 and
   the UI catalog E04 note name an `Image(symairaIcon:)` label; the previous
   `Label(_:symairaIcon:)` recipe renders an empty glass circle on macOS (#510).
