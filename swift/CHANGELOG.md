@@ -11,6 +11,34 @@ the releases of the former `symaira-appkit` repository.
 
 ## [Unreleased]
 
+### Added
+- `symairaButtonStyle(_:onPressChange:)` and the primary/secondary button
+  styles report press and release, so apps can play touch-down haptics without
+  their own gesture (#493).
+- `SymairaTextField(_:text:prompt:)` draws its placeholder in `ink3` (#502).
+- `SymairaTheme.springPress`, `springPop` and `springFill` motion tokens;
+  MOTION-5 defines one-shot milestone feedback (#489).
+- `scripts/check-strings.py <source-root> <catalog>` fails on missing German
+  String Catalog entries; COPY-1 requires English and German following the
+  system language (#492).
+
+### Fixed
+- Primary and secondary button labels stay on one line instead of breaking
+  mid-word in narrow containers; full-width buttons still fill (#507).
+- `Image(symairaIcon:)` returns a template image, so native Settings tabs and
+  toolbars tint it in dark appearance (#491).
+- Inactive dark `SymairaWorkspace` windows use the opaque sidebar, keeping nav
+  labels above 4.5:1 (#504).
+- `.textFieldStyle(.symaira)` shows the 2 pt focus ring from the field's own
+  keyboard focus; `isFocused:` stays as an override (#502).
+- `SymairaFormRow` centers trailing switches, segments and fields on the
+  label's first line (#503).
+- `SymairaProviderSettingsView` asks before removing a saved key (Cancel keeps
+  it), is a native grouped form, uses `SymairaNotice` tones and Title Case
+  copy in English and German, and pluralizes the model count (#501).
+- `gui-review.py` COPY-3 no longer reports Swift ranges such as `2...6`
+  between two string literals (#494).
+
 ### Changed
 - Native Apple controls per the UI catalog decision of 2026-11-25
   (`swift/design/ui-catalog/`): `SymairaAppearancePicker` is a native segmented

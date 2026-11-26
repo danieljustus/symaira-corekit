@@ -11,6 +11,23 @@ The GitHub Releases page is the authoritative source for complete release notes.
   loading, sheet scaffold, stat tile); the appearance picker, badge and status
   label keep their API with the chosen look. GUIDELINES gain NATIVE-1, checked
   by `gui-review.py`.
+- Swift: button labels stay on one line (#507), `symairaButtonStyle(_:onPressChange:)`
+  reports press and release (#493), `Image(symairaIcon:)` is a template image
+  (#491), inactive dark workspace windows keep sidebar contrast (#504), the
+  text field style shows its focus ring by itself and `SymairaTextField` offers
+  an `ink3` prompt (#502), `SymairaFormRow` centers controls on the label line
+  (#503), and the provider settings view is a native grouped form that confirms
+  key removal (#501). GUIDELINES: feedback motion with spring tokens (MOTION-5,
+  #489), English and German with `swift/scripts/check-strings.py` (COPY-1,
+  #492); `gui-review.py` no longer flags Swift ranges as three dots (#494).
+- Rust (`symaira-core-mcp`): `Server::catalog_json()` returns the exact
+  `tools/list` result, and `symaira_core_mcp::catalog_gate` checks a committed
+  catalog-size record (tool count, at most 10 % byte drift) (#500).
+- Rust (`symaira-core-llm`): the cancellation contract tests separate fixture
+  startup from the cancellation deadline and no longer fail under load (#498).
+- CI: Miri jobs use the dated `nightly-2026-10-29` instead of floating
+  `nightly` (#496); CodeQL actions 4.39.4 (#499).
+- `docs/consumers.json` records EraseMe v0.17.1 with its standalone evidence (#370).
 
 ## v0.24.0 — 2026-11-22
 

@@ -91,26 +91,23 @@ public struct SymairaProviderCredentialField: View {
     }
 
     public var body: some View {
-        VStack(alignment: .leading, spacing: SymairaSpacing.small) {
-            SymairaFormRow(title) {
-                SecureField(title, text: draft)
-                    .labelsHidden()
-                    .textFieldStyle(.symaira)
-                    .onSubmit(save)
-            }
+        // A Group yields one native row per child inside a grouped Form (FORM-1).
+        Group {
+            SecureField(title, text: draft, prompt: Text(ProviderStrings.enterKey))
+                .onSubmit(save)
             HStack(spacing: SymairaSpacing.small) { credentialActions }
-            if value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                Text(ProviderStrings.enterKey)
-                    .symairaText(.caption)
-            }
             if let errorMessage {
                 SymairaNotice(message: errorMessage, tone: .critical)
             } else if saved {
                 SymairaNotice(message: ProviderStrings.saved, tone: .positive)
             }
         }
-        .padding(.bottom, SymairaSpacing.small)
-        .accessibilityElement(children: .contain)
+        .alert(ProviderStrings.removeKey, isPresented: isConfirmingRemoval) {
+            Button(ProviderStrings.removeKey, role: .destructive, action: delete)
+            Button(ProviderStrings.cancel, role: .cancel) { removal.cancel() }
+        } message: {
+            Text(ProviderStrings.removeConsequence)
+        }
     }
 
     @ViewBuilder private var credentialActions: some View {
@@ -120,14 +117,6 @@ public struct SymairaProviderCredentialField: View {
         if hasStoredKey {
             Button(ProviderStrings.removeKey, role: .destructive) { removal.request() }
                 .symairaButtonStyle(.secondary)
-                .confirmationDialog(
-                    ProviderStrings.removeKey, isPresented: isConfirmingRemoval, titleVisibility: .visible
-                ) {
-                    Button(ProviderStrings.removeKey, role: .destructive, action: delete)
-                    Button(ProviderStrings.cancel, role: .cancel) { removal.cancel() }
-                } message: {
-                    Text(ProviderStrings.removeConsequence)
-                }
         }
     }
 
@@ -196,8 +185,10 @@ public struct SymairaModelPicker: View {
 
     public var body: some View {
         if models.isEmpty {
-            Text(ProviderStrings.noModels)
-                .symairaText(.caption)
+            LabeledContent(title) {
+                Text(ProviderStrings.noModels)
+                    .symairaText(.caption)
+            }
         } else {
             Picker(title, selection: $selection) {
                 ForEach(models) { model in
@@ -256,15 +247,11 @@ public struct SymairaProviderSettingsView: View {
     }
 
     public var body: some View {
-        VStack(alignment: .leading, spacing: SymairaSpacing.medium) {
-            VStack(alignment: .leading, spacing: 0) {
-                SymairaFormRow(ProviderStrings.provider) {
-                    SymairaProviderPicker(selection: $providerID, catalog: catalog)
-                        .labelsHidden()
-                }
+        Form {
+            Section {
+                SymairaProviderPicker(selection: $providerID, catalog: catalog)
 
                 if let descriptor {
-                    SymairaFormDivider()
                     SymairaProviderCredentialField(
                         providerID: descriptor.id,
                         credentialStore: credentialStore,
@@ -273,56 +260,44 @@ public struct SymairaProviderSettingsView: View {
                     .id(descriptor.id)
 
                     if descriptor.baseURLOverridable || descriptor.baseURLRequiredOverride {
-                        SymairaFormDivider()
-                        SymairaFormRow(ProviderStrings.baseURL) {
-                            TextField(ProviderStrings.baseURL, text: $baseURLText)
-                                .labelsHidden()
-                                .textFieldStyle(.symaira)
-                                .textContentType(.URL)
-                                .autocorrectionDisabled()
-                        }
+                        TextField(ProviderStrings.baseURL, text: $baseURLText)
+                            .textContentType(.URL)
+                            .autocorrectionDisabled()
                     }
 
-                    SymairaFormDivider()
                     modelRow(descriptor)
                 }
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .symairaCard()
 
             if let descriptor {
-                connectionActions(descriptor)
+                Section { connectionActions(descriptor) }
             }
         }
+        .formStyle(.grouped)
         .onAppear(perform: synchronizeState)
         .onChange(of: providerID) { _, _ in synchronizeState() }
     }
 
     @ViewBuilder private func modelRow(_ descriptor: SymairaProviderDescriptor) -> some View {
         if descriptor.models.mode == .configured || descriptor.models.mode == .deployment {
-            SymairaFormRow(ProviderStrings.modelOrDeployment) {
-                TextField(ProviderStrings.modelOrDeployment, text: $modelText)
-                    .labelsHidden()
-                    .textFieldStyle(.symaira)
-                    .autocorrectionDisabled()
-            }
+            TextField(ProviderStrings.modelOrDeployment, text: $modelText)
+                .autocorrectionDisabled()
         } else {
-            SymairaFormRow(ProviderStrings.model) {
-                SymairaModelPicker(selection: $modelText, models: modelsForDisplay(descriptor))
-                    .labelsHidden()
-            }
+            SymairaModelPicker(selection: $modelText, models: modelsForDisplay(descriptor))
         }
     }
 
     private func connectionActions(_ descriptor: SymairaProviderDescriptor) -> some View {
-        VStack(alignment: .leading, spacing: SymairaSpacing.small) {
-            Button(ProviderStrings.testConnection, action: testConnection)
-                .symairaButtonStyle(.primary)
-                .disabled(isTesting || isLoadingModels)
-            if descriptor.models.mode == .discovered {
-                Button(ProviderStrings.refreshModels, action: loadModels)
-                    .symairaButtonStyle(.secondary)
+        Group {
+            HStack(spacing: SymairaSpacing.small) {
+                Button(ProviderStrings.testConnection, action: testConnection)
+                    .symairaButtonStyle(.primary)
                     .disabled(isTesting || isLoadingModels)
+                if descriptor.models.mode == .discovered {
+                    Button(ProviderStrings.refreshModels, action: loadModels)
+                        .symairaButtonStyle(.secondary)
+                        .disabled(isTesting || isLoadingModels)
+                }
             }
             if isTesting {
                 ProgressView(ProviderStrings.testing)

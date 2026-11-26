@@ -53,6 +53,8 @@ jobs:
         run: python3 swift/scripts/test_select_xcode.py
       - name: Regression-test stale build description cleanup
         run: python3 swift/scripts/test_drop_stale_build_description.py
+      - name: Regression-test the String Catalog check
+        run: python3 swift/scripts/test_check_strings.py
       - name: Regression-test formatter discovery
         run: make -C swift test-make
       - name: Self-test the GUI guidelines review
