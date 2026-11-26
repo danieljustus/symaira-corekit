@@ -11,6 +11,12 @@ the releases of the former `symaira-appkit` repository.
 
 ## [Unreleased]
 
+## [0.26.0] - 2026-11-26
+
+### Changed
+- No Swift source changes; the package ships unchanged with CoreKit v0.26.0
+  (Rust-only Windows removal, #458).
+
 ## [0.25.0] - 2026-11-26
 
 ### Added

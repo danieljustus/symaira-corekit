@@ -10,6 +10,16 @@ also preserve historical removals, including `embedkit` in v0.12.0; those
 require migration. Otherwise "check" means a new capability to adopt or a
 behavior change worth confirming.
 
+## v0.26.0
+
+- **Rust consumers:** Windows-only code is removed from `symaira-core-fs`,
+  `-secretref`, `-config`, `-update` and `-mcpcfg` (#458). `chmod_windows` no
+  longer exists; `config::default_path_for_roots` keeps its `userprofile`
+  argument but ignores it (only `HOME` counts). On non-Unix targets the
+  filesystem primitives fail closed. No behavior change on macOS or Linux.
+- **Swift consumers:** move the pin to `exact: "0.26.0"` (XcodeGen
+  `exactVersion: 0.26.0`) when convenient; no Swift source changes.
+
 ## v0.25.0
 
 - **Swift consumers:** move the pin to `exact: "0.25.0"` (XcodeGen

@@ -4,6 +4,8 @@ The GitHub Releases page is the authoritative source for complete release notes.
 
 ## Unreleased
 
+## v0.26.0 — 2026-11-26
+
 - Rust: Windows-only code leaves `symaira-core-fs`, `-secretref`, `-config`,
   `-update` and `-mcpcfg`, together with the Windows-only `cap-primitives`,
   `cap-std` and `same-file` dependencies and the Windows-only tests (#458).
