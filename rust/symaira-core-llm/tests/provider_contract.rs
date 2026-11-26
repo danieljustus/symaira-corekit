@@ -1,5 +1,9 @@
 #![deny(unsafe_code)]
 
+#[path = "support/cancellation.rs"]
+mod cancellation;
+
+use cancellation::{bind, cancel_and_check_close, fixture_ready, stall};
 use serde_json::{Value, json};
 use std::io::{Read, Write};
 use std::net::TcpListener;
@@ -127,14 +131,6 @@ fn read_request(stream: &mut std::net::TcpStream) -> String {
         request.extend_from_slice(&chunk[..n]);
     }
     String::from_utf8_lossy(&request).into_owned()
-}
-
-fn server_observes_close(stream: &mut std::net::TcpStream) -> bool {
-    stream
-        .set_read_timeout(Some(Duration::from_secs(5)))
-        .unwrap();
-    let mut byte = [0_u8; 1];
-    matches!(stream.read(&mut byte), Ok(0))
 }
 
 #[test]
@@ -274,7 +270,7 @@ fn one_injected_http_client_handles_blocking_and_cancellable_calls() {
     let expected = &fixture["injected_http_client"];
     let listener = TcpListener::bind("127.0.0.1:0").unwrap();
     let address = listener.local_addr().unwrap();
-    let (started_tx, started_rx) = std::sync::mpsc::channel();
+    let (ready_tx, ready_rx) = tokio::sync::oneshot::channel();
     let (delta_tx, delta_rx) = std::sync::mpsc::channel();
     let server = thread::spawn(move || {
         let (mut stream, _) = listener.accept().unwrap();
@@ -308,30 +304,8 @@ fn one_injected_http_client_handles_blocking_and_cancellable_calls() {
             .write_all(b"HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: 256\r\nConnection: close\r\n\r\n{\"data\":[")
             .unwrap();
         stream.flush().unwrap();
-        started_tx.send(()).unwrap();
-        stream
-            .set_read_timeout(Some(Duration::from_secs(5)))
-            .unwrap();
-        let mut byte = [0_u8; 1];
-        let (close_observation, closed) = match stream.read(&mut byte) {
-            Ok(0) => ("eof".to_owned(), true),
-            Ok(count) => (
-                format!("unexpected client byte: {:?}", &byte[..count]),
-                false,
-            ),
-            Err(error) => (
-                format!("read error: {error}"),
-                error.kind() == std::io::ErrorKind::ConnectionReset,
-            ),
-        };
-        (
-            regular,
-            streaming,
-            cancellable,
-            delivered_before_rest,
-            closed,
-            close_observation,
-        )
+        ready_tx.send(stream).unwrap();
+        (regular, streaming, cancellable, delivered_before_rest)
     });
     let client = ClientBuilder::new(lookup("openai").unwrap().clone(), "")
         .base_url(format!("http://{address}/v1"))
@@ -397,18 +371,16 @@ fn one_injected_http_client_handles_blocking_and_cancellable_calls() {
             .embed_cancellable(&worker_token, "", &["input".into()], None)
             .await
     });
-    started_rx
-        .recv_timeout(Duration::from_secs(2))
-        .expect("the shared request did not reach its response body");
-    token.cancel();
-    let error = runtime
-        .block_on(async { tokio::time::timeout(Duration::from_secs(2), worker).await })
-        .expect("cancellable shared request did not return")
-        .unwrap()
-        .unwrap_err();
+    let phase = "shared HTTP client waiting for body";
+    let error = runtime.block_on(async {
+        let stream = fixture_ready(phase, ready_rx).await.unwrap();
+        stream.set_nonblocking(true).unwrap();
+        let stream = tokio::net::TcpStream::from_std(stream).unwrap();
+        cancel_and_check_close(&token, worker, stream, phase).await
+    });
     assert_eq!(error.code, ErrorCode::TransportError);
-    let (regular, streaming, cancellable, delivered_before_rest, closed, close_observation) =
-        server.join().unwrap();
+    assert_eq!(error.detail, "llmkit: context canceled");
+    let (regular, streaming, cancellable, delivered_before_rest) = server.join().unwrap();
     assert!(regular.starts_with("POST /v1/chat/completions "));
     assert!(streaming.starts_with("POST /v1/chat/completions "));
     assert!(cancellable.starts_with("POST /v1/embeddings "));
@@ -420,10 +392,6 @@ fn one_injected_http_client_handles_blocking_and_cancellable_calls() {
     assert_eq!(deltas.concat(), expected["stream_delta"]);
     assert_eq!(finish, "stop");
     assert_eq!(finish, expected["stream_finished"]);
-    assert!(
-        closed,
-        "cancellation did not close the shared HTTP response: {close_observation}"
-    );
     assert_eq!(expected["regular_path"], "/v1/chat/completions");
     assert_eq!(expected["cancellable_path"], "/v1/embeddings");
     assert_eq!(expected["cancellation_observed"], true);
@@ -564,55 +532,30 @@ fn cancellable_embedding_returns_before_starting_a_pre_cancelled_request() {
     ));
 }
 
-#[test]
-fn cancellable_embedding_closes_connection_while_waiting_for_headers_or_body() {
-    for wait_for_body in [false, true] {
-        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
-        let address = listener.local_addr().unwrap();
-        let (started_tx, started_rx) = std::sync::mpsc::channel();
-        let server = thread::spawn(move || {
-            let (mut stream, _) = listener.accept().unwrap();
-            read_request(&mut stream);
-            if wait_for_body {
-                stream
-                    .write_all(
-                        b"HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: 64\r\nConnection: keep-alive\r\n\r\n{\"data\":[",
-                    )
-                    .unwrap();
-                stream.flush().unwrap();
-            }
-            started_tx.send(()).unwrap();
-            server_observes_close(&mut stream)
-        });
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn cancellable_embedding_closes_connection_while_waiting_for_headers_or_body() {
+    let partial_body = b"HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: 64\r\nConnection: keep-alive\r\n\r\n{\"data\":[";
+    for (phase, reply) in [
+        ("provider embedding waiting for headers", &[][..]),
+        ("provider embedding waiting for body", &partial_body[..]),
+    ] {
+        let (url, listener) = bind().await;
         let client = ClientBuilder::new(lookup("openai").unwrap().clone(), "")
-            .base_url(format!("http://{address}/v1"))
+            .base_url(format!("{url}/v1"))
             .api_key("dummy-key")
             .build()
             .unwrap();
         let token = CancellationToken::new();
         let worker_token = token.clone();
-        let runtime = tokio::runtime::Builder::new_multi_thread()
-            .enable_all()
-            .build()
-            .unwrap();
-        let worker = runtime.spawn(async move {
+        let worker = tokio::spawn(async move {
             client
                 .embed_cancellable(&worker_token, "model", &["input".into()], None)
                 .await
         });
-        started_rx
-            .recv_timeout(Duration::from_secs(2))
-            .expect("provider did not reach the expected response phase");
-        token.cancel();
-        let error = runtime.block_on(async {
-            tokio::time::timeout(Duration::from_secs(2), worker)
-                .await
-                .expect("cancelled embedding did not return promptly")
-                .unwrap()
-                .unwrap_err()
-        });
+        let stream = stall(listener, reply, phase).await;
+        let error = cancel_and_check_close(&token, worker, stream, phase).await;
         assert_eq!(error.code, ErrorCode::TransportError);
-        assert!(server.join().unwrap(), "provider connection stayed open");
+        assert_eq!(error.detail, "llmkit: context canceled");
     }
 }
 
@@ -800,32 +743,20 @@ fn cancellable_chat_preserves_go_rate_limit_and_header_classification() {
     }
 }
 
-#[test]
-fn cancellation_closes_connection_while_waiting_for_response_headers() {
+#[tokio::test]
+async fn cancellation_closes_connection_while_waiting_for_response_headers() {
     // Go's net/http request uses the supplied context through Do and returns
     // when that context is cancelled (llmkit/client.go:138-161).
-    let listener = TcpListener::bind("127.0.0.1:0").unwrap();
-    let address = listener.local_addr().unwrap();
-    let (started_tx, started_rx) = std::sync::mpsc::channel();
-    let server = thread::spawn(move || {
-        let (mut stream, _) = listener.accept().unwrap();
-        read_request(&mut stream);
-        started_tx.send(()).unwrap();
-        server_observes_close(&mut stream)
-    });
+    let (url, listener) = bind().await;
     let client = ClientBuilder::new(lookup("openai").unwrap().clone(), "")
-        .base_url(format!("http://{address}/v1"))
+        .base_url(format!("{url}/v1"))
         .api_key("dummy-key")
         .async_client(reqwest::Client::builder().build().unwrap())
         .build()
         .unwrap();
     let token = CancellationToken::new();
     let worker_token = token.clone();
-    let runtime = tokio::runtime::Builder::new_multi_thread()
-        .enable_all()
-        .build()
-        .unwrap();
-    let worker = runtime.spawn(async move {
+    let worker = tokio::spawn(async move {
         client
             .chat_cancellable(
                 &worker_token,
@@ -838,49 +769,26 @@ fn cancellation_closes_connection_while_waiting_for_response_headers() {
             )
             .await
     });
-    started_rx
-        .recv_timeout(Duration::from_secs(2))
-        .expect("provider did not receive the request");
-    token.cancel();
-    let error = runtime.block_on(async {
-        tokio::time::timeout(Duration::from_secs(2), worker)
-            .await
-            .expect("cancelled chat did not return promptly")
-            .unwrap()
-            .unwrap_err()
-    });
+    let phase = "chat waiting for headers";
+    let stream = stall(listener, b"", phase).await;
+    let error = cancel_and_check_close(&token, worker, stream, phase).await;
     assert_eq!(error.code, ErrorCode::TransportError);
-    assert!(server.join().unwrap(), "provider connection stayed open");
+    assert_eq!(error.detail, "llmkit: context canceled");
 }
 
-#[test]
-fn cancellation_closes_connection_while_waiting_for_next_stream_chunk() {
-    let listener = TcpListener::bind("127.0.0.1:0").unwrap();
-    let address = listener.local_addr().unwrap();
-    let server = thread::spawn(move || {
-        let (mut stream, _) = listener.accept().unwrap();
-        read_request(&mut stream);
-        stream
-            .write_all(
-                b"HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nConnection: keep-alive\r\n\r\ndata: {\"choices\":[{\"delta\":{\"content\":\"partial\"}}]}\n\n",
-            )
-            .unwrap();
-        stream.flush().unwrap();
-        server_observes_close(&mut stream)
-    });
+#[tokio::test]
+async fn cancellation_closes_connection_while_waiting_for_next_stream_chunk() {
+    let (url, listener) = bind().await;
     let client = ClientBuilder::new(lookup("openai").unwrap().clone(), "")
-        .base_url(format!("http://{address}/v1"))
+        .base_url(format!("{url}/v1"))
         .api_key("dummy-key")
         .build()
         .unwrap();
     let token = CancellationToken::new();
     let worker_token = token.clone();
-    let (seen_tx, seen_rx) = std::sync::mpsc::channel();
-    let runtime = tokio::runtime::Builder::new_multi_thread()
-        .enable_all()
-        .build()
-        .unwrap();
-    let worker = runtime.spawn(async move {
+    let (seen_tx, seen_rx) = tokio::sync::oneshot::channel();
+    let mut seen_tx = Some(seen_tx);
+    let worker = tokio::spawn(async move {
         client
             .stream_chat_cancellable(
                 &worker_token,
@@ -891,27 +799,29 @@ fn cancellation_closes_connection_while_waiting_for_next_stream_chunk() {
                 }],
                 None,
                 |delta| {
-                    seen_tx.send(delta.to_owned()).unwrap();
+                    seen_tx.take().unwrap().send(delta.to_owned()).unwrap();
                     Ok(())
                 },
                 |_| {},
             )
             .await
     });
+    let phase = "chat stream waiting for next chunk";
+    let stream = stall(
+        listener,
+        b"HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nConnection: keep-alive\r\n\r\ndata: {\"choices\":[{\"delta\":{\"content\":\"partial\"}}]}\n\n",
+        phase,
+    )
+    .await;
     assert_eq!(
-        seen_rx.recv_timeout(Duration::from_secs(2)).unwrap(),
+        fixture_ready("chat stream first chunk", seen_rx)
+            .await
+            .expect("chat stream ended before delivering its first chunk"),
         "partial"
     );
-    token.cancel();
-    let error = runtime.block_on(async {
-        tokio::time::timeout(Duration::from_secs(2), worker)
-            .await
-            .expect("cancelled stream did not return promptly")
-            .unwrap()
-            .unwrap_err()
-    });
+    let error = cancel_and_check_close(&token, worker, stream, phase).await;
     assert_eq!(error.code, ErrorCode::TransportError);
-    assert!(server.join().unwrap(), "provider connection stayed open");
+    assert_eq!(error.detail, "llmkit: context canceled");
 }
 
 #[test]
