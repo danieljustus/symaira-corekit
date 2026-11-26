@@ -113,7 +113,11 @@
     },
     {
       "repo": "danieljustus/symaira-eraseme",
-      "checkout_commit": "300d9c3800f8efae10675fe5765a5a7062a234df",
+      "checkout_commit": "d7cf0e2003f4db19edac25d919e31b05568b8c77",
+      "consumer_release": {
+        "tag": "v0.17.1",
+        "commit": "d7cf0e2003f4db19edac25d919e31b05568b8c77"
+      },
       "go_status": "retired",
       "pins": [],
       "rust": {
@@ -138,12 +142,13 @@
             "status": "verified",
             "report": "evidence/standalone.json",
             "artifact": "evidence/artifact/symeraseme",
-            "command": "env -i PATH=/usr/bin:/bin HOME=/var/folders/7v/7bpq0fjn44lflpxdylsx8qs40000gn/T/ev-home-g4v6nw37 /Users/daniel/.hermes/cache/scratch/evidence-wt/symaira-eraseme/evidence/artifact/symeraseme version",
+            "command": "env -i PATH=/usr/bin:/bin HOME=/var/folders/7v/7bpq0fjn44lflpxdylsx8qs40000gn/T/ev-home-1sacd5aw ./evidence/artifact/symeraseme version",
             "result": {
               "exit_code": 0,
-              "stdout": "symeraseme dev\n",
+              "stdout": "symeraseme 0.17.1\n",
               "stderr": ""
-            }
+            },
+            "report_sha256": "4d71db0016aabe3f93e85da171f8ad1fbadcdf4096e89dc365fef21fa5d6b3fe"
           }
         }
       }
