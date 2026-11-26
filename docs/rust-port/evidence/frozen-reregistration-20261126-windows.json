@@ -1,0 +1,292 @@
+{
+ "date": "2026-11-26",
+ "fs_sec": {
+  "anchors": {
+   "darwin-arm64": "cf91336c7da45aad52e7a4622affec39e4ab86ec686848a33134f427f97f76a0",
+   "linux-amd64": "13cfe96608c014f9d17faceadebd85a453435d6f78dd8bc51655e64101056c3b",
+   "windows-amd64": "9cd98c130b84fba3eec1e5817fa9c9ba3b51b735145dbe324932decf9a1e4565"
+  },
+  "artifacts": {
+   "darwin-arm64": {
+    "artifact_id": 15102138594,
+    "fixture": "testdata/rust-port/fixtures/fs-secret/frozen-v1/darwin-arm64.json",
+    "sha256": "cf91336c7da45aad52e7a4622affec39e4ab86ec686848a33134f427f97f76a0",
+    "source_commit": "ad7008662b69c33527d8bc65057a606f4c114700",
+    "workflow_run": 45790832085
+   },
+   "linux-amd64": {
+    "artifact_id": 15102800690,
+    "fixture": "testdata/rust-port/fixtures/fs-secret/frozen-v1/linux-amd64.json",
+    "sha256": "13cfe96608c014f9d17faceadebd85a453435d6f78dd8bc51655e64101056c3b",
+    "source_commit": "ad7008662b69c33527d8bc65057a606f4c114700",
+    "workflow_run": 45790832085
+   }
+  },
+  "capture_run": 45790832085,
+  "previous_anchors": {
+   "darwin-arm64": "8708417c66e1b4e2a3c2245346e6c7e1f6b8f1598ead104b4b2ba299fe94fcdd",
+   "linux-amd64": "1a315da2080dba23a70998102ca553b50f49f5143327b6d9cc5d596f99e9e554",
+   "windows-amd64": "9cd98c130b84fba3eec1e5817fa9c9ba3b51b735145dbe324932decf9a1e4565"
+  },
+  "retained_unchanged": {
+   "windows-amd64": "outside the supported platform scope since #459; fixture and anchor kept as historical evidence; not replayed by any gate and no recapture is required"
+  },
+  "review": {
+   "darwin-arm64": {
+    "case_inventory_identical": true,
+    "changed": [
+     "/capture/candidate/files[candidate/Cargo.lock#dependency-closure]/sha256",
+     "/capture/candidate/files[candidate/rust/symaira-core-config/src/lib.rs]/sha256",
+     "/capture/candidate/files[candidate/rust/symaira-core-fs/Cargo.toml]/sha256",
+     "/capture/candidate/files[candidate/rust/symaira-core-fs/src/lib.rs]/sha256",
+     "/capture/candidate/files[candidate/rust/symaira-core-fs/tests/parity.rs]/sha256",
+     "/capture/candidate/files[candidate/rust/symaira-core-secretref/src/lib.rs]/sha256",
+     "/capture/candidate/files[candidate/rust/test-support/symaira-core-foundation/src/bin/rust_fs_secret.rs]/sha256",
+     "/capture/candidate/files[candidate/rust/test-support/symaira-core-foundation/tests/config.rs]/sha256",
+     "/capture/candidate/head_after",
+     "/capture/candidate/head_before",
+     "/capture/commands[git-head-after]/stdout_sha256",
+     "/capture/commands[git-head-before]/stdout_sha256",
+     "/capture/commands[go-env-000]/stdout_bytes",
+     "/capture/commands[go-env-000]/stdout_sha256",
+     "/capture/commands[go-env-001]/stdout_bytes",
+     "/capture/commands[go-env-001]/stdout_sha256",
+     "/capture/commands[go-env-002]/stdout_bytes",
+     "/capture/commands[go-env-002]/stdout_sha256",
+     "/capture/commands[go-env-003]/stdout_bytes",
+     "/capture/commands[go-env-003]/stdout_sha256",
+     "/capture/commands[go-env-004]/stdout_bytes",
+     "/capture/commands[go-env-004]/stdout_sha256",
+     "/capture/commands[go-list-after]/stdout_sha256",
+     "/capture/commands[go-list-before]/stdout_sha256",
+     "/capture/go/modules_sha256",
+     "/capture/go/probe_binary_sha256",
+     "/capture/inputs/after_sha256",
+     "/capture/inputs/before_sha256",
+     "/capture/inputs/files[candidate/Cargo.lock#dependency-closure]/sha256",
+     "/capture/inputs/files[candidate/rust/symaira-core-config/src/lib.rs]/sha256",
+     "/capture/inputs/files[candidate/rust/symaira-core-fs/Cargo.toml]/sha256",
+     "/capture/inputs/files[candidate/rust/symaira-core-fs/src/lib.rs]/sha256",
+     "/capture/inputs/files[candidate/rust/symaira-core-fs/tests/parity.rs]/sha256",
+     "/capture/inputs/files[candidate/rust/symaira-core-secretref/src/lib.rs]/sha256",
+     "/capture/inputs/files[candidate/rust/test-support/symaira-core-foundation/src/bin/rust_fs_secret.rs]/sha256",
+     "/capture/inputs/files[candidate/rust/test-support/symaira-core-foundation/tests/config.rs]/sha256",
+     "/capture/inputs/files[modules/current-helper/effective.mod]/sha256",
+     "/capture/inputs/groups/candidate",
+     "/capture/inputs/groups/modules"
+    ],
+    "explained": "Windows-only code removed from the candidate sources (symaira-core-config, -fs, -secretref, FS/SEC foundation harness) and Windows-only dependencies removed from the lockfile dependency closure change their candidate records; commit heads and per-run identities; go env outputs are hosted-toolcache paths and the helper module identity follows the runner module cache; Go observations, raw observations, case inventory and oracle byte-identical",
+    "go_identical": false,
+    "observations_identical": true,
+    "oracle_identical": true,
+    "raw_observations_identical": true
+   },
+   "linux-amd64": {
+    "case_inventory_identical": true,
+    "changed": [
+     "/capture/candidate/files[candidate/Cargo.lock#dependency-closure]/sha256",
+     "/capture/candidate/files[candidate/rust/symaira-core-config/src/lib.rs]/sha256",
+     "/capture/candidate/files[candidate/rust/symaira-core-fs/Cargo.toml]/sha256",
+     "/capture/candidate/files[candidate/rust/symaira-core-fs/src/lib.rs]/sha256",
+     "/capture/candidate/files[candidate/rust/symaira-core-fs/tests/parity.rs]/sha256",
+     "/capture/candidate/files[candidate/rust/symaira-core-secretref/src/lib.rs]/sha256",
+     "/capture/candidate/files[candidate/rust/test-support/symaira-core-foundation/src/bin/rust_fs_secret.rs]/sha256",
+     "/capture/candidate/files[candidate/rust/test-support/symaira-core-foundation/tests/config.rs]/sha256",
+     "/capture/candidate/head_after",
+     "/capture/candidate/head_before",
+     "/capture/commands[git-head-after]/stdout_sha256",
+     "/capture/commands[git-head-before]/stdout_sha256",
+     "/capture/commands[go-env-000]/stdout_bytes",
+     "/capture/commands[go-env-000]/stdout_sha256",
+     "/capture/commands[go-env-003]/stdout_bytes",
+     "/capture/commands[go-env-003]/stdout_sha256",
+     "/capture/commands[go-env-004]/stdout_bytes",
+     "/capture/commands[go-env-004]/stdout_sha256",
+     "/capture/commands[go-list-after]/stdout_sha256",
+     "/capture/commands[go-list-before]/stdout_sha256",
+     "/capture/go/modules_sha256",
+     "/capture/go/probe_binary_sha256",
+     "/capture/inputs/after_sha256",
+     "/capture/inputs/before_sha256",
+     "/capture/inputs/files[candidate/Cargo.lock#dependency-closure]/sha256",
+     "/capture/inputs/files[candidate/rust/symaira-core-config/src/lib.rs]/sha256",
+     "/capture/inputs/files[candidate/rust/symaira-core-fs/Cargo.toml]/sha256",
+     "/capture/inputs/files[candidate/rust/symaira-core-fs/src/lib.rs]/sha256",
+     "/capture/inputs/files[candidate/rust/symaira-core-fs/tests/parity.rs]/sha256",
+     "/capture/inputs/files[candidate/rust/symaira-core-secretref/src/lib.rs]/sha256",
+     "/capture/inputs/files[candidate/rust/test-support/symaira-core-foundation/src/bin/rust_fs_secret.rs]/sha256",
+     "/capture/inputs/files[candidate/rust/test-support/symaira-core-foundation/tests/config.rs]/sha256",
+     "/capture/inputs/files[modules/current-helper/effective.mod]/sha256",
+     "/capture/inputs/groups/candidate",
+     "/capture/inputs/groups/modules"
+    ],
+    "explained": "Windows-only code removed from the candidate sources (symaira-core-config, -fs, -secretref, FS/SEC foundation harness) and Windows-only dependencies removed from the lockfile dependency closure change their candidate records; commit heads and per-run identities; go env outputs are hosted-toolcache paths and the helper module identity follows the runner module cache; Go observations, raw observations, case inventory and oracle byte-identical",
+    "go_identical": false,
+    "observations_identical": true,
+    "oracle_identical": true,
+    "raw_observations_identical": true
+   }
+  }
+ },
+ "maintainer_decision": "Windows removal from the shared crates was planned in #458 for the next deliberate FS/SEC re-freeze (consumer ordering met since 2026-11-15); re-registration under the maintainer's standing delegation of implementation decisions; verdicts, cases and accepted differences unchanged.",
+ "reason": "Windows-only code leaves symaira-core-fs, -secretref, -config and the FS/SEC foundation harness, and the Windows-only cap-primitives, cap-std and same-file dependencies leave the lockfile dependency closure (#458). These are enforced FS/SEC and SQLite inputs; test_acceptance.py pointing at differential-macos-nowindows-20261126.json alters a bound SQLite harness file.",
+ "source_commit": "ad7008662b69c33527d8bc65057a606f4c114700",
+ "sqlite": {
+  "captures": {
+   "darwin-arm64": {
+    "artifact_id": 15103052433,
+    "manifest": "testdata/rust-port/sqlite/frozen-v1/darwin-arm64/sqlite-native-candidate-source.json",
+    "manifest_sha256": "24d8eef71aaf390469267a2df7a6f59cb3b6261157528ce03bcf7a340fa75b82",
+    "report": "testdata/rust-port/sqlite/frozen-v1/darwin-arm64/sqlite-native-report.json",
+    "report_sha256": "e64864507c4b4ffa04ac005e1d177190c071fca2fc783403352574a55b9fbbe2",
+    "source_commit": "ad7008662b69c33527d8bc65057a606f4c114700",
+    "workflow_run": 45790832085
+   },
+   "linux-amd64": {
+    "artifact_id": 15102338410,
+    "manifest": "testdata/rust-port/sqlite/frozen-v1/linux-amd64/sqlite-native-candidate-source.json",
+    "manifest_sha256": "24d8eef71aaf390469267a2df7a6f59cb3b6261157528ce03bcf7a340fa75b82",
+    "report": "testdata/rust-port/sqlite/frozen-v1/linux-amd64/sqlite-native-report.json",
+    "report_sha256": "0ac0121569982953974e034c6bbf1c04bfd6e21ebc188320df32b9e7048524c0",
+    "source_commit": "ad7008662b69c33527d8bc65057a606f4c114700",
+    "workflow_run": 45790832085
+   }
+  },
+  "previous": {
+   "darwin-arm64": {
+    "artifact_id": 15095061341,
+    "manifest_sha256": "c5319464f77fd206e86b944cd22ed07c96f0a5d87dc715649107531840cdb04a",
+    "report_sha256": "3c4c50be9f6d1d2f14adc9c351da9e4301172a995a39ec494ddb90e66feffb0a",
+    "workflow_run": 45772582817
+   },
+   "linux-amd64": {
+    "artifact_id": 15094766928,
+    "manifest_sha256": "c5319464f77fd206e86b944cd22ed07c96f0a5d87dc715649107531840cdb04a",
+    "report_sha256": "c8e266dbc82dde10eb69999a25ab626a58ab1c580118782a2d501783cc61f385",
+    "workflow_run": 45772582817
+   }
+  },
+  "retained_unchanged": {
+   "windows-amd64": "outside the supported platform scope since #459; not replayed by any gate"
+  },
+  "review": {
+   "acceptance_capture": "testdata/rust-port/sqlite/differential-macos-nowindows-20261126.json",
+   "candidate_revision": "e76ff4b4156a279c62b91a827ef4fcf33a5d9f37",
+   "changed_pointers": {
+    "darwin-arm64": [
+     "/go/capture_interval[0]",
+     "/go/capture_interval[1]",
+     "/go/cases[SQL-003]/state/applied_at[0]",
+     "/go/cases[SQL-003]/state/applied_at[1]",
+     "/go/cases[SQL-003]/state/data[item-1]/created_at",
+     "/go/cases[SQL-004]/state/applied_at[0]",
+     "/go/cases[SQL-004]/state/applied_at[1]",
+     "/go/cases[SQL-004]/state/data[item-1]/created_at",
+     "/go/oracle/artifact_hashes/scripts/rust-port/sqlite/test_acceptance.py",
+     "/rust/binary_sha256",
+     "/rust/candidate_manifest_sha256",
+     "/rust/candidate_revision",
+     "/rust/capture_interval[0]",
+     "/rust/capture_interval[1]",
+     "/rust/cases[SQL-002]/observed_busy_seconds",
+     "/rust/cases[SQL-003]/state/applied_at[0]",
+     "/rust/cases[SQL-003]/state/applied_at[1]",
+     "/rust/cases[SQL-003]/state/data[item-1]/created_at",
+     "/rust/cases[SQL-004]/state/applied_at[0]",
+     "/rust/cases[SQL-004]/state/applied_at[1]",
+     "/rust/cases[SQL-004]/state/data[item-1]/created_at",
+     "/rust/source_hashes/.github/workflows/ci.yml",
+     "/rust/source_hashes/Cargo.lock",
+     "/rust/source_hashes/Cargo.lock#dependency-closure",
+     "/rust/source_hashes/rust/symaira-core-config/src/lib.rs",
+     "/rust/source_hashes/rust/symaira-core-fs/Cargo.toml",
+     "/rust/source_hashes/rust/symaira-core-fs/src/lib.rs",
+     "/rust/source_hashes/rust/symaira-core-fs/tests/parity.rs",
+     "/rust/source_hashes/rust/symaira-core-mcpcfg/src/lib.rs",
+     "/rust/source_hashes/rust/symaira-core-secretref/src/lib.rs",
+     "/rust/source_hashes/rust/symaira-core-update/src/cache.rs",
+     "/rust/source_hashes/rust/symaira-core-update/src/checker.rs",
+     "/rust/source_hashes/rust/symaira-core-update/src/cosign.rs",
+     "/rust/source_hashes/rust/symaira-core-update/src/extract.rs",
+     "/rust/source_hashes/rust/symaira-core-update/src/install_method.rs",
+     "/rust/source_hashes/rust/symaira-core-update/tests/apply.rs",
+     "/rust/source_hashes/rust/symaira-core-update/tests/cancellation.rs",
+     "/rust/source_hashes/rust/symaira-core-update/tests/extract.rs",
+     "/rust/source_hashes/rust/symaira-core-update/tests/extract_containment.rs",
+     "/rust/source_hashes/rust/symaira-core-update/tests/install_method.rs",
+     "/rust/source_hashes/rust/symaira-core-update/tests/windows_install_method.rs",
+     "/rust/source_hashes/rust/test-support/symaira-core-foundation/src/bin/rust_fs_secret.rs",
+     "/rust/source_hashes/rust/test-support/symaira-core-foundation/tests/config.rs",
+     "/rust/source_hashes/scripts/rust-port/sqlite/test_acceptance.py"
+    ],
+    "linux-amd64": [
+     "/go/capture_interval[0]",
+     "/go/capture_interval[1]",
+     "/go/cases[SQL-003]/state/applied_at[0]",
+     "/go/cases[SQL-003]/state/applied_at[1]",
+     "/go/cases[SQL-003]/state/data[item-1]/created_at",
+     "/go/cases[SQL-004]/state/applied_at[0]",
+     "/go/cases[SQL-004]/state/applied_at[1]",
+     "/go/cases[SQL-004]/state/data[item-1]/created_at",
+     "/go/oracle/artifact_hashes/scripts/rust-port/sqlite/test_acceptance.py",
+     "/rust/binary_sha256",
+     "/rust/candidate_manifest_sha256",
+     "/rust/candidate_revision",
+     "/rust/capture_interval[0]",
+     "/rust/capture_interval[1]",
+     "/rust/cases[SQL-002]/observed_busy_seconds",
+     "/rust/cases[SQL-003]/state/applied_at[0]",
+     "/rust/cases[SQL-003]/state/applied_at[1]",
+     "/rust/cases[SQL-003]/state/data[item-1]/created_at",
+     "/rust/cases[SQL-004]/state/applied_at[0]",
+     "/rust/cases[SQL-004]/state/applied_at[1]",
+     "/rust/cases[SQL-004]/state/data[item-1]/created_at",
+     "/rust/source_hashes/.github/workflows/ci.yml",
+     "/rust/source_hashes/Cargo.lock",
+     "/rust/source_hashes/Cargo.lock#dependency-closure",
+     "/rust/source_hashes/rust/symaira-core-config/src/lib.rs",
+     "/rust/source_hashes/rust/symaira-core-fs/Cargo.toml",
+     "/rust/source_hashes/rust/symaira-core-fs/src/lib.rs",
+     "/rust/source_hashes/rust/symaira-core-fs/tests/parity.rs",
+     "/rust/source_hashes/rust/symaira-core-mcpcfg/src/lib.rs",
+     "/rust/source_hashes/rust/symaira-core-secretref/src/lib.rs",
+     "/rust/source_hashes/rust/symaira-core-update/src/cache.rs",
+     "/rust/source_hashes/rust/symaira-core-update/src/checker.rs",
+     "/rust/source_hashes/rust/symaira-core-update/src/cosign.rs",
+     "/rust/source_hashes/rust/symaira-core-update/src/extract.rs",
+     "/rust/source_hashes/rust/symaira-core-update/src/install_method.rs",
+     "/rust/source_hashes/rust/symaira-core-update/tests/apply.rs",
+     "/rust/source_hashes/rust/symaira-core-update/tests/cancellation.rs",
+     "/rust/source_hashes/rust/symaira-core-update/tests/extract.rs",
+     "/rust/source_hashes/rust/symaira-core-update/tests/extract_containment.rs",
+     "/rust/source_hashes/rust/symaira-core-update/tests/install_method.rs",
+     "/rust/source_hashes/rust/symaira-core-update/tests/windows_install_method.rs",
+     "/rust/source_hashes/rust/test-support/symaira-core-foundation/src/bin/rust_fs_secret.rs",
+     "/rust/source_hashes/rust/test-support/symaira-core-foundation/tests/config.rs",
+     "/rust/source_hashes/scripts/rust-port/sqlite/test_acceptance.py"
+    ]
+   },
+   "verdict": {
+    "darwin-arm64": {
+     "accepted_differences": 9,
+     "accepted_differences_identical": true,
+     "case_ids": 6,
+     "checked_fields": 42,
+     "comparison_contract": "approved-typed-errors-and-consuming-close",
+     "differences": 0,
+     "status": "passed"
+    },
+    "linux-amd64": {
+     "accepted_differences": 9,
+     "accepted_differences_identical": true,
+     "case_ids": 6,
+     "checked_fields": 42,
+     "comparison_contract": "approved-typed-errors-and-consuming-close",
+     "differences": 0,
+     "status": "passed"
+    }
+   }
+  }
+ },
+ "workflow_run": 45790832085
+}
