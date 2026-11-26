@@ -4,6 +4,18 @@ The GitHub Releases page is the authoritative source for complete release notes.
 
 ## Unreleased
 
+- Rust 1.100.0: `rust-toolchain.toml` is the single toolchain pin and every
+  workflow installs from it; Dependabot proposes new stable releases through
+  the `rust-toolchain` ecosystem. 1.98.0 had a trait-object vtable
+  miscompilation (#495). ADR RUST-003 documents the Go-oracle recapture that
+  a toolchain or lockfile update needs (#497); the frozen FS/SEC and SQLite
+  evidence is re-registered with byte-identical Go observations
+  (`docs/rust-port/evidence/frozen-reregistration-20261126.json`).
+- Rust (`symaira-core-mcp`): the optional `toon` feature adds
+  `Server::set_adaptive_toon` for text-only results that are at least 5 %
+  smaller as TOON and decode to the same value (#506). It pulls in
+  `toon-format` 0.7.0 (MIT), which enables `serde_json/preserve_order`, a mode
+  the crate already tests in CI.
 - Swift: Apple platforms move to native controls per the UI catalog decision
   of 2026-11-25 (`swift/design/ui-catalog/`, 33 elements with real macOS and
   iPhone screenshots). Nine Symaira controls are deprecated with named native
