@@ -442,9 +442,11 @@ public enum SymairaButtonRole: Sendable {
 /// macOS/iOS 26.
 public struct SymairaAdaptiveButtonModifier: ViewModifier {
     private let role: SymairaButtonRole
+    private let onPressChange: ((Bool) -> Void)?
 
-    public init(role: SymairaButtonRole) {
+    public init(role: SymairaButtonRole, onPressChange: ((Bool) -> Void)? = nil) {
         self.role = role
+        self.onPressChange = onPressChange
     }
 
     @ViewBuilder
@@ -462,9 +464,9 @@ public struct SymairaAdaptiveButtonModifier: ViewModifier {
         #else
         switch role {
         case .primary:
-            content.buttonStyle(SymairaPrimaryButtonStyle())
+            content.buttonStyle(SymairaPrimaryButtonStyle(onPressChange: onPressChange))
         case .secondary:
-            content.buttonStyle(SymairaSecondaryButtonStyle())
+            content.buttonStyle(SymairaSecondaryButtonStyle(onPressChange: onPressChange))
         case .toolbar:
             toolbarButton(content)
         }
@@ -486,8 +488,12 @@ public struct SymairaAdaptiveButtonModifier: ViewModifier {
 }
 
 extension View {
-    public func symairaButtonStyle(_ role: SymairaButtonRole) -> some View {
-        modifier(SymairaAdaptiveButtonModifier(role: role))
+    /// Observes press and release for primary and secondary styles on macOS and iOS.
+    /// The native toolbar and tvOS styles do not invoke the callback.
+    public func symairaButtonStyle(
+        _ role: SymairaButtonRole, onPressChange: ((Bool) -> Void)? = nil
+    ) -> some View {
+        modifier(SymairaAdaptiveButtonModifier(role: role, onPressChange: onPressChange))
     }
 }
 
@@ -497,14 +503,18 @@ public struct SymairaPrimaryButtonStyle: ButtonStyle {
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.isEnabled) private var isEnabled
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    private let onPressChange: ((Bool) -> Void)?
 
-    public init() {}
+    public init(onPressChange: ((Bool) -> Void)? = nil) {
+        self.onPressChange = onPressChange
+    }
 
     public func makeBody(configuration: Configuration) -> some View {
         let shape = RoundedRectangle(cornerRadius: SymairaTokens.Radius.lg, style: .continuous)
         SymairaIconHost(isPressed: configuration.isPressed) {
             configuration.label
                 .font(SymairaTypography.bodyEmphasized)
+                .lineLimit(1)
                 .foregroundStyle(SymairaTheme.surfaceOpaque(for: colorScheme))
                 .padding(.horizontal, SymairaMetrics.contentActionHorizontalPadding)
                 .frame(minHeight: SymairaMetrics.contentActionHeight)
@@ -515,6 +525,7 @@ public struct SymairaPrimaryButtonStyle: ButtonStyle {
                 .opacity(isEnabled ? 1 : 0.55)
                 .animation(reduceMotion ? nil : .easeOut(duration: 0.15), value: configuration.isPressed)
         }
+        .onChange(of: configuration.isPressed) { _, isPressed in onPressChange?(isPressed) }
     }
 }
 
@@ -523,14 +534,18 @@ public struct SymairaSecondaryButtonStyle: ButtonStyle {
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.isEnabled) private var isEnabled
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    private let onPressChange: ((Bool) -> Void)?
 
-    public init() {}
+    public init(onPressChange: ((Bool) -> Void)? = nil) {
+        self.onPressChange = onPressChange
+    }
 
     public func makeBody(configuration: Configuration) -> some View {
         let shape = RoundedRectangle(cornerRadius: SymairaTokens.Radius.lg, style: .continuous)
         SymairaIconHost(isPressed: configuration.isPressed) {
             configuration.label
                 .font(SymairaTypography.bodyEmphasized)
+                .lineLimit(1)
                 .foregroundStyle(SymairaTheme.foregroundPrimary(for: colorScheme))
                 .padding(.horizontal, SymairaMetrics.contentActionHorizontalPadding)
                 .frame(minHeight: SymairaMetrics.contentActionHeight)
@@ -546,5 +561,6 @@ public struct SymairaSecondaryButtonStyle: ButtonStyle {
                 .opacity(isEnabled ? 1 : 0.5)
                 .animation(reduceMotion ? nil : .easeOut(duration: 0.15), value: configuration.isPressed)
         }
+        .onChange(of: configuration.isPressed) { _, isPressed in onPressChange?(isPressed) }
     }
 }

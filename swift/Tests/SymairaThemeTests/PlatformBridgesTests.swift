@@ -17,6 +17,15 @@ final class PlatformBridgesTests: XCTestCase {
         }
     }
 
+    func testNativeIconImageIsATemplate() throws {
+        let image = try XCTUnwrap(SymairaIconStill(icon: .delete, size: 24).templateImage(scale: 2))
+        #if canImport(UIKit)
+        XCTAssertEqual(image.renderingMode, .alwaysTemplate)
+        #else
+        XCTAssertTrue(image.isTemplate)
+        #endif
+    }
+
     private func hasOpaquePixel(_ image: CGImage) -> Bool {
         let w = image.width
         let h = image.height

@@ -9,6 +9,20 @@ import Observation
 
 @MainActor
 final class WorkspaceFoundationTests: XCTestCase {
+    func testWorkspaceUsesOpaqueChromeOnlyForInactiveDarkWindowsOrReducedTransparency() {
+        for scheme in [ColorScheme.light, .dark] {
+            for state in ControlActiveState.allCases {
+                XCTAssertTrue(
+                    workspaceUsesOpaqueChrome(
+                        colorScheme: scheme, controlActiveState: state, reduceTransparency: true))
+                XCTAssertEqual(
+                    workspaceUsesOpaqueChrome(
+                        colorScheme: scheme, controlActiveState: state, reduceTransparency: false),
+                    scheme == .dark && state == .inactive)
+            }
+        }
+    }
+
     func testSidebarPolicyKeepsWidthsAndContentBudget() {
         var state = SymairaSidebarState()
         state.resize(to: 328)

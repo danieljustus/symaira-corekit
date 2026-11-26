@@ -12,6 +12,8 @@ public struct SymairaWorkspace<Navigation: View, Content: View>: View {
     private let content: Content
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @Environment(\.colorSchemeContrast) private var contrast
+    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.controlActiveState) private var controlActiveState
 
     public init(
         sidebar: Binding<SymairaSidebarState>, topography: SymairaTopoModel? = nil,
@@ -67,12 +69,21 @@ public struct SymairaWorkspace<Navigation: View, Content: View>: View {
     }
 
     @ViewBuilder private var chrome: some View {
-        if reduceTransparency {
+        if workspaceUsesOpaqueChrome(
+            colorScheme: colorScheme, controlActiveState: controlActiveState, reduceTransparency: reduceTransparency
+        ) {
             SymairaTokens.sidebar
         } else {
             Color.clear.symairaGlassChrome(tint: SymairaTokens.sidebar, cornerRadius: 0)
         }
     }
+}
+
+func workspaceUsesOpaqueChrome(
+    colorScheme: ColorScheme, controlActiveState: ControlActiveState, reduceTransparency: Bool
+) -> Bool {
+    // Inactive dark glass can lighten enough to lose contrast with sidebar text.
+    reduceTransparency || (colorScheme == .dark && controlActiveState == .inactive)
 }
 #endif
 

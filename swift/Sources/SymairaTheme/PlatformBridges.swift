@@ -12,21 +12,15 @@ extension Image {
     /// it like an SF Symbol. Interactive surfaces keep using `SymairaIconView`.
     @MainActor
     public init(symairaIcon icon: SymairaIcon, size: CGFloat = 24, scale: CGFloat = 3) {
-        let renderer = ImageRenderer(content: SymairaIconStill(icon: icon, size: size))
-        renderer.scale = scale
-        #if canImport(UIKit)
-        if let image = renderer.uiImage {
+        if let image = SymairaIconStill(icon: icon, size: size).templateImage(scale: scale) {
+            #if canImport(UIKit)
             self.init(uiImage: image)
-        } else {
-            self.init(systemName: "questionmark")
-        }
-        #else
-        if let image = renderer.nsImage {
+            #else
             self.init(nsImage: image)
+            #endif
         } else {
             self.init(systemName: "questionmark")
         }
-        #endif
         self = self.renderingMode(.template)
     }
 }
@@ -35,6 +29,25 @@ extension Image {
 struct SymairaIconStill: View {
     let icon: SymairaIcon
     let size: CGFloat
+
+    #if canImport(UIKit)
+    typealias PlatformImage = UIImage
+    #else
+    typealias PlatformImage = NSImage
+    #endif
+
+    func templateImage(scale: CGFloat) -> PlatformImage? {
+        let renderer = ImageRenderer(content: self)
+        renderer.scale = scale
+        #if canImport(UIKit)
+        return renderer.uiImage?.withRenderingMode(.alwaysTemplate)
+        #else
+        let image = renderer.nsImage
+        image?.isTemplate = true
+        return image
+        #endif
+    }
+
     var body: some View {
         Canvas { context, canvasSize in
             for part in icon.spec {
