@@ -4,6 +4,10 @@ The GitHub Releases page is the authoritative source for complete release notes.
 
 ## Unreleased
 
+- Swift: the `SymairaIconButton` deprecation message, GUIDELINES ICON-2 and
+  the UI catalog E04 note name an `Image(symairaIcon:)` label; the previous
+  `Label(_:symairaIcon:)` recipe renders an empty glass circle on macOS (#510).
+
 ## v0.26.0 — 2026-11-26
 
 - Rust: Windows-only code leaves `symaira-core-fs`, `-secretref`, `-config`,

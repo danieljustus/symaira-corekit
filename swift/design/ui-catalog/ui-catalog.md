@@ -79,7 +79,7 @@ Werden durch native Controls ersetzt (deprecaten, nicht sofort löschen):
 - `SymairaSegmentedControl` → `Picker(.segmented)` + `.tint(SymairaTokens.selected)` (E07); Tabs → `TabView` (E28)
 - `.symairaSwitch` → `Toggle(.switch)` + `.tint(SymairaTokens.selected)` (E08)
 - `SymairaFilterMenu` → `Picker(.menu)` (E06, E09)
-- `SymairaIconButton` → `Button` + `.glass` + `.buttonBorderShape(.circle)` (E04); Toolbar-Gruppen → `GlassEffectContainer` (E05)
+- `SymairaIconButton` → `Button` + `.glass` + `.buttonBorderShape(.circle)` (E04), Symbol als `Image(symairaIcon:)` im Label (`Label(_:symairaIcon:)` bleibt im Glass-Button leer, #510); Toolbar-Gruppen → `GlassEffectContainer` (E05)
 - `SymairaProgressStyle` → `ProgressView(value:)` (E19); `SymairaLoadingState` → `ProgressView("…")` (E24)
 - `SymairaFormSection` als Formular → `Form { Section }.formStyle(.grouped)` (E17)
 - `SymairaSheetScaffold` → `.sheet` + `NavigationStack` + Toolbar-Rollen (E26); Bestätigung → `.alert` (E25)

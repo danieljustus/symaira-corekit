@@ -82,7 +82,7 @@ extension SymairaIconView where Trigger == Int {
 @available(
     *, deprecated,
     message:
-        "Use Button { } label: { Label(...).labelStyle(.iconOnly) }.symairaButtonStyle(.toolbar).buttonBorderShape(.circle), E04 (UI catalog 2026-11-25)."
+        "Use Button { } label: { Label { Text(title) } icon: { Image(symairaIcon: icon, size: 16) }.labelStyle(.iconOnly) }.symairaButtonStyle(.toolbar).buttonBorderShape(.circle), E04 (UI catalog 2026-11-25); glass buttons render SymairaIconView blank."
 )
 public struct SymairaIconButton: View {
     private let title: Text

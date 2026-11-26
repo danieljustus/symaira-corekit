@@ -257,9 +257,12 @@ Six lines, kept in the pull request or issue:
   Shared cases include `operate`, `restart`, `memory`, `battery`, `keepAwake`,
   `expired` and `externalDrive`.
 - **ICON-2** Icon-only controls carry `.accessibilityLabel` and `.help(...)`.
-  An icon button is `Button { } label: { Label(_:symairaIcon:)
-  .labelStyle(.iconOnly) }` with `.symairaButtonStyle(.toolbar)` and
-  `.buttonBorderShape(.circle)` (Liquid Glass, UI catalog E04).
+  An icon button is `Button { } label: { Label { Text(title) } icon:
+  { Image(symairaIcon: icon, size: 16) }.labelStyle(.iconOnly) }` with
+  `.symairaButtonStyle(.toolbar)` and `.buttonBorderShape(.circle)` (Liquid
+  Glass, UI catalog E04). Do not use `Label(_:symairaIcon:)` there: the glass
+  button style renders its `SymairaIconView` as an empty circle (#510, same
+  limitation as ICON-4 and IOS-6).
 - **ICON-3** Toolbar controls use `.symairaButtonStyle(.toolbar)` (glass);
   content actions never do.
 - **ICON-4** Use `Image(symairaIcon:)` rather than `SymairaIconView` in a

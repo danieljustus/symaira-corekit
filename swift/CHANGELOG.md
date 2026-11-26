@@ -11,6 +11,10 @@ the releases of the former `symaira-appkit` repository.
 
 ## [Unreleased]
 
+### Fixed
+- `SymairaIconButton` deprecation message names an `Image(symairaIcon:)` label;
+  `Label(_:symairaIcon:)` renders blank inside the glass toolbar button (#510).
+
 ## [0.26.0] - 2026-11-26
 
 ### Changed
