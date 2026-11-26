@@ -11,6 +11,11 @@ the releases of the former `symaira-appkit` repository.
 
 ## [Unreleased]
 
+## [0.27.1] - 2026-11-26
+
+No Swift changes. The release ships the consumer Dependabot action (root
+`CHANGELOG.md`).
+
 ## [0.27.0] - 2026-11-26
 
 ### Added

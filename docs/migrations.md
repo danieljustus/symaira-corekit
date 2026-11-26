@@ -10,6 +10,16 @@ also preserve historical removals, including `embedkit` in v0.12.0; those
 require migration. Otherwise "check" means a new capability to adopt or a
 behavior change worth confirming.
 
+## v0.27.1
+
+- **Rust and Swift consumers:** no library changes; moving the pin is optional.
+- **Consumer repositories:** new composite action
+  `.github/actions/dependabot-corekit` lands CoreKit-only Dependabot pull
+  requests (syncs `project.yml` and `[workspace.dependencies]` tags, pushes
+  with a repository deploy key, enables auto-merge). Adopt it with the
+  templates in `docs/consumer-dependabot.md`; it also fails on `rev`/`branch`
+  Cargo pins, which Dependabot cannot move.
+
 ## v0.27.0
 
 - **Rust consumers:** no changes.

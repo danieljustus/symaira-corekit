@@ -4,6 +4,8 @@ The GitHub Releases page is the authoritative source for complete release notes.
 
 ## Unreleased
 
+## v0.27.1 — 2026-11-26
+
 - Consumers: composite action `.github/actions/dependabot-corekit` lands a
   CoreKit-only Dependabot pull request. It copies the new version into the
   files Dependabot never edits (XcodeGen `project.yml`, a
