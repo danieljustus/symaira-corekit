@@ -21,6 +21,10 @@ from typing import Sequence
 
 ROOT = Path(__file__).resolve().parents[2]
 
+# Dated nightly, never floating `nightly`: nightly switches compiler internals on
+# by default without any repository change (go-rust-port-parity: rust-stack.md).
+MIRI_TOOLCHAIN = "nightly-2026-10-29"
+
 # Keep default isolation for code whose tests do not need ambient I/O.
 PURE_PACKAGES = (
     "symaira-core-exit",
@@ -92,7 +96,7 @@ def validate_package_partition() -> None:
 
 
 def miri_command(packages: Sequence[str], *, test: str | None = None) -> list[str]:
-    command = ["cargo", "+nightly", "miri", "test"]
+    command = ["cargo", f"+{MIRI_TOOLCHAIN}", "miri", "test"]
     for package in packages:
         command.extend(("-p", package))
     if test is not None:
