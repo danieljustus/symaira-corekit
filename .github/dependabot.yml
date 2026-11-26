@@ -7,7 +7,11 @@ updates:
   # (#368) and the Go module is being retired (#373). Security alerts still
   # surface through Dependabot alerts.
   - package-ecosystem: "github-actions"
-    directory: "/"
+    # "/" covers .github/workflows; the composite action consumers call
+    # (.github/actions/dependabot-corekit) pins its own actions/checkout.
+    directories:
+      - "/"
+      - "/.github/actions/*"
     schedule:
       interval: "weekly"
       day: "monday"

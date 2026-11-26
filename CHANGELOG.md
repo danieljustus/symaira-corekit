@@ -4,6 +4,15 @@ The GitHub Releases page is the authoritative source for complete release notes.
 
 ## Unreleased
 
+- Consumers: composite action `.github/actions/dependabot-corekit` lands a
+  CoreKit-only Dependabot pull request. It copies the new version into the
+  files Dependabot never edits (XcodeGen `project.yml`, a
+  `[workspace.dependencies]` tag in `Cargo.toml`), pushes that commit with a
+  repository deploy key so the pull request's CI runs on it, and enables
+  auto-merge behind the consumer's required checks. Its
+  `corekit_pins.py` also rejects `rev`/`branch` Cargo pins, which Dependabot
+  cannot move. Setup and templates: `docs/consumer-dependabot.md`.
+
 ## v0.27.0 — 2026-11-26
 
 - Swift: three control tiers (GUIDELINES CTRL-1). `SymairaControlTier` and

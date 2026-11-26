@@ -1,0 +1,107 @@
+name: CoreKit Dependabot
+description: >-
+  Lands a Dependabot pull request that bumps only symaira-corekit: copies the
+  new version into the files Dependabot never edits (XcodeGen project.yml, a
+  [workspace.dependencies] tag in Cargo.toml), pushes that commit with a
+  repository deploy key so the pull request's CI runs on it, and enables
+  auto-merge, so the consumer's required checks decide the merge. Pull
+  requests that touch any other dependency are left alone.
+
+inputs:
+  github-token:
+    description: Token with contents, pull-requests and actions write access.
+    default: ${{ github.token }}
+  ssh-key:
+    description: >-
+      Private half of a write deploy key of this repository, stored as a
+      Dependabot secret. A push made with GITHUB_TOKEN starts no workflow, so
+      the required checks would never run on the sync commit; a deploy-key
+      push triggers the pull request's workflows like any other push.
+    required: true
+  auto-merge:
+    description: Enable auto-merge; the repository's required checks gate it.
+    default: "true"
+  merge-method:
+    description: merge, squash or rebase.
+    default: squash
+
+outputs:
+  corekit:
+    description: "true when the pull request bumps only CoreKit."
+    value: ${{ steps.scope.outputs.corekit }}
+  synced:
+    description: "true when a sync commit was pushed."
+    value: ${{ steps.sync.outputs.synced }}
+
+runs:
+  using: composite
+  steps:
+    - name: Check scope
+      id: scope
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+        AUTHOR: ${{ github.event.pull_request.user.login }}
+        PR: ${{ github.event.pull_request.number }}
+        REPO: ${{ github.repository }}
+      run: |
+        set -euo pipefail
+        if [ "$AUTHOR" != "dependabot[bot]" ]; then
+          echo "Not a Dependabot pull request; nothing to do."
+          echo "corekit=false" >>"$GITHUB_OUTPUT"; exit 0
+        fi
+        # Dependabot lists every updated dependency in its first commit.
+        deps="$(gh api "repos/$REPO/pulls/$PR/commits" --jq '.[0].commit.message' | sed -n 's/^- dependency-name: //p')"
+        other="$(printf '%s\n' "$deps" | grep -Ev '^(symaira-core-[a-z0-9-]+|github\.com/danieljustus/symaira-corekit|danieljustus/symaira-corekit(/.*)?)$' || true)"
+        if [ -z "$deps" ] || [ -n "$other" ]; then
+          echo "::notice::Not a CoreKit-only update; left for review: ${other:-no dependency list}"
+          echo "corekit=false" >>"$GITHUB_OUTPUT"; exit 0
+        fi
+        echo "CoreKit-only update: $(echo $deps)"
+        echo "corekit=true" >>"$GITHUB_OUTPUT"
+
+    # head.ref is a Dependabot-generated branch name (the scope step above
+    # rejects any other author), not attacker-controlled input.
+    - name: Check out the pull request branch
+      if: steps.scope.outputs.corekit == 'true'
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
+      with:
+        ref: ${{ github.event.pull_request.head.ref }}
+        persist-credentials: false
+
+    - name: Sync pins Dependabot does not edit
+      id: sync
+      if: steps.scope.outputs.corekit == 'true'
+      shell: bash
+      env:
+        HEAD_REF: ${{ github.event.pull_request.head.ref }}
+        REPO: ${{ github.repository }}
+        SSH_KEY: ${{ inputs.ssh-key }}
+      run: |
+        set -euo pipefail
+        python3 -I "$GITHUB_ACTION_PATH/corekit_pins.py" --fix
+        if git diff --quiet; then
+          echo "synced=false" >>"$GITHUB_OUTPUT"; exit 0
+        fi
+        git -c user.name='github-actions[bot]' \
+            -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
+            commit -qam "chore(deps): sync CoreKit pins Dependabot does not edit"
+        if [ -z "$SSH_KEY" ]; then
+          echo "::error::ssh-key is empty: add the deploy key secret for Dependabot (docs/consumer-dependabot.md in symaira-corekit)"
+          exit 1
+        fi
+        key="$RUNNER_TEMP/corekit-sync-key"
+        trap 'rm -f "$key"' EXIT
+        (umask 077; printf '%s\n' "$SSH_KEY" >"$key")
+        GIT_SSH_COMMAND="ssh -i $key -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new" \
+          git push "git@github.com:${REPO}.git" "HEAD:refs/heads/$HEAD_REF"
+        echo "synced=true" >>"$GITHUB_OUTPUT"
+
+    - name: Enable auto-merge
+      if: steps.scope.outputs.corekit == 'true' && inputs.auto-merge == 'true'
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+        PR_URL: ${{ github.event.pull_request.html_url }}
+        METHOD: ${{ inputs.merge-method }}
+      run: gh pr merge "$PR_URL" --auto "--$METHOD"
