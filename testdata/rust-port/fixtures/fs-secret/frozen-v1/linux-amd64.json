@@ -28,15 +28,15 @@
       ]
     },
     "candidate": {
-      "head_before": "e7876801f6e4381ce28a5e8f00418f3b9e52093f",
-      "head_after": "e7876801f6e4381ce28a5e8f00418f3b9e52093f",
+      "head_before": "ad7008662b69c33527d8bc65057a606f4c114700",
+      "head_after": "ad7008662b69c33527d8bc65057a606f4c114700",
       "clean_before": true,
       "clean_after": true,
       "go_helper_sha256": "c4f72bf9ad241759aae097756103baa820e7ed8210a956e2efa4b645ac97734d",
       "files": [
         {
           "path": "candidate/Cargo.lock#dependency-closure",
-          "sha256": "ed3df0a895e9f5e338c7bf0efc1c608198c121ff7478c822e5c3fc1f38e7198c"
+          "sha256": "43377b2d956a719f09b6ed495aa36dc4e93ef108977f4d31c1fcd78c7d3e3fbc"
         },
         {
           "path": "candidate/Cargo.toml",
@@ -56,7 +56,7 @@
         },
         {
           "path": "candidate/rust/symaira-core-config/src/lib.rs",
-          "sha256": "c01e41034c616276d534c1482eb2765cab73ad0cc90727bfa724b94925a25a65"
+          "sha256": "2d982b6f0c593b165c2227c5624ca2d02b573f36a7db97bae339287ba02010a7"
         },
         {
           "path": "candidate/rust/symaira-core-env/Cargo.toml",
@@ -76,15 +76,15 @@
         },
         {
           "path": "candidate/rust/symaira-core-fs/Cargo.toml",
-          "sha256": "5c71508b25500b8de54f40f6e266a393dd0b347b48d0377a5481487edd9e1824"
+          "sha256": "83ce22ce575782b3d2fbf899c87bd782a334e351b3c35bed266a216dfe34fc37"
         },
         {
           "path": "candidate/rust/symaira-core-fs/src/lib.rs",
-          "sha256": "5a66b877005f079bfd824b43f8b149ea442e385e7a3b0ab21d74f64dc6518b11"
+          "sha256": "90223945236841cc46f96c559b64b8fe1d51bc6e052485deb3bacd46e148d33a"
         },
         {
           "path": "candidate/rust/symaira-core-fs/tests/parity.rs",
-          "sha256": "b60321ca203595eedfd6da9460c2237aa683c5e982952266d78d9df4398a3cfa"
+          "sha256": "25c11e3e96ca65ce7f81fe0e287676fbbbf76143dfd21db40931e68071b9e1d6"
         },
         {
           "path": "candidate/rust/symaira-core-log/Cargo.toml",
@@ -104,7 +104,7 @@
         },
         {
           "path": "candidate/rust/symaira-core-secretref/src/lib.rs",
-          "sha256": "41a553885c6cb08bf44be9d413897fbb7fb39122b1f17fac8281338b00f83f7d"
+          "sha256": "c1ca51f586b3bf85ada6b41ef375caba14b52d90c2e62f53d81f2be44674cba6"
         },
         {
           "path": "candidate/rust/symaira-core-secretref/tests/parity.rs",
@@ -252,7 +252,7 @@
         },
         {
           "path": "candidate/rust/test-support/symaira-core-foundation/src/bin/rust_fs_secret.rs",
-          "sha256": "e96bae13645cf538ba254ad4239fc0baeb88f818bb4a188a7389150369980718"
+          "sha256": "65f09efe59d123557f21aa04743a6b24317520803ddf60ad9d3f1be0bfbf0235"
         },
         {
           "path": "candidate/rust/test-support/symaira-core-foundation/src/lib.rs",
@@ -260,7 +260,7 @@
         },
         {
           "path": "candidate/rust/test-support/symaira-core-foundation/tests/config.rs",
-          "sha256": "42c25aefb4d143540edce2107c6f09f83684aa22b422389b0c4afbb318a5b4b7"
+          "sha256": "94fac90a49f2032308056a1aa3a5e505ea1aa7e6948ac979f9d276bb10a62e80"
         },
         {
           "path": "candidate/rust/test-support/symaira-core-foundation/tests/env.rs",
@@ -347,18 +347,18 @@
       "goarch": "amd64",
       "binary_sha256": "29e6e0b8be61beb1489ceae62b304343566de8a1dc700af74bde7aeb9c80ad45",
       "goroot_label": "installed-go-sdk",
-      "probe_binary_sha256": "e542add9a18af33a0090d71311cb6dcba96123c1c578c7a1a4605ac449ac56ae",
+      "probe_binary_sha256": "0055afa933adc6b1e6be29d2fc6732c840f3674cf892b3b0c9902cd53c280462",
       "gomodcache_policy": "existing-cache-offline-read-only",
       "sdk_sha256": "5b54db2855c64f9181b9e762eb14fb9dff6ffacd86e67dce8fccab10381a9d67",
-      "modules_sha256": "3f696fd41d6c3f00a420c64c76c31590e6105ad5df3fbbe69258be9b3870152c"
+      "modules_sha256": "f678f104b6db22bf435dc305a2654d2e6df2a1c06078dc238a9e1259bb769cf0"
     },
     "inputs": {
-      "before_sha256": "32e03da54f01ee3b58b1e9f2ef15b760064bdb331a291903320881c2ce00f86a",
-      "after_sha256": "32e03da54f01ee3b58b1e9f2ef15b760064bdb331a291903320881c2ce00f86a",
+      "before_sha256": "e50befb58a15a257e4148ccf3b6725f4cf4326bc7135c777c06fa4f3e3057796",
+      "after_sha256": "e50befb58a15a257e4148ccf3b6725f4cf4326bc7135c777c06fa4f3e3057796",
       "files": [
         {
           "path": "candidate/Cargo.lock#dependency-closure",
-          "sha256": "ed3df0a895e9f5e338c7bf0efc1c608198c121ff7478c822e5c3fc1f38e7198c"
+          "sha256": "43377b2d956a719f09b6ed495aa36dc4e93ef108977f4d31c1fcd78c7d3e3fbc"
         },
         {
           "path": "candidate/Cargo.toml",
@@ -378,7 +378,7 @@
         },
         {
           "path": "candidate/rust/symaira-core-config/src/lib.rs",
-          "sha256": "c01e41034c616276d534c1482eb2765cab73ad0cc90727bfa724b94925a25a65"
+          "sha256": "2d982b6f0c593b165c2227c5624ca2d02b573f36a7db97bae339287ba02010a7"
         },
         {
           "path": "candidate/rust/symaira-core-env/Cargo.toml",
@@ -398,15 +398,15 @@
         },
         {
           "path": "candidate/rust/symaira-core-fs/Cargo.toml",
-          "sha256": "5c71508b25500b8de54f40f6e266a393dd0b347b48d0377a5481487edd9e1824"
+          "sha256": "83ce22ce575782b3d2fbf899c87bd782a334e351b3c35bed266a216dfe34fc37"
         },
         {
           "path": "candidate/rust/symaira-core-fs/src/lib.rs",
-          "sha256": "5a66b877005f079bfd824b43f8b149ea442e385e7a3b0ab21d74f64dc6518b11"
+          "sha256": "90223945236841cc46f96c559b64b8fe1d51bc6e052485deb3bacd46e148d33a"
         },
         {
           "path": "candidate/rust/symaira-core-fs/tests/parity.rs",
-          "sha256": "b60321ca203595eedfd6da9460c2237aa683c5e982952266d78d9df4398a3cfa"
+          "sha256": "25c11e3e96ca65ce7f81fe0e287676fbbbf76143dfd21db40931e68071b9e1d6"
         },
         {
           "path": "candidate/rust/symaira-core-log/Cargo.toml",
@@ -426,7 +426,7 @@
         },
         {
           "path": "candidate/rust/symaira-core-secretref/src/lib.rs",
-          "sha256": "41a553885c6cb08bf44be9d413897fbb7fb39122b1f17fac8281338b00f83f7d"
+          "sha256": "c1ca51f586b3bf85ada6b41ef375caba14b52d90c2e62f53d81f2be44674cba6"
         },
         {
           "path": "candidate/rust/symaira-core-secretref/tests/parity.rs",
@@ -574,7 +574,7 @@
         },
         {
           "path": "candidate/rust/test-support/symaira-core-foundation/src/bin/rust_fs_secret.rs",
-          "sha256": "e96bae13645cf538ba254ad4239fc0baeb88f818bb4a188a7389150369980718"
+          "sha256": "65f09efe59d123557f21aa04743a6b24317520803ddf60ad9d3f1be0bfbf0235"
         },
         {
           "path": "candidate/rust/test-support/symaira-core-foundation/src/lib.rs",
@@ -582,7 +582,7 @@
         },
         {
           "path": "candidate/rust/test-support/symaira-core-foundation/tests/config.rs",
-          "sha256": "42c25aefb4d143540edce2107c6f09f83684aa22b422389b0c4afbb318a5b4b7"
+          "sha256": "94fac90a49f2032308056a1aa3a5e505ea1aa7e6948ac979f9d276bb10a62e80"
         },
         {
           "path": "candidate/rust/test-support/symaira-core-foundation/tests/env.rs",
@@ -658,7 +658,7 @@
         },
         {
           "path": "modules/current-helper/effective.mod",
-          "sha256": "9fcaeb534cfa2fe67a5b028bed36b8de9a53704dbd4e8dbc69e498716301f761"
+          "sha256": "af6423522bfa6450f4ae4b0466026c43edd64579cf3d322165f960cc45962590"
         },
         {
           "path": "modules/current-helper/effective.sum",
@@ -5510,9 +5510,9 @@
         }
       ],
       "groups": {
-        "candidate": "c9feda780c40acba8a1d033d9e5fac384c215799e37ef7ae8f1e61db66c17e7e",
+        "candidate": "b1013d4414ef42fa39238f3ac320866b6b0c5a8e45af79111614cbd82cbb6e14",
         "oracle": "45d7026b1c25266b1cc11065ad284ce878fc45edd88fa4b53e3b8888672b4de1",
-        "modules": "3f696fd41d6c3f00a420c64c76c31590e6105ad5df3fbbe69258be9b3870152c",
+        "modules": "f678f104b6db22bf435dc305a2654d2e6df2a1c06078dc238a9e1259bb769cf0",
         "sdk": "5b54db2855c64f9181b9e762eb14fb9dff6ffacd86e67dce8fccab10381a9d67"
       }
     },
@@ -5525,7 +5525,7 @@
         "cleanup_verified": true,
         "stdout_bytes": 41,
         "stderr_bytes": 0,
-        "stdout_sha256": "22b6f817ce92b97737f9d79f1dce34e2566718b8d2f6cce0133eb1b5dffd324f",
+        "stdout_sha256": "3d06ecdc6ef2d019247d90bd3e4d6c56be3a97f84c4e87aa6f534c48f0c11a5a",
         "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
       },
       {
@@ -5578,9 +5578,9 @@
         "timed_out": false,
         "output_exceeded": false,
         "cleanup_verified": true,
-        "stdout_bytes": 24,
+        "stdout_bytes": 35,
         "stderr_bytes": 0,
-        "stdout_sha256": "ad25f5b9db8480bc43317d173775483b57d93ee5a0e58367f3d7ad3a36d49fda",
+        "stdout_sha256": "bd7cc2b842d4430d75b2e69042a880d26e5aa63c12a558a12f9db721572c5a30",
         "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
       },
       {
@@ -5611,9 +5611,9 @@
         "timed_out": false,
         "output_exceeded": false,
         "cleanup_verified": true,
-        "stdout_bytes": 80,
+        "stdout_bytes": 24,
         "stderr_bytes": 0,
-        "stdout_sha256": "aed755722234392c198b004406227b1cf1acba20f6bef2ea0e9395f08f22d58a",
+        "stdout_sha256": "ad25f5b9db8480bc43317d173775483b57d93ee5a0e58367f3d7ad3a36d49fda",
         "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
       },
       {
@@ -5622,9 +5622,9 @@
         "timed_out": false,
         "output_exceeded": false,
         "cleanup_verified": true,
-        "stdout_bytes": 35,
+        "stdout_bytes": 80,
         "stderr_bytes": 0,
-        "stdout_sha256": "bd7cc2b842d4430d75b2e69042a880d26e5aa63c12a558a12f9db721572c5a30",
+        "stdout_sha256": "aed755722234392c198b004406227b1cf1acba20f6bef2ea0e9395f08f22d58a",
         "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
       },
       {
@@ -5635,7 +5635,7 @@
         "cleanup_verified": true,
         "stdout_bytes": 35904,
         "stderr_bytes": 0,
-        "stdout_sha256": "5542b2613d919191765cae106b9eaba280c59df4347afbb84ca4f084b4d19841",
+        "stdout_sha256": "bcc66f6b8dd3797a5a180b79ebaf3e349c590467dd5e2648550727ef48640246",
         "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
       },
       {
@@ -5690,7 +5690,7 @@
         "cleanup_verified": true,
         "stdout_bytes": 35904,
         "stderr_bytes": 0,
-        "stdout_sha256": "5542b2613d919191765cae106b9eaba280c59df4347afbb84ca4f084b4d19841",
+        "stdout_sha256": "bcc66f6b8dd3797a5a180b79ebaf3e349c590467dd5e2648550727ef48640246",
         "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
       },
       {
@@ -5712,7 +5712,7 @@
         "cleanup_verified": true,
         "stdout_bytes": 41,
         "stderr_bytes": 0,
-        "stdout_sha256": "22b6f817ce92b97737f9d79f1dce34e2566718b8d2f6cce0133eb1b5dffd324f",
+        "stdout_sha256": "3d06ecdc6ef2d019247d90bd3e4d6c56be3a97f84c4e87aa6f534c48f0c11a5a",
         "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
       },
       {

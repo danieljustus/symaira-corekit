@@ -4,6 +4,17 @@ The GitHub Releases page is the authoritative source for complete release notes.
 
 ## Unreleased
 
+- Rust: Windows-only code leaves `symaira-core-fs`, `-secretref`, `-config`,
+  `-update` and `-mcpcfg`, together with the Windows-only `cap-primitives`,
+  `cap-std` and `same-file` dependencies and the Windows-only tests (#458).
+  Windows has been outside the supported platform scope since #456/#459 and
+  every consumer has removed its Windows code. `chmod_windows` is gone;
+  `default_path_for_roots` keeps its `userprofile` parameter for source
+  compatibility and ignores it. Non-Unix targets keep failing closed. The
+  frozen FS/SEC and SQLite evidence is re-captured against the Go oracle with
+  byte-identical Go observations
+  (`docs/rust-port/evidence/frozen-reregistration-20261126-windows.json`).
+
 ## v0.25.0 — 2026-11-26
 
 - Rust 1.100.0: `rust-toolchain.toml` is the single toolchain pin and every

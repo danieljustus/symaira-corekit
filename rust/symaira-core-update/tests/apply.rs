@@ -115,9 +115,7 @@ impl ExpectedCase {
 /// platform `make rust-update-contract` replays this platform's fresh Go
 /// observations through the same test instead of foreign expectations.
 fn platform_mismatch(recorded: Option<&str>) -> Option<String> {
-    let current = if cfg!(target_os = "windows") {
-        "windows"
-    } else if cfg!(target_os = "macos") {
+    let current = if cfg!(target_os = "macos") {
         "darwin"
     } else if cfg!(target_os = "linux") {
         "linux"

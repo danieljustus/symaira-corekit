@@ -66,9 +66,6 @@ fn secure_directory_and_exists_semantics() {
     assert!(!file_exists(nested.join("missing")).expect("missing"));
     assert!(validate_path("a/b").is_ok());
     assert!(validate_path("a\\..\\b").is_err());
-    #[cfg(windows)]
-    assert!(has_traversal("a\\..\\b"));
-    #[cfg(not(windows))]
     assert!(!has_traversal("a\\..\\b"));
     safe_remove(&file).expect("remove");
     assert!(!file_exists(&file).expect("removed"));
@@ -86,23 +83,6 @@ fn chmod_and_atomic_rename_failure_are_checked() {
         assert_eq!(
             fs::metadata(&mode_file).expect("mode").permissions().mode() & 0o777,
             0o600
-        );
-    }
-    #[cfg(windows)]
-    {
-        chmod(&mode_file, 0o444).expect("readonly chmod");
-        assert!(
-            fs::metadata(&mode_file)
-                .expect("readonly")
-                .permissions()
-                .readonly()
-        );
-        chmod(&mode_file, 0o600).expect("writable chmod");
-        assert!(
-            !fs::metadata(&mode_file)
-                .expect("writable")
-                .permissions()
-                .readonly()
         );
     }
 

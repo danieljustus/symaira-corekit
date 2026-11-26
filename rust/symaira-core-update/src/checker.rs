@@ -32,7 +32,7 @@ pub fn default_cache_path(owner: &str, repo: &str) -> PathBuf {
         .map(PathBuf::from)
         .filter(|path| path.is_absolute())
         .unwrap_or_else(|| {
-            std::env::var_os(if cfg!(windows) { "USERPROFILE" } else { "HOME" })
+            std::env::var_os("HOME")
                 .filter(|home| !home.is_empty())
                 .map_or_else(
                     || PathBuf::from(".cache"),

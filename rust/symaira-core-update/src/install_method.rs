@@ -59,8 +59,7 @@ pub fn detect(binary_path: &Path) -> Result<InstallMethod, &'static str> {
     .into_iter()
     .filter_map(|key| env::var(key).ok().map(|value| (key.to_owned(), value)))
     .collect();
-    let home_key = if cfg!(windows) { "USERPROFILE" } else { "HOME" };
-    let home = env::var_os(home_key)
+    let home = env::var_os("HOME")
         .filter(|value| !value.is_empty())
         .map(PathBuf::from);
     detect_with(binary_path, &env, home.as_deref())
@@ -76,13 +75,8 @@ pub fn detect_with(
         return Err("binary path must not be empty");
     }
     let resolved = fs::canonicalize(binary_path);
-    let canonical_binary = resolved.is_ok();
     let real_path = resolved.unwrap_or_else(|_| binary_path.to_owned());
-    let absolute = if cfg!(windows) {
-        // Match Go filepath.Abs/GetFullPathNameW even for nonexistent paths
-        // and mixed separators; canonicalize alone only handles existing files.
-        std::path::absolute(&real_path).unwrap_or(real_path)
-    } else if real_path.is_absolute() {
+    let absolute = if real_path.is_absolute() {
         real_path
     } else {
         env::current_dir().unwrap_or_default().join(real_path)
@@ -147,14 +141,9 @@ pub fn detect_with(
         }
     }
     if let Some(home) = home {
-        // Windows canonicalization introduces a verbatim prefix. Match it only
-        // when the binary was also canonicalized; nonexistent fixture paths
-        // must retain their lexical home, as must the Unix Go contract.
-        let home = if cfg!(windows) && canonical_binary {
-            fs::canonicalize(home).unwrap_or_else(|_| home.to_owned())
-        } else {
-            home.to_owned()
-        };
+        // Nonexistent fixture paths retain their lexical home, as does the
+        // Unix Go contract.
+        let home = home.to_owned();
         let go_bin = format!(
             "{}{}",
             home.join("go")
@@ -195,9 +184,6 @@ pub fn detect_with(
     }
     if absolute.contains('@') || absolute.contains("/pkg/mod/") {
         return Ok(InstallMethod::GoInstall);
-    }
-    if cfg!(windows) {
-        return Ok(InstallMethod::BuildFromSource);
     }
     let dir = Path::new(absolute.as_ref())
         .parent()

@@ -19,8 +19,6 @@ fn extraction_cannot_follow_existing_links_outside_staging() {
         fs::create_dir(&stage).unwrap();
         #[cfg(unix)]
         std::os::unix::fs::symlink(&outside, stage.join("bundle")).unwrap();
-        #[cfg(windows)]
-        std::os::windows::fs::symlink_dir(&outside, stage.join("bundle")).unwrap();
         let result = extract_binary_to_dir(
             &fs::read(fixtures.join(archive)).unwrap(),
             asset,

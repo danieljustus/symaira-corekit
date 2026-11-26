@@ -461,20 +461,7 @@ fn atomic_cache_write(parent: &cap_std::fs::Dir, name: &Path, bytes: &[u8]) -> i
         file.write_all(bytes)?;
         file.sync_all()?;
         drop(file);
-        #[cfg(not(windows))]
-        return parent.rename(&temporary, parent, name);
-        #[cfg(windows)]
-        {
-            // Match Go's bounded retry for antivirus/indexer sharing conflicts.
-            for attempt in 0..10 {
-                match parent.rename(&temporary, parent, name) {
-                    Ok(()) => return Ok(()),
-                    Err(error) if attempt == 9 => return Err(error),
-                    Err(_) => std::thread::sleep(Duration::from_millis(10)),
-                }
-            }
-            unreachable!()
-        }
+        parent.rename(&temporary, parent, name)
     })();
     if result.is_err() {
         let _ = parent.remove_file(&temporary);

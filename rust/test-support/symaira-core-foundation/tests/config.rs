@@ -1,8 +1,6 @@
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use std::sync::Arc;
-#[cfg(windows)]
-use symaira_core_config::default_path_for_roots;
 use symaira_core_config::{
     ConfigSchema, Duration, Loader, Options, apply_env_overrides_from, default_path, duration,
     merge_file,
@@ -247,20 +245,6 @@ fn cfg_006_map_fields_reject_and_env_overrides_are_ignored() {
     apply_env_overrides_from(&mut config, "APP", [("APP_ALLOWED_EXISTING", "4")]).unwrap();
     assert_eq!(config.allowed.get("existing"), Some(&1));
     assert!(expected["env_map_unchanged"].as_bool().unwrap());
-}
-
-#[cfg(windows)]
-#[test]
-fn cfg_001_windows_prefers_userprofile() {
-    let expected = fixture("CFG-001");
-    assert_eq!(expected["windows_home_env"], "USERPROFILE");
-    let path = default_path_for_roots(
-        "symx",
-        None,
-        Some(PathBuf::from(r"C:\wrong-home")),
-        Some(PathBuf::from(r"C:\expected-home")),
-    );
-    assert!(path.starts_with(r"C:\expected-home"));
 }
 
 #[test]

@@ -119,17 +119,10 @@ fn home_dir() -> Option<PathBuf> {
     )
 }
 
-fn platform_home(home: Option<PathBuf>, userprofile: Option<PathBuf>) -> Option<PathBuf> {
-    #[cfg(windows)]
-    let selected = userprofile
-        .filter(|path| !path.as_os_str().is_empty())
-        .or(home);
-    #[cfg(not(windows))]
-    let selected = {
-        let _ = userprofile;
-        home
-    };
-    selected.filter(|path| !path.as_os_str().is_empty())
+// `userprofile` stays in the public seam for source compatibility; Windows is
+// outside the supported platform scope (#458), so only HOME is consulted.
+fn platform_home(home: Option<PathBuf>, _userprofile: Option<PathBuf>) -> Option<PathBuf> {
+    home.filter(|path| !path.as_os_str().is_empty())
 }
 
 /// Cached loader. `load` caches the first result; `reload` bypasses that cache.

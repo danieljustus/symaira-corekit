@@ -219,13 +219,7 @@ fn fs_mkdir(base: &Path) -> Value {
     set_private_dir(&d);
     fs::write(d.join("file"), b"x").unwrap();
     set_private_file(&d.join("file"));
-    #[cfg(not(windows))]
     let b = outcome(safe_mkdir_all(d.join("file/child"), 0o750).map(|_| String::new()));
-    #[cfg(windows)]
-    let b = match safe_mkdir_all(d.join("file/child"), 0o750) {
-        Ok(()) => json!({"ok": true}),
-        Err(_) => json!({"ok": false, "error": "error"}),
-    };
     let m = fs::metadata(d.join("a/b")).map(|v| mode(&v)).unwrap_or(0);
     json!({"outcomes":{"nested":outcome(a),"file-parent":b},"files":manifest(&d),"mode":m})
 }

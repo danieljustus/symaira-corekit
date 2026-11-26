@@ -354,43 +354,12 @@ fn validate_name(name: &str) -> Result<(), ExtractError> {
         })
     {
         // Go's filepath.Clean renders the rejected path with native separators.
-        #[cfg(windows)]
-        let name = name.replace('/', "\\");
         return Err(ExtractError::new(
             "path_traversal",
             format!("archive entry attempts path traversal: {name:?}"),
         ));
     }
     Ok(())
-}
-
-#[cfg(all(test, windows))]
-mod windows_path_tests {
-    #[test]
-    fn traversal_diagnostics_use_native_separators() {
-        for (input, native) in [("../escape", r"..\escape"), ("/outside", r"\outside")] {
-            let error = super::validate_name(input).unwrap_err();
-            assert_eq!(error.code, "path_traversal");
-            assert_eq!(
-                error.message,
-                format!("archive entry attempts path traversal: {native:?}")
-            );
-        }
-    }
-
-    #[test]
-    fn reject_drive_relative_absolute_unc_and_device_paths() {
-        for name in [
-            "C:/escape",
-            "C:escape",
-            "//server/share/escape",
-            "//?/C:/escape",
-            "/escape",
-        ] {
-            assert!(super::validate_name(name).is_err(), "accepted {name:?}");
-        }
-        assert!(super::validate_name("bundle/tool.exe").is_ok());
-    }
 }
 
 fn clean_name(raw: &str) -> String {

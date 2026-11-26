@@ -122,12 +122,6 @@ fn production_extraction_keeps_binary_in_staging_and_rejects_traversal() {
         if let Some(error) = &case.error {
             let message = error.message.clone();
             // This production test reads the Darwin fixture on every platform.
-            #[cfg(windows)]
-            let message = if error.code == "path_traversal" {
-                message.replace('/', "\\\\")
-            } else {
-                message
-            };
             assert_eq!(result.unwrap_err(), message, "{id}");
             assert!(!destination.join("escape").exists(), "{id}");
         } else {
