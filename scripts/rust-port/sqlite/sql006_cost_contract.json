@@ -8,7 +8,7 @@
     "runtime_env": "NVME_RUNTIME",
     "runtime_mount": "/Volumes/SymairaSecureRuntime",
     "storage_root": "/Volumes/1TB_NVMe_SN850X/Dev/Symaira_Dev",
-    "toolchain": "1.98.0-aarch64-apple-darwin",
+    "toolchain": "1.100.0-aarch64-apple-darwin",
     "go_toolchain": "1.26.6",
     "run_relative": "BuildTargets/sql006-consumer-cost",
     "cache_relative": "BuildCaches/sql006-consumer-cost"

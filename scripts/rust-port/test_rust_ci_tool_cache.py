@@ -12,7 +12,7 @@ WORKFLOW = Path(__file__).resolve().parents[2] / ".github" / "workflows" / "ci.y
 CACHE_ACTION = "actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9"
 INSTALL_ROOT = "${{ runner.temp }}/corekit-cargo-install-root"
 CACHE_KEY = (
-    "rust-tools-${{ runner.os }}-${{ runner.arch }}-rust-1.98.0-"
+    "rust-tools-${{ runner.os }}-${{ runner.arch }}-rust-${{ hashFiles('rust-toolchain.toml') }}-"
     "nextest-0.9.143-hack-0.6.45-llvm-cov-0.9.0-"
     "audit-0.22.2-deny-0.20.2"
 )

@@ -47,3 +47,35 @@
 | CI orchestration | `.github/workflows/ci.yml` | no | No invalidation; recorded for forensics |
 | Checkout attributes | `.gitattributes` | no | No invalidation; effects appear through the hashed files |
 | Unrelated crates | `rust/symaira-core-{config,env,exit,log,mcp,secretref,version}/**`, `rust/test-support/**` | no | No invalidation; recorded for forensics |
+
+## Toolchain and dependency updates (amendment 2026-11-26, #497)
+
+The repository follows the newest stable Rust (maintainer decision
+2026-11-26); Dependabot proposes each new release through the
+`rust-toolchain` ecosystem. A toolchain or lockfile change stays a build-input
+change in the enforced class above, so it still requires a fresh capture
+against the Go oracle. The recapture path did not disappear with the retired Go
+library: the oracle sources are read from immutable commits on `main`'s
+history (the Go module at `v0.18.3`, see `scripts/rust-port/retired_go.py`), so
+the capture runs on an ordinary pull request. Procedure, as used for #475 and
+for the 1.100.0 update:
+
+1. Change the input (for example `rust-toolchain.toml`), regenerate
+   `testdata/rust-port/sqlite/candidate-source.json`, and run the typed SQLite
+   differential locally with the pinned Go toolchain into a new
+   `testdata/rust-port/sqlite/differential-*.json`; repoint
+   `CURRENT_CAPTURE` in `scripts/rust-port/sqlite/test_acceptance.py`.
+2. Remove the supported FS/SEC native fixtures (darwin-arm64, linux-amd64)
+   and add the temporary native capture steps for both lanes to `ci.yml`.
+3. Review the CI artifacts: the Go observations, raw observations, case
+   inventory and oracle identity must be byte-identical to the previous
+   registration, and SQLite must pass with the same accepted differences.
+   Register the new fixtures, anchors and native reports with an evidence
+   record under `docs/rust-port/evidence/`, and remove the temporary steps
+   in the same pull request before merge.
+
+Rejected alternative: re-binding the manifests to new build inputs by a
+Rust-only replay against the stored Go observations. The replay already runs
+on every change; the recapture additionally re-executes the Go oracle on both
+native targets, costs one pull request, and keeps the enforced class honest.
+

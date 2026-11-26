@@ -44,7 +44,7 @@ jobs:
           python-version: '3.14'
       - name: Install pinned Rust
         shell: bash
-        run: rustup toolchain install 1.98.0 --profile minimal --component rustfmt,clippy
+        run: rustup toolchain install
       - name: Populate dependencies before offline replay
         run: cargo fetch --locked
       - name: Check actual corpus mutation and restoration
