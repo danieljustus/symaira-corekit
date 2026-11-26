@@ -4,6 +4,8 @@ The GitHub Releases page is the authoritative source for complete release notes.
 
 ## Unreleased
 
+## v0.25.0 — 2026-11-26
+
 - Rust 1.100.0: `rust-toolchain.toml` is the single toolchain pin and every
   workflow installs from it; Dependabot proposes new stable releases through
   the `rust-toolchain` ecosystem. 1.98.0 had a trait-object vtable

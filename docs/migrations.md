@@ -10,6 +10,25 @@ also preserve historical removals, including `embedkit` in v0.12.0; those
 require migration. Otherwise "check" means a new capability to adopt or a
 behavior change worth confirming.
 
+## v0.25.0
+
+- **Swift consumers:** move the pin to `exact: "0.25.0"` (XcodeGen
+  `exactVersion: 0.25.0`). Nine controls are deprecated in favor of native
+  Apple controls (`SymairaFormSection`, `SymairaSegmentedControl`,
+  `SymairaFilterMenu`, `SymairaSwitchToggleStyle`/`.symairaSwitch`,
+  `SymairaIconButton`, `SymairaProgressStyle`, `SymairaLoadingState`,
+  `SymairaSheetScaffold`, `SymairaStatTile`); each deprecation message names
+  the replacement, and `gui-review.py` NATIVE-1 reports remaining uses. They
+  still compile, so builds that treat warnings as errors need the migration
+  first. Check screens that relied on the blue `SymairaTone.informative` hue:
+  it now renders like `.neutral`. `SymairaNotice` defaults to `.neutral`.
+- **Rust consumers:** CoreKit builds with Rust 1.100.0 (`rust-toolchain.toml`);
+  1.98.0 has a trait-object vtable miscompilation, so consumers should move
+  their own pin too. `symaira-core-mcp` adds `Server::catalog_json()`, the
+  `catalog_gate` module and the optional `toon` feature
+  (`Server::set_adaptive_toon`); enabling `toon` turns on
+  `serde_json/preserve_order` for the whole build. No breaking API change.
+
 ## v0.24.0
 
 - **Swift consumers:** move the pin to `exact: "0.24.0"` (XcodeGen

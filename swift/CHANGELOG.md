@@ -11,6 +11,8 @@ the releases of the former `symaira-appkit` repository.
 
 ## [Unreleased]
 
+## [0.25.0] - 2026-11-26
+
 ### Added
 - `symairaButtonStyle(_:onPressChange:)` and the primary/secondary button
   styles report press and release, so apps can play touch-down haptics without
