@@ -139,6 +139,51 @@ final class ComponentsTests: XCTestCase {
         XCTAssertEqual(try XCTUnwrap(deleteHeight), expected, accuracy: 0.5)
     }
 
+    #if os(macOS)
+    /// CTRL-1: in the workbench tier buttons and segments share the native `.large` height;
+    /// the page tier gives actions and the segmented control one 36 pt height.
+    func testControlTiersGiveEachTierOneHeight() throws {
+        for tier in [SymairaControlTier.page, .workbench] {
+            var heights: [String: CGFloat] = [:]
+            ThemeRenderHost.render(
+                HStack {
+                    Button("Anwenden") {}.symairaButtonStyle(.primary)
+                        .onGeometryChange(for: CGFloat.self, of: { $0.size.height }) { heights["primary"] = $0 }
+                    Button("Probe") {}.symairaButtonStyle(.secondary)
+                        .onGeometryChange(for: CGFloat.self, of: { $0.size.height }) { heights["secondary"] = $0 }
+                    SymairaSegmentedControl("Ansicht", selection: .constant(0), options: [(0, "Audio"), (1, "Text")])
+                        .onGeometryChange(for: CGFloat.self, of: { $0.size.height }) { heights["segmented"] = $0 }
+                    TextField("Name", text: .constant("")).textFieldStyle(SymairaTextFieldStyle())
+                        .onGeometryChange(for: CGFloat.self, of: { $0.size.height }) { heights["field"] = $0 }
+                }
+                .symairaControlTier(tier))
+            let page = tier == .page
+            let tool = SymairaMetrics.workbenchControlHeight
+            let action = page ? SymairaMetrics.contentActionHeight : tool
+            XCTAssertEqual(try XCTUnwrap(heights["primary"]), action, accuracy: 0.5, "\(tier)")
+            XCTAssertEqual(try XCTUnwrap(heights["secondary"]), action, accuracy: 0.5, "\(tier)")
+            XCTAssertEqual(
+                try XCTUnwrap(heights["segmented"]), page ? SymairaMetrics.segmentedControlHeight : tool,
+                accuracy: 0.5, "\(tier)")
+            if !page { XCTAssertEqual(try XCTUnwrap(heights["field"]), tool, accuracy: 0.5) }
+        }
+    }
+    #endif
+
+    /// ACTION-2: the glass secondary keeps the opaque primary's height, so a row can mix them.
+    func testSecondaryGlassKeepsPrimaryHeight() throws {
+        var heights: [SymairaButtonRole: CGFloat] = [:]
+        for role in [SymairaButtonRole.primary, .secondary] {
+            ThemeRenderHost.render(
+                Button("Export…") {}
+                    .symairaButtonStyle(role)
+                    .onGeometryChange(for: CGFloat.self, of: { $0.size.height }) { heights[role] = $0 })
+        }
+        let primary = try XCTUnwrap(heights[.primary])
+        XCTAssertEqual(primary, SymairaMetrics.contentActionHeight, accuracy: 0.5)
+        XCTAssertEqual(try XCTUnwrap(heights[.secondary]), primary, accuracy: 0.5)
+    }
+
     func testContentActionsStillFillAvailableWidth() throws {
         for role in [SymairaButtonRole.primary, .secondary] {
             var buttonWidth: CGFloat?
@@ -221,13 +266,15 @@ final class SelectionControlsTests: XCTestCase {
     }
 
     #if os(macOS)
+    /// The opaque fallback (Reduce Transparency, before macOS 26) keeps its outline; native glass
+    /// draws its own edge and does not render into an offscreen bitmap at all.
     func testSecondaryButtonOnLightCanvasDrawsItsOutline() throws {
         let host = ThemeRenderHost.render(
             // No label: anti-aliased glyph edges would otherwise pass for an outline.
             Button {
             } label: {
                 Color.clear.frame(width: 120, height: 20)
-            }.symairaButtonStyle(.secondary)
+            }.buttonStyle(SymairaSecondaryButtonStyle(allowsGlass: false))
                 .padding(24)
                 .background(Color(hex: "EEEDEA"))
                 .environment(\.colorScheme, .light),

@@ -41,8 +41,9 @@ consumes `symaira-corekit` through an exact pin.
 - **NN-3** Champagne (`primary`) is a brand accent that the shared controls
   already apply; state uses `selected`, `onSelected` and `focus`. Champagne is
   never a text color or a state signal.
-- **NN-4** One primary action per screen (`.symairaButtonStyle(.primary)`);
-  every other action is secondary or a toolbar control.
+- **NN-4** One primary action per screen (`.symairaButtonStyle(.primary)`),
+  the only opaque Symaira button; every other action is secondary (native
+  Liquid Glass) or a toolbar control.
 - **NN-5** Every screen that loads data has loading, empty, error and
   unreachable states; none of them is a blank area or a spinner without words.
 - **NN-6** Status is text or icon plus color, never color alone
@@ -50,7 +51,8 @@ consumes `symaira-corekit` through an exact pin.
   `SymairaNotice`).
 - **NN-7** Readability outranks topography and glass: text and controls are
   `.topoProtected()`, reading surfaces are opaque (`.symairaCard()`), glass is
-  navigation chrome only.
+  for chrome and controls (secondary and toolbar buttons), never behind
+  reading text.
 - **NN-8** Destructive or consequential actions are confirmed with the verb in
   the button, or they are undoable; never immediate, never "OK".
 - **NN-9** Everything reachable by pointer is reachable by keyboard and named
@@ -158,12 +160,36 @@ Six lines, kept in the pull request or issue:
 
 ## 6. Actions, dialogs and destructive operations
 
+- **CTRL-1** Every control belongs to one of three tiers (revised 2026-11-26 in
+  the Soundworks pilot, after Apple's split of a navigation layer above the
+  content). Within a tier controls look alike and share one height; between
+  tiers they differ in material, size and motion, so the eye can tell where it
+  navigates, acts on the page, or works on content.
+
+  | Tier | Where | Controls |
+  | --- | --- | --- |
+  | Navigation | Sidebar, window toolbar (the workspace shell) | `SymairaNavigationButton` with animated Symaira icons, glass toolbar buttons |
+  | Page | `SymairaPage` toolbar, sheet footer, empty-state and error actions | One 36 pt capsule height: primary (opaque `ink`), secondary (glass), extra-large segments, menus and glass icon buttons |
+  | Workbench | `SymairaPage` content: inspectors, panels, lists, cards, form rows | Native solid controls in `.large` (28 pt, `SymairaMetrics.workbenchControlHeight`): `borderedProminent` primary in `ink`, `bordered` secondary and icon buttons, 28 pt text fields; no glass |
+
+  `SymairaPage` sets `.symairaControlTier(.page)` on its toolbar and
+  `.symairaControlTier(.workbench)` on its content; `SymairaPageEmpty` and the
+  retry action of `SymairaPageState` are page actions again. A sheet sets
+  `.symairaControlTier(.page)` on its `NavigationStack` and `.workbench` on its
+  `Form`; a Settings window sets `.workbench` on its `Form`. `symairaButtonStyle`,
+  `SymairaSegmentedControl` and `SymairaTextFieldStyle` follow the tier; native
+  controls follow the control size the tier sets. A row of tools under the page
+  toolbar (filters, zoom, loop) belongs to the content, not the toolbar.
 - **ACTION-1** Button labels are specific verbs ("Execute Campaign",
   "Save API Key"); never "OK", "Continue", "Yes", "Submit".
-- **ACTION-2** Primary and secondary content actions share geometry through
-  `.symairaButtonStyle(.primary/.secondary)`
-  (`SymairaMetrics.contentActionHeight`, 20 pt horizontal padding). Switching
-  role or label must not change size; reserve width for stateful labels.
+- **ACTION-2** Primary and secondary actions share geometry through
+  `.symairaButtonStyle(.primary/.secondary)`. In the page tier
+  (`SymairaMetrics.contentActionHeight`, 20 pt horizontal padding) primary is
+  the opaque Symaira button and secondary native interactive Liquid Glass on
+  macOS/iOS 26+ (opaque `raised` under Reduce Transparency and on older
+  systems); in the workbench tier both are the native solid buttons (CTRL-1). Switching role or label must not change size; reserve width for
+  stateful labels, and give a secondary label in a crowded row `.fixedSize()`
+  so it is not truncated to "…".
 - **ACTION-3** Confirm consequential or irreversible actions with
   `confirmationDialog` or `.alert`: the primary button repeats the verb, the
   message states the consequence in one sentence, `Cancel` has
@@ -174,7 +200,10 @@ Six lines, kept in the pull request or issue:
   `.buttonStyle(.borderedProminent).tint(.red)`.
 - **ACTION-5** Sheets are native: `.sheet { NavigationStack { Form { … } } }`
   with `ToolbarItem(placement: .cancellationAction)` and
-  `.confirmationAction`; the system maps Esc and Return.
+  `.confirmationAction`; the system maps Esc and Return. The cancel button
+  carries `.symairaButtonStyle(.secondary)`, the confirming verb
+  `.symairaButtonStyle(.primary)`. The footer is the page tier, the form the
+  workbench tier (CTRL-1).
 - **ACTION-6** Sheets are for multi-step or multi-field work; a single toggle
   or small choice is inline or a popover.
 - **ACTION-7** Long-running actions disable their trigger, show progress where
@@ -200,17 +229,35 @@ Six lines, kept in the pull request or issue:
   move focus to the first error on submit; never block paste.
 - **FORM-4** Secrets use `SecureField`, are stored through `SymairaKeychain`,
   and never appear in error text or logs.
-- **FORM-5** Two to four options are a `Picker(.segmented)` with
-  `.tint(SymairaTokens.selected)`; longer lists and filters are a
+- **FORM-5** Two to four options are a `SymairaSegmentedControl` (UI catalog
+  E07, revised 2026-11-26): the native `Picker(.segmented)` with
+  `.tint(SymairaTokens.selected)` and its natural width, so no label is
+  truncated. It is 36 pt (`SymairaMetrics.segmentedControlHeight`) in the page
+  tier and takes the 28 pt of the workbench tier there (CTRL-1). The system draws the glass rail and handles
+  press, drag, keyboard and VoiceOver; the clear lens of iOS and Catalyst apps
+  does not exist in the macOS control and is not imitated. Inside
+  a `Form` it sits in `LabeledContent`; longer lists and filters are a
   `Picker(.menu)` whose first option is the unfiltered default; on/off is
   `Toggle(.switch)` with `.tint(SymairaTokens.selected)`; numbers use
   `Stepper`, dates a compact `DatePicker`, sliders `.tint(SymairaTokens.ink)`.
+- **FORM-9** The `SymairaPage` toolbar is the page tier and gets
+  `.controlSize(.extraLarge)` from `SymairaPage` itself (CTRL-1): on macOS 26
+  its native segments, menus, switches and glass icon buttons become 36 pt
+  capsules, as high as the page actions. A tools row under it is workbench. Adjacent icon buttons sit in
+  `SymairaGlassEffectContainer(spacing: 0)` so they stay separate circles.
+  Never wrap these controls in `ViewThatFits`: the extra-large sizes made
+  AppKit's layout oscillate until it crashed; only an optional display
+  element (a meter) may give way.
+- **FORM-10** In a grouped `Form` on macOS, a control taller than one text line
+  (`SymairaSegmentedControl`, a `.symairaButtonStyle` action) inside
+  `LabeledContent` carries `.symairaFormRowControl()`: the row aligns label and
+  control at the top and ignores alignment guides, so the control would hang
+  below the row title.
 - **NATIVE-1** Apple platforms use the native control wherever the UI catalog
   (`design/ui-catalog/ui-catalog.md`, decided 2026-11-25) chose it: search
   `.searchable`, tabs `TabView` (iOS), tables `Table`, details
   `DisclosureGroup`, confirmation `.alert`, sheets as in ACTION-5. Deprecated
-  Symaira controls (`SymairaFormSection`, `SymairaSegmentedControl`,
-  `SymairaFilterMenu`, `.symairaSwitch`, `SymairaIconButton`,
+  Symaira controls (`SymairaFormSection`, `SymairaFilterMenu`, `.symairaSwitch`, `SymairaIconButton`,
   `SymairaProgressStyle`, `SymairaLoadingState`, `SymairaSheetScaffold`,
   `SymairaStatTile`) are flagged by `gui-review.py`.
 - **FORM-6** Settings persist under the product's existing keys; previews and
@@ -227,14 +274,18 @@ Six lines, kept in the pull request or issue:
   `Color(hex:)`, no `.red`, `.green`, `.orange`, no `Color.white` or
   `Color.black` on surfaces.
 - **COLOR-2** `selected`, `onSelected` and `focus` carry state; `primary` is
-  reserved for the brand accents the shared controls already apply.
+  reserved for the brand accents the shared controls already apply. Glass
+  buttons stay neutral: `.symairaButtonStyle(.toolbar)` and `.secondary` ignore
+  a window-wide `.tint(SymairaTokens.selected)`, which colors selected
+  segments and switches only.
 - **COLOR-3** Status colors always pair with `SymairaTone` text or icon. Live
   measured values are `ink`; sample data gets a neutral icon and the word
   "Example". There is no informational hue: a message without a status is
   `.neutral` (`ink-2` plus the info icon), the default of `SymairaNotice`;
   `.informative` remains only as a neutral alias.
-- **COLOR-4** In light appearance, controls placed directly on the canvas carry
-  the 1 pt `SymairaTheme.raisedOutline(for:)`; never rely on fill alone.
+- **COLOR-4** In light appearance, opaque controls placed directly on the
+  canvas carry the 1 pt `SymairaTheme.raisedOutline(for:)`; never rely on fill
+  alone. Native glass draws its own edge; its opaque fallback keeps the outline.
 - **TYPE-1** Fonts come from `SymairaTypography` roles or `.symairaText(_:)`
   (Google Sans Flex `opsz` 18 only for the wordmark, display and screen titles;
   Figtree for every other text: headings, metrics, running text, labels and
@@ -277,9 +328,9 @@ Six lines, kept in the pull request or issue:
 - **MOTION-2** Every text-bearing element in a topography area is
   `.topoProtected()`; cards protect their whole surface (`hill: true`);
   headers protect each text, not the whole stack.
-- **MOTION-3** Glass (`SymairaGlassEffectContainer`, `.symairaGlassChrome`) is
-  for navigation chrome and floating controls; reading surfaces stay
-  `surface` or `raised`.
+- **MOTION-3** Glass (`SymairaGlassEffectContainer`, `.symairaGlassChrome`,
+  secondary and toolbar buttons) is for navigation chrome and controls;
+  reading surfaces stay `surface` or `raised`.
 - **MOTION-4** No gradients on surfaces, no textures or images as backgrounds,
   no shadows except on floating elements (menus, popovers, composer).
 - **MOTION-5** Keep product motion interruptible and tied to state transitions;
@@ -315,8 +366,10 @@ Six lines, kept in the pull request or issue:
   images are `.accessibilityHidden(true)`.
 - **A11Y-2** Status changes are announced through text (`SymairaStatusLabel`,
   `SymairaNotice`), not through color or motion.
-- **A11Y-3** Touch targets are at least 44 pt on iOS; content actions are at
-  least 40 pt on macOS (`SymairaMetrics`).
+- **A11Y-3** Touch targets are at least 44 pt on iOS. On macOS page actions are
+  36 pt and workbench controls 28 pt (`SymairaMetrics.contentActionHeight`,
+  `.workbenchControlHeight`, CTRL-1); no clickable control is smaller than the
+  native `.large` size except the small inline controls Apple draws itself.
 - **A11Y-4** Dynamic Type scales every role on iOS; never fix a frame height
   that clips at accessibility sizes. `SymairaIconView` scales its `size`
   relative to `.body`, so icons grow with the text next to them.
@@ -402,7 +455,7 @@ Severity: `error` violates a non-negotiable or the token contract; `warn`
 violates a rule that has an existing shared replacement; `info` marks a
 judgment call or a project-level absence.
 
-**Mechanical** (`scripts/gui-review.py`): COLOR-1, TYPE-1, ICON-1, ICON-2, ICON-4,
+**Mechanical** (`scripts/gui-review.py`): COLOR-1, TYPE-1, ICON-1, ICON-2, ICON-4, FORM-5,
 STATE-1, ACTION-1, COPY-3, MOTION-1, MOTION-4, MOTION-6, NATIVE-1, SHELL-1, and
 project-level absences KEY-1, SHELL-7, SHELL-9, POINTER-2, POINTER-3.
 Run `scripts/check-strings.py` separately for COPY-1 catalog coverage.
@@ -435,7 +488,8 @@ Run `scripts/check-strings.py` separately for COPY-1 catalog coverage.
 - "Are you sure?" with OK/Cancel; a destructive action without confirmation
   or undo.
 - Champagne text, champagne as a state, gradients, glass behind text, shadows
-  on cards.
+  on cards, tinted glass buttons, more than one opaque Symaira button per
+  screen.
 - SF Symbol strings where a `SymairaIcon` exists; `.font(.system(size:))`;
   hex colors.
 - Settings as a sidebar destination; the appearance control in the toolbar;

@@ -199,7 +199,7 @@ sheet and use `dismissTitle: "Close"`. When supplying a primary title, also
 supply its callback. Presentation, sheet dimensions, validation, disabled-state
 explanation and consequential-action confirmation remain product-owned. Both
 footer actions use shared button styles: identical font, 20 pt horizontal
-padding and `SymairaMetrics.contentActionHeight` (40 pt macOS, 44 pt iOS).
+padding and `SymairaMetrics.contentActionHeight` (36 pt capsule on macOS, 44 pt iOS).
 Intrinsic widths still depend on labels; products reserve changing label widths.
 
 Accessibility identifiers: `symaira.page.toolbar`, `symaira.page.state`,

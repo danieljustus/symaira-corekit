@@ -426,6 +426,46 @@ public struct SymairaGlassEffectContainer<Content: View>: View {
     }
 }
 
+// MARK: - Control tiers
+
+/// Which of the three control tiers (GUIDELINES CTRL-1) the controls of a region belong to.
+/// The third tier, navigation, is the workspace shell itself (`SymairaNavigationButton`,
+/// `SymairaWorkspaceToolbar`) and needs no value.
+///
+/// - `page`: actions about the whole page or sheet (page toolbar, sheet footer, empty-state
+///   actions). Extra-large controls, glass secondary actions, the opaque primary action.
+/// - `workbench`: tools that work on content (inspectors, panels, lists, forms). Native
+///   controls in `.large`, solid instead of glass, so every control of a row has one height.
+public enum SymairaControlTier: Sendable {
+    case page
+    case workbench
+}
+
+private struct SymairaControlTierKey: EnvironmentKey {
+    static let defaultValue = SymairaControlTier.page
+}
+
+extension EnvironmentValues {
+    /// Read by `symairaButtonStyle` and `SymairaSegmentedControl`. Set it with `symairaControlTier(_:)`.
+    public var symairaControlTier: SymairaControlTier {
+        get { self[SymairaControlTierKey.self] }
+        set { self[SymairaControlTierKey.self] = newValue }
+    }
+}
+
+extension View {
+    /// Puts a region in a control tier and gives its native controls the tier's size:
+    /// `.extraLarge` (36 pt) for `page`, `.large` (28 pt) for `workbench`. A later
+    /// `.controlSize` inside the region still wins. `SymairaPage` sets `page` on its toolbar
+    /// and `workbench` on its content; sheets and other windows set it themselves.
+    public func symairaControlTier(_ tier: SymairaControlTier) -> some View {
+        environment(\.symairaControlTier, tier)
+            #if !os(tvOS)
+        .controlSize(tier == .page ? .extraLarge : .large)
+            #endif
+    }
+}
+
 // MARK: - Buttons
 
 public enum SymairaButtonRole: Sendable {
@@ -436,11 +476,16 @@ public enum SymairaButtonRole: Sendable {
 
 /// Preferred button API.
 ///
-/// Content buttons (`primary`, `secondary`) are opaque, as approved in the
-/// Cockpit design pilot: Liquid Glass belongs to chrome, not to actions that
-/// carry text inside content. `toolbar` adopts the native glass style on
-/// macOS/iOS 26.
+/// In the `page` tier (the default), `primary` is the one opaque Symaira action of a
+/// screen, `secondary` native Liquid Glass in the same geometry (UI catalog E02, revised
+/// 2026-11-26) and `toolbar` the native glass button. In the `workbench` tier all three
+/// are the native solid buttons at the region's control size, so they line up with the
+/// menus, segments and switches next to them: `primary` filled with `ink`, `secondary`
+/// and `toolbar` bordered. Every role stays neutral: a window-wide
+/// `.tint(SymairaTokens.selected)` colors selection states only (COLOR-2).
 public struct SymairaAdaptiveButtonModifier: ViewModifier {
+    @Environment(\.symairaControlTier) private var tier
+    @Environment(\.colorScheme) private var colorScheme
     private let role: SymairaButtonRole
     private let onPressChange: ((Bool) -> Void)?
 
@@ -462,6 +507,28 @@ public struct SymairaAdaptiveButtonModifier: ViewModifier {
             content.buttonStyle(.bordered)
         }
         #else
+        if tier == .workbench {
+            workbenchButton(content)
+        } else {
+            pageButton(content)
+        }
+        #endif
+    }
+
+    @ViewBuilder
+    private func workbenchButton(_ content: Content) -> some View {
+        switch role {
+        case .primary:
+            content.buttonStyle(.borderedProminent)
+                .tint(SymairaTheme.foregroundPrimary(for: colorScheme))
+                .foregroundStyle(SymairaTheme.surfaceOpaque(for: colorScheme))
+        case .secondary, .toolbar:
+            content.buttonStyle(.bordered).tint(nil)
+        }
+    }
+
+    @ViewBuilder
+    private func pageButton(_ content: Content) -> some View {
         switch role {
         case .primary:
             content.buttonStyle(SymairaPrimaryButtonStyle(onPressChange: onPressChange))
@@ -470,14 +537,15 @@ public struct SymairaAdaptiveButtonModifier: ViewModifier {
         case .toolbar:
             toolbarButton(content)
         }
-        #endif
     }
 
     @ViewBuilder
     private func toolbarButton(_ content: Content) -> some View {
         #if compiler(>=6.2)
         if #available(macOS 26.0, iOS 26.0, tvOS 26.0, *) {
-            content.buttonStyle(.glass)
+            // `.glass` fills itself with the environment tint; a product's window-wide selection
+            // tint would turn every icon button champagne.
+            content.buttonStyle(.glass).tint(nil)
         } else {
             content.buttonStyle(.borderless)
         }
@@ -488,8 +556,8 @@ public struct SymairaAdaptiveButtonModifier: ViewModifier {
 }
 
 extension View {
-    /// Observes press and release for primary and secondary styles on macOS and iOS.
-    /// The native toolbar and tvOS styles do not invoke the callback.
+    /// Observes press and release for primary and secondary styles of the `page` tier on
+    /// macOS and iOS. The native styles (toolbar, workbench tier, tvOS) do not invoke it.
     public func symairaButtonStyle(
         _ role: SymairaButtonRole, onPressChange: ((Bool) -> Void)? = nil
     ) -> some View {
@@ -497,8 +565,8 @@ extension View {
     }
 }
 
-/// Primary action: filled `ink` with `surface` text, 14 pt radius, bold label.
-/// At most one per view.
+/// Primary action: filled `ink` capsule with `surface` text and a bold label, as high as
+/// the extra-large native controls beside it. At most one per view.
 public struct SymairaPrimaryButtonStyle: ButtonStyle {
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.isEnabled) private var isEnabled
@@ -510,7 +578,7 @@ public struct SymairaPrimaryButtonStyle: ButtonStyle {
     }
 
     public func makeBody(configuration: Configuration) -> some View {
-        let shape = RoundedRectangle(cornerRadius: SymairaTokens.Radius.lg, style: .continuous)
+        let shape = Capsule()
         SymairaIconHost(isPressed: configuration.isPressed) {
             configuration.label
                 .font(SymairaTypography.bodyEmphasized)
@@ -529,38 +597,72 @@ public struct SymairaPrimaryButtonStyle: ButtonStyle {
     }
 }
 
-/// Secondary action: filled `raised`, no outline, 14 pt radius.
+/// Secondary action: native interactive Liquid Glass on macOS/iOS 26+, in the
+/// primary button's geometry (font, padding, height, capsule), so the two
+/// roles still line up. Reduce Transparency and older systems get the opaque
+/// `raised` fill with its outline.
 public struct SymairaSecondaryButtonStyle: ButtonStyle {
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.isEnabled) private var isEnabled
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     private let onPressChange: ((Bool) -> Void)?
+    /// Tests reach the opaque fallback with `false`; Reduce Transparency is read-only on macOS.
+    let allowsGlass: Bool
 
     public init(onPressChange: ((Bool) -> Void)? = nil) {
+        self.init(onPressChange: onPressChange, allowsGlass: true)
+    }
+
+    init(onPressChange: ((Bool) -> Void)? = nil, allowsGlass: Bool) {
         self.onPressChange = onPressChange
+        self.allowsGlass = allowsGlass
     }
 
     public func makeBody(configuration: Configuration) -> some View {
-        let shape = RoundedRectangle(cornerRadius: SymairaTokens.Radius.lg, style: .continuous)
+        let shape = Capsule()
         SymairaIconHost(isPressed: configuration.isPressed) {
-            configuration.label
-                .font(SymairaTypography.bodyEmphasized)
-                .lineLimit(1)
-                .foregroundStyle(SymairaTheme.foregroundPrimary(for: colorScheme))
-                .padding(.horizontal, SymairaMetrics.contentActionHorizontalPadding)
-                .frame(minHeight: SymairaMetrics.contentActionHeight)
-                .background(
-                    configuration.isPressed
-                        ? SymairaTheme.navigationSelection(for: colorScheme)
-                        : SymairaTheme.surfaceRaised(for: colorScheme),
-                    in: shape
-                )
-                .overlay(shape.stroke(SymairaTheme.raisedOutline(for: colorScheme), lineWidth: 1))
-                .contentShape(shape)
-                .scaleEffect(configuration.isPressed && !reduceMotion ? 0.98 : 1)
-                .opacity(isEnabled ? 1 : 0.5)
-                .animation(reduceMotion ? nil : .easeOut(duration: 0.15), value: configuration.isPressed)
+            surface(
+                configuration.label
+                    .font(SymairaTypography.bodyEmphasized)
+                    .lineLimit(1)
+                    .foregroundStyle(SymairaTheme.foregroundPrimary(for: colorScheme))
+                    .padding(.horizontal, SymairaMetrics.contentActionHorizontalPadding)
+                    .frame(minHeight: SymairaMetrics.contentActionHeight),
+                shape: shape,
+                isPressed: configuration.isPressed
+            )
+            .contentShape(shape)
+            .scaleEffect(configuration.isPressed && !reduceMotion ? 0.98 : 1)
+            .opacity(isEnabled ? 1 : 0.5)
+            .animation(reduceMotion ? nil : .easeOut(duration: 0.15), value: configuration.isPressed)
         }
         .onChange(of: configuration.isPressed) { _, isPressed in onPressChange?(isPressed) }
+    }
+
+    @ViewBuilder
+    private func surface(
+        _ label: some View, shape: Capsule, isPressed: Bool
+    ) -> some View {
+        #if compiler(>=6.2)
+        if #available(macOS 26.0, iOS 26.0, tvOS 26.0, *), allowsGlass, !reduceTransparency {
+            label.glassEffect(.regular.interactive(isEnabled), in: shape)
+        } else {
+            opaque(label, shape: shape, isPressed: isPressed)
+        }
+        #else
+        opaque(label, shape: shape, isPressed: isPressed)
+        #endif
+    }
+
+    private func opaque(_ label: some View, shape: Capsule, isPressed: Bool) -> some View {
+        label
+            .background(
+                isPressed
+                    ? SymairaTheme.navigationSelection(for: colorScheme)
+                    : SymairaTheme.surfaceRaised(for: colorScheme),
+                in: shape
+            )
+            .overlay(shape.stroke(SymairaTheme.raisedOutline(for: colorScheme), lineWidth: 1))
     }
 }

@@ -36,18 +36,15 @@ extension View {
 
 // MARK: - Segmented control
 
-/// Single-choice segmented control.
-///
-/// Each segment is a button with the `isSelected` accessibility trait, so
-/// VoiceOver announces the choice and keyboard focus moves between segments.
-@available(
-    *, deprecated,
-    message: "Use Picker(...).pickerStyle(.segmented).tint(SymairaTokens.selected), E07 (UI catalog 2026-11-25)."
-)
+/// Single-choice segmented control (UI catalog E07, revised 2026-11-26): the native
+/// segmented picker with the Symaira selection tint. The system draws the rail and
+/// handles press, drag, keyboard focus and VoiceOver. In the `page` tier it is
+/// extra-large (36 pt, `SymairaMetrics.segmentedControlHeight`) wherever it sits; in the
+/// `workbench` tier it takes the region's control size like the controls next to it.
+/// `.fixedSize()` keeps its natural width, so labels never truncate and the control does
+/// not stretch inside forms or toolbars.
 public struct SymairaSegmentedControl<Value: Hashable>: View {
-    @Environment(\.colorScheme) private var colorScheme
-    @Environment(\.isEnabled) private var isEnabled
-
+    @Environment(\.symairaControlTier) private var tier
     private let title: String
     @Binding private var selection: Value
     private let options: [(value: Value, label: String)]
@@ -60,34 +57,32 @@ public struct SymairaSegmentedControl<Value: Hashable>: View {
     }
 
     public var body: some View {
-        HStack(spacing: SymairaSpacing.xSmall) {
+        Picker(title, selection: $selection) {
             ForEach(options.indices, id: \.self) { index in
-                segment(options[index])
+                Text(options[index].label).tag(options[index].value)
             }
         }
-        .padding(SymairaSpacing.xSmall)
-        .background(
-            SymairaTheme.surfaceRaised(for: colorScheme),
-            in: RoundedRectangle(cornerRadius: SymairaTokens.Radius.lg, style: .continuous)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: SymairaTokens.Radius.lg, style: .continuous)
-                .stroke(SymairaTheme.raisedOutline(for: colorScheme), lineWidth: 1)
-        )
-        .opacity(isEnabled ? 1 : 0.55)
-        .accessibilityElement(children: .contain)
-        .accessibilityLabel(title)
-    }
-
-    private func segment(_ option: (value: Value, label: String)) -> some View {
-        SymairaSegmentButton(
-            label: option.label,
-            isSelected: option.value == selection,
-            colorScheme: colorScheme,
-            action: { selection = option.value }
-        )
+        .pickerStyle(.segmented)
+        .labelsHidden()
+        .tint(SymairaTokens.selected)
+        #if !os(tvOS)
+        .modifier(SymairaPageTierControlSize(isPage: tier == .page))
+        #endif
+        .fixedSize()
     }
 }
+
+#if !os(tvOS)
+/// Extra-large in the `page` tier; otherwise the inherited control size stays.
+private struct SymairaPageTierControlSize: ViewModifier {
+    let isPage: Bool
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if isPage { content.controlSize(.extraLarge) } else { content }
+    }
+}
+#endif
 
 /// Filter dropdown with the text-field silhouette: same height, fill, radius and
 /// border as `SymairaTextFieldStyle`, so a row of search fields and filters reads
@@ -161,40 +156,30 @@ public struct SymairaFilterMenu<Value: Hashable>: View {
     }
 }
 
-private struct SymairaSegmentButton: View {
-    let label: String
-    let isSelected: Bool
-    let colorScheme: ColorScheme
-    let action: () -> Void
-    @FocusState private var isFocused: Bool
+/// Reports one text line of height and centres its child on it. A macOS form row
+/// aligns label and control at the top, so a control taller than a line (a 36 pt
+/// segmented control, a 36 pt page action) would hang below the row title.
+struct SymairaFormRowControlLayout: Layout {
+    static let lineHeight: CGFloat = 17 * SymairaMetrics.platformScale
 
-    var body: some View {
-        Button(action: action) {
-            Text(label)
-                .font(isSelected ? SymairaTypography.bodyEmphasized : SymairaTypography.bodyMedium)
-                .lineLimit(1)
-                .minimumScaleFactor(0.85)
-                .frame(maxWidth: .infinity, minHeight: SymairaMetrics.minimumControlHeight - 2)
-                .foregroundStyle(
-                    isSelected
-                        ? SymairaTheme.onSelected(for: colorScheme)
-                        : SymairaTheme.foregroundSecondary(for: colorScheme)
-                )
-                .background {
-                    if isSelected {
-                        RoundedRectangle(cornerRadius: SymairaTokens.Radius.md, style: .continuous)
-                            .fill(SymairaTheme.selected(for: colorScheme))
-                    }
-                }
-                .contentShape(RoundedRectangle(cornerRadius: SymairaTokens.Radius.md, style: .continuous))
-        }
-        .buttonStyle(.plain)
-        .focused($isFocused)
-        .symairaKeyboardFocusRing(
-            RoundedRectangle(cornerRadius: SymairaTokens.Radius.md, style: .continuous),
-            isFocused: isFocused
-        )
-        .accessibilityAddTraits(isSelected ? [.isSelected] : [])
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let size = subviews.first?.sizeThatFits(ProposedViewSize(width: proposal.width, height: nil)) ?? .zero
+        return CGSize(width: size.width, height: min(size.height, Self.lineHeight))
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        guard let child = subviews.first else { return }
+        let size = child.sizeThatFits(ProposedViewSize(width: bounds.width, height: nil))
+        child.place(at: CGPoint(x: bounds.midX, y: bounds.midY), anchor: .center, proposal: ProposedViewSize(size))
+    }
+}
+
+extension View {
+    /// Centres a control that is taller than one text line on the first line of a
+    /// form row title (`LabeledContent` in a grouped `Form`, GUIDELINES FORM-10).
+    /// The control keeps its full size and hit area; only the row sees one line.
+    public func symairaFormRowControl() -> some View {
+        SymairaFormRowControlLayout { self }
     }
 }
 

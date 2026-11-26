@@ -106,17 +106,9 @@ public struct SymairaAppearancePicker: View {
     static let options = SymairaAppearance.allCases.map { (value: $0, label: $0.title) }
 
     public var body: some View {
-        // Native segmented picker with the Symaira selection tint (UI catalog E29, like E07).
-        Picker(SymairaStrings.appearance, selection: $selection) {
-            ForEach(Self.options, id: \.value) { option in
-                Text(option.label).tag(option.value)
-            }
-        }
-        .pickerStyle(.segmented)
-        .labelsHidden()
-        .tint(SymairaTokens.selected)
-        .frame(maxWidth: 360)
-        .accessibilityIdentifier("symaira-appearance-picker")
+        // The native segmented control with the Symaira selection tint (UI catalog E29, like E07).
+        SymairaSegmentedControl(SymairaStrings.appearance, selection: $selection, options: Self.options)
+            .accessibilityIdentifier("symaira-appearance-picker")
     }
 }
 

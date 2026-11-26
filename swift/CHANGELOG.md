@@ -11,6 +11,47 @@ the releases of the former `symaira-appkit` repository.
 
 ## [Unreleased]
 
+### Added
+- Control tiers (GUIDELINES CTRL-1): `SymairaControlTier` (`page`, `workbench`),
+  `.symairaControlTier(_:)` and `SymairaMetrics.workbenchControlHeight`. The
+  navigation tier is the workspace shell. `SymairaPage` puts its toolbar in the
+  page tier (extra-large controls, glass secondary, opaque primary) and its
+  content in the workbench tier: native solid controls in `.large` (28 pt on
+  macOS), with `.symairaButtonStyle` as `borderedProminent` in `ink` and
+  `bordered`, `SymairaSegmentedControl` at the region's control size and
+  `SymairaTextFieldStyle` at 28 pt. Empty-state and retry actions stay page
+  actions. Sheets set the tiers themselves (page on the `NavigationStack`,
+  workbench on the `Form`).
+  Page actions (`.symairaButtonStyle(.primary/.secondary)` in the page tier)
+  are 36 pt capsules (`SymairaMetrics.contentActionHeight`, was a 40 pt
+  rounded rectangle), the height and shape of the extra-large native controls
+  beside them.
+  Migration: a `SymairaAppearancePicker` or segmented control in a grouped
+  `Form` row is now 28 pt and needs `.symairaFormRowControl()` (FORM-10) to sit
+  on the row title.
+
+### Changed
+- `.symairaButtonStyle(.secondary)` is native interactive Liquid Glass on
+  macOS/iOS 26+ in the primary's geometry (Figtree, capsule); Reduce Transparency and older systems keep the opaque `raised`
+  fill. The primary button stays the one opaque Symaira action (UI catalog
+  E02 revised D → B in the Soundworks pilot).
+- `.symairaButtonStyle(.toolbar)` ignores the environment tint, so a
+  window-wide `.tint(SymairaTokens.selected)` no longer turns glass icon
+  buttons champagne (COLOR-2).
+- `SymairaSegmentedControl` is no longer deprecated: it is the native
+  `Picker(.segmented)` with `.tint(SymairaTokens.selected)` and
+  `.controlSize(.extraLarge)`, so every segmented control has one 36 pt height
+  (`SymairaMetrics.segmentedControlHeight`) and its natural width without
+  truncated labels (UI catalog E07 stays B). The system draws the glass rail
+  and handles press, drag, keyboard and VoiceOver. `SymairaAppearancePicker`
+  uses it. `gui-review.py` reports a bare `.pickerStyle(.segmented)` as FORM-5.
+- `.symairaFormRowControl()` centres a control taller than one text line on the
+  first line of a grouped `Form` row title (FORM-10); macOS form rows align at
+  the top and ignore alignment guides.
+- GUIDELINES: FORM-9 (`.controlSize(.extraLarge)` for page toolbar rows, no
+  `ViewThatFits` around them), ACTION-5 sheet footers (secondary Cancel,
+  primary verb), NN-4/NN-7/MOTION-3 reworded for glass secondary actions.
+
 ### Fixed
 - `SymairaIconButton` deprecation message names an `Image(symairaIcon:)` label;
   `Label(_:symairaIcon:)` renders blank inside the glass toolbar button (#510).

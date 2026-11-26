@@ -27,6 +27,7 @@ public struct SymairaTextFieldStyle: TextFieldStyle {
 }
 
 private struct SymairaTextFieldChrome: ViewModifier {
+    @Environment(\.symairaControlTier) private var tier
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.colorSchemeContrast) private var contrast
     @Environment(\.isEnabled) private var isEnabled
@@ -49,8 +50,11 @@ private struct SymairaTextFieldChrome: ViewModifier {
         }
         .font(SymairaTypography.body)
         .padding(.horizontal, SymairaSpacing.medium)
-        .padding(.vertical, SymairaSpacing.small)
-        .frame(minHeight: SymairaMetrics.minimumControlHeight)
+        // A workbench field lines up with the native `.large` controls beside it (CTRL-1).
+        .padding(.vertical, tier == .workbench ? SymairaSpacing.xSmall : SymairaSpacing.small)
+        .frame(
+            minHeight: tier == .workbench ? SymairaMetrics.workbenchControlHeight : SymairaMetrics.minimumControlHeight
+        )
         .background(shape.fill(fill))
         .overlay(shape.stroke(border, lineWidth: borderWidth))
         .opacity(isEnabled ? 1 : 0.55)

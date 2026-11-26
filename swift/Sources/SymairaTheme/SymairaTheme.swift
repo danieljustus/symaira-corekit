@@ -171,12 +171,22 @@ public enum SymairaMetrics {
     public static let minimumControlHeight: CGFloat = 34 * platformScale
     #endif
 
-    /// Content-action roles share geometry, including when an action changes state.
-    public static let contentActionHeight: CGFloat = max(minimumControlHeight, 40 * platformScale)
+    /// Page actions share geometry, including when an action changes state: the 36 pt capsule
+    /// of the extra-large native controls beside them (CTRL-1), the touch minimum on iOS.
+    public static let contentActionHeight: CGFloat = max(minimumControlHeight, 36 * platformScale)
     public static let contentActionHorizontalPadding: CGFloat = 20 * platformScale
 
     public static let readableContentWidth: CGFloat = 760 * platformScale
     public static let glassGroupSpacing: CGFloat = 12 * platformScale
+    /// One height for every segmented control, the 36 pt of the extra-large native controls.
+    public static let segmentedControlHeight: CGFloat = 36 * platformScale
+    /// Height of the `workbench` control tier (CTRL-1): the native `.large` controls on macOS,
+    /// the touch minimum on iOS.
+    #if os(iOS)
+    public static let workbenchControlHeight: CGFloat = minimumControlHeight
+    #else
+    public static let workbenchControlHeight: CGFloat = 28 * platformScale
+    #endif
 
     /// Symbol size for the illustration above an empty state. Fixed on purpose —
     /// it is a graphic, not text, and must not scale with Dynamic Type.

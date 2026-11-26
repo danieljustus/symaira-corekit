@@ -35,10 +35,11 @@ final class SettingsMenuTests: XCTestCase {
         func controls(_ view: NSView) -> [NSSegmentedControl] {
             (view as? NSSegmentedControl).map { [$0] } ?? view.subviews.flatMap(controls)
         }
-        // UI catalog 2026-11-25 (E29): one native segmented control with one segment per appearance.
+        // UI catalog E07/E29 revised 2026-11-26: one native segmented control, one height everywhere.
         let segmented = controls(host)
         XCTAssertEqual(segmented.count, 1)
         XCTAssertEqual(segmented.first?.segmentCount, SymairaAppearance.allCases.count)
+        XCTAssertEqual(host.fittingSize.height, SymairaMetrics.segmentedControlHeight, accuracy: 0.5)
     }
 }
 #endif

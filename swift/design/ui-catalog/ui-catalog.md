@@ -2,7 +2,7 @@
 
 Stand: 2026-11-25, Auswahl von Daniel im Board am 2026-11-25 (33/33 entschieden, maschinenlesbar in `selection.json`).
 
-Ergebnis Apple: 16 nativ, 4 nativ mit Symaira-Tint, 2 Liquid Glass, 11 Symaira-Eigenbau. Web: 25 Browser-nativ (W1), 8 natives Element mit Symaira-Tokens (W2).
+Ergebnis Apple: 16 nativ, 3 nativ mit Symaira-Tint, 4 Liquid Glass, 10 Symaira-Eigenbau (E02 und E07 am 2026-11-26 im Soundworks-Pilot auf Liquid Glass geändert). Web: 25 Browser-nativ (W1), 8 natives Element mit Symaira-Tokens (W2).
 
 Spalten: **Apple** / **Web** = gewählte Variante (`Out` = Element wird nicht gebraucht), **Prio** = Must / Should / Later / Out.
 
@@ -12,7 +12,7 @@ Spalten: **Apple** / **Web** = gewählte Variante (`Out` = Element wird nicht ge
 | ID | Element | Apple-Varianten | Web-Varianten | Apple | Web | Prio | Gebaut |
 |---|---|---|---|---|---|---|---|
 | E01 | Primär-Button | A: Apple nativ, Systemakzent<br>B: Nativ mit Symaira-Tint<br>C: Liquid Glass prominent<br>D: Symaira heute | W1: Browser-nativ<br>W2: Natives <button> mit Symaira-Tokens | **D** | **W2** | Must | [ ] |
-| E02 | Sekundär-Button | A: Apple nativ<br>B: Liquid Glass<br>C: Ohne Rahmen<br>D: Symaira heute | W1: Browser-nativ<br>W2: Natives <button> mit Symaira-Tokens<br>W3: Textlink-Button | **D** | **W2** | Must | [ ] |
+| E02 | Sekundär-Button | A: Apple nativ<br>B: Liquid Glass<br>C: Ohne Rahmen<br>D: Symaira heute | W1: Browser-nativ<br>W2: Natives <button> mit Symaira-Tokens<br>W3: Textlink-Button | **B** | **W2** | Must | [ ] |
 | E03 | Destruktiv-Button | A: Apple nativ, Rolle destructive<br>B: Prominent rot<br>C: Symaira-Tokens (kein eigenes Control vorhanden) | W1: Browser-nativ<br>W2: Symaira-Tokens | **B** | **W1** | Must | [ ] |
 | E04 | Icon-Button | A: Apple nativ, rund<br>B: Liquid Glass, rund<br>C: Symaira heute | W1: Browser-nativ<br>W2: Symaira-Tokens | **B** | **W1** | Must | [ ] |
 | E05 | Toolbar-Gruppe | A: Native Glasgruppe<br>B: ControlGroup<br>C: Symaira heute | W1: Browser-nativ<br>W2: Symaira-Tokens, deckend | **A** | **W1** | Must | [ ] |
@@ -22,7 +22,7 @@ Spalten: **Apple** / **Web** = gewählte Variante (`Out` = Element wird nicht ge
 
 | ID | Element | Apple-Varianten | Web-Varianten | Apple | Web | Prio | Gebaut |
 |---|---|---|---|---|---|---|---|
-| E07 | Segmentauswahl | A: Apple nativ<br>B: Nativ mit Symaira-Tint<br>C: Symaira heute | W1: Browser-nativ (Radiogruppe)<br>W2: Radiogruppe als Segmentschiene | **B** | **W1** | Must | [ ] |
+| E07 | Segmentauswahl | A: Apple nativ<br>B: Nativ mit Symaira-Tint<br>C: Symaira, Liquid Glass mit Symaira-Tint | W1: Browser-nativ (Radiogruppe)<br>W2: Radiogruppe als Segmentschiene | **B** | **W1** | Must | [ ] |
 | E08 | Schalter | A: Apple nativ<br>B: Nativ mit Symaira-Tint<br>C: Checkbox (nur macOS)<br>D: Symaira heute | W1: Browser-nativ Checkbox<br>W2: Checkbox als Schalter (switch)<br>W3: Eigenbau-Schalter heute | **B** | **W1** | Must | [ ] |
 | E09 | Auswahlliste | A: Apple nativ, Popup<br>B: Radiogruppe (macOS) / Inline (iOS)<br>C: Symaira-Formularzeile | W1: Browser-nativ<br>W2: Radiogruppe mit Tokens | **A** | **W1** | Must | [ ] |
 | E10 | Regler | A: Apple nativ<br>B: Nativ mit Symaira-Tint | W1: Browser-nativ<br>W2: Range mit Tokens | **B** | **W2** | Must | [ ] |
@@ -73,10 +73,10 @@ Spalten: **Apple** / **Web** = gewählte Variante (`Out` = Element wird nicht ge
 ## Folgen für SymairaTheme (CoreKit)
 
 Bleiben Symaira-Komponente:
-- `symairaButtonStyle(.primary/.secondary)` (E01, E02), `SymairaTextFieldStyle` (E13, E14), `.symairaCard()` (E16, E18, E30, E32), `SymairaNotice` (E20), `SymairaEmptyState` (E23), `SymairaWorkspace` + `SymairaNavigationButton` (E27), `SymairaFormRow`/`SymairaFormDivider` nur noch als Kartenzeile (E30).
+- `symairaButtonStyle(.primary)` (E01); `.secondary` (E02) behält die Symaira-Geometrie, ist seit 2026-11-26 aber natives Liquid Glass; `SymairaTextFieldStyle` (E13, E14), `.symairaCard()` (E16, E18, E30, E32), `SymairaNotice` (E20), `SymairaEmptyState` (E23), `SymairaWorkspace` + `SymairaNavigationButton` (E27), `SymairaFormRow`/`SymairaFormDivider` nur noch als Kartenzeile (E30).
 
 Werden durch native Controls ersetzt (deprecaten, nicht sofort löschen):
-- `SymairaSegmentedControl` → `Picker(.segmented)` + `.tint(SymairaTokens.selected)` (E07); Tabs → `TabView` (E28)
+- ~~`SymairaSegmentedControl` → `Picker(.segmented)`~~ (E07, am 2026-11-26 zurückgenommen: `SymairaSegmentedControl` bleibt als dünne Hülle um den nativen Picker mit Tint und 36 pt); Tabs → `TabView` (E28)
 - `.symairaSwitch` → `Toggle(.switch)` + `.tint(SymairaTokens.selected)` (E08)
 - `SymairaFilterMenu` → `Picker(.menu)` (E06, E09)
 - `SymairaIconButton` → `Button` + `.glass` + `.buttonBorderShape(.circle)` (E04), Symbol als `Image(symairaIcon:)` im Label (`Label(_:symairaIcon:)` bleibt im Glass-Button leer, #510); Toolbar-Gruppen → `GlassEffectContainer` (E05)
@@ -95,6 +95,14 @@ Web: W1 = natives HTML-Element (Browser-Standard), W2 = natives Element mit Syma
 - **Felder in Formularen:** Innerhalb eines nativen `Form` native Felder; `.textFieldStyle(.symaira)` nur außerhalb von Formularen (Suchleiste, Feld auf Karte).
 - **Darstellung E29** bekommt den Symaira-Tint wie E07 (`SymairaAppearancePicker` ist jetzt nativer Segment-Picker mit `.tint(SymairaTokens.selected)`).
 - **Umsetzung:** CoreKit umgebaut, ersetzte Komponenten deprecated statt gelöscht; Doku, `gui-review.py` (NATIVE-1) und Katalog-App angepasst; lokal gebaut und getestet, kein Push.
+
+## Revision 2026-11-26 (Soundworks-Pilot)
+
+- **E07 bleibt B:** `SymairaSegmentedControl` ist der native `Picker(.segmented)` mit `.tint(SymairaTokens.selected)`: 36 pt bei Seitenaktionen, 28 pt in der Werkbank (CTRL-1), natürliche Breite, nichts wird abgeschnitten. Die eigene Glas-Variante C mit Linse wurde gebaut und verworfen: Die Linse aus „Wo ist?“ gibt es nur in Catalyst-/iOS-Controls, der macOS-Picker hat sie auch auf macOS 27.2 nicht (gemessen), und eine Nachbildung wäre eigener Code ohne natives Verhalten. `gui-review.py` meldet ein loses `.pickerStyle(.segmented)` als FORM-5, damit Tint und Höhe nicht fehlen.
+- **Drei Control-Ebenen (GUIDELINES CTRL-1):** Navigation (Seitenleiste, Fenster-Toolbar, animierte Icons), Seitenaktionen (Seiten-Toolbar, Sheet-Footer, leere Zustände: eine Höhe, 36-pt-Kapseln, Glass) und Werkbank (Inhalt, Inspector, Panels, Formularzeilen: native solide Controls in `.large`, 28 pt, kein Glass). `SymairaPage` setzt Seite und Werkbank selbst.
+- **E02 → B:** Sekundär-Buttons sind natives, interaktives Liquid Glass in Symaira-Geometrie (36-pt-Kapsel, Figtree); Reduce Transparency und ältere Systeme behalten die deckende `raised`-Fläche. Einziger deckender Symaira-Button pro Screen bleibt der Primär-Button.
+- **Glass bleibt neutral:** `.toolbar` und `.secondary` ignorieren einen fensterweiten `.tint(SymairaTokens.selected)`; der Tint färbt nur Auswahlzustände (Segmente, Schalter).
+- **Toolbar-Zeilen:** `.controlSize(.extraLarge)` macht Segmente, Menüs, Schalter und Icon-Buttons zu 36-pt-Kapseln neben den 40-pt-Aktionen (GUIDELINES FORM-9); Sheet-Footer: Abbrechen `.secondary`, bestätigendes Verb `.primary` (ACTION-5).
 
 ## Umsetzungshinweise
 

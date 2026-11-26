@@ -354,7 +354,7 @@ Jede Rolle gibt es hell (Standardwert) und dunkel (Suffix `-dark`). Code nutzt i
 - Prosa bleibt in einer lesbaren, zentrierten Spalte; Tabellen, Grids und Dashboards dürfen einen breiteren produktspezifischen Inhaltsrahmen nutzen. Native Toolbar-Höhen werden nicht durch eine zweite feste Kopfzeile verdoppelt.
 - Großzügige Innenabstände: Inhaltsaktionen 20pt horizontal, Pills 6×14px, Sidebar-Einträge 8×12px, Eingabebox 14/12/10/18px.
 - Abstandsraster in 4px-Schritten, gängig sind 8, 12, 16, 20 und 24px.
-- Touch-Ziele mindestens 44pt auf iOS. Primär-/Sekundäraktionen mindestens 40pt auf macOS, mit identischer Geometrie und Schrift in beiden Rollen. Ein Zustandswechsel darf den Button nicht schmaler oder flacher machen; für wechselnde Beschriftungen eine stabile Label-Fläche reservieren.
+- Touch-Ziele mindestens 44pt auf iOS. Primär-/Sekundäraktionen auf macOS 36pt (Seitenaktionen) bzw. 28pt (Werkbank, GUIDELINES CTRL-1), mit identischer Geometrie und Schrift in beiden Rollen. Ein Zustandswechsel darf den Button nicht schmaler oder flacher machen; für wechselnde Beschriftungen eine stabile Label-Fläche reservieren.
 
 ## Elevation & Depth
 

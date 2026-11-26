@@ -85,9 +85,15 @@ LINE_RULES = [
     (
         "NATIVE-1",
         "warn",
-        r"\b(SymairaFormSection|SymairaSegmentedControl|SymairaFilterMenu|SymairaIconButton|SymairaProgressStyle"
+        r"\b(SymairaFormSection|SymairaFilterMenu|SymairaIconButton|SymairaProgressStyle"
         r"|SymairaLoadingState|SymairaSheetScaffold|SymairaStatTile|SymairaSwitchToggleStyle)\b|\.symairaSwitch\b",
         "deprecated Symaira control; use the native control from the UI catalog (GUIDELINES NATIVE-1)",
+    ),
+    (
+        "FORM-5",
+        "warn",
+        r"\.pickerStyle\(\s*\.segmented\s*\)",
+        "bare segmented picker; use SymairaSegmentedControl (native picker with Symaira tint and one 36 pt height)",
     ),
     (
         "SHELL-1",
@@ -279,14 +285,18 @@ struct Fixture: View {
         Text("fine").symairaText(.body).foregroundStyle(SymairaTokens.ink)
         ProgressView("Loading jobs…")
         Form { Toggle("Sync", isOn: $sync).toggleStyle(.switch).tint(SymairaTokens.selected) }
+        SymairaFilterMenu("Mode", selection: $mode, options: options)
+        Picker("Mode", selection: $mode) { Text("A").tag(0) }.pickerStyle(.segmented)
         SymairaSegmentedControl("Mode", selection: $mode, options: options)
     }
 }
 """
     found = review_text(fixture, "fixture.swift")
-    expected = {"COLOR-1", "COPY-3", "ICON-1", "TYPE-1", "STATE-1", "ACTION-1", "MOTION-4", "ICON-2", "NATIVE-1"}
+    expected = {
+        "COLOR-1", "COPY-3", "ICON-1", "TYPE-1", "STATE-1", "ACTION-1", "MOTION-4", "ICON-2", "NATIVE-1", "FORM-5",
+    }
     got = {item["rule"] for item in found}
-    clean_lines = {16, 17, 18}
+    clean_lines = {16, 17, 18, 21}
     leaked = [item for item in found if item["line"] in clean_lines]
     comment_hits = [item for item in found if item["line"] == 3]
     project = [

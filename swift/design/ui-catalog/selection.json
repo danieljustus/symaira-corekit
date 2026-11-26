@@ -12,11 +12,11 @@
    "web_code": "button.sym-primary"
   },
   "E02": {
-   "apple": "D",
+   "apple": "B",
    "web": "W2",
-   "apple_title": "Symaira heute",
-   "apple_code": ".symairaButtonStyle(.secondary)",
-   "apple_kind": "symaira",
+   "apple_title": "Liquid Glass",
+   "apple_code": ".symairaButtonStyle(.secondary) (native glass, Symaira geometry)",
+   "apple_kind": "apple-glass",
    "web_title": "Natives <button> mit Symaira-Tokens",
    "web_code": "button.sym-secondary"
   },
@@ -60,7 +60,7 @@
    "apple": "B",
    "web": "W1",
    "apple_title": "Nativ mit Symaira-Tint",
-   "apple_code": ".segmented + .tint(SymairaTokens.selected)",
+   "apple_code": "SymairaSegmentedControl (native .segmented, .tint(SymairaTokens.selected), .controlSize(.extraLarge))",
    "apple_kind": "native-tinted",
    "web_title": "Browser-nativ (Radiogruppe)",
    "web_code": "<fieldset> + <input type=radio>"
@@ -299,5 +299,9 @@
    "web_title": "Browser-nativ",
    "web_code": "<dl><dt><dd>"
   }
+ },
+ "revised": {
+  "E02": "2026-11-26, Daniel (Soundworks pilot): D -> B",
+  "E07": "2026-11-26, Daniel (Soundworks pilot): B -> C -> B (glass lens exists only in Catalyst/iOS controls)"
  }
 }

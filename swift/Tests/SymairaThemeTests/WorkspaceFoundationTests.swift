@@ -105,7 +105,7 @@ final class WorkspaceFoundationTests: XCTestCase {
                 }
                 XCTAssertEqual(images[0].width, images[1].width)
                 XCTAssertEqual(images[0].height, images[1].height)
-                XCTAssertEqual(images[0].height, 80)
+                XCTAssertEqual(CGFloat(images[0].height), SymairaMetrics.contentActionHeight * 2)
                 XCTAssertNotEqual(try sample(images[0]), try sample(images[1]))
             }
         }

@@ -8,6 +8,7 @@ public enum SymairaPageLayout {
 
 /// Stable header and toolbar, with optional page scrolling. Tables should use `scrolls: false`.
 /// Pages without a toolbar (`Toolbar == EmptyView`) reserve no toolbar row.
+/// The toolbar is the `page` control tier, the content the `workbench` tier (CTRL-1).
 public struct SymairaPage<Toolbar: View, Content: View>: View {
     private let title: String
     private let subtitle: String?
@@ -60,9 +61,11 @@ public struct SymairaPage<Toolbar: View, Content: View>: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .frame(height: toolbarHeight)
                     .accessibilityIdentifier("symaira.page.toolbar")
+                    .symairaControlTier(.page)
                     .symairaFocusSection()
             }
             content
+                .symairaControlTier(.workbench)
                 .symairaFocusSection()
         }
         .padding(SymairaSpacing.xLarge)
@@ -128,6 +131,7 @@ public struct SymairaPageState<Value, Loaded: View>: View {
                     Button(SymairaStrings.retry, action: retry)
                         .symairaButtonStyle(.secondary)
                         .accessibilityIdentifier("symaira.page.retry")
+                        .symairaControlTier(.page)
                 }
                 .padding(SymairaSpacing.medium)
             }
@@ -153,7 +157,9 @@ public struct SymairaPageEmpty<Actions: View>: View {
 
     public var body: some View {
         SymairaPageStateFrame {
+            // The next action of an empty page is a page action, not a tool (CTRL-1).
             SymairaEmptyState(icon: icon, title: title, message: message) { actions }
+                .symairaControlTier(.page)
         }
     }
 }
