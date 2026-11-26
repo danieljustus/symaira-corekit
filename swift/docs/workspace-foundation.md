@@ -242,6 +242,8 @@ consumer or update dependency pins; EraseMe adoption is a separate follow-up.
 | One trailing native gear, direct action with no submenu | `SymairaSettingsButton` inside shared toolbar | Open/reuse native settings window; no duplicate sidebar/parent-toolbar entry |
 | Forms and settings | Native `Form { Section }.formStyle(.grouped)` (`SymairaFormSection` deprecated) | Domain fields and sections |
 | Opaque notices; bounded empty/loading text protection | `SymairaNotice`, `SymairaEmptyState`, `SymairaPageState` (native `ProgressView`) | Messages and retry actions |
+| One-shot feedback motion (MOTION-5) | `SymairaTheme.springPress`, `.springPop`, `.springFill` | Tie feedback to a recorded state change, respect Reduce Motion, and stop drawing when done; confetti stays product-local |
+| English and German localization (COPY-1) | `swift/scripts/check-strings.py` | Own the bundle lookup, String Catalog, and localized system-menu resources |
 
 Button roles use the same font and 20 pt horizontal padding. Changing text can
 still change an unconstrained intrinsic width; reserve the label area or make a

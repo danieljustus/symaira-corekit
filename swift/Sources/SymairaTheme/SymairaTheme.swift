@@ -123,6 +123,15 @@ public enum SymairaTheme {
     // Motion
     public static let transitionSmooth = Animation.timingCurve(0.16, 1, 0.3, 1, duration: 0.4)
     public static let transitionFast = Animation.easeOut(duration: 0.2)
+
+    /// Quick response to a pressed control: 0.25 s duration, 0.45 bounce.
+    public static let springPress = Animation.spring(duration: 0.25, bounce: 0.45)
+
+    /// One-shot reveal of a verdict or milestone: 0.5 s duration, 0.5 bounce.
+    public static let springPop = Animation.spring(duration: 0.5, bounce: 0.5)
+
+    /// Gentle fill of a progress indicator: 0.9 s duration, 0.15 bounce.
+    public static let springFill = Animation.spring(duration: 0.9, bounce: 0.15)
 }
 
 /// Shared spacing scale. Keeping layout values here prevents each client from

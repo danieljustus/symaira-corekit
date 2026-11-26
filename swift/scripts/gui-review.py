@@ -69,7 +69,6 @@ LINE_RULES = [
         r"Button\(\s*\"(OK|Okay|Continue|Yes|No|Submit|Go|Proceed)\"",
         "vague button label; name the verb",
     ),
-    ("COPY-3", "warn", r"\"[^\"\n]*\.\.\.[^\"\n]*\"", "three dots; use the ellipsis character …"),
     (
         "MOTION-4",
         "error",
@@ -105,6 +104,9 @@ ICON_ONLY_WINDOW = 6
 BARE_PROGRESS = re.compile(r"ProgressView\(\)")
 PROGRESS_LABEL = re.compile(r"accessibilityLabel|Text\(")
 PROGRESS_WINDOW = 3
+# Consume comments and complete single-line literals in source order so a
+# closing quote cannot be paired with the opening quote of the next literal.
+COPY_TOKENS = re.compile(r'//[^\n]*|/\*[\s\S]*?\*/|"((?:[^"\\\n]|\\.)*)"')
 
 # (rule, severity, pattern, message) -- reported once when no file in the root matches
 PROJECT_RULES = [
@@ -168,11 +170,19 @@ def review_text(text: str, display: str) -> list[dict]:
          "message": "Menu label uses SymairaIconView; use Image(symairaIcon:)"}
         for pos in menu_label_icons(text)
     ]
+    copy_lines = {
+        text.count("\n", 0, match.start()) + 1
+        for match in COPY_TOKENS.finditer(text)
+        if match[1] is not None and "..." in match[1]
+    }
     lines = text.splitlines()
     for index, line in enumerate(lines, start=1):
         stripped = line.lstrip()
         if stripped.startswith("//") or stripped.startswith("import "):
             continue
+        if index in copy_lines:
+            findings.append({"file": display, "line": index, "rule": "COPY-3", "severity": "warn",
+                             "message": "three dots; use the ellipsis character …"})
         for rule, severity, pattern, message in COMPILED_LINE_RULES:
             if pattern.search(line):
                 findings.append({"file": display, "line": index, "rule": rule, "severity": severity, "message": message})
@@ -325,6 +335,17 @@ struct Fixture: View {
         hits = [f for f in review_text(source, "menu.swift") if f["rule"] == "ICON-4"]
         if len(hits) != expected_count:
             problems.append(f"menu fixture {source!r}: expected {expected_count}, got {len(hits)}")
+    copy_cases = [
+        ('TextField("Description", text: $description).lineLimit(2...6).accessibilityIdentifier("description")', 0),
+        ('Text("Loading...")', 1),
+        ('Text("Loading…")', 0),
+        (r'Text("Loading \"campaigns\"...")', 1),
+        ('Text("Loading…") // Previously "Loading..."', 0),
+    ]
+    for source, expected_count in copy_cases:
+        hits = [f for f in review_text(source, "copy.swift") if f["rule"] == "COPY-3"]
+        if len(hits) != expected_count:
+            problems.append(f"copy fixture {source!r}: expected {expected_count}, got {len(hits)}")
     if problems:
         print("self-test FAILED\n" + "\n".join(problems))
         return 1

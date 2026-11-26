@@ -4,6 +4,12 @@ import XCTest
 @testable import SymairaTheme
 
 final class ThemeTests: XCTestCase {
+    func testFeedbackSpringsMatchApprovedParameters() {
+        XCTAssertEqual(SymairaTheme.springPress, .spring(duration: 0.25, bounce: 0.45))
+        XCTAssertEqual(SymairaTheme.springPop, .spring(duration: 0.5, bounce: 0.5))
+        XCTAssertEqual(SymairaTheme.springFill, .spring(duration: 0.9, bounce: 0.15))
+    }
+
     func testHexShortAndLongFormsAreEquivalent() {
         XCTAssertEqual(Color(hex: "FFF"), Color(hex: "FFFFFF"))
         XCTAssertEqual(Color(hex: "000"), Color(hex: "000000"))

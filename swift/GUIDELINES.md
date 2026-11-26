@@ -279,9 +279,18 @@ Six lines, kept in the pull request or issue:
   `surface` or `raised`.
 - **MOTION-4** No gradients on surfaces, no textures or images as backgrounds,
   no shadows except on floating elements (menus, popovers, composer).
-- **MOTION-5** Reduce Motion, Reduce Transparency and Low Power are honored by
-  the shared components; product animations are limited to state transitions
-  and are interruptible.
+- **MOTION-5** Keep product motion interruptible and tied to state transitions;
+  the shared components honor Reduce Motion, Reduce Transparency and Low Power.
+  Milestone feedback may play once per recorded state change (e.g. a saved goal
+  completion), for at most about 2 seconds. Text carries the meaning and stays
+  readable without motion. Suppress particles under Reduce Motion; stop drawing
+  and remove the effect or its timeline when it finishes or is dismissed, rather
+  than leaving it animating out of sight. Use `SymairaTheme.springPress` (0.25 s,
+  0.45 bounce) for press feedback, `springPop` (0.5 s, 0.5 bounce) for reveals and
+  `springFill` (0.9 s, 0.15 bounce) for progress fills. Read
+  `@Environment(\.accessibilityReduceMotion)` and pass `nil` instead of the spring
+  when Reduce Motion is on. Keep confetti and particle bursts product-local
+  until a second real consumer needs the same effect.
 - **MOTION-6** `SymairaBackdrop`, `BlueprintGrid`, `AmbientGlows`,
   `.glassCard()`, `.glassmorphicPanel()` and the fixed `Color.symaira*`
   aliases are compatibility APIs; add no new call sites.
@@ -314,8 +323,19 @@ Six lines, kept in the pull request or issue:
 
 ## 11. Copy
 
-- **COPY-1** The UI language is English unless the product is localized; no
-  German defaults in shared or product code.
+- **COPY-1** Ship English (source) and German, follow the system language
+  automatically, and do not add an in-app language switch. Route user-facing
+  strings through one product-owned lookup helper (`L("English source text")`)
+  that resolves the compiled `Localizable.xcstrings` using the product's
+  resource bundle (`Bundle.module` for SwiftPM resources), not the shared kit. Run
+  `python3 swift/scripts/check-strings.py <source-root> <catalog>` from the
+  pinned CoreKit checkout in product CI, once per source root and catalog, to
+  fail on missing German translations. Use literal English keys with format
+  arguments instead of interpolating values into lookup keys.
+  Set `defaultLocalization: "en"` in the product's `Package.swift` and list
+  `en` and `de` in the app's `Info.plist` `CFBundleLocalizations` array for
+  system menus. For macOS apps that export `NSServices`, provide localized
+  `ServicesMenu.strings` in the app bundle for service menu titles.
 - **COPY-2** Title Case for window titles, destinations, section titles,
   buttons and menu items; sentence case for messages, captions and footers.
 - **COPY-3** Ongoing work ends with the ellipsis character "…" ("Loading…",
@@ -380,8 +400,9 @@ violates a rule that has an existing shared replacement; `info` marks a
 judgment call or a project-level absence.
 
 **Mechanical** (`scripts/gui-review.py`): COLOR-1, TYPE-1, ICON-1, ICON-2, ICON-4,
-STATE-1, ACTION-1, COPY-3, MOTION-1, MOTION-4, MOTION-6, FORM-1, SHELL-1, and
-the project-level absences KEY-1, SHELL-7, SHELL-9, POINTER-2, POINTER-3.
+STATE-1, ACTION-1, COPY-3, MOTION-1, MOTION-4, MOTION-6, NATIVE-1, SHELL-1, and
+project-level absences KEY-1, SHELL-7, SHELL-9, POINTER-2, POINTER-3.
+Run `scripts/check-strings.py` separately for COPY-1 catalog coverage.
 
 **Manual checklist** (one pass per screen):
 
@@ -418,7 +439,8 @@ the project-level absences KEY-1, SHELL-7, SHELL-9, POINTER-2, POINTER-3.
   renamed preference keys.
 - A fixed window size; content remounted on sidebar toggle; a header that
   grows when the subtitle is missing.
-- German or mixed-language strings in an English product.
+- German defaults in Swift source, untranslated English in German UI, or an
+  in-app language switch.
 
 ## 15. Known gaps (AppKit side)
 
