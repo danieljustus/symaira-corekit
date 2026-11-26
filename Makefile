@@ -147,7 +147,7 @@ rust-update-signed-contract:
 	python3 scripts/rust-port/cosign-valid-differential.py
 
 # Complete native functional replay. FS security/Miri and workspace hardening
-# retain their separate required CI lanes; Miri is not a native Windows gate.
+# retain their separate required CI lanes.
 # The real signed-release gate needs pinned Cosign, curl and public trust access.
 .PHONY: rust-contracts
 rust-contracts: rust-foundation-contract rust-fs-secret-frozen-contract rust-mcp-contract rust-mcpcfg-contract mcp-differential mcpcfg-differential rust-llm-contract rust-sqlite-contract rust-update-contract rust-update-signed-contract

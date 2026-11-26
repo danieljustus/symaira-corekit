@@ -46,12 +46,6 @@ fn install_method_observations_match_go_api() {
         temp.join("link/tool"),
     )
     .unwrap();
-    #[cfg(windows)]
-    std::os::windows::fs::symlink_file(
-        temp.join("Cellar/tool/1.0.0/bin/tool"),
-        temp.join("link/tool"),
-    )
-    .unwrap();
     fs::create_dir_all(temp.join("readonly")).unwrap();
     let mut readonly = fs::metadata(temp.join("readonly")).unwrap().permissions();
     #[cfg(unix)]
@@ -59,8 +53,6 @@ fn install_method_observations_match_go_api() {
         use std::os::unix::fs::PermissionsExt;
         readonly.set_mode(0o555);
     }
-    #[cfg(windows)]
-    readonly.set_readonly(true);
     fs::set_permissions(temp.join("readonly"), readonly).unwrap();
 
     for case in fixture.cases {
@@ -70,7 +62,7 @@ fn install_method_observations_match_go_api() {
             .iter()
             .map(|(key, value)| (key.clone(), value.replace("${TMP}", temp.to_str().unwrap())))
             .collect();
-        let home_key = if cfg!(windows) { "USERPROFILE" } else { "HOME" };
+        let home_key = "HOME";
         let home = environment
             .get(home_key)
             .map(PathBuf::from)

@@ -212,14 +212,6 @@ fn stop_tree(child: &mut Child) {
             let _ = kill_process_group(pid, Signal::KILL);
         }
     }
-    #[cfg(windows)]
-    {
-        let _ = Command::new("taskkill")
-            .args(["/PID", &child.id().to_string(), "/T", "/F"])
-            .stdout(Stdio::null())
-            .stderr(Stdio::null())
-            .status();
-    }
     let _ = child.kill();
 }
 

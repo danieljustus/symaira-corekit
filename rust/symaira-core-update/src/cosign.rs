@@ -421,14 +421,6 @@ impl Drop for OwnedVerifier {
                 .stderr(Stdio::null())
                 .status();
         }
-        #[cfg(windows)]
-        {
-            let _ = Command::new("taskkill")
-                .args(["/F", "/T", "/PID", &self.child.id().to_string()])
-                .stdout(Stdio::null())
-                .stderr(Stdio::null())
-                .status();
-        }
         let _ = self.child.kill();
         let _ = self.child.wait();
     }

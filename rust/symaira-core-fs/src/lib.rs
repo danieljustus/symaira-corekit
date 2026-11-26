@@ -82,11 +82,7 @@ pub fn validate_path(path: &str) -> Result<(), FsError> {
 
 #[must_use]
 pub fn has_traversal(path: &str) -> bool {
-    if cfg!(windows) {
-        path.split(['/', '\\']).any(|part| part == "..")
-    } else {
-        path.split('/').any(|part| part == "..")
-    }
+    path.split('/').any(|part| part == "..")
 }
 #[allow(non_snake_case)]
 pub fn ValidatePath(path: &str) -> Result<(), FsError> {
@@ -124,25 +120,8 @@ pub fn set_mode(path: impl AsRef<Path>, mode: u32) -> io::Result<()> {
     .map_err(io::Error::from)?;
     fchmod(&file, Mode::from_raw_mode(mode as _)).map_err(io::Error::from)
 }
-#[cfg(windows)]
-pub fn set_mode(path: impl AsRef<Path>, mode: u32) -> io::Result<()> {
-    let (parent, name) = secure_parent_windows(path.as_ref()).map_err(io::Error::other)?;
-    use cap_primitives::fs::OpenOptionsExt;
-    const FILE_WRITE_ATTRIBUTES: u32 = 0x0100;
-    let mut options = cap_primitives::fs::OpenOptions::new();
-    options.access_mode(FILE_WRITE_ATTRIBUTES);
-    options._cap_fs_ext_follow(cap_primitives::fs::FollowSymlinks::No);
-    let file = cap_primitives::fs::open(&parent, &name, &options)?;
-    let mut permissions = file.metadata()?.permissions();
-    permissions.set_readonly(mode & 0o200 == 0);
-    file.set_permissions(permissions)
-}
 #[cfg(unix)]
 pub fn chmod_unix(path: impl AsRef<Path>, mode: u32) -> io::Result<()> {
-    set_mode(path, mode)
-}
-#[cfg(windows)]
-pub fn chmod_windows(path: impl AsRef<Path>, mode: u32) -> io::Result<()> {
     set_mode(path, mode)
 }
 
@@ -159,16 +138,6 @@ pub fn check_secure_dir(path: impl AsRef<Path>) -> Result<(), FsError> {
         }
         if !is_secure_handle(&metadata, path) {
             return Err(FsError::InsecureDirectory(path.to_path_buf()));
-        }
-        Ok(())
-    }
-    #[cfg(windows)]
-    {
-        let (parent, name) = secure_parent_windows(path)?;
-        let dir = cap_primitives::fs::open_dir_nofollow(&parent, &name).map_err(FsError::Io)?;
-        let metadata = dir_metadata(&dir)?;
-        if !metadata.is_dir() {
-            return Err(FsError::NotDirectory(path.to_path_buf()));
         }
         Ok(())
     }
@@ -227,26 +196,6 @@ pub fn safe_mkdir_all(path: impl AsRef<Path>, mode: u32) -> Result<(), FsError> 
                 Err(error) => return Err(FsError::Io(error.into())),
             }
         }
-        Ok(())
-    }
-    #[cfg(windows)]
-    {
-        let absolute = absolute_path(path)?;
-        let (root, parts) = windows_directory_parts(&absolute)?;
-        let mut dir = open_windows_root(&root)?;
-        for part in parts {
-            let child = match cap_primitives::fs::open_dir_nofollow(&dir, Path::new(&part)) {
-                Ok(child) => child,
-                Err(error) if error.kind() == io::ErrorKind::NotFound => {
-                    cap_std::fs::Dir::from_std_file(dir.try_clone()?)
-                        .create_dir(Path::new(&part))?;
-                    cap_primitives::fs::open_dir_nofollow(&dir, Path::new(&part))?
-                }
-                Err(error) => return Err(FsError::Io(error)),
-            };
-            dir = child;
-        }
-        let _ = mode;
         Ok(())
     }
 }
@@ -347,43 +296,12 @@ where
             .map_err(|error| FsError::Io(error.into()))?;
         Ok(())
     }
-    #[cfg(windows)]
-    {
-        let (parent, name) = secure_parent_windows(path)?;
-        let file = open_windows_file(&parent, &name, true, false, false, false)?;
-        let before = file.metadata()?;
-        let before_identity = windows_file_identity(&file)?;
-        if !before.is_file() {
-            return Err(FsError::NotRegular(path.to_path_buf()));
-        }
-        close_file(file)?;
-        let quarantine = unique_sibling_name(&name);
-        let cap = cap_std::fs::Dir::from_std_file(parent.try_clone()?);
-        before_rename();
-        cap.rename(&name, &cap, &quarantine)?;
-        let moved = open_windows_file(&parent, &quarantine, true, false, false, false)?;
-        let after = moved.metadata()?;
-        if windows_file_identity(&moved)? != before_identity || !after.is_file() {
-            return Err(FsError::Atomic {
-                path: path.to_path_buf(),
-                source: io::Error::other("file identity changed during removal"),
-            });
-        }
-        cap.remove_file(&quarantine)?;
-        Ok(())
-    }
 }
 
 #[cfg(unix)]
 fn close_file_checked(file: File) -> io::Result<()> {
     use std::os::fd::IntoRawFd;
     nix::unistd::close(file.into_raw_fd()).map_err(io::Error::from)
-}
-
-#[cfg(windows)]
-fn close_file_checked(file: File) -> io::Result<()> {
-    drop(file);
-    Ok(())
 }
 
 #[allow(non_snake_case)]
@@ -428,33 +346,6 @@ pub fn write_file_atomic(path: impl AsRef<Path>, data: &[u8], mode: u32) -> Resu
         }
         result
     }
-    #[cfg(windows)]
-    {
-        let (parent, name) = secure_parent_windows(path)?;
-        let temporary = unique_sibling_name(&name);
-        let file = open_windows_file(&parent, &temporary, false, true, false, true)?;
-        let mut file = file;
-        let result = (|| {
-            use std::io::Write;
-            let mut permissions = file.metadata()?.permissions();
-            permissions.set_readonly(mode & 0o200 == 0);
-            file.set_permissions(permissions)?;
-            file.write_all(data)?;
-            file.sync_all()?;
-            drop(file);
-            let cap = cap_std::fs::Dir::from_std_file(parent.try_clone()?);
-            cap.rename(&temporary, &cap, &name)?;
-            Ok::<(), io::Error>(())
-        })();
-        if result.is_err() {
-            let cap = cap_std::fs::Dir::from_std_file(parent);
-            let _ = cap.remove_file(&temporary);
-        }
-        result.map_err(|source| FsError::Atomic {
-            path: path.to_path_buf(),
-            source,
-        })
-    }
 }
 
 #[allow(non_snake_case)]
@@ -464,8 +355,6 @@ pub fn WriteFileAtomic(path: impl AsRef<Path>, data: &[u8], mode: u32) -> Result
 
 pub fn safe_write_file(path: impl AsRef<Path>, data: &[u8], mode: u32) -> Result<(), FsError> {
     let path = path.as_ref();
-    #[cfg(windows)]
-    let _ = mode;
     #[cfg(unix)]
     {
         let (parent, name) = secure_parent(path)?;
@@ -485,22 +374,6 @@ pub fn safe_write_file(path: impl AsRef<Path>, data: &[u8], mode: u32) -> Result
         }
         file.write_all(data)
             .map_err(|error| FsError::Io(error.into()))
-    }
-    #[cfg(windows)]
-    {
-        let (parent, name) = secure_parent_windows(path)?;
-        if let Ok(metadata) =
-            cap_primitives::fs::stat(&parent, &name, cap_primitives::fs::FollowSymlinks::No)
-            && metadata.is_dir()
-        {
-            return Err(FsError::NotRegular(path.to_path_buf()));
-        }
-        let mut file = open_windows_file(&parent, &name, false, true, true, false)?;
-        if !file.metadata()?.is_file() {
-            return Err(FsError::NotRegular(path.to_path_buf()));
-        }
-        use std::io::Write;
-        file.write_all(data).map_err(FsError::Io)
     }
 }
 
@@ -551,8 +424,6 @@ struct FileIdentity {
     dev: u64,
     ino: u64,
 }
-#[cfg(windows)]
-type FileIdentity = same_file::Handle;
 #[cfg(unix)]
 #[cfg(any())]
 fn file_identity(metadata: &fs::Metadata) -> FileIdentity {
@@ -587,24 +458,6 @@ fn verify_directory_identity(
     let stat = statat(parent, name, AtFlags::SYMLINK_NOFOLLOW)
         .map_err(|error| FsError::Io(error.into()))?;
     if !FileType::from_raw_mode(stat.st_mode).is_dir() || stat_identity(&stat) != expected {
-        return Err(FsError::InsecureDirectory(display_path.to_path_buf()));
-    }
-    Ok(())
-}
-#[cfg(windows)]
-fn windows_file_identity(file: &File) -> io::Result<FileIdentity> {
-    same_file::Handle::from_file(file.try_clone()?)
-}
-#[cfg(windows)]
-#[cfg(any())]
-fn verify_directory_identity_windows(
-    parent: &File,
-    name: &Path,
-    expected: &FileIdentity,
-    display_path: &Path,
-) -> Result<(), FsError> {
-    let file = open_windows_file(parent, name, true, false, false, false)?;
-    if !file.metadata()?.is_dir() || windows_file_identity(&file)? != *expected {
         return Err(FsError::InsecureDirectory(display_path.to_path_buf()));
     }
     Ok(())
@@ -664,72 +517,6 @@ fn absolute_path(path: &Path) -> Result<PathBuf, FsError> {
     } else {
         Ok(std::env::current_dir()?.join(path))
     }
-}
-#[cfg(windows)]
-fn windows_directory_parts(path: &Path) -> Result<(PathBuf, Vec<PathBuf>), FsError> {
-    let mut root = PathBuf::new();
-    let mut parts = Vec::new();
-    for component in path.components() {
-        match component {
-            Component::Prefix(prefix) => root.push(prefix.as_os_str()),
-            Component::RootDir => root.push("\\"),
-            Component::Normal(name) => parts.push(name.to_owned().into()),
-            Component::CurDir => {}
-            Component::ParentDir => {
-                return Err(FsError::InvalidPath(
-                    "parent components are forbidden for secure operations".into(),
-                ));
-            }
-        }
-    }
-    if root.as_os_str().is_empty() {
-        return Err(FsError::InvalidPath("path has no Windows root".into()));
-    }
-    Ok((root, parts))
-}
-#[cfg(windows)]
-fn open_windows_root(root: &Path) -> Result<std::fs::File, FsError> {
-    cap_primitives::fs::open_ambient_dir(root, cap_std::ambient_authority()).map_err(FsError::Io)
-}
-#[cfg(windows)]
-fn dir_metadata(dir: &std::fs::File) -> Result<fs::Metadata, FsError> {
-    dir.metadata().map_err(FsError::Io)
-}
-#[cfg(windows)]
-fn secure_parent_windows(path: &Path) -> Result<(std::fs::File, PathBuf), FsError> {
-    let absolute = absolute_path(path)?;
-    let parent = absolute
-        .parent()
-        .ok_or_else(|| FsError::InvalidPath("missing parent".into()))?;
-    let name = absolute
-        .file_name()
-        .ok_or_else(|| FsError::InvalidPath("missing filename".into()))?
-        .to_owned();
-    let (root, parts) = windows_directory_parts(parent)?;
-    let mut dir = open_windows_root(&root)?;
-    for part in parts {
-        dir = cap_primitives::fs::open_dir_nofollow(&dir, &part).map_err(FsError::Io)?;
-    }
-    Ok((dir, PathBuf::from(name)))
-}
-#[cfg(windows)]
-fn open_windows_file(
-    parent: &std::fs::File,
-    name: &Path,
-    read: bool,
-    create: bool,
-    truncate: bool,
-    create_new: bool,
-) -> Result<std::fs::File, FsError> {
-    let mut options = cap_primitives::fs::OpenOptions::new();
-    options
-        .read(read)
-        .write(!read)
-        .create(create)
-        .truncate(truncate)
-        .create_new(create_new);
-    options._cap_fs_ext_follow(cap_primitives::fs::FollowSymlinks::No);
-    cap_primitives::fs::open(parent, name, &options).map_err(FsError::Io)
 }
 fn unique_sibling_name(name: &Path) -> PathBuf {
     temp_name(name)
@@ -844,16 +631,6 @@ impl FileLock {
                 path: path.to_path_buf(),
             });
         }
-        #[cfg(windows)]
-        {
-            let (parent, name) = secure_parent_windows(path)?;
-            let file = open_windows_file(&parent, &name, false, true, false, false)?;
-            file.try_lock_exclusive().map_err(FsError::Io)?;
-            return Ok(Self {
-                file,
-                path: path.to_path_buf(),
-            });
-        }
     }
     pub fn lock_nonblocking(path: impl AsRef<Path>) -> Result<Self, FsError> {
         Self::try_lock(path)
@@ -947,45 +724,7 @@ impl DirSwap {
                 committed: false,
             });
         }
-        #[cfg(windows)]
-        {
-            let (p, sname) = secure_parent_windows(&staging_abs)?;
-            let sm = open_windows_file(&p, &sname, true, false, false, false)?;
-            let metadata = sm.metadata()?;
-            if !metadata.is_dir() {
-                return Err(FsError::NotDirectory(staging));
-            }
-            staging_identity = windows_file_identity(&sm)?;
-            let tname = target_abs
-                .file_name()
-                .ok_or_else(|| FsError::InvalidPath("target has no filename".into()))?;
-            target_identity =
-                match open_windows_file(&p, Path::new(tname), true, false, false, false) {
-                    Ok(file) => {
-                        let m = file.metadata()?;
-                        if !m.is_dir() {
-                            return Err(FsError::NotDirectory(target));
-                        }
-                        Some(windows_file_identity(&file)?)
-                    }
-                    Err(FsError::Io(e)) if e.kind() == io::ErrorKind::NotFound => None,
-                    Err(error) => return Err(error),
-                };
-            let backup = parent.join(format!(
-                ".{}.symaira-backup-{}",
-                tname.to_string_lossy(),
-                std::process::id()
-            ));
-            return Ok(Self {
-                target: target_abs,
-                staging: staging_abs,
-                backup,
-                staging_identity,
-                target_identity,
-                committed: false,
-            });
-        }
-        #[cfg(not(any(unix, windows)))]
+        #[cfg(not(unix))]
         {
             let _ = (target, staging, parent);
             Err(FsError::UnsupportedSecurity(
@@ -1105,98 +844,7 @@ impl DirSwap {
             self.committed = true;
             Ok(())
         }
-        #[cfg(windows)]
-        {
-            let (parent, target_name) = secure_parent_windows(&self.target)?;
-            let (_, staging_name) = secure_parent_windows(&self.staging)?;
-            let backup_name = self
-                .backup
-                .file_name()
-                .ok_or_else(|| FsError::InvalidPath("backup has no filename".into()))?;
-            let target_now =
-                match open_windows_file(&parent, &target_name, true, false, false, false) {
-                    Ok(file) => {
-                        let m = file.metadata()?;
-                        if !m.is_dir() {
-                            return Err(FsError::InsecureDirectory(self.target.clone()));
-                        }
-                        Some(windows_file_identity(&file)?)
-                    }
-                    Err(FsError::Io(e)) if e.kind() == io::ErrorKind::NotFound => None,
-                    Err(error) => return Err(error),
-                };
-            if target_now != self.target_identity {
-                return Err(FsError::Atomic {
-                    path: self.target.clone(),
-                    source: io::Error::other("target identity changed before swap"),
-                });
-            }
-            let stage = open_windows_file(&parent, &staging_name, true, false, false, false)?;
-            let sm = stage.metadata()?;
-            if !sm.is_dir() || windows_file_identity(&stage)? != self.staging_identity {
-                return Err(FsError::InsecureDirectory(self.staging.clone()));
-            }
-            if open_windows_file(&parent, Path::new(backup_name), true, false, false, false).is_ok()
-            {
-                return Err(FsError::Atomic {
-                    path: self.target.clone(),
-                    source: io::Error::new(io::ErrorKind::AlreadyExists, "backup collision"),
-                });
-            }
-            let cap = cap_std::fs::Dir::from_std_file(parent.try_clone()?);
-            before_rename();
-            if self.target_identity.is_some() {
-                cap.rename(&target_name, &cap, Path::new(backup_name))?;
-            }
-            if let Err(error) = cap.rename(&staging_name, &cap, &target_name) {
-                if let Some(expected) = self.target_identity.as_ref() {
-                    verify_directory_identity_windows(
-                        &parent,
-                        Path::new(backup_name),
-                        expected,
-                        &self.backup,
-                    )?;
-                    cap.rename(Path::new(backup_name), &cap, &target_name)?;
-                }
-                return Err(FsError::Atomic {
-                    path: self.target.clone(),
-                    source: error,
-                });
-            }
-            let installed = open_windows_file(&parent, &target_name, true, false, false, false)?;
-            if !installed.metadata()?.is_dir()
-                || windows_file_identity(&installed)? != self.staging_identity
-            {
-                drop(installed);
-                let quarantine = unique_sibling_name(&target_name);
-                let _ = cap.rename(&target_name, &cap, &quarantine);
-                if let Some(expected) = self.target_identity.as_ref() {
-                    verify_directory_identity_windows(
-                        &parent,
-                        Path::new(backup_name),
-                        expected,
-                        &self.backup,
-                    )?;
-                    cap.rename(Path::new(backup_name), &cap, &target_name)?;
-                }
-                return Err(FsError::Atomic {
-                    path: self.target.clone(),
-                    source: io::Error::other("staging identity changed during swap"),
-                });
-            }
-            if let Some(expected) = self.target_identity.as_ref() {
-                verify_directory_identity_windows(
-                    &parent,
-                    Path::new(backup_name),
-                    expected,
-                    &self.backup,
-                )?;
-                cap.remove_dir_all(Path::new(backup_name))?;
-            }
-            self.committed = true;
-            Ok(())
-        }
-        #[cfg(not(any(unix, windows)))]
+        #[cfg(not(unix))]
         {
             Err(FsError::UnsupportedSecurity(
                 "directory swap requires a reparse-safe capability".into(),
@@ -1247,55 +895,7 @@ impl DirSwap {
             }
             Ok(())
         }
-        #[cfg(windows)]
-        {
-            let (parent, target_name) = secure_parent_windows(&self.target)?;
-            let staging_name = self
-                .staging
-                .file_name()
-                .ok_or_else(|| FsError::InvalidPath("staging has no filename".into()))?;
-            let backup_name = self
-                .backup
-                .file_name()
-                .ok_or_else(|| FsError::InvalidPath("backup has no filename".into()))?;
-            let cap = cap_std::fs::Dir::from_std_file(parent.try_clone()?);
-            if open_windows_file(&parent, Path::new(staging_name), true, false, false, false)
-                .is_ok()
-            {
-                verify_directory_identity_windows(
-                    &parent,
-                    Path::new(staging_name),
-                    &self.staging_identity,
-                    &self.staging,
-                )?;
-                cap.remove_dir_all(Path::new(staging_name))?;
-            }
-            if open_windows_file(&parent, Path::new(backup_name), true, false, false, false).is_ok()
-            {
-                if open_windows_file(&parent, &target_name, true, false, false, false).is_ok() {
-                    return Err(FsError::Atomic {
-                        path: self.target.clone(),
-                        source: io::Error::other("target exists while backup awaits rollback"),
-                    });
-                }
-                let expected = self
-                    .target_identity
-                    .as_ref()
-                    .ok_or_else(|| FsError::Atomic {
-                        path: self.backup.clone(),
-                        source: io::Error::other("unexpected backup without target identity"),
-                    })?;
-                verify_directory_identity_windows(
-                    &parent,
-                    Path::new(backup_name),
-                    expected,
-                    &self.backup,
-                )?;
-                cap.rename(Path::new(backup_name), &cap, &target_name)?;
-            }
-            Ok(())
-        }
-        #[cfg(not(any(unix, windows)))]
+        #[cfg(not(unix))]
         {
             Err(FsError::UnsupportedSecurity(
                 "directory recovery requires a reparse-safe capability".into(),
@@ -1383,71 +983,7 @@ impl DirSwap {
             }
             Ok(false)
         }
-        #[cfg(windows)]
-        {
-            let (parent, name) = secure_parent_windows(target)?;
-            if open_windows_file(&parent, &name, true, false, false, false).is_ok() {
-                return Ok(false);
-            }
-            let prefix = format!(".{}.symaira-backup-", name.to_string_lossy());
-            let cap = cap_std::fs::Dir::from_std_file(parent.try_clone()?);
-            let mut candidate: Option<(PathBuf, FileIdentity)> = None;
-            for entry in cap.entries()? {
-                let entry = entry?;
-                let candidate_name = entry.file_name();
-                let text = candidate_name.to_string_lossy();
-                let Some(suffix) = text.strip_prefix(&prefix) else {
-                    continue;
-                };
-                if suffix.is_empty() || !suffix.bytes().all(|byte| byte.is_ascii_digit()) {
-                    continue;
-                }
-                let candidate_file = open_windows_file(
-                    &parent,
-                    Path::new(&candidate_name),
-                    true,
-                    false,
-                    false,
-                    false,
-                )?;
-                let metadata = candidate_file.metadata()?;
-                if !metadata.is_dir() {
-                    return Err(FsError::InsecureDirectory(target.to_path_buf()));
-                }
-                let identity = windows_file_identity(&candidate_file)?;
-                if candidate
-                    .replace((candidate_name.into(), identity))
-                    .is_some()
-                {
-                    return Err(FsError::InsecureDirectory(target.to_path_buf()));
-                }
-            }
-            if let Some((candidate, expected_identity)) = candidate {
-                if open_windows_file(&parent, &name, true, false, false, false).is_ok() {
-                    return Err(FsError::Atomic {
-                        path: target.to_path_buf(),
-                        source: io::Error::other("target appeared during recovery"),
-                    });
-                }
-                before_rename();
-                cap.rename(&candidate, &cap, &name)?;
-                let installed = open_windows_file(&parent, &name, true, false, false, false)?;
-                if !installed.metadata()?.is_dir()
-                    || windows_file_identity(&installed)? != expected_identity
-                {
-                    drop(installed);
-                    let quarantine = unique_sibling_name(&name);
-                    let _ = cap.rename(&name, &cap, &quarantine);
-                    return Err(FsError::Atomic {
-                        path: target.to_path_buf(),
-                        source: io::Error::other("backup identity changed during recovery"),
-                    });
-                }
-                return Ok(true);
-            }
-            Ok(false)
-        }
-        #[cfg(not(any(unix, windows)))]
+        #[cfg(not(unix))]
         {
             let _ = target;
             Err(FsError::UnsupportedSecurity(

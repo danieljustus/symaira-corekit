@@ -1524,12 +1524,9 @@ dependencies = [
 name = "symaira-core-fs"
 version = "0.0.0"
 dependencies = [
- "cap-primitives",
- "cap-std",
  "fs2",
  "nix",
  "rustix",
- "same-file",
  "tempfile",
  "thiserror",
 ]

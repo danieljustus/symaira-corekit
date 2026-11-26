@@ -1059,7 +1059,7 @@ pub fn canonical_notes(notes: &[Note]) -> Vec<Note> {
 /// separators and keeps a leading native separator.
 #[must_use]
 pub fn clean_path(path: &str) -> String {
-    let absolute = path.starts_with('/') || (cfg!(windows) && path.starts_with('\\'));
+    let absolute = path.starts_with('/');
     let mut parts: Vec<String> = Vec::new();
     for component in Path::new(path).components() {
         match component {

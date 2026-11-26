@@ -369,20 +369,6 @@ async fn cancellable_verifier_reaps_native_owned_process_tree() {
                 .status()
                 .unwrap()
                 .success();
-            #[cfg(windows)]
-            let alive = {
-                let output = Command::new("tasklist")
-                    .args(["/FI", &format!("PID eq {pid}"), "/FO", "CSV", "/NH"])
-                    .stderr(Stdio::null())
-                    .output()
-                    .unwrap();
-                assert!(output.status.success());
-                String::from_utf8_lossy(&output.stdout).lines().any(|line| {
-                    line.split(',')
-                        .nth(1)
-                        .is_some_and(|field| field.trim_matches('"') == pid)
-                })
-            };
             if !alive {
                 break;
             }
