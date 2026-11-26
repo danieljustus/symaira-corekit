@@ -252,7 +252,8 @@ impl Error for ToolError {
 #[derive(Clone, Debug)]
 pub enum ToolOutput {
     /// Any value is rendered as one MCP text content block. Strings are
-    /// rendered as their string value; all other JSON values use compact JSON.
+    /// rendered verbatim; other values use compact JSON by default and may use
+    /// adaptive TOON on servers that opt in.
     Value(Value),
     /// An already-shaped MCP result.
     Result(ToolResult),
@@ -406,6 +407,13 @@ impl ToolCallLimiter {
     }
 }
 
+#[derive(Clone, Copy)]
+enum TextEncoding {
+    Json,
+    #[cfg(feature = "toon")]
+    AdaptiveToon,
+}
+
 #[derive(Clone)]
 struct Registry {
     name: String,
@@ -413,6 +421,7 @@ struct Registry {
     instructions: String,
     tools: BTreeMap<String, Tool>,
     order: Vec<String>,
+    text_encoding: TextEncoding,
 }
 
 /// A JSON-RPC 2.0 MCP server.
@@ -442,8 +451,30 @@ impl Server {
                 instructions: String::new(),
                 tools: BTreeMap::new(),
                 order: Vec::new(),
+                text_encoding: TextEncoding::Json,
             })),
         }
+    }
+
+    /// Enables or disables adaptive TOON for this server (including its clones).
+    ///
+    /// Requires the `toon` Cargo feature and defaults to disabled. When enabled,
+    /// non-string [`ToolOutput::Value`] results use TOON only if the UTF-8 text
+    /// is at least 5% smaller than compact JSON and decodes to the same value.
+    /// Strings, already-shaped [`ToolOutput::Result`] results (including any
+    /// `structuredContent`), and errors are never transformed. Only enable this
+    /// for clients that can consume either JSON or TOON text.
+    #[cfg(feature = "toon")]
+    pub fn set_adaptive_toon(&self, enabled: bool) {
+        let encoding = if enabled {
+            TextEncoding::AdaptiveToon
+        } else {
+            TextEncoding::Json
+        };
+        self.registry
+            .lock()
+            .expect("MCP registry mutex poisoned")
+            .text_encoding = encoding;
     }
 
     pub fn set_instructions(&self, instructions: impl Into<String>) {
@@ -948,7 +979,7 @@ impl Server {
         let output = catch_unwind(AssertUnwindSafe(|| handler(request_token, arguments)));
         match output {
             Ok(Ok(ToolOutput::Result(result))) => Ok(result.into_value()),
-            Ok(Ok(ToolOutput::Value(value))) => Ok(text_result(value)),
+            Ok(Ok(ToolOutput::Value(value))) => Ok(text_result(value, registry.text_encoding)),
             Ok(Err(error)) => Ok(tool_error_result(error.as_ref())),
             Err(_) => Err(CallError::rpc(
                 CODE_INTERNAL_ERROR,
@@ -1256,24 +1287,37 @@ fn reject_unknown_fields(input: &Value, schema: &Value, path: &str) -> Result<()
     Ok(())
 }
 
-fn text_result(value: Value) -> Value {
+fn text_result(value: Value, encoding: TextEncoding) -> Value {
     let text = match value {
         Value::String(text) => text,
         value => {
-            String::from_utf8(go_json_bytes(&value).expect("serde_json::Value is serializable"))
-                .expect("JSON output is UTF-8")
+            let json = String::from_utf8(
+                go_json_bytes(&value).expect("serde_json::Value is serializable"),
+            )
+            .expect("JSON output is UTF-8");
+            match encoding {
+                TextEncoding::Json => json,
+                #[cfg(feature = "toon")]
+                TextEncoding::AdaptiveToon => {
+                    smaller_lossless_toon(&value, json.len()).unwrap_or(json)
+                }
+            }
         }
     };
-    let mut block = Map::new();
-    block.insert("type".to_string(), Value::String("text".to_string()));
-    block.insert("text".to_string(), Value::String(text));
-    let mut result = Map::new();
-    result.insert(
-        "content".to_string(),
-        Value::Array(vec![Value::Object(block)]),
-    );
-    result.insert("isError".to_string(), Value::Bool(false));
-    Value::Object(result)
+    ToolResult::text(text).into_value()
+}
+
+#[cfg(feature = "toon")]
+fn smaller_lossless_toon(value: &Value, json_bytes: usize) -> Option<String> {
+    let toon = toon_format::encode_default(value).ok()?;
+    // Require a full 5% saving in bytes, rounding the required saving up.
+    if toon.len() > json_bytes - json_bytes.div_ceil(20) {
+        return None;
+    }
+    // The TOON codec can normalize numbers that serde_json preserves with
+    // arbitrary_precision. Keep JSON unless the shorter text is lossless.
+    let decoded = toon_format::decode_strict::<Value>(&toon).ok()?;
+    (decoded == *value).then_some(toon)
 }
 
 fn tool_error_result(error: &(dyn Error + 'static)) -> Value {
@@ -1892,6 +1936,129 @@ mod tests {
         let result: Value = serde_json::from_str(response.result.get()).unwrap();
         assert_eq!(result["tools"][0]["name"], "zulu");
         assert_eq!(result["tools"][1]["name"], "alpha");
+    }
+
+    fn call_with_output(server: &Server, output: ToolOutput) -> Value {
+        server
+            .register_tool(
+                Tool::new("output", "test output").handler(move |_, _| Ok(output.clone())),
+            )
+            .unwrap();
+        let response: Value = serde_json::from_slice(&run(
+            server,
+            line(r#"{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"output"}}"#),
+        ))
+        .unwrap();
+        response["result"].clone()
+    }
+
+    fn uniform_rows() -> Value {
+        serde_json::json!([
+            {"active": true, "city": "Köln", "id": 9007199254740993_u64},
+            {"active": false, "city": "New York, NY", "id": 2},
+            {"active": true, "city": "Paris", "id": 3},
+        ])
+    }
+
+    #[test]
+    fn values_default_to_compact_json_even_for_uniform_rows() {
+        let server = Server::new("test", "1.0");
+        let result = call_with_output(&server, uniform_rows().into());
+        assert_eq!(result["isError"], false);
+        assert_eq!(result["content"][0]["type"], "text");
+        assert_eq!(
+            result["content"][0]["text"],
+            r#"[{"active":true,"city":"Köln","id":9007199254740993},{"active":false,"city":"New York, NY","id":2},{"active":true,"city":"Paris","id":3}]"#,
+        );
+        assert!(result.get("structuredContent").is_none());
+    }
+
+    #[cfg(feature = "toon")]
+    #[test]
+    fn adaptive_toon_uses_tabular_text_and_round_trips() {
+        let server = Server::new("test", "1.0");
+        server.set_adaptive_toon(true);
+        let rows = uniform_rows();
+        let result = call_with_output(&server.clone(), rows.clone().into());
+        let text = result["content"][0]["text"].as_str().unwrap();
+        assert!(text.starts_with("[3]{active,city,id}:"));
+        assert!(text.len() * 100 <= serde_json::to_vec(&rows).unwrap().len() * 95);
+        assert!(result.get("structuredContent").is_none());
+        assert_eq!(toon_format::decode_strict::<Value>(text).unwrap(), rows);
+    }
+
+    #[cfg(feature = "toon")]
+    #[test]
+    fn adaptive_toon_keeps_json_for_nested_rows_without_enough_savings() {
+        let server = Server::new("test", "1.0");
+        server.set_adaptive_toon(true);
+        let rows = serde_json::json!([
+            {"a": {"b": [{"c": 1}, {"d": 2}]}, "id": 1},
+            {"a": {"e": [{"f": 3}, {"g": 4}]}, "id": 2},
+        ]);
+        let json = serde_json::to_string(&rows).unwrap();
+        let toon = toon_format::encode_default(&rows).unwrap();
+        assert!(toon.len() * 100 > json.len() * 95);
+        let result = call_with_output(&server, rows.into());
+        assert_eq!(result["content"][0]["text"], json);
+    }
+
+    #[cfg(feature = "toon")]
+    #[test]
+    fn adaptive_toon_requires_at_least_five_percent_byte_savings() {
+        for (string_len, use_toon) in [(92, true), (93, false)] {
+            let value = serde_json::json!({"a": "x".repeat(string_len)});
+            let json = serde_json::to_string(&value).unwrap();
+            let toon = toon_format::encode_default(&value).unwrap();
+            // 95/100 qualifies, but 96/101 is just above the limit.
+            assert_eq!(json.len(), string_len + 8);
+            assert_eq!(toon.len(), string_len + 3);
+            let result = text_result(value, TextEncoding::AdaptiveToon);
+            assert_eq!(
+                result["content"][0]["text"],
+                if use_toon { toon } else { json }
+            );
+        }
+    }
+
+    #[cfg(feature = "toon")]
+    #[test]
+    fn adaptive_toon_keeps_json_when_shorter_toon_loses_number_precision() {
+        let server = Server::new("test", "1.0");
+        server.set_adaptive_toon(true);
+        let number: Value = serde_json::from_str("1.123456789012345678901").unwrap();
+        let row = serde_json::json!({"precise_decimal_measurement": number});
+        let rows = Value::Array(vec![row; 3]);
+        let json = serde_json::to_string(&rows).unwrap();
+        let toon = toon_format::encode_default(&rows).unwrap();
+        assert!(toon.len() * 100 <= json.len() * 95);
+        assert_ne!(toon_format::decode_strict::<Value>(&toon).unwrap(), rows);
+        let result = call_with_output(&server, rows.into());
+        assert_eq!(result["content"][0]["text"], json);
+    }
+
+    #[cfg(feature = "toon")]
+    #[test]
+    fn adaptive_toon_does_not_rewrite_structured_results_or_strings() {
+        let server = Server::new("test", "1.0");
+        server.set_adaptive_toon(true);
+        let structured = serde_json::json!({"rows": uniform_rows()});
+        let json = serde_json::to_string(&structured).unwrap();
+        let result = call_with_output(
+            &server,
+            ToolResult {
+                structured_content: Some(structured.clone()),
+                ..ToolResult::text(&json)
+            }
+            .into(),
+        );
+        assert_eq!(result["content"][0]["text"], json);
+        assert_eq!(result["structuredContent"], structured);
+
+        let server = Server::new("test", "1.0");
+        server.set_adaptive_toon(true);
+        let result = call_with_output(&server, "a verbatim <string>".into());
+        assert_eq!(result["content"][0]["text"], "a verbatim <string>");
     }
 
     #[test]

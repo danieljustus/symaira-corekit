@@ -72,7 +72,7 @@ jobs:
         run: python scripts/verify-brand-assets.py
       - name: Install pinned Rust toolchain
         shell: bash
-        run: rustup toolchain install 1.98.0 --profile minimal --component rustfmt,clippy
+        run: rustup toolchain install
       - name: Build
         run: cargo build --workspace --all-targets --locked
       - name: Test
@@ -93,7 +93,7 @@ jobs:
         run: python3 -B -W error -m unittest discover -s scripts/rust-port -p test_ci_merge_gate.py -v
       - name: Install pinned Rust toolchain
         shell: bash
-        run: rustup toolchain install 1.98.0 --profile minimal --component rustfmt,clippy
+        run: rustup toolchain install
       - name: Rust format
         run: cargo fmt --all --check
       - name: Validate Rust migration handoff
@@ -141,7 +141,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
       - name: Install pinned Rust toolchain
         shell: bash
-        run: rustup toolchain install 1.98.0 --profile minimal
+        run: rustup toolchain install
       - name: Audit Rust dependencies
         run: |
           cargo install cargo-audit --version 0.22.2 --locked
@@ -174,7 +174,7 @@ jobs:
           python-version: "3.14" # Darwin waitid(WNOWAIT) for owned process cleanup
       - name: Install pinned Rust toolchain
         shell: bash
-        run: rustup toolchain install 1.98.0 --profile minimal --component rustfmt,clippy
+        run: rustup toolchain install
       - name: Format
         run: cargo fmt --all --check
       - name: Check
@@ -228,7 +228,7 @@ jobs:
           python-version: "3.14" # Darwin waitid(WNOWAIT) for owned process cleanup
       - name: Install pinned Rust toolchain
         shell: bash
-        run: rustup toolchain install 1.98.0 --profile minimal --component rustfmt,clippy
+        run: rustup toolchain install
       - name: Install pinned native acceptance tools
         shell: bash
         run: |
@@ -272,7 +272,7 @@ jobs:
           fetch-depth: 0
       - name: Install pinned Rust toolchain
         shell: bash
-        run: rustup toolchain install 1.98.0 --profile minimal --component rustfmt,clippy
+        run: rustup toolchain install
       - name: Install pinned fuzz toolchain
         if: runner.os != 'Windows'
         shell: bash
@@ -312,7 +312,7 @@ jobs:
           fetch-depth: 0
       - name: Install pinned Rust toolchain
         shell: bash
-        run: rustup toolchain install 1.98.0 --profile minimal --component rustfmt,clippy
+        run: rustup toolchain install
       - name: Rust MCP config contract
         run: make rust-mcpcfg-contract
       - name: Python for frozen MCP config differential
@@ -349,7 +349,7 @@ jobs:
           python-version: "3.12"
       - name: Install pinned Rust toolchain
         shell: bash
-        run: rustup toolchain install 1.98.0 --profile minimal --component rustfmt,clippy
+        run: rustup toolchain install
       - name: SQLite tests and frozen source-bound replay
         shell: bash
         run: |
@@ -392,7 +392,7 @@ jobs:
           python-version: "3.14"
       - name: Install pinned Rust toolchain
         shell: bash
-        run: rustup toolchain install 1.98.0 --profile minimal --component rustfmt,clippy
+        run: rustup toolchain install
       - name: Populate Rust dependencies before offline replay
         run: cargo fetch --locked
       - name: Run native frozen FS/SEC gate with executable Go and Git denials
@@ -509,11 +509,11 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
       - name: Install pinned Rust toolchain
         shell: bash
-        run: rustup toolchain install 1.98.0 --profile minimal --component rustfmt,clippy
+        run: rustup toolchain install
       - name: Run full workspace tests natively
-        run: cargo +1.98.0 test --workspace --all-features --locked
+        run: cargo test --workspace --all-features --locked
       - name: Run workspace doctests natively
-        run: cargo +1.98.0 test --workspace --doc --all-features --locked
+        run: cargo test --workspace --doc --all-features --locked
   rust-rust013-hardening:
     name: Rust RUST-013 hardening
     needs: changes
@@ -530,13 +530,13 @@ jobs:
           python-version: "3.12"
       - name: Install pinned Rust toolchain
         shell: bash
-        run: rustup toolchain install 1.98.0 --profile minimal --component rustfmt,clippy
+        run: rustup toolchain install
       - name: Cache Rust verification tools
         id: rust_tools_cache
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ${{ runner.temp }}/corekit-cargo-install-root
-          key: rust-tools-${{ runner.os }}-${{ runner.arch }}-rust-1.98.0-nextest-0.9.143-hack-0.6.45-llvm-cov-0.9.0-audit-0.22.2-deny-0.20.2
+          key: rust-tools-${{ runner.os }}-${{ runner.arch }}-rust-${{ hashFiles('rust-toolchain.toml') }}-nextest-0.9.143-hack-0.6.45-llvm-cov-0.9.0-audit-0.22.2-deny-0.20.2
       - name: Install pinned Rust gate tools on cache miss
         if: steps.rust_tools_cache.outputs.cache-hit != 'true'
         env:
@@ -566,7 +566,7 @@ jobs:
           fetch-depth: 0
       - name: Install pinned Rust toolchain
         shell: bash
-        run: rustup toolchain install 1.98.0 --profile minimal --component rustfmt,clippy
+        run: rustup toolchain install
       - name: Install cargo-semver-checks
         run: cargo install cargo-semver-checks --version 0.50.0 --locked
       - name: Check Rust API compatibility

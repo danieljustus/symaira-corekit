@@ -9,12 +9,16 @@ publish = false
 
 description = "Owned, zero-pollution MCP JSON-RPC stdio adapter for Symaira CoreKit"
 
+[features]
+toon = ["dep:toon-format"]
+
 [dependencies]
 serde.workspace = true
 serde_json.workspace = true
 schemars.workspace = true
 serde_ignored.workspace = true
 thiserror.workspace = true
+toon-format = { version = "=0.7.0", default-features = false, optional = true }
 
 [[bin]]
 name = "symaira-mcp-fixture"

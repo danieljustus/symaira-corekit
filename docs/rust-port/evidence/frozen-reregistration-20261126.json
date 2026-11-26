@@ -1,0 +1,229 @@
+{
+ "date": "2026-11-26",
+ "maintainer_decision": "The repository follows the newest stable Rust (maintainer decision 2026-11-26); re-registration under the maintainer's standing delegation of implementation decisions; verdicts, cases and accepted differences unchanged.",
+ "reason": "rust-toolchain.toml moves from 1.98.0 to 1.100.0 (1.98.0 vtable miscompilation, #495) and the optional symaira-core-mcp `toon` feature adds toon-format, which enables serde_json/preserve_order and changes the lockfile dependency closure (#506). Both are enforced FS/SEC and SQLite inputs; test_acceptance.py pointing at differential-macos-rust1100-20261126.json alters a bound SQLite harness file.",
+ "source_commit": "e7876801f6e4381ce28a5e8f00418f3b9e52093f",
+ "workflow_run": 45772582817,
+ "fs_sec": {
+  "anchors": {
+   "darwin-arm64": "8708417c66e1b4e2a3c2245346e6c7e1f6b8f1598ead104b4b2ba299fe94fcdd",
+   "linux-amd64": "1a315da2080dba23a70998102ca553b50f49f5143327b6d9cc5d596f99e9e554",
+   "windows-amd64": "9cd98c130b84fba3eec1e5817fa9c9ba3b51b735145dbe324932decf9a1e4565"
+  },
+  "previous_anchors": {
+   "darwin-arm64": "523ace09f23c5dc95084f7649cdf2b87e434e7d90dd20458b3f9a83bcd97b5fe",
+   "linux-amd64": "afa4687c46eb2771b5697f805212ded2e093a5c702a6d6621d53317110167200",
+   "windows-amd64": "9cd98c130b84fba3eec1e5817fa9c9ba3b51b735145dbe324932decf9a1e4565"
+  },
+  "capture_run": 45772582817,
+  "artifacts": {
+   "darwin-arm64": {
+    "artifact_id": 15094852526,
+    "fixture": "testdata/rust-port/fixtures/fs-secret/frozen-v1/darwin-arm64.json",
+    "sha256": "8708417c66e1b4e2a3c2245346e6c7e1f6b8f1598ead104b4b2ba299fe94fcdd",
+    "source_commit": "e7876801f6e4381ce28a5e8f00418f3b9e52093f",
+    "workflow_run": 45772582817
+   },
+   "linux-amd64": {
+    "artifact_id": 15094388075,
+    "fixture": "testdata/rust-port/fixtures/fs-secret/frozen-v1/linux-amd64.json",
+    "sha256": "1a315da2080dba23a70998102ca553b50f49f5143327b6d9cc5d596f99e9e554",
+    "source_commit": "e7876801f6e4381ce28a5e8f00418f3b9e52093f",
+    "workflow_run": 45772582817
+   }
+  },
+  "retained_unchanged": {
+   "windows-amd64": "outside the supported platform scope since #459; fixture and anchor kept as historical evidence; not replayed by any gate and no recapture is required"
+  },
+  "review": {
+   "darwin-arm64": {
+    "case_inventory_identical": true,
+    "changed": [
+     "/capture/candidate/files[candidate/Cargo.lock#dependency-closure]/sha256",
+     "/capture/candidate/files[candidate/rust-toolchain.toml]/sha256",
+     "/capture/candidate/head_after",
+     "/capture/candidate/head_before",
+     "/capture/commands[git-head-after]/stdout_sha256",
+     "/capture/commands[git-head-before]/stdout_sha256",
+     "/capture/commands[go-env-000]/stdout_bytes",
+     "/capture/commands[go-env-000]/stdout_sha256",
+     "/capture/commands[go-env-002]/stdout_bytes",
+     "/capture/commands[go-env-002]/stdout_sha256",
+     "/capture/commands[go-env-004]/stdout_bytes",
+     "/capture/commands[go-env-004]/stdout_sha256",
+     "/capture/commands[go-list-after]/stdout_sha256",
+     "/capture/commands[go-list-before]/stdout_sha256",
+     "/capture/go/modules_sha256",
+     "/capture/go/probe_binary_sha256",
+     "/capture/inputs/after_sha256",
+     "/capture/inputs/before_sha256",
+     "/capture/inputs/files[candidate/Cargo.lock#dependency-closure]/sha256",
+     "/capture/inputs/files[candidate/rust-toolchain.toml]/sha256",
+     "/capture/inputs/files[modules/current-helper/effective.mod]/sha256",
+     "/capture/inputs/groups/candidate",
+     "/capture/inputs/groups/modules"
+    ],
+    "explained": "rust-toolchain.toml 1.98.0 -> 1.100.0 and the lockfile dependency closure (toon-format via the optional mcp feature) change their candidate records; commit heads and per-run identities; go env outputs are hosted-toolcache paths and the helper module identity follows the runner module cache; Go observations, raw observations, case inventory and oracle byte-identical",
+    "go_identical": false,
+    "observations_identical": true,
+    "oracle_identical": true,
+    "raw_observations_identical": true
+   },
+   "linux-amd64": {
+    "case_inventory_identical": true,
+    "changed": [
+     "/capture/candidate/files[candidate/Cargo.lock#dependency-closure]/sha256",
+     "/capture/candidate/files[candidate/rust-toolchain.toml]/sha256",
+     "/capture/candidate/head_after",
+     "/capture/candidate/head_before",
+     "/capture/commands[git-head-after]/stdout_sha256",
+     "/capture/commands[git-head-before]/stdout_sha256",
+     "/capture/commands[go-env-000]/stdout_bytes",
+     "/capture/commands[go-env-000]/stdout_sha256",
+     "/capture/commands[go-env-001]/stdout_bytes",
+     "/capture/commands[go-env-001]/stdout_sha256",
+     "/capture/commands[go-env-002]/stdout_bytes",
+     "/capture/commands[go-env-002]/stdout_sha256",
+     "/capture/commands[go-env-003]/stdout_bytes",
+     "/capture/commands[go-env-003]/stdout_sha256",
+     "/capture/commands[go-env-004]/stdout_bytes",
+     "/capture/commands[go-env-004]/stdout_sha256",
+     "/capture/commands[go-list-after]/stdout_sha256",
+     "/capture/commands[go-list-before]/stdout_sha256",
+     "/capture/go/modules_sha256",
+     "/capture/go/probe_binary_sha256",
+     "/capture/inputs/after_sha256",
+     "/capture/inputs/before_sha256",
+     "/capture/inputs/files[candidate/Cargo.lock#dependency-closure]/sha256",
+     "/capture/inputs/files[candidate/rust-toolchain.toml]/sha256",
+     "/capture/inputs/files[modules/current-helper/effective.mod]/sha256",
+     "/capture/inputs/groups/candidate",
+     "/capture/inputs/groups/modules"
+    ],
+    "explained": "rust-toolchain.toml 1.98.0 -> 1.100.0 and the lockfile dependency closure (toon-format via the optional mcp feature) change their candidate records; commit heads and per-run identities; go env outputs are hosted-toolcache paths and the helper module identity follows the runner module cache; Go observations, raw observations, case inventory and oracle byte-identical",
+    "go_identical": false,
+    "observations_identical": true,
+    "oracle_identical": true,
+    "raw_observations_identical": true
+   }
+  }
+ },
+ "sqlite": {
+  "captures": {
+   "darwin-arm64": {
+    "artifact_id": 15095061341,
+    "manifest": "testdata/rust-port/sqlite/frozen-v1/darwin-arm64/sqlite-native-candidate-source.json",
+    "manifest_sha256": "c5319464f77fd206e86b944cd22ed07c96f0a5d87dc715649107531840cdb04a",
+    "report": "testdata/rust-port/sqlite/frozen-v1/darwin-arm64/sqlite-native-report.json",
+    "report_sha256": "3c4c50be9f6d1d2f14adc9c351da9e4301172a995a39ec494ddb90e66feffb0a",
+    "source_commit": "e7876801f6e4381ce28a5e8f00418f3b9e52093f",
+    "workflow_run": 45772582817
+   },
+   "linux-amd64": {
+    "artifact_id": 15094766928,
+    "manifest": "testdata/rust-port/sqlite/frozen-v1/linux-amd64/sqlite-native-candidate-source.json",
+    "manifest_sha256": "c5319464f77fd206e86b944cd22ed07c96f0a5d87dc715649107531840cdb04a",
+    "report": "testdata/rust-port/sqlite/frozen-v1/linux-amd64/sqlite-native-report.json",
+    "report_sha256": "c8e266dbc82dde10eb69999a25ab626a58ab1c580118782a2d501783cc61f385",
+    "source_commit": "e7876801f6e4381ce28a5e8f00418f3b9e52093f",
+    "workflow_run": 45772582817
+   }
+  },
+  "previous": {
+   "darwin-arm64": {
+    "artifact_id": 13892494283,
+    "manifest_sha256": "a8ea5f16a107cc5926958e6b1452b5d63b145e9580ea68a6f35e7320bf2991bb",
+    "report_sha256": "e2876d5a4a262db92aa97655cc0ec678d8381f9fb40180673083f36c5c2cee0c",
+    "workflow_run": 43104032164
+   },
+   "linux-amd64": {
+    "artifact_id": 13892009096,
+    "manifest_sha256": "a8ea5f16a107cc5926958e6b1452b5d63b145e9580ea68a6f35e7320bf2991bb",
+    "report_sha256": "75dd2f20721399c8219b16b6b33e8a0a74a1fcbb22d7d90c2ce6674b547a3057",
+    "workflow_run": 43104032164
+   }
+  },
+  "retained_unchanged": {
+   "windows-amd64": "outside the supported platform scope since #459; not replayed by any gate"
+  },
+  "review": {
+   "acceptance_capture": "testdata/rust-port/sqlite/differential-macos-rust1100-20261126.json",
+   "candidate_revision": "12535e934c1b886f9f491ad9c655fd064ef5f05c",
+   "changed_pointers": {
+    "darwin-arm64": [
+     "/go/capture_interval[0]",
+     "/go/capture_interval[1]",
+     "/go/cases[SQL-003]/state/applied_at[0]",
+     "/go/cases[SQL-003]/state/applied_at[1]",
+     "/go/cases[SQL-003]/state/data[item-1]/created_at",
+     "/go/cases[SQL-004]/state/applied_at[0]",
+     "/go/cases[SQL-004]/state/applied_at[1]",
+     "/go/cases[SQL-004]/state/data[item-1]/created_at",
+     "/go/oracle/artifact_hashes/scripts/rust-port/sqlite/test_acceptance.py",
+     "/rust/binary_sha256",
+     "/rust/candidate_manifest_sha256",
+     "/rust/candidate_revision",
+     "/rust/capture_interval[0]",
+     "/rust/capture_interval[1]",
+     "/rust/cases[SQL-002]/observed_busy_seconds",
+     "/rust/cases[SQL-003]/state/applied_at[0]",
+     "/rust/cases[SQL-003]/state/applied_at[1]",
+     "/rust/cases[SQL-003]/state/data[item-1]/created_at",
+     "/rust/cases[SQL-004]/state/applied_at[0]",
+     "/rust/cases[SQL-004]/state/applied_at[1]",
+     "/rust/cases[SQL-004]/state/data[item-1]/created_at",
+     "/rust/source_hashes/.github/workflows/ci.yml",
+     "/rust/source_hashes/Cargo.lock",
+     "/rust/source_hashes/Cargo.lock#dependency-closure",
+     "/rust/source_hashes/rust-toolchain.toml",
+     "/rust/source_hashes/rust/symaira-core-llm/Cargo.toml",
+     "/rust/source_hashes/rust/symaira-core-llm/src/lib.rs",
+     "/rust/source_hashes/rust/symaira-core-llm/tests/cancellation_contract.rs",
+     "/rust/source_hashes/rust/symaira-core-llm/tests/provider_contract.rs",
+     "/rust/source_hashes/rust/symaira-core-llm/tests/support/cancellation.rs",
+     "/rust/source_hashes/rust/symaira-core-mcp/Cargo.toml",
+     "/rust/source_hashes/rust/symaira-core-mcp/src/catalog_gate.rs",
+     "/rust/source_hashes/rust/symaira-core-mcp/src/lib.rs",
+     "/rust/source_hashes/scripts/rust-port/sqlite/test_acceptance.py"
+    ],
+    "linux-amd64": [
+     "/go/capture_interval[0]",
+     "/go/capture_interval[1]",
+     "/go/cases[SQL-003]/state/applied_at[0]",
+     "/go/cases[SQL-003]/state/applied_at[1]",
+     "/go/cases[SQL-003]/state/data[item-1]/created_at",
+     "/go/cases[SQL-004]/state/applied_at[0]",
+     "/go/cases[SQL-004]/state/applied_at[1]",
+     "/go/cases[SQL-004]/state/data[item-1]/created_at",
+     "/go/oracle/artifact_hashes/scripts/rust-port/sqlite/test_acceptance.py",
+     "/rust/binary_sha256",
+     "/rust/candidate_manifest_sha256",
+     "/rust/candidate_revision",
+     "/rust/capture_interval[0]",
+     "/rust/capture_interval[1]",
+     "/rust/cases[SQL-002]/observed_busy_seconds",
+     "/rust/cases[SQL-003]/state/applied_at[0]",
+     "/rust/cases[SQL-003]/state/applied_at[1]",
+     "/rust/cases[SQL-003]/state/data[item-1]/created_at",
+     "/rust/cases[SQL-004]/state/applied_at[0]",
+     "/rust/cases[SQL-004]/state/applied_at[1]",
+     "/rust/cases[SQL-004]/state/data[item-1]/created_at",
+     "/rust/source_hashes/.github/workflows/ci.yml",
+     "/rust/source_hashes/Cargo.lock",
+     "/rust/source_hashes/Cargo.lock#dependency-closure",
+     "/rust/source_hashes/rust-toolchain.toml",
+     "/rust/source_hashes/rust/symaira-core-llm/Cargo.toml",
+     "/rust/source_hashes/rust/symaira-core-llm/src/lib.rs",
+     "/rust/source_hashes/rust/symaira-core-llm/tests/cancellation_contract.rs",
+     "/rust/source_hashes/rust/symaira-core-llm/tests/provider_contract.rs",
+     "/rust/source_hashes/rust/symaira-core-llm/tests/support/cancellation.rs",
+     "/rust/source_hashes/rust/symaira-core-mcp/Cargo.toml",
+     "/rust/source_hashes/rust/symaira-core-mcp/src/catalog_gate.rs",
+     "/rust/source_hashes/rust/symaira-core-mcp/src/lib.rs",
+     "/rust/source_hashes/scripts/rust-port/sqlite/test_acceptance.py"
+    ]
+   },
+   "verdict": "passed on darwin-arm64 and linux-amd64: 6 cases, 42 checked fields, 0 differences, the same 9 accepted differences as the 2026-11-11 registration"
+  }
+ }
+}

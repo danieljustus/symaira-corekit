@@ -28,15 +28,15 @@
       ]
     },
     "candidate": {
-      "head_before": "5c625553cc6dc895c9cf28d87cae65988f68c247",
-      "head_after": "5c625553cc6dc895c9cf28d87cae65988f68c247",
+      "head_before": "e7876801f6e4381ce28a5e8f00418f3b9e52093f",
+      "head_after": "e7876801f6e4381ce28a5e8f00418f3b9e52093f",
       "clean_before": true,
       "clean_after": true,
       "go_helper_sha256": "c4f72bf9ad241759aae097756103baa820e7ed8210a956e2efa4b645ac97734d",
       "files": [
         {
           "path": "candidate/Cargo.lock#dependency-closure",
-          "sha256": "22c18435c1ec171f298ad3639f282c424873a067957ebcfd73195bd712e12fb8"
+          "sha256": "ed3df0a895e9f5e338c7bf0efc1c608198c121ff7478c822e5c3fc1f38e7198c"
         },
         {
           "path": "candidate/Cargo.toml",
@@ -48,7 +48,7 @@
         },
         {
           "path": "candidate/rust-toolchain.toml",
-          "sha256": "e879701472a698533f43f54989bbf5f3101eb0503472159d32633f3bb8a13fdf"
+          "sha256": "6b1cf8341d9a08d76c6deb1e9df90a0b208d0ef0d00ee05e0173e9cd4f0f425d"
         },
         {
           "path": "candidate/rust/symaira-core-config/Cargo.toml",
@@ -347,18 +347,18 @@
       "goarch": "amd64",
       "binary_sha256": "29e6e0b8be61beb1489ceae62b304343566de8a1dc700af74bde7aeb9c80ad45",
       "goroot_label": "installed-go-sdk",
-      "probe_binary_sha256": "2fd77d6d24ad6c180e5fa6ae284d77f356840728c56d8cca277f7ff0d4a4cba5",
+      "probe_binary_sha256": "e542add9a18af33a0090d71311cb6dcba96123c1c578c7a1a4605ac449ac56ae",
       "gomodcache_policy": "existing-cache-offline-read-only",
       "sdk_sha256": "5b54db2855c64f9181b9e762eb14fb9dff6ffacd86e67dce8fccab10381a9d67",
-      "modules_sha256": "8980286c6e135666c21d9b74cbe7a2b1cc6c3304f898b2bf0be5a0a8c9c45869"
+      "modules_sha256": "3f696fd41d6c3f00a420c64c76c31590e6105ad5df3fbbe69258be9b3870152c"
     },
     "inputs": {
-      "before_sha256": "f12ed003ebf43d32370d8e96881a5e52713a3b91a1edbd64d26734497d4903f4",
-      "after_sha256": "f12ed003ebf43d32370d8e96881a5e52713a3b91a1edbd64d26734497d4903f4",
+      "before_sha256": "32e03da54f01ee3b58b1e9f2ef15b760064bdb331a291903320881c2ce00f86a",
+      "after_sha256": "32e03da54f01ee3b58b1e9f2ef15b760064bdb331a291903320881c2ce00f86a",
       "files": [
         {
           "path": "candidate/Cargo.lock#dependency-closure",
-          "sha256": "22c18435c1ec171f298ad3639f282c424873a067957ebcfd73195bd712e12fb8"
+          "sha256": "ed3df0a895e9f5e338c7bf0efc1c608198c121ff7478c822e5c3fc1f38e7198c"
         },
         {
           "path": "candidate/Cargo.toml",
@@ -370,7 +370,7 @@
         },
         {
           "path": "candidate/rust-toolchain.toml",
-          "sha256": "e879701472a698533f43f54989bbf5f3101eb0503472159d32633f3bb8a13fdf"
+          "sha256": "6b1cf8341d9a08d76c6deb1e9df90a0b208d0ef0d00ee05e0173e9cd4f0f425d"
         },
         {
           "path": "candidate/rust/symaira-core-config/Cargo.toml",
@@ -658,7 +658,7 @@
         },
         {
           "path": "modules/current-helper/effective.mod",
-          "sha256": "25058de352a5d75bae371685827e8300f98bac6d28c37d868a853178c76a13e3"
+          "sha256": "9fcaeb534cfa2fe67a5b028bed36b8de9a53704dbd4e8dbc69e498716301f761"
         },
         {
           "path": "modules/current-helper/effective.sum",
@@ -5510,9 +5510,9 @@
         }
       ],
       "groups": {
-        "candidate": "8d17f4034511049ecb495ad76f884b3789251d0566799c8e10580ac474252151",
+        "candidate": "c9feda780c40acba8a1d033d9e5fac384c215799e37ef7ae8f1e61db66c17e7e",
         "oracle": "45d7026b1c25266b1cc11065ad284ce878fc45edd88fa4b53e3b8888672b4de1",
-        "modules": "8980286c6e135666c21d9b74cbe7a2b1cc6c3304f898b2bf0be5a0a8c9c45869",
+        "modules": "3f696fd41d6c3f00a420c64c76c31590e6105ad5df3fbbe69258be9b3870152c",
         "sdk": "5b54db2855c64f9181b9e762eb14fb9dff6ffacd86e67dce8fccab10381a9d67"
       }
     },
@@ -5525,7 +5525,7 @@
         "cleanup_verified": true,
         "stdout_bytes": 41,
         "stderr_bytes": 0,
-        "stdout_sha256": "67e055f83ea05115a0bc869ee285edfe26e291603cc265abd6871b6bbbc0b6b0",
+        "stdout_sha256": "22b6f817ce92b97737f9d79f1dce34e2566718b8d2f6cce0133eb1b5dffd324f",
         "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
       },
       {
@@ -5578,9 +5578,9 @@
         "timed_out": false,
         "output_exceeded": false,
         "cleanup_verified": true,
-        "stdout_bytes": 35,
+        "stdout_bytes": 24,
         "stderr_bytes": 0,
-        "stdout_sha256": "bd7cc2b842d4430d75b2e69042a880d26e5aa63c12a558a12f9db721572c5a30",
+        "stdout_sha256": "ad25f5b9db8480bc43317d173775483b57d93ee5a0e58367f3d7ad3a36d49fda",
         "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
       },
       {
@@ -5589,35 +5589,13 @@
         "timed_out": false,
         "output_exceeded": false,
         "cleanup_verified": true,
-        "stdout_bytes": 80,
-        "stderr_bytes": 0,
-        "stdout_sha256": "aed755722234392c198b004406227b1cf1acba20f6bef2ea0e9395f08f22d58a",
-        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-      },
-      {
-        "id": "go-env-002",
-        "exit_code": 0,
-        "timed_out": false,
-        "output_exceeded": false,
-        "cleanup_verified": true,
         "stdout_bytes": 35,
         "stderr_bytes": 0,
         "stdout_sha256": "bd7cc2b842d4430d75b2e69042a880d26e5aa63c12a558a12f9db721572c5a30",
         "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
       },
       {
-        "id": "go-env-003",
-        "exit_code": 0,
-        "timed_out": false,
-        "output_exceeded": false,
-        "cleanup_verified": true,
-        "stdout_bytes": 24,
-        "stderr_bytes": 0,
-        "stdout_sha256": "ad25f5b9db8480bc43317d173775483b57d93ee5a0e58367f3d7ad3a36d49fda",
-        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-      },
-      {
-        "id": "go-env-004",
+        "id": "go-env-002",
         "exit_code": 0,
         "timed_out": false,
         "output_exceeded": false,
@@ -5628,6 +5606,28 @@
         "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
       },
       {
+        "id": "go-env-003",
+        "exit_code": 0,
+        "timed_out": false,
+        "output_exceeded": false,
+        "cleanup_verified": true,
+        "stdout_bytes": 80,
+        "stderr_bytes": 0,
+        "stdout_sha256": "aed755722234392c198b004406227b1cf1acba20f6bef2ea0e9395f08f22d58a",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "id": "go-env-004",
+        "exit_code": 0,
+        "timed_out": false,
+        "output_exceeded": false,
+        "cleanup_verified": true,
+        "stdout_bytes": 35,
+        "stderr_bytes": 0,
+        "stdout_sha256": "bd7cc2b842d4430d75b2e69042a880d26e5aa63c12a558a12f9db721572c5a30",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
         "id": "go-list-before",
         "exit_code": 0,
         "timed_out": false,
@@ -5635,7 +5635,7 @@
         "cleanup_verified": true,
         "stdout_bytes": 35904,
         "stderr_bytes": 0,
-        "stdout_sha256": "e110c934d01a9c289344e75567c0b865eb4a31c9d1d57e910da3fd67db6272ea",
+        "stdout_sha256": "5542b2613d919191765cae106b9eaba280c59df4347afbb84ca4f084b4d19841",
         "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
       },
       {
@@ -5690,7 +5690,7 @@
         "cleanup_verified": true,
         "stdout_bytes": 35904,
         "stderr_bytes": 0,
-        "stdout_sha256": "e110c934d01a9c289344e75567c0b865eb4a31c9d1d57e910da3fd67db6272ea",
+        "stdout_sha256": "5542b2613d919191765cae106b9eaba280c59df4347afbb84ca4f084b4d19841",
         "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
       },
       {
@@ -5712,7 +5712,7 @@
         "cleanup_verified": true,
         "stdout_bytes": 41,
         "stderr_bytes": 0,
-        "stdout_sha256": "67e055f83ea05115a0bc869ee285edfe26e291603cc265abd6871b6bbbc0b6b0",
+        "stdout_sha256": "22b6f817ce92b97737f9d79f1dce34e2566718b8d2f6cce0133eb1b5dffd324f",
         "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
       },
       {

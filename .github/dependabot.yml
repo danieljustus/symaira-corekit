@@ -17,3 +17,13 @@ updates:
       github-actions:
         patterns:
           - "*"
+  # The repository follows the newest stable Rust. rust-toolchain.toml is the
+  # single toolchain pin; every workflow installs from it. It is a bound input
+  # of the frozen FS/SEC and SQLite evidence, so a toolchain pull request needs
+  # the recapture in docs/rust-port/adr-rust-003-candidate-source-scope.md
+  # ("Toolchain and dependency updates") before it can merge.
+  - package-ecosystem: "rust-toolchain"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"

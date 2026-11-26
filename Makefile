@@ -76,7 +76,8 @@ rust-sqlite-contract:
 	python3 scripts/rust-port/frozen_sqlite_replay.py
 
 # Live Go recapture (formerly rust-sqlite-refreeze and rust-fs-secret-live-oracle)
-# needs the retired Go library and runs only on the release/v0.18 branch.
+# runs as a reviewed pull-request procedure: docs/rust-port/adr-rust-003-candidate-source-scope.md
+# ("Toolchain and dependency updates").
 
 .PHONY: rust-fs-secret-frozen-contract
 rust-fs-secret-frozen-contract:
