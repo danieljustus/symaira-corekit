@@ -1,18 +1,21 @@
 /* Shared UI strings. Keys must exist in every .lproj (see LocalizationTests). */
 
 "provider.title" = "Provider";
-"provider.apiKey" = "API key";
+"provider.apiKey" = "API Key";
 "provider.model" = "Model";
-"provider.saved" = "Saved";
-"provider.save" = "Save";
-"provider.removeKey" = "Remove saved key";
-"provider.removeFailed" = "The saved credential could not be removed.";
+"provider.saved" = "Your API key was saved.";
+"provider.save" = "Save API Key";
+"provider.enterKey" = "Enter an API key to save it.";
+"provider.saveFailed" = "Could not save your API key. Try again.";
+"provider.removeKey" = "Remove API Key";
+"provider.cancel" = "Cancel";
+"provider.removeConsequence" = "This removes the saved API key for this provider from this device.";
+"provider.removeFailed" = "Could not remove your API key. Try again.";
 "provider.noModels" = "No model list available — enter a model in the host app.";
 "provider.baseURL" = "Base URL";
-"provider.modelOrDeployment" = "Model or deployment";
-"provider.loading" = "Loading…";
-"provider.refreshModels" = "Refresh models";
-"provider.testing" = "Testing…";
-"provider.testConnection" = "Test connection";
-"provider.loadedModels" = "Loaded %lld model(s).";
+"provider.modelOrDeployment" = "Model or Deployment";
+"provider.loading" = "Loading models…";
+"provider.refreshModels" = "Refresh Models";
+"provider.testing" = "Testing connection…";
+"provider.testConnection" = "Test Connection";
 "provider.connected" = "Connected in %lld ms.";

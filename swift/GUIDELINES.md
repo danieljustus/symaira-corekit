@@ -190,9 +190,12 @@ Six lines, kept in the pull request or issue:
   `Picker` and native fields. `SymairaFormRow` and `SymairaFormDivider` remain
   for list rows inside a `.symairaCard()` (UI catalog E30), not for forms.
 - **FORM-2** Inside a `Form`, fields are native. Outside a form (search bar,
-  inline field on a card) a field uses `.textFieldStyle(.symaira)`. The label
-  names the field; the placeholder shows an example or the default
-  ("Auto-detect", "Default (~/Library/…)").
+  inline field on a card) a field uses `.textFieldStyle(.symaira)`, which
+  shows a 2 pt focus ring automatically. The label names the field; the
+  placeholder shows an example or the default ("Auto-detect", "Default
+  (~/Library/…)"). Use `SymairaTextField(_:text:prompt:)` for an `ink3`
+  placeholder, or pass `prompt: Text(…).foregroundColor(SymairaTokens.ink3)`
+  to a native field that needs a different initializer.
 - **FORM-3** Validate inline below the field (`.caption` in `critical`) and
   move focus to the first error on submit; never block paste.
 - **FORM-4** Secrets use `SecureField`, are stored through `SymairaKeychain`,

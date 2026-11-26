@@ -1,5 +1,32 @@
 import SwiftUI
 import SymairaCLIRunner
+import SymairaTheme
+
+@MainActor
+protocol ProviderSettingsCredentialStore {
+    func credential(for providerID: String) throws -> String?
+    func save(_ value: String, for providerID: String) throws -> Bool
+    func delete(for providerID: String) -> Bool
+    func reference(for providerID: String) -> String
+}
+
+extension SymairaProviderCredentialStore: ProviderSettingsCredentialStore {}
+
+/// Two-step removal of a saved key: the first activation only asks, and
+/// only an explicit confirmation deletes the stored credential (NN-8).
+@MainActor
+struct ProviderKeyRemoval {
+    private(set) var isConfirming = false
+
+    mutating func request() { isConfirming = true }
+
+    mutating func cancel() { isConfirming = false }
+
+    mutating func confirm(providerID: String, store: any ProviderSettingsCredentialStore) -> Bool {
+        isConfirming = false
+        return store.delete(for: providerID)
+    }
+}
 
 /// Reusable provider picker backed by the shared descriptor registry.
 public struct SymairaProviderPicker: View {
@@ -23,16 +50,19 @@ public struct SymairaProviderPicker: View {
                 Text(provider.displayName).tag(provider.id)
             }
         }
+        .pickerStyle(.menu)
     }
 }
 
 /// A secure provider key field that writes only on an explicit user action.
 public struct SymairaProviderCredentialField: View {
     private let providerID: String
-    private let store: SymairaProviderCredentialStore
+    private let store: any ProviderSettingsCredentialStore
     private let title: String
     private let onCredentialChange: (() -> Void)?
     @State private var value: String
+    @State private var hasStoredKey: Bool
+    @State private var removal = ProviderKeyRemoval()
     @State private var saved = false
     @State private var errorMessage: String?
 
@@ -42,57 +72,93 @@ public struct SymairaProviderCredentialField: View {
         title: String = ProviderStrings.apiKey,
         onCredentialChange: (() -> Void)? = nil
     ) {
+        self.init(providerID: providerID, credentialStore: store, title: title, onCredentialChange: onCredentialChange)
+    }
+
+    init(
+        providerID: String,
+        credentialStore: any ProviderSettingsCredentialStore,
+        title: String = ProviderStrings.apiKey,
+        onCredentialChange: (() -> Void)? = nil
+    ) {
         self.providerID = providerID
-        self.store = store
+        self.store = credentialStore
         self.title = title
         self.onCredentialChange = onCredentialChange
-        self._value = State(initialValue: (try? store.credential(for: providerID)) ?? "")
+        let stored = try? credentialStore.credential(for: providerID)
+        self._value = State(initialValue: stored ?? "")
+        self._hasStoredKey = State(initialValue: stored?.isEmpty == false)
     }
 
     public var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack {
-                SecureField(title, text: $value)
-                    #if !os(tvOS)
-                .textFieldStyle(.roundedBorder)
-                    #endif
+        VStack(alignment: .leading, spacing: SymairaSpacing.small) {
+            SymairaFormRow(title) {
+                SecureField(title, text: draft)
+                    .labelsHidden()
+                    .textFieldStyle(.symaira)
                     .onSubmit(save)
-                if saved {
-                    Text(ProviderStrings.saved)
-                        .foregroundStyle(.green)
-                        .font(.caption)
-                } else {
-                    Button(ProviderStrings.save, action: save)
-                        .disabled(value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                }
             }
-            if !value.isEmpty {
-                Button(ProviderStrings.removeKey, role: .destructive, action: delete)
-                    .font(.caption)
+            HStack(spacing: SymairaSpacing.small) { credentialActions }
+            if value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                Text(ProviderStrings.enterKey)
+                    .symairaText(.caption)
             }
             if let errorMessage {
-                Text(errorMessage)
-                    .font(.caption)
-                    .foregroundStyle(.red)
-                    .fixedSize(horizontal: false, vertical: true)
+                SymairaNotice(message: errorMessage, tone: .critical)
+            } else if saved {
+                SymairaNotice(message: ProviderStrings.saved, tone: .positive)
             }
         }
+        .padding(.bottom, SymairaSpacing.small)
         .accessibilityElement(children: .contain)
+    }
+
+    @ViewBuilder private var credentialActions: some View {
+        Button(ProviderStrings.save, action: save)
+            .symairaButtonStyle(.secondary)
+            .disabled(value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+        if hasStoredKey {
+            Button(ProviderStrings.removeKey, role: .destructive) { removal.request() }
+                .symairaButtonStyle(.secondary)
+                .confirmationDialog(
+                    ProviderStrings.removeKey, isPresented: isConfirmingRemoval, titleVisibility: .visible
+                ) {
+                    Button(ProviderStrings.removeKey, role: .destructive, action: delete)
+                    Button(ProviderStrings.cancel, role: .cancel) { removal.cancel() }
+                } message: {
+                    Text(ProviderStrings.removeConsequence)
+                }
+        }
+    }
+
+    private var isConfirmingRemoval: Binding<Bool> {
+        Binding(get: { removal.isConfirming }, set: { if !$0 { removal.cancel() } })
+    }
+
+    private var draft: Binding<String> {
+        Binding(
+            get: { value },
+            set: {
+                value = $0
+                saved = false
+                errorMessage = nil
+            })
     }
 
     private func save() {
         let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
         do {
-            _ = try store.save(trimmed, for: providerID)
+            guard try store.save(trimmed, for: providerID) else {
+                errorMessage = ProviderStrings.saveFailed
+                saved = false
+                return
+            }
             value = trimmed
+            hasStoredKey = true
             errorMessage = nil
             saved = true
             onCredentialChange?()
-            Task { @MainActor in
-                try? await Task.sleep(for: .seconds(2))
-                saved = false
-            }
         } catch {
             errorMessage = SymairaSecretRedactor.redact(error.localizedDescription)
             saved = false
@@ -100,11 +166,12 @@ public struct SymairaProviderCredentialField: View {
     }
 
     private func delete() {
-        guard store.delete(for: providerID) else {
+        guard removal.confirm(providerID: providerID, store: store) else {
             errorMessage = ProviderStrings.removeFailed
             return
         }
         value = ""
+        hasStoredKey = false
         errorMessage = nil
         saved = false
         onCredentialChange?()
@@ -130,14 +197,14 @@ public struct SymairaModelPicker: View {
     public var body: some View {
         if models.isEmpty {
             Text(ProviderStrings.noModels)
-                .font(.caption)
-                .foregroundStyle(.secondary)
+                .symairaText(.caption)
         } else {
             Picker(title, selection: $selection) {
                 ForEach(models) { model in
                     Text(model.displayName).tag(model.id)
                 }
             }
+            .pickerStyle(.menu)
         }
     }
 }
@@ -150,17 +217,17 @@ public struct SymairaModelPicker: View {
 public struct SymairaProviderSettingsView: View {
     @Binding private var providerID: String
     private let catalog: SymairaProviderCatalog
-    private let credentialStore: SymairaProviderCredentialStore
+    private let credentialStore: any ProviderSettingsCredentialStore
     private let credentialResolver: SymairaCredentialResolver
     private let httpClient: any SymairaProviderHTTPClient
 
     @State private var baseURLText = ""
     @State private var modelText = ""
-    @State private var discoveredModels: [SymairaProviderModel] = []
+    @State private var discoveredModels: [SymairaProviderModel]?
     @State private var isLoadingModels = false
     @State private var isTesting = false
     @State private var statusMessage: String?
-    @State private var statusIsSuccess = false
+    @State private var statusTone: SymairaTone = .neutral
 
     public init(
         providerID: Binding<String>,
@@ -169,59 +236,102 @@ public struct SymairaProviderSettingsView: View {
         credentialResolver: SymairaCredentialResolver = SymairaCredentialResolver(),
         httpClient: any SymairaProviderHTTPClient = SymairaURLSessionHTTPClient()
     ) {
+        self.init(
+            providerID: providerID, catalog: catalog, store: credentialStore,
+            credentialResolver: credentialResolver, httpClient: httpClient)
+    }
+
+    init(
+        providerID: Binding<String>,
+        catalog: SymairaProviderCatalog = .bundled,
+        store: any ProviderSettingsCredentialStore,
+        credentialResolver: SymairaCredentialResolver = SymairaCredentialResolver(),
+        httpClient: any SymairaProviderHTTPClient = SymairaURLSessionHTTPClient()
+    ) {
         self._providerID = providerID
         self.catalog = catalog
-        self.credentialStore = credentialStore
+        self.credentialStore = store
         self.credentialResolver = credentialResolver
         self.httpClient = httpClient
     }
 
     public var body: some View {
-        Form {
-            SymairaProviderPicker(selection: $providerID, catalog: catalog)
+        VStack(alignment: .leading, spacing: SymairaSpacing.medium) {
+            VStack(alignment: .leading, spacing: 0) {
+                SymairaFormRow(ProviderStrings.provider) {
+                    SymairaProviderPicker(selection: $providerID, catalog: catalog)
+                        .labelsHidden()
+                }
+
+                if let descriptor {
+                    SymairaFormDivider()
+                    SymairaProviderCredentialField(
+                        providerID: descriptor.id,
+                        credentialStore: credentialStore,
+                        onCredentialChange: { statusMessage = nil }
+                    )
+                    .id(descriptor.id)
+
+                    if descriptor.baseURLOverridable || descriptor.baseURLRequiredOverride {
+                        SymairaFormDivider()
+                        SymairaFormRow(ProviderStrings.baseURL) {
+                            TextField(ProviderStrings.baseURL, text: $baseURLText)
+                                .labelsHidden()
+                                .textFieldStyle(.symaira)
+                                .textContentType(.URL)
+                                .autocorrectionDisabled()
+                        }
+                    }
+
+                    SymairaFormDivider()
+                    modelRow(descriptor)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .symairaCard()
 
             if let descriptor {
-                SymairaProviderCredentialField(
-                    providerID: descriptor.id,
-                    store: credentialStore,
-                    onCredentialChange: { statusMessage = nil }
-                )
-                .id(descriptor.id)
-
-                if descriptor.baseURLOverridable || descriptor.baseURLRequiredOverride {
-                    TextField(ProviderStrings.baseURL, text: $baseURLText)
-                        .textContentType(.URL)
-                        .autocorrectionDisabled()
-                }
-
-                if descriptor.models.mode == .configured || descriptor.models.mode == .deployment {
-                    TextField(ProviderStrings.modelOrDeployment, text: $modelText)
-                        .autocorrectionDisabled()
-                } else {
-                    SymairaModelPicker(selection: $modelText, models: modelsForDisplay(descriptor))
-                    if descriptor.models.mode == .discovered {
-                        Button(
-                            isLoadingModels ? ProviderStrings.loading : ProviderStrings.refreshModels,
-                            action: loadModels
-                        )
-                        .disabled(isLoadingModels)
-                    }
-                }
-
-                HStack {
-                    Button(isTesting ? ProviderStrings.testing : ProviderStrings.testConnection, action: testConnection)
-                        .disabled(isTesting)
-                    if let statusMessage {
-                        Text(statusMessage)
-                            .font(.caption)
-                            .foregroundStyle(statusIsSuccess ? .green : .red)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                }
+                connectionActions(descriptor)
             }
         }
         .onAppear(perform: synchronizeState)
         .onChange(of: providerID) { _, _ in synchronizeState() }
+    }
+
+    @ViewBuilder private func modelRow(_ descriptor: SymairaProviderDescriptor) -> some View {
+        if descriptor.models.mode == .configured || descriptor.models.mode == .deployment {
+            SymairaFormRow(ProviderStrings.modelOrDeployment) {
+                TextField(ProviderStrings.modelOrDeployment, text: $modelText)
+                    .labelsHidden()
+                    .textFieldStyle(.symaira)
+                    .autocorrectionDisabled()
+            }
+        } else {
+            SymairaFormRow(ProviderStrings.model) {
+                SymairaModelPicker(selection: $modelText, models: modelsForDisplay(descriptor))
+                    .labelsHidden()
+            }
+        }
+    }
+
+    private func connectionActions(_ descriptor: SymairaProviderDescriptor) -> some View {
+        VStack(alignment: .leading, spacing: SymairaSpacing.small) {
+            Button(ProviderStrings.testConnection, action: testConnection)
+                .symairaButtonStyle(.primary)
+                .disabled(isTesting || isLoadingModels)
+            if descriptor.models.mode == .discovered {
+                Button(ProviderStrings.refreshModels, action: loadModels)
+                    .symairaButtonStyle(.secondary)
+                    .disabled(isTesting || isLoadingModels)
+            }
+            if isTesting {
+                ProgressView(ProviderStrings.testing)
+            } else if isLoadingModels {
+                ProgressView(ProviderStrings.loading)
+            } else if let statusMessage {
+                SymairaNotice(message: statusMessage, tone: statusTone)
+            }
+        }
     }
 
     private var descriptor: SymairaProviderDescriptor? {
@@ -229,7 +339,7 @@ public struct SymairaProviderSettingsView: View {
     }
 
     private func modelsForDisplay(_ descriptor: SymairaProviderDescriptor) -> [SymairaProviderModel] {
-        if !discoveredModels.isEmpty { return discoveredModels }
+        if let discoveredModels { return discoveredModels }
         guard let defaultModel = descriptor.models.defaultModel else { return [] }
         return [SymairaProviderModel(id: defaultModel)]
     }
@@ -238,7 +348,7 @@ public struct SymairaProviderSettingsView: View {
         guard let descriptor else { return }
         baseURLText = descriptor.baseURL?.absoluteString ?? ""
         modelText = descriptor.models.defaultModel ?? ""
-        discoveredModels = []
+        discoveredModels = nil
         statusMessage = nil
     }
 
@@ -267,13 +377,17 @@ public struct SymairaProviderSettingsView: View {
             defer { isLoadingModels = false }
             do {
                 let models = try await makeClient(descriptor).discoverModels()
+                guard self.descriptor?.id == descriptor.id else { return }
                 discoveredModels = models
-                if modelText.isEmpty { modelText = models.first?.id ?? "" }
+                if let first = models.first, !models.contains(where: { $0.id == modelText }) {
+                    modelText = first.id
+                }
                 statusMessage = ProviderStrings.loadedModels(models.count)
-                statusIsSuccess = true
+                statusTone = .positive
             } catch {
+                guard self.descriptor?.id == descriptor.id else { return }
                 statusMessage = SymairaSecretRedactor.redact(error.localizedDescription)
-                statusIsSuccess = false
+                statusTone = .critical
             }
         }
     }
@@ -286,12 +400,14 @@ public struct SymairaProviderSettingsView: View {
             defer { isTesting = false }
             do {
                 let result = try await makeClient(descriptor).testConnection()
+                guard self.descriptor?.id == descriptor.id else { return }
                 let latency = Int((result.latency * 1_000).rounded())
                 statusMessage = ProviderStrings.connected(milliseconds: latency)
-                statusIsSuccess = true
+                statusTone = .positive
             } catch {
+                guard self.descriptor?.id == descriptor.id else { return }
                 statusMessage = SymairaSecretRedactor.redact(error.localizedDescription)
-                statusIsSuccess = false
+                statusTone = .critical
             }
         }
     }

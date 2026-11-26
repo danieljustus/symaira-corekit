@@ -26,8 +26,19 @@ final class ProviderLocalizationTests: XCTestCase {
         let connected = ProviderStrings.string("provider.connected", "", bundle: german)
         XCTAssertEqual(String(format: connected, 42), "Verbunden in 42 ms.")
         let english = try table("en")
-        XCTAssertEqual(
-            String(format: ProviderStrings.string("provider.loadedModels", "", bundle: english), 3),
-            "Loaded 3 model(s).")
+        XCTAssertEqual(ProviderStrings.string("provider.testConnection", "", bundle: english), "Test Connection")
+        XCTAssertEqual(ProviderStrings.string("provider.removeKey", "", bundle: english), "Remove API Key")
+        XCTAssertEqual(ProviderStrings.string("provider.removeKey", "", bundle: german), "API-Schlüssel entfernen")
+    }
+
+    func testModelCountUsesSingularAndPluralInBothLanguages() throws {
+        let english = try table("en")
+        let german = try table("de")
+        XCTAssertEqual(ProviderStrings.loadedModels(0, bundle: english), "Loaded 0 models.")
+        XCTAssertEqual(ProviderStrings.loadedModels(1, bundle: english), "Loaded 1 model.")
+        XCTAssertEqual(ProviderStrings.loadedModels(3, bundle: english), "Loaded 3 models.")
+        XCTAssertEqual(ProviderStrings.loadedModels(0, bundle: german), "0 Modelle geladen.")
+        XCTAssertEqual(ProviderStrings.loadedModels(1, bundle: german), "1 Modell geladen.")
+        XCTAssertEqual(ProviderStrings.loadedModels(3, bundle: german), "3 Modelle geladen.")
     }
 }

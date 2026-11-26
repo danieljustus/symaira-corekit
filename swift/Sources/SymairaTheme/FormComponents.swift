@@ -7,32 +7,56 @@ import SwiftUI
 /// Six of the client apps style their text fields inline today, each with its own
 /// padding and border. This is the one place that decision should live.
 public struct SymairaTextFieldStyle: TextFieldStyle {
-    @Environment(\.colorScheme) private var colorScheme
-    @Environment(\.colorSchemeContrast) private var contrast
-    @Environment(\.isEnabled) private var isEnabled
+    private let focusOverride: Bool?
 
-    private let isFocused: Bool
+    /// Use the native field's keyboard focus to drive the focus ring.
+    public init() {
+        focusOverride = nil
+    }
 
-    /// - Parameter isFocused: drives the focus ring. Wire it to a `@FocusState`
-    ///   binding; SwiftUI does not expose focus to a `TextFieldStyle` directly.
-    public init(isFocused: Bool = false) {
-        self.isFocused = isFocused
+    /// Override the focus ring, for example with the host's `@FocusState`.
+    public init(isFocused: Bool) {
+        focusOverride = isFocused
     }
 
     public func _body(configuration: TextField<Self._Label>) -> some View {
-        let shape = RoundedRectangle(cornerRadius: SymairaRadius.control, style: .continuous)
         configuration
             .textFieldStyle(.plain)
-            // The role modifier is main-actor isolated and `_body` is not, so the
-            // font token is applied directly here. Colour stays with the field.
-            .font(SymairaTypography.body)
-            .padding(.horizontal, SymairaSpacing.medium)
-            .padding(.vertical, SymairaSpacing.small)
-            .frame(minHeight: SymairaMetrics.minimumControlHeight)
-            .background(shape.fill(fill))
-            .overlay(shape.stroke(border, lineWidth: borderWidth))
-            .opacity(isEnabled ? 1 : 0.55)
+            .modifier(SymairaTextFieldChrome(focusOverride: focusOverride))
     }
+}
+
+private struct SymairaTextFieldChrome: ViewModifier {
+    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.colorSchemeContrast) private var contrast
+    @Environment(\.isEnabled) private var isEnabled
+    @FocusState private var hasKeyboardFocus: Bool
+
+    let focusOverride: Bool?
+
+    nonisolated init(focusOverride: Bool?) {
+        self.focusOverride = focusOverride
+    }
+
+    func body(content: Content) -> some View {
+        let shape = RoundedRectangle(cornerRadius: SymairaRadius.control, style: .continuous)
+        Group {
+            if focusOverride != nil {
+                content
+            } else {
+                content.focused($hasKeyboardFocus)
+            }
+        }
+        .font(SymairaTypography.body)
+        .padding(.horizontal, SymairaSpacing.medium)
+        .padding(.vertical, SymairaSpacing.small)
+        .frame(minHeight: SymairaMetrics.minimumControlHeight)
+        .background(shape.fill(fill))
+        .overlay(shape.stroke(border, lineWidth: borderWidth))
+        .opacity(isEnabled ? 1 : 0.55)
+    }
+
+    private var isFocused: Bool { focusOverride ?? hasKeyboardFocus }
 
     private var fill: Color {
         SymairaTheme.surfaceRaised(for: colorScheme)
@@ -55,12 +79,30 @@ public struct SymairaTextFieldStyle: TextFieldStyle {
 }
 
 extension TextFieldStyle where Self == SymairaTextFieldStyle {
-    /// Symaira text field chrome without a focus ring.
+    /// Symaira text field chrome that tracks keyboard focus automatically.
     public static var symaira: SymairaTextFieldStyle { SymairaTextFieldStyle() }
 
     /// Symaira text field chrome with an explicit focus state.
     public static func symaira(isFocused: Bool) -> SymairaTextFieldStyle {
         SymairaTextFieldStyle(isFocused: isFocused)
+    }
+}
+
+/// An inline text field with Symaira chrome and a contrast-safe prompt.
+public struct SymairaTextField: View {
+    private let title: String
+    @Binding private var text: String
+    private let prompt: String
+
+    public init(_ title: String, text: Binding<String>, prompt: String) {
+        self.title = title
+        self._text = text
+        self.prompt = prompt
+    }
+
+    public var body: some View {
+        TextField(title, text: $text, prompt: Text(prompt).foregroundColor(SymairaTokens.ink3))
+            .textFieldStyle(.symaira)
     }
 }
 
@@ -116,7 +158,17 @@ public struct SymairaFormSection<Content: View>: View {
     }
 }
 
-/// A single labelled row inside a ``SymairaFormSection``.
+private enum FormRowLabelCenter: AlignmentID {
+    static func defaultValue(in dimensions: ViewDimensions) -> CGFloat {
+        dimensions[VerticalAlignment.center]
+    }
+}
+
+extension VerticalAlignment {
+    fileprivate static let formRowLabelCenter = VerticalAlignment(FormRowLabelCenter.self)
+}
+
+/// A single labelled row inside a content card.
 ///
 /// The trailing closure holds the control — a toggle, a picker, a value, a button.
 public struct SymairaFormRow<Trailing: View>: View {
@@ -135,10 +187,15 @@ public struct SymairaFormRow<Trailing: View>: View {
     }
 
     public var body: some View {
-        HStack(alignment: .firstTextBaseline, spacing: SymairaSpacing.large) {
+        HStack(alignment: .formRowLabelCenter, spacing: SymairaSpacing.large) {
             VStack(alignment: .leading, spacing: SymairaSpacing.xSmall) {
                 Text(label)
                     .symairaText(.body)
+                    .alignmentGuide(.formRowLabelCenter) { dimensions in
+                        // Drop the distance between baselines to isolate the first line's height.
+                        let remainingLines = dimensions[.lastTextBaseline] - dimensions[.firstTextBaseline]
+                        return (dimensions.height - remainingLines) / 2
+                    }
                 if let description {
                     Text(description)
                         .symairaText(.caption)
