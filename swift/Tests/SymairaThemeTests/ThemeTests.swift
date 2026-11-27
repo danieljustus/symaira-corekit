@@ -45,6 +45,82 @@ final class ThemeTests: XCTestCase {
         XCTAssertEqual(SymairaTheme.accent(for: .light), SymairaTheme.accent(for: .dark))
     }
 
+    /// The generated palette must match DESIGN.md: CI does not run build.py, so an edited
+    /// spec without regenerated tokens fails here instead of drifting silently.
+    func testGeneratedPaletteMatchesTheTokenSpec() throws {
+        let spec = try String(contentsOf: Self.tokenSpec, encoding: .utf8)
+        let front = try XCTUnwrap(spec.components(separatedBy: "\n---\n").first)
+        let colors = try XCTUnwrap(
+            front.components(separatedBy: "\ncolors:\n").last?
+                .components(separatedBy: "\ntypography:\n").first)
+        var specColors: [String: Int] = [:]
+        for line in colors.split(separator: "\n") {
+            let parts = line.trimmingCharacters(in: .whitespaces).split(separator: ":", maxSplits: 1)
+            guard parts.count == 2, !parts[0].hasPrefix("#") else { continue }
+            let hex = parts[1].trimmingCharacters(in: CharacterSet(charactersIn: " \"#"))
+            specColors[String(parts[0])] = Int(hex, radix: 16)
+        }
+        let roles = specColors.keys.filter { !$0.hasSuffix("-dark") }
+        XCTAssertEqual(Set(roles), Set(SymairaTokens.Palette.byName.keys), "rerun design/liquid-topography/build.py")
+        for role in roles {
+            let pair = try XCTUnwrap(SymairaTokens.Palette.byName[role], role)
+            XCTAssertEqual(pair.light, specColors[role], "\(role) light: rerun build.py")
+            XCTAssertEqual(pair.dark, specColors[role + "-dark"] ?? specColors[role], "\(role) dark: rerun build.py")
+        }
+    }
+
+    /// The `for:` helpers read the generated palette instead of keeping their own hex copies.
+    func testAppearanceHelpersReadTheGeneratedPalette() {
+        let helpers: [(String, (ColorScheme) -> Color, SymairaTokens.Pair)] = [
+            ("canvas", SymairaTheme.backgroundPrimary, SymairaTokens.Palette.canvas),
+            ("sidebar", SymairaTheme.backgroundSecondary, SymairaTokens.Palette.sidebar),
+            ("surface", SymairaTheme.surfaceOpaque, SymairaTokens.Palette.surface),
+            ("raised", SymairaTheme.surfaceRaised, SymairaTokens.Palette.raised),
+            ("control-outline", SymairaTheme.controlOutline, SymairaTokens.Palette.controlOutline),
+            ("control-outline", SymairaTheme.raisedOutline, SymairaTokens.Palette.controlOutline),
+            ("line", SymairaTheme.line, SymairaTokens.Palette.line),
+            ("selection", SymairaTheme.navigationSelection, SymairaTokens.Palette.selection),
+            ("ink", SymairaTheme.foregroundPrimary, SymairaTokens.Palette.ink),
+            ("ink-2", SymairaTheme.foregroundSecondary, SymairaTokens.Palette.ink2),
+            ("ink-3", SymairaTheme.foregroundMuted, SymairaTokens.Palette.ink3),
+            ("primary", SymairaTheme.accent, SymairaTokens.Palette.primary),
+            ("selected", SymairaTheme.selected, SymairaTokens.Palette.selected),
+            ("on-selected", SymairaTheme.onSelected, SymairaTokens.Palette.onSelected),
+            ("focus", SymairaTheme.focus, SymairaTokens.Palette.focus),
+        ]
+        for (role, helper, pair) in helpers {
+            for scheme in [ColorScheme.light, .dark] {
+                XCTAssertEqual(helper(scheme), pair.color(for: scheme), "\(role) \(scheme)")
+            }
+        }
+    }
+
+    /// #515: control boundaries reach 3:1 on every surface they sit on; #513: the destructive
+    /// label reaches 4.5:1 on its fill.
+    func testControlOutlineAndDestructiveLabelMeetWCAG() {
+        func luminance(_ hex: Int) -> Double {
+            let c = SymairaTokens.Pair.components(hex)
+            return zip([c.red, c.green, c.blue], [0.2126, 0.7152, 0.0722]).map { value, weight in
+                weight * (value <= 0.04045 ? value / 12.92 : pow((value + 0.055) / 1.055, 2.4))
+            }.reduce(0, +)
+        }
+        func ratio(_ a: Int, _ b: Int) -> Double {
+            let (x, y) = (luminance(a), luminance(b))
+            return (max(x, y) + 0.05) / (min(x, y) + 0.05)
+        }
+        let palette = SymairaTokens.Palette.self
+        for background in [palette.raised, palette.surface, palette.canvas] {
+            XCTAssertGreaterThanOrEqual(ratio(palette.controlOutline.light, background.light), 3)
+            XCTAssertGreaterThanOrEqual(ratio(palette.controlOutline.dark, background.dark), 3)
+        }
+        XCTAssertGreaterThanOrEqual(ratio(palette.onCritical.light, palette.critical.light), 4.5)
+        XCTAssertGreaterThanOrEqual(ratio(palette.onCritical.dark, palette.critical.dark), 4.5)
+    }
+
+    static let tokenSpec = URL(fileURLWithPath: #filePath)
+        .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+        .appendingPathComponent("design/liquid-topography/DESIGN.md")
+
     /// Decision A: light-mode selection is ink, never pale champagne (about 1.2:1).
     func testSelectionUsesInkInLightAndChampagneInDark() {
         XCTAssertEqual(SymairaTheme.selected(for: .light), Color(hex: "141413"))

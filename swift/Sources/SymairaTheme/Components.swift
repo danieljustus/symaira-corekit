@@ -472,6 +472,10 @@ public enum SymairaButtonRole: Sendable {
     case primary
     case secondary
     case toolbar
+    /// A visible destructive action (ACTION-4): opaque `critical` with an `on-critical` label in
+    /// the primary's geometry. Pair it with `Button(role: .destructive)`; it counts as the
+    /// screen's one opaque action.
+    case destructive
 }
 
 /// Preferred button API.
@@ -480,9 +484,9 @@ public enum SymairaButtonRole: Sendable {
 /// screen, `secondary` native Liquid Glass in the same geometry (UI catalog E02, revised
 /// 2026-11-26) and `toolbar` the native glass button. In the `workbench` tier all three
 /// are the native solid buttons at the region's control size, so they line up with the
-/// menus, segments and switches next to them: `primary` filled with `ink`, `secondary`
-/// and `toolbar` bordered. Every role stays neutral: a window-wide
-/// `.tint(SymairaTokens.selected)` colors selection states only (COLOR-2).
+/// menus, segments and switches next to them: `primary` filled with `ink`, `destructive`
+/// filled with `critical`, `secondary` and `toolbar` bordered. Every role stays neutral: a
+/// window-wide `.tint(SymairaTokens.selected)` colors selection states only (COLOR-2).
 public struct SymairaAdaptiveButtonModifier: ViewModifier {
     @Environment(\.symairaControlTier) private var tier
     @Environment(\.colorScheme) private var colorScheme
@@ -503,6 +507,9 @@ public struct SymairaAdaptiveButtonModifier: ViewModifier {
         case .primary:
             content.buttonStyle(.borderedProminent).tint(SymairaTokens.primary)
                 .foregroundStyle(SymairaTokens.onPrimary)
+        case .destructive:
+            content.buttonStyle(.borderedProminent).tint(SymairaTokens.critical)
+                .foregroundStyle(SymairaTokens.onCritical)
         case .secondary, .toolbar:
             content.buttonStyle(.bordered)
         }
@@ -522,6 +529,12 @@ public struct SymairaAdaptiveButtonModifier: ViewModifier {
             content.buttonStyle(.borderedProminent)
                 .tint(SymairaTheme.foregroundPrimary(for: colorScheme))
                 .foregroundStyle(SymairaTheme.surfaceOpaque(for: colorScheme))
+        case .destructive:
+            // A light tint would put the system's white label on salmon (2.2:1 in dark), so the
+            // label takes `on-critical` like the page style.
+            content.buttonStyle(.borderedProminent)
+                .tint(SymairaTokens.Palette.critical.color(for: colorScheme))
+                .foregroundStyle(SymairaTokens.Palette.onCritical.color(for: colorScheme))
         case .secondary, .toolbar:
             content.buttonStyle(.bordered).tint(nil)
         }
@@ -532,6 +545,8 @@ public struct SymairaAdaptiveButtonModifier: ViewModifier {
         switch role {
         case .primary:
             content.buttonStyle(SymairaPrimaryButtonStyle(onPressChange: onPressChange))
+        case .destructive:
+            content.buttonStyle(SymairaPrimaryButtonStyle(onPressChange: onPressChange, isDestructive: true))
         case .secondary:
             content.buttonStyle(SymairaSecondaryButtonStyle(onPressChange: onPressChange))
         case .toolbar:
@@ -566,27 +581,36 @@ extension View {
 }
 
 /// Primary action: filled `ink` capsule with `surface` text and a bold label, as high as
-/// the extra-large native controls beside it. At most one per view.
+/// the extra-large native controls beside it. At most one per view. The destructive role
+/// draws the same capsule in `critical` with an `on-critical` label (ACTION-4).
 public struct SymairaPrimaryButtonStyle: ButtonStyle {
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.isEnabled) private var isEnabled
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     private let onPressChange: ((Bool) -> Void)?
+    private let isDestructive: Bool
 
     public init(onPressChange: ((Bool) -> Void)? = nil) {
+        self.init(onPressChange: onPressChange, isDestructive: false)
+    }
+
+    init(onPressChange: ((Bool) -> Void)?, isDestructive: Bool) {
         self.onPressChange = onPressChange
+        self.isDestructive = isDestructive
     }
 
     public func makeBody(configuration: Configuration) -> some View {
         let shape = Capsule()
+        let fill = isDestructive ? SymairaTokens.Palette.critical : SymairaTokens.Palette.ink
+        let label = isDestructive ? SymairaTokens.Palette.onCritical : SymairaTokens.Palette.surface
         SymairaIconHost(isPressed: configuration.isPressed) {
             configuration.label
                 .font(SymairaTypography.bodyEmphasized)
                 .lineLimit(1)
-                .foregroundStyle(SymairaTheme.surfaceOpaque(for: colorScheme))
+                .foregroundStyle(label.color(for: colorScheme))
                 .padding(.horizontal, SymairaMetrics.contentActionHorizontalPadding)
                 .frame(minHeight: SymairaMetrics.contentActionHeight)
-                .background(SymairaTheme.foregroundPrimary(for: colorScheme), in: shape)
+                .background(fill.color(for: colorScheme), in: shape)
                 .contentShape(shape)
                 .brightness(configuration.isPressed ? -0.05 : 0)
                 .scaleEffect(configuration.isPressed && !reduceMotion ? 0.98 : 1)

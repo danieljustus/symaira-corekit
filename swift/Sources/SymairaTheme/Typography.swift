@@ -2,55 +2,68 @@ import SwiftUI
 
 /// Canonical Symaira type scale (see ``SymairaFont``).
 ///
-/// Only the largest headings, display copy and screen titles, are set in Google
-/// Sans Flex with the fixed optical size `opsz` 18. Every other role (headings,
-/// metrics, running text, labels and captions) is set in Figtree. Sizes and
-/// weights follow `design/liquid-topography/DESIGN.md`. On iOS each role
-/// scales with Dynamic Type relative to its text style; macOS has no Dynamic
-/// Type. If a bundled font cannot be registered, the system font with
-/// the same size and weight is used. Monospaced roles stay on SF Mono.
+/// Only the largest headings, the page title (`display`) and other screen titles
+/// (`title`), are set in Google Sans Flex with the fixed optical size `opsz` 18. Every
+/// other role (headings, metrics, running text, labels and captions) is set in Figtree.
+/// Names, sizes, weights and line heights follow the `typography` roles of
+/// `design/liquid-topography/DESIGN.md` (kebab-case there). Wrapped text keeps the
+/// role's line height; single lines keep the typeface's own. On iOS every role is
+/// `SymairaMetrics.textScale` (17 / 13.5) larger and scales with Dynamic Type relative to
+/// its text style; macOS has no Dynamic Type. If a bundled font cannot be registered, the
+/// system font with the same size and weight is used. Monospaced roles stay on SF Mono.
 /// Values are `SymairaFontRole` recipes; `.font(role)` resolves them in the view.
 public enum SymairaTypography {
-    /// Hero copy on empty states and onboarding. One per screen at most. Google Sans Flex 26 / 700.
-    public static let display = SymairaFont.font(size: 26, weight: 700, relativeTo: .largeTitle)
+    /// Page title of `SymairaPage` (LAYOUT-1) and hero copy on empty states. One per screen.
+    /// Google Sans Flex 26 / 700, line height 1.2.
+    public static let display = SymairaFont.font(size: 26, weight: 700, relativeTo: .largeTitle).lineHeight(1.2)
 
-    /// Primary screen title (H1). Google Sans Flex 20 / 700.
-    public static let title = SymairaFont.font(size: 20, weight: 700, relativeTo: .title)
+    /// Screen title where no `SymairaPage` header exists (onboarding steps, sheets).
+    /// Google Sans Flex 20 / 700, line height 1.25.
+    public static let title = SymairaFont.font(size: 20, weight: 700, relativeTo: .title).lineHeight(1.25)
 
-    /// Section or card heading. Figtree 16 / 700.
+    /// Section or card heading. Figtree 16 / 700, line height 1.3.
     public static let heading = SymairaFont.font(size: 16, weight: 700, relativeTo: .title3, family: .text)
+        .lineHeight(1.3)
 
-    /// Sub-heading above a group of rows. Figtree 14 / 650.
+    /// Sub-heading above a group of rows. Figtree 14 / 650, line height 1.35.
     public static let subheading = SymairaFont.font(size: 14, weight: 650, relativeTo: .headline, family: .text)
+        .lineHeight(1.35)
 
-    /// Default running text. Figtree 13.5 / 450.
+    /// Default running text. Figtree 13.5 / 450, line height 1.5.
     public static let body = SymairaFont.font(size: 13.5, weight: 450, relativeTo: .body, family: .text)
+        .lineHeight(1.5)
 
     /// Running text that carries the weight of a decision (selected row, active value). Figtree 13.5 / 600.
     public static let bodyEmphasized = SymairaFont.font(size: 13.5, weight: 600, relativeTo: .body, family: .text)
+        .lineHeight(1.5)
 
     /// Running text on a secondary control. Figtree 13.5 / 550.
     public static let bodyMedium = SymairaFont.font(size: 13.5, weight: 550, relativeTo: .body, family: .text)
+        .lineHeight(1.5)
 
-    /// Badge, pill, button and control label text. Figtree 12.5 / 550.
+    /// Badge, pill, button and control label text. Figtree 12.5 / 550, line height 1.4.
     public static let label = SymairaFont.font(size: 12.5, weight: 550, relativeTo: .caption, family: .text)
+        .lineHeight(1.4)
 
-    /// Secondary text next to a control or inside a row. Figtree 12.5 / 450.
+    /// Secondary text next to a control or inside a row. Figtree 12.5 / 450, line height 1.5.
     public static let callout = SymairaFont.font(size: 12.5, weight: 450, relativeTo: .callout, family: .text)
+        .lineHeight(1.5)
 
-    /// Helper text, timestamps, counts, scale labels. Figtree 11.5 / 450.
+    /// Helper text, timestamps, counts, scale labels. Figtree 11.5 / 450, line height 1.4.
     public static let caption = SymairaFont.font(size: 11.5, weight: 450, relativeTo: .caption, family: .text)
+        .lineHeight(1.4)
 
     /// Uppercase group labels. The smallest role that still has to stay legible. Figtree 11.5 / 600.
     public static let micro = SymairaFont.font(size: 11.5, weight: 600, relativeTo: .caption2, family: .text)
+        .lineHeight(1.4)
 
     /// Live value next to a control (brightness, fan speed). Figtree 18 / 700, tabular digits.
     public static let readout = SymairaFont.font(size: 18, weight: 700, relativeTo: .title3, family: .text)
-        .monospacedDigit()
+        .lineHeight(1.3).monospacedDigit()
 
     /// Summary metric in a stat card. Figtree 27 / 700, tabular digits.
     public static let stat = SymairaFont.font(size: 27, weight: 700, relativeTo: .largeTitle, family: .text)
-        .monospacedDigit()
+        .lineHeight(1.2).monospacedDigit()
 
     /// Command output, paths, hashes, identifiers.
     public static let mono = SymairaFontRole(source: .system(.system(.body, design: .monospaced, weight: .regular)))

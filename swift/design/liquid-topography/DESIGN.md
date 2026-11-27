@@ -29,6 +29,11 @@ colors:
   selection-dark: "#2D2D2C"
   line: "#B0AEA9"
   line-dark: "#30302E"
+  # Kontur von Bedienelementen (Textfelder, deckender Sekundär-Fallback), mindestens 3:1
+  # gegen raised, surface und canvas (WCAG 1.4.11). `line` bleibt die ruhige Linie für Karten
+  # und Trenner (Practical UI: stroke strong vs. stroke weak). Entschieden 2026-11-27 (#515).
+  control-outline: "#827F78"
+  control-outline-dark: "#74746F"
   ink: "#141413"
   ink-dark: "#EEEDEA"
   ink-2: "#2B2B2A"
@@ -48,7 +53,8 @@ colors:
   topo: "#2B2B2A"
   topo-dark: "#E1E0DA"
 typography:
-  # Nur die größte Überschrift (display, H1) und die Wortmarke: Google Sans Flex, opsz 18.
+  # Rollennamen = SymairaTypography (Apple) in kebab-case, damit Web und Apple dieselben Namen nutzen.
+  # Nur die größten Überschriften (display, title) und die Wortmarke: Google Sans Flex, opsz 18.
   # Alle übrigen Texte: Figtree (siehe Abschnitt Typography).
   display:
     fontFamily: Google Sans Flex
@@ -56,6 +62,12 @@ typography:
     fontWeight: 700
     lineHeight: 1.2
     letterSpacing: "-0.025em"
+  title:
+    fontFamily: Google Sans Flex
+    fontSize: 20px
+    fontWeight: 700
+    lineHeight: 1.25
+    letterSpacing: "-0.015em"
   stat:
     fontFamily: Figtree
     fontSize: 27px
@@ -68,17 +80,18 @@ typography:
     fontWeight: 700
     lineHeight: 1.3
     letterSpacing: "-0.015em"
-  headline:
+  heading:
     fontFamily: Figtree
     fontSize: 16px
     fontWeight: 700
     lineHeight: 1.3
     letterSpacing: "-0.01em"
-  title:
+  subheading:
     fontFamily: Figtree
     fontSize: 14px
     fontWeight: 650
     lineHeight: 1.35
+  # Nur Web (Eingabebox); Apple hat keine Composer-Komponente.
   body-lg:
     fontFamily: Figtree
     fontSize: 14.5px
@@ -89,16 +102,37 @@ typography:
     fontSize: 13.5px
     fontWeight: 450
     lineHeight: 1.5
+  body-medium:
+    fontFamily: Figtree
+    fontSize: 13.5px
+    fontWeight: 550
+    lineHeight: 1.5
+  body-emphasized:
+    fontFamily: Figtree
+    fontSize: 13.5px
+    fontWeight: 600
+    lineHeight: 1.5
   label:
     fontFamily: Figtree
     fontSize: 12.5px
     fontWeight: 550
     lineHeight: 1.4
+  callout:
+    fontFamily: Figtree
+    fontSize: 12.5px
+    fontWeight: 450
+    lineHeight: 1.5
   caption:
     fontFamily: Figtree
     fontSize: 11.5px
     fontWeight: 450
     lineHeight: 1.4
+  micro:
+    fontFamily: Figtree
+    fontSize: 11.5px
+    fontWeight: 600
+    lineHeight: 1.4
+    letterSpacing: "0.05em"
   mono:
     fontFamily: SF Mono
     fontSize: 12.5px
@@ -118,43 +152,41 @@ spacing:
   xl: 24px
   xxl: 32px
 components:
+  # Seitenaktionen (GUIDELINES CTRL-1): 36pt-Kapsel, 8px + 20px Zeilenhöhe + 8px.
   button-primary:
     backgroundColor: "{colors.ink}"
     textColor: "{colors.surface}"
-    typography: "{typography.label}"
-    rounded: "{rounded.lg}"
-    padding: 12px 20px
+    typography: "{typography.body-emphasized}"
+    rounded: "{rounded.pill}"
+    padding: 8px 20px
   button-primary-dark:
     backgroundColor: "{colors.ink-dark}"
     textColor: "{colors.surface-dark}"
-    rounded: "{rounded.lg}"
+    rounded: "{rounded.pill}"
+  # Deckende Fassung: Web, „Transparenz reduzieren“ und Systeme vor macOS/iOS 26.
+  # Apple nutzt sonst natives Liquid Glass in derselben Geometrie (UI-Katalog E02).
   button-secondary:
     backgroundColor: "{colors.raised}"
-    borderColor: "{colors.line}"
+    borderColor: "{colors.control-outline}"
     textColor: "{colors.ink}"
-    typography: "{typography.label}"
-    rounded: "{rounded.lg}"
-    padding: 12px 20px
+    typography: "{typography.body-emphasized}"
+    rounded: "{rounded.pill}"
+    padding: 8px 20px
   button-secondary-dark:
     backgroundColor: "{colors.raised-dark}"
+    borderColor: "{colors.control-outline-dark}"
     textColor: "{colors.ink-dark}"
-  segment-selected:
-    backgroundColor: "{colors.selected}"
-    textColor: "{colors.on-selected}"
-    typography: "{typography.label}"
-    rounded: "{rounded.md}"
-  segment-selected-dark:
-    backgroundColor: "{colors.selected-dark}"
-    textColor: "{colors.on-selected-dark}"
-  segment-rail:
+  input:
     backgroundColor: "{colors.raised}"
-    borderColor: "{colors.line}"
-    textColor: "{colors.ink-2}"
-    rounded: "{rounded.lg}"
-    padding: 4px
-  segment-rail-dark:
+    borderColor: "{colors.control-outline}"
+    textColor: "{colors.ink}"
+    typography: "{typography.body}"
+    rounded: "{rounded.md}"
+    padding: 8px 12px
+  input-dark:
     backgroundColor: "{colors.raised-dark}"
-    textColor: "{colors.ink-2-dark}"
+    borderColor: "{colors.control-outline-dark}"
+    textColor: "{colors.ink-dark}"
   switch-on:
     backgroundColor: "{colors.selected}"
     textColor: "{colors.on-selected}"
@@ -167,7 +199,7 @@ components:
     textColor: "{colors.ink-2}"
     typography: "{typography.label}"
     rounded: "{rounded.pill}"
-    padding: 6px 14px
+    padding: 4px 12px
   pill-dark:
     backgroundColor: "{colors.surface-dark}"
     textColor: "{colors.ink-2-dark}"
@@ -205,7 +237,7 @@ components:
     backgroundColor: "{colors.surface}"
     textColor: "{colors.ink}"
     rounded: "{rounded.lg}"
-    padding: 14px 16px
+    padding: 16px
   card-dark:
     backgroundColor: "{colors.surface-dark}"
     textColor: "{colors.ink-dark}"
@@ -214,7 +246,7 @@ components:
     textColor: "{colors.ink}"
     typography: "{typography.body}"
     rounded: "{rounded.xl}"
-    padding: 11px 16px
+    padding: 12px 16px
   user-bubble-dark:
     backgroundColor: "{colors.raised-dark}"
     textColor: "{colors.ink-dark}"
@@ -223,7 +255,7 @@ components:
     textColor: "{colors.ink}"
     typography: "{typography.body-lg}"
     rounded: "{rounded.xl}"
-    padding: 14px 12px 10px 18px
+    padding: 16px 12px 8px 16px
   composer-dark:
     backgroundColor: "{colors.surface-dark}"
     textColor: "{colors.ink-dark}"
@@ -252,18 +284,19 @@ components:
   alert-critical:
     backgroundColor: "{colors.critical-soft}"
     textColor: "{colors.critical}"
-    typography: "{typography.title}"
+    typography: "{typography.subheading}"
     rounded: "{rounded.lg}"
-    padding: 16px 18px
+    padding: 12px
   alert-critical-dark:
     backgroundColor: "{colors.critical-soft-dark}"
     textColor: "{colors.critical-dark}"
+  # Apple: .symairaButtonStyle(.destructive), Geometrie wie button-primary (GUIDELINES ACTION-4).
   button-danger:
     backgroundColor: "{colors.critical}"
     textColor: "{colors.on-critical}"
-    typography: "{typography.label}"
-    rounded: "{rounded.lg}"
-    padding: 9px 16px
+    typography: "{typography.body-emphasized}"
+    rounded: "{rounded.pill}"
+    padding: 8px 20px
   button-danger-dark:
     backgroundColor: "{colors.critical-dark}"
     textColor: "{colors.on-critical-dark}"
@@ -283,9 +316,9 @@ components:
   alert-warning:
     backgroundColor: "{colors.surface}"
     textColor: "{colors.warning}"
-    typography: "{typography.title}"
+    typography: "{typography.subheading}"
     rounded: "{rounded.lg}"
-    padding: 16px 18px
+    padding: 12px
   alert-warning-dark:
     backgroundColor: "{colors.surface-dark}"
     textColor: "{colors.warning-dark}"
@@ -323,7 +356,8 @@ bleiben im Produkt. Native Zuordnung und Migrationsgrenzen stehen in
 
 Jede Rolle gibt es hell (Standardwert) und dunkel (Suffix `-dark`). Code nutzt immer die Rolle, nie den Hexwert.
 
-- **canvas / sidebar / surface / raised:** Graustufen mit minimaler Wärme. Von hinten nach vorne: canvas, sidebar, surface (Karten, Eingabebox), raised (Nutzer-Blase, Hover). Hell ist `raised` gleich `canvas`: Sekundär-Buttons und Segmentschienen tragen dort eine 1px-Kontur in `line`, sonst verschwinden sie direkt auf der Fläche. Dunkel entfällt die Kontur.
+- **canvas / sidebar / surface / raised:** Graustufen mit minimaler Wärme. Von hinten nach vorne: canvas, sidebar, surface (Karten, Eingabebox), raised (Nutzer-Blase, Hover). Hell ist `raised` gleich `canvas`: deckende Bedienelemente (Textfelder, Sekundär-Button ohne Glas) tragen deshalb in beiden Modi eine 1px-Kontur in `control-outline`.
+- **line / control-outline:** zwei Konturstärken nach Practical UI. `line` ist die ruhige, dekorative Linie für Karten, Trenner und Tabellen (unter 3:1, bewusst). `control-outline` begrenzt Bedienelemente und erreicht mindestens 3:1 gegen `raised`, `surface` und `canvas` (WCAG 1.4.11). „Kontrast erhöhen“ verstärkt beide.
 - **ink / ink-2 / ink-3:** Haupttext, Sekundärtext, Metadaten. Selbst `ink-3` erreicht auf canvas mindestens 4.5:1. Noch blasseren Text gibt es nicht.
 - **primary (Champagner `#E0D2BA`):** Markenakzent, in beiden Modi derselbe Wert. Auf hellen Flächen erreicht er nur 1,1 bis 1,3:1 und ist dort **nie** ein Zustandsmerkmal.
 - **selected / on-selected:** Auswahlzustand für Segmente, Schalter (an), Häkchen und Reglergriffe. Dunkel: Champagner mit dunkler Schrift. Hell: Tinte `#141413` mit heller Schrift (Variante A, 15,7:1 gegen die Schiene). Code nutzt immer `selected`, nie `primary`, für Zustände.
@@ -342,7 +376,10 @@ Jede Rolle gibt es hell (Standardwert) und dunkel (Suffix `-dark`). Code nutzt i
 - **Dunkelmodus:** Kleine graue Sekundärtexte (Captions, Sekundärtext neben Bedienelementen) bekommen im Dunkelmodus +0.01em Laufweite, damit helle Glyphen auf dunklem Grund nicht zusammenlaufen. Apple: `SymairaTextRole.secondary`/`.caption` über `.symairaText(_:)`. Web: `--sym-tracking-quiet` (hell 0, dunkel 0.01em) in `.sym-type-caption` und `.sym-text-quiet`.
 - **Antialiasing:** Graustufen statt Subpixel. Web: `tokens.css` setzt `-webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale` auf `body`. Apple: macOS (seit 10.14) und iOS glätten Schrift bereits in Graustufen; nichts deaktivieren (`CGContext.setShouldAntialias(false)` o. ä. ist verboten).
 - **Ziffern** in Messwerten tabellarisch (`tnum` bzw. `.monospacedDigit()`).
-- **Dynamic Type:** Größen skalieren relativ zum zugehörigen Textstil.
+- **Rollen:** Die Namen im Front Matter sind die Apple-Rollen in kebab-case (`body-emphasized` = `SymairaTypography.bodyEmphasized`). `display` setzt den Seitentitel von `SymairaPage`, `title` Überschriften in Onboarding und Sheets. `micro` ist das Gruppenlabel (`.sectionLabel`, Versalien vom Aufrufer). `body-lg` gibt es nur im Web (Eingabebox). Monospace nutzt auf Apple die System-Monospace in Textstilgröße (`mono` = `.body`, `monoSmall` = `.caption`) mit Systemzeilenabstand.
+- **Zeilenhöhe:** Die `lineHeight`-Werte gelten auf allen Plattformen. Apple setzt sie über `.font(role)` bzw. `.symairaText(_:)` als zusätzlichen Zeilenabstand über der natürlichen Zeilenhöhe der Schrift (Figtree 1,2, Google Sans Flex 1,25). Einzeilige Texte und Bedienelemente bleiben gleich hoch.
+- **Zeilenlänge:** Fließtext höchstens etwa 75 Zeichen (Refactoring UI 45–75, Practical UI 40–80). Apple: `SymairaMetrics.proseMeasure` (440pt, Figtree 13,5pt ≈ 71–73 Zeichen); die Seitenspalte `readableContentWidth` trägt Karten, Formulare und Listen, nicht Absätze.
+- **Dynamic Type:** Größen skalieren relativ zum zugehörigen Textstil. Auf iOS sind alle Rollen um 17/13,5 größer (`SymairaMetrics.textScale`), damit Fließtext bei Standardgröße die 17pt der Apple-Richtlinien erreicht; tvOS nutzt den Plattformfaktor 2.
 - **Keine Symbole als Schriftzeichen.** Die Schriften enthalten nicht jedes Symbol (Google Sans Flex etwa kein ⓘ → ✓ ✕ ⌥); der Browser würde eine Ersatzschrift einsetzen. Symbole sind SVG bzw. auf Apple-Plattformen `SymairaIcon`.
 - Web-Fallback-Ketten: `--sym-font` `"Google Sans Flex", -apple-system, BlinkMacSystemFont, system-ui, sans-serif`; `--sym-font-text` `"Figtree", -apple-system, BlinkMacSystemFont, system-ui, sans-serif`.
 
@@ -352,8 +389,8 @@ Jede Rolle gibt es hell (Standardwert) und dunkel (Suffix `-dark`). Code nutzt i
 - Sidebar: Standardbreite 272pt, per Trennkante auf 224–360pt verstellbar, eingeklappt eine 64pt-Iconleiste. Die 10pt breite Ziehfläche zeigt beim Hover den horizontalen Größenänderungs-Cursor. Unter 144pt vorgeschlagener Breite klappt die Leiste ein; Ziehen nach rechts öffnet sie wieder. Der Toolbar-Button mit ⌃⌘S bleibt erhalten und merkt sich die gewählte Breite.
 - Bei ausgeklappter Sidebar bleiben mindestens 568pt für den Inhalt. Engere Fenster verwenden vorübergehend die Iconleiste. Breitenänderungen dürfen Inhalt, Entwürfe, Scrollposition und laufende Bedienung nicht neu erzeugen; Schutzzonen folgen dem tatsächlichen Layout.
 - Prosa bleibt in einer lesbaren, zentrierten Spalte; Tabellen, Grids und Dashboards dürfen einen breiteren produktspezifischen Inhaltsrahmen nutzen. Native Toolbar-Höhen werden nicht durch eine zweite feste Kopfzeile verdoppelt.
-- Großzügige Innenabstände: Inhaltsaktionen 20pt horizontal, Pills 6×14px, Sidebar-Einträge 8×12px, Eingabebox 14/12/10/18px.
-- Abstandsraster in 4px-Schritten, gängig sind 8, 12, 16, 20 und 24px.
+- Großzügige Innenabstände: Inhaltsaktionen 20pt horizontal, Pills 4×12px, Sidebar-Einträge 8×12px, Karten 16px, Eingabebox 16/12/8/16px.
+- Abstandsraster in 4px-Schritten, gängig sind 8, 12, 16, 20 und 24px. Auch Komponenten-Innenabstände liegen auf dem Raster.
 - Touch-Ziele mindestens 44pt auf iOS. Primär-/Sekundäraktionen auf macOS 36pt (Seitenaktionen) bzw. 28pt (Werkbank, GUIDELINES CTRL-1), mit identischer Geometrie und Schrift in beiden Rollen. Ein Zustandswechsel darf den Button nicht schmaler oder flacher machen; für wechselnde Beschriftungen eine stabile Label-Fläche reservieren.
 
 ## Elevation & Depth
@@ -371,20 +408,22 @@ Zwei Ebenen mit getrennten Aufgaben: **Liquid Glass ist die Bedienschicht, Liqui
 
 ## Shapes
 
-Radien: 6px für Code-Inline, 10px für Einträge, Eingabefelder, Segmente und Toolbar-Buttons, 14px für Inhaltsaktionen (Primär und Sekundär), Karten und Segmentschienen, 20px für Eingabebox, Blasen und das Hauptpanel sowie 999px für Pills und Chips. Icons sind die eigenen Symaira-Icons aus `Brand/Icons/icons.svg` (Apple: `SymairaIcon`): Linien mit 2.0 Strichstärke, runden Enden und 16–17px Größe. Der Senden-Pfeil hat 2.4. SF Symbols sind nur eine Übergangslösung, solange für eine Bedeutung noch kein Symaira-Icon existiert; dann mit Gewicht `.semibold` (`SymairaTokens.iconWeight`), und das fehlende Icon wird in `icons.svg` ergänzt.
+Radien: 6px für Code-Inline, 10px für Einträge, Eingabefelder und Hinweise, 14px für Karten, 20px für Eingabebox, Blasen und das Hauptpanel sowie 999px (Kapsel) für Seitenaktionen (Primär, Sekundär, Destruktiv; GUIDELINES CTRL-1), Pills und Chips. Native Controls (Segmente, Schalter, Werkbank-Buttons, Glas-Icon-Buttons) bringen ihre Form vom System mit. Icons sind die eigenen Symaira-Icons aus `Brand/Icons/icons.svg` (Apple: `SymairaIcon`): Linien mit 2.0 Strichstärke, runden Enden und 16–17px Größe. Der Senden-Pfeil hat 2.4. SF Symbols sind nur eine Übergangslösung, solange für eine Bedeutung noch kein Symaira-Icon existiert; dann mit Gewicht `.semibold` (`SymairaTokens.iconWeight`), und das fehlende Icon wird in `icons.svg` ergänzt.
 
 ## Components
 
 Siehe `components:` oben. Varianten sind eigene Einträge (`button-primary-dark`). Fokus wird immer mit einem 2px-Ring in `focus` und 2px Abstand dargestellt (`:focus-visible`), nie nur durch eine Farbänderung.
 
 - **Native Controls (UI-Katalog 2026-11-25):** Apple nutzt für Segmente, Schalter, Menüs, Regler, Formulare, Fortschritt, Sheets und Dialoge die nativen Controls; Segmente und Schalter mit Tint `selected`, Regler mit `ink`. Im Web tragen native HTML-Elemente die Symaira-Grundlage (Figtree, Tokenfarben, `accent-color: selected`); Buttons, Menü, Regler, Hinweis, Leerzustand, Sheet und Aufklapper sind voll gestaltet. Entscheidungen je Element: `../ui-catalog/ui-catalog.md`.
-- **Auswahl** (gestaltete Varianten) über Füllung (`selected`) plus Gewicht 700, ohne Rahmen oder Schatten. Segmentschiene `raised`, 14px Radius, 4px Innenabstand.
+- **Segmente:** auf Apple der native `Picker(.segmented)` mit Tint `selected` (`SymairaSegmentedControl`), im Web eine native Radiogruppe (UI-Katalog E07). Eine eigene Segmentschiene gibt es nicht mehr.
 - **Navigation:** Auswahl über `selection`-Fläche und Gewicht 700 in beiden Modi; die Fläche allein ist kein Zustandsmerkmal.
 - **Schalter:** nativ (Apple `Toggle(.switch)`, Web `<input type=checkbox switch>`), an = `selected`. Trefferfläche mindestens 44px auf Touch-Geräten.
 - **Messwerte** in `ink`, unabhängig davon, ob sie sich ändern. Champagner gehört zu Auswahl, aktiven Bedienelementen und Fokus.
 - **Balken und Regler:** die leere Schiene ist eine ruhige Rinne in `raised` mit 1px-Kontur in `line`, die Füllung ist `ink`, in beiden Modi. So liest sich 0 % nie als voller Balken; `ink-3` ist eine Textrolle und für Schienen zu hell. Speicher-, Nutzungs- und Prozessbalken verwenden dieselben Rollen wie native Regler. Warnungen bleiben als Text/Symbol sichtbar.
 - **Darstellung:** `System / Light / Dark` steht nur im Einstellungsfenster, neben den übrigen Einstellungen. Das Zahnrad in der Toolbar öffnet dieses Fenster direkt, ohne Zwischenmenü; eine Darstellungsauswahl in der Toolbar gibt es nicht. „System“ entfernt die Vorgabe und folgt macOS weiter live, statt dessen aktuellen Zustand einzufrieren. Produkte behalten ihre bisherigen Speicherschlüssel; passive Vorschauen schreiben keine Einstellungen.
-- **Karten:** `surface` mit 1px `line`, 14px Radius. Die Fläche hebt sich nur schwach vom Hintergrund ab (1,1:1); die Linie trägt die Abgrenzung.
+- **Karten:** `surface` mit 1px `line`, 14px Radius, 16px Innenabstand. Die Fläche hebt sich nur schwach vom Hintergrund ab (1,1:1); die Linie trägt die Abgrenzung. Karten sind keine Bedienelemente und bleiben bei `line`.
+- **Textfelder** außerhalb von Formularen (`input`): `raised` mit 1px `control-outline`, 10px Radius; Fokus 2px `focus`.
+- **Destruktive Aktion** (`button-danger`): deckende `critical`-Kapsel mit `on-critical`-Schrift, Geometrie der Primäraktion. Für den bestätigenden Schritt oder die eine destruktive Seitenaktion; Zeilenaktionen bleiben im Kontextmenü.
 
 ## Liquid Topography (Topografie-Ebene)
 
@@ -440,4 +479,4 @@ Die Hintergrundebene ist ein Shader. Im Web läuft er über WebGL2 (`web/symaira
 - Figtree für alle Texte außer den größten Überschriften ist neu (15.11.2026) und noch nicht im vollständigen Cockpit-Piloten abgenommen; die von Inter übernommenen Gewichte 450/550/600 sind ein Startwert.
 - Google Sans Flex ist in SwiftUI und im Web nur in Chrome (Pilot) geprüft. Safari/WebKit-Darstellung und VoiceOver bleiben offen.
 - Die Navigationsauswahl erreicht als Fläche weniger als 3:1 und wird zusätzlich über Fettdruck markiert.
-- Konturen von Bedienelementen liegen bewusst unter WCAG 1.4.11 (3:1), damit die Flächen ruhig bleiben: `line` erreicht auf `surface` 1,68:1 hell und 1,39:1 dunkel; im Dunkelmodus hebt sich die `raised`-Füllung eines Feldes nur etwa 1,3:1 von `surface` ab. „Kontrast erhöhen“ verstärkt die Konturen. Ob `line` angehoben wird, ist offen.
+- `line` liegt bewusst unter 3:1 (1,68:1 hell, 1,39:1 dunkel auf `surface`), weil es nur noch Karten, Trenner und Tabellen begrenzt. Bedienelemente tragen `control-outline` (mindestens 3:1, entschieden 2026-11-27).

@@ -85,7 +85,7 @@ Werden durch native Controls ersetzt (deprecaten, nicht sofort löschen):
 - `SymairaSheetScaffold` → `.sheet` + `NavigationStack` + Toolbar-Rollen (E26); Bestätigung → `.alert` (E25)
 - `SymairaAppearancePicker` → `Picker(.segmented)` (E29)
 - `SymairaStatTile` → `Gauge` mit Wert (E33); `SymairaStatusLabel` → Punkt + Text (E22); `SymairaBadge` → Kapsel mit Tint (E21)
-- Destruktiv: `.borderedProminent` + `.tint(.red)` (E03); Regler: `Slider` + `.tint(SymairaTokens.ink)` (E10)
+- Destruktiv: prominentes Rot als `.symairaButtonStyle(.destructive)` (E03, seit 2026-11-27, vorher `.borderedProminent` + `.tint(.red)`); Regler: `Slider` + `.tint(SymairaTokens.ink)` (E10)
 
 Web: W1 = natives HTML-Element (Browser-Standard), W2 = natives Element mit Symaira-Tokens (`web/variants.css`).
 
@@ -102,7 +102,13 @@ Web: W1 = natives HTML-Element (Browser-Standard), W2 = natives Element mit Syma
 - **Drei Control-Ebenen (GUIDELINES CTRL-1):** Navigation (Seitenleiste, Fenster-Toolbar, animierte Icons), Seitenaktionen (Seiten-Toolbar, Sheet-Footer, leere Zustände: eine Höhe, 36-pt-Kapseln, Glass) und Werkbank (Inhalt, Inspector, Panels, Formularzeilen: native solide Controls in `.large`, 28 pt, kein Glass). `SymairaPage` setzt Seite und Werkbank selbst.
 - **E02 → B:** Sekundär-Buttons sind natives, interaktives Liquid Glass in Symaira-Geometrie (36-pt-Kapsel, Figtree); Reduce Transparency und ältere Systeme behalten die deckende `raised`-Fläche. Einziger deckender Symaira-Button pro Screen bleibt der Primär-Button.
 - **Glass bleibt neutral:** `.toolbar` und `.secondary` ignorieren einen fensterweiten `.tint(SymairaTokens.selected)`; der Tint färbt nur Auswahlzustände (Segmente, Schalter).
-- **Toolbar-Zeilen:** `.controlSize(.extraLarge)` macht Segmente, Menüs, Schalter und Icon-Buttons zu 36-pt-Kapseln neben den 40-pt-Aktionen (GUIDELINES FORM-9); Sheet-Footer: Abbrechen `.secondary`, bestätigendes Verb `.primary` (ACTION-5).
+- **Toolbar-Zeilen:** `.controlSize(.extraLarge)` macht Segmente, Menüs, Schalter und Icon-Buttons zu 36-pt-Kapseln, so hoch wie die Seitenaktionen (GUIDELINES FORM-9); Sheet-Footer: Abbrechen `.secondary`, bestätigendes Verb `.primary` (ACTION-5).
+
+## Revision 2026-11-27 (Designcheck nach der UI-Literatur, #512 bis #516)
+
+- **E03 bleibt B (prominentes Rot), aber aus Tokens:** `.symairaButtonStyle(.destructive)` zeichnet `critical` mit `on-critical`-Schrift in der Geometrie der Primäraktion (4,81:1 hell, 8,24:1 dunkel). `.tint(.red)` setzte weiße Schrift auf Systemrot (3,55:1 bzw. 3,41:1) und verstieß gegen COLOR-1; `gui-review.py` meldet es weiter.
+- **Kontur von Bedienelementen:** neue Rolle `control-outline` (mindestens 3:1) für Symaira-Textfelder (E13, E14) und den deckenden Sekundär-Fallback (E02); Karten und Trenner bleiben bei `line`.
+- **Text:** Rollen tragen die Zeilenhöhen der Token-Spec (Fließtext 1,5), Fließtext bleibt in `SymairaMetrics.proseMeasure` (440 pt, etwa 72 Zeichen), und iOS skaliert alle Rollen um 17/13,5.
 
 ## Umsetzungshinweise
 

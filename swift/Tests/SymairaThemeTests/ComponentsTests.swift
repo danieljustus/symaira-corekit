@@ -98,12 +98,16 @@ final class ComponentsTests: XCTestCase {
         XCTAssertNotEqual(SymairaButtonRole.primary, SymairaButtonRole.secondary)
         XCTAssertNotEqual(SymairaButtonRole.primary, SymairaButtonRole.toolbar)
         XCTAssertNotEqual(SymairaButtonRole.secondary, SymairaButtonRole.toolbar)
+        XCTAssertNotEqual(SymairaButtonRole.primary, SymairaButtonRole.destructive)
     }
 
     func testAdaptiveButtonRendersAllRoles() {
         ThemeRenderHost.render(Button("Action") {}.symairaButtonStyle(.primary))
         ThemeRenderHost.render(Button("Action") {}.symairaButtonStyle(.secondary))
         ThemeRenderHost.render(Button("Action") {}.symairaButtonStyle(.toolbar))
+        ThemeRenderHost.render(Button("Action", role: .destructive) {}.symairaButtonStyle(.destructive))
+        ThemeRenderHost.render(
+            Button("Action", role: .destructive) {}.symairaButtonStyle(.destructive).symairaControlTier(.workbench))
     }
 
     #if !os(tvOS)
@@ -151,6 +155,8 @@ final class ComponentsTests: XCTestCase {
                         .onGeometryChange(for: CGFloat.self, of: { $0.size.height }) { heights["primary"] = $0 }
                     Button("Probe") {}.symairaButtonStyle(.secondary)
                         .onGeometryChange(for: CGFloat.self, of: { $0.size.height }) { heights["secondary"] = $0 }
+                    Button("Löschen", role: .destructive) {}.symairaButtonStyle(.destructive)
+                        .onGeometryChange(for: CGFloat.self, of: { $0.size.height }) { heights["destructive"] = $0 }
                     SymairaSegmentedControl("Ansicht", selection: .constant(0), options: [(0, "Audio"), (1, "Text")])
                         .onGeometryChange(for: CGFloat.self, of: { $0.size.height }) { heights["segmented"] = $0 }
                     TextField("Name", text: .constant("")).textFieldStyle(SymairaTextFieldStyle())
@@ -162,10 +168,12 @@ final class ComponentsTests: XCTestCase {
             let action = page ? SymairaMetrics.contentActionHeight : tool
             XCTAssertEqual(try XCTUnwrap(heights["primary"]), action, accuracy: 0.5, "\(tier)")
             XCTAssertEqual(try XCTUnwrap(heights["secondary"]), action, accuracy: 0.5, "\(tier)")
+            XCTAssertEqual(try XCTUnwrap(heights["destructive"]), action, accuracy: 0.5, "\(tier)")
             XCTAssertEqual(
                 try XCTUnwrap(heights["segmented"]), page ? SymairaMetrics.segmentedControlHeight : tool,
                 accuracy: 0.5, "\(tier)")
-            if !page { XCTAssertEqual(try XCTUnwrap(heights["field"]), tool, accuracy: 0.5) }
+            // A Symaira field in a page toolbar is as high as the page actions beside it (#514).
+            XCTAssertEqual(try XCTUnwrap(heights["field"]), action, accuracy: 0.5, "\(tier)")
         }
     }
     #endif
@@ -173,7 +181,7 @@ final class ComponentsTests: XCTestCase {
     /// ACTION-2: the glass secondary keeps the opaque primary's height, so a row can mix them.
     func testSecondaryGlassKeepsPrimaryHeight() throws {
         var heights: [SymairaButtonRole: CGFloat] = [:]
-        for role in [SymairaButtonRole.primary, .secondary] {
+        for role in [SymairaButtonRole.primary, .secondary, .destructive] {
             ThemeRenderHost.render(
                 Button("Export…") {}
                     .symairaButtonStyle(role)
@@ -182,6 +190,7 @@ final class ComponentsTests: XCTestCase {
         let primary = try XCTUnwrap(heights[.primary])
         XCTAssertEqual(primary, SymairaMetrics.contentActionHeight, accuracy: 0.5)
         XCTAssertEqual(try XCTUnwrap(heights[.secondary]), primary, accuracy: 0.5)
+        XCTAssertEqual(try XCTUnwrap(heights[.destructive]), primary, accuracy: 0.5)
     }
 
     func testContentActionsStillFillAvailableWidth() throws {
@@ -258,11 +267,14 @@ final class ComponentsTests: XCTestCase {
 
 @MainActor
 final class SelectionControlsTests: XCTestCase {
-    /// Light `raised` equals `canvas`; without an outline secondary controls vanish on the page.
-    func testRaisedControlsAreOutlinedOnlyWhereRaisedMatchesCanvas() {
+    /// Light `raised` equals `canvas`, and dark `raised` sits at 1.3:1 on `surface`: opaque
+    /// controls carry the 3:1 control outline in both appearances (COLOR-4, #515), not `line`.
+    func testRaisedControlsCarryTheControlOutlineInBothAppearances() {
         XCTAssertEqual(SymairaTheme.surfaceRaised(for: .light), Color(hex: "EEEDEA"))
-        XCTAssertEqual(SymairaTheme.raisedOutline(for: .light), SymairaTheme.line(for: .light))
-        XCTAssertEqual(SymairaTheme.raisedOutline(for: .dark), .clear)
+        for scheme in [ColorScheme.light, .dark] {
+            XCTAssertEqual(SymairaTheme.raisedOutline(for: scheme), SymairaTheme.controlOutline(for: scheme))
+            XCTAssertNotEqual(SymairaTheme.raisedOutline(for: scheme), SymairaTheme.line(for: scheme))
+        }
     }
 
     #if os(macOS)

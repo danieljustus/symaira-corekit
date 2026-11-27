@@ -42,7 +42,8 @@ LINE_RULES = [
         "error",
         r"\b(foregroundStyle|foregroundColor|background|fill|tint|stroke|border)\("
         r"\s*(Color\.)?\.?(red|green|orange|yellow|blue|purple|pink|gray|white|black)\b",
-        "raw system color; use SymairaTokens.ink/positive/warning/critical",
+        "raw system color; use SymairaTokens.ink/positive/warning/critical"
+        " (a destructive button: .symairaButtonStyle(.destructive))",
     ),
     (
         "TYPE-1",
@@ -288,6 +289,8 @@ struct Fixture: View {
         SymairaFilterMenu("Mode", selection: $mode, options: options)
         Picker("Mode", selection: $mode) { Text("A").tag(0) }.pickerStyle(.segmented)
         SymairaSegmentedControl("Mode", selection: $mode, options: options)
+        Button("Delete Request", role: .destructive) {}.symairaButtonStyle(.destructive)
+        Button("Delete Request", role: .destructive) {}.buttonStyle(.borderedProminent).tint(.red)
     }
 }
 """
@@ -296,7 +299,8 @@ struct Fixture: View {
         "COLOR-1", "COPY-3", "ICON-1", "TYPE-1", "STATE-1", "ACTION-1", "MOTION-4", "ICON-2", "NATIVE-1", "FORM-5",
     }
     got = {item["rule"] for item in found}
-    clean_lines = {16, 17, 18, 21}
+    clean_lines = {16, 17, 18, 21, 22}
+    destructive_red = [item for item in found if item["line"] == 23 and item["rule"] == "COLOR-1"]
     leaked = [item for item in found if item["line"] in clean_lines]
     comment_hits = [item for item in found if item["line"] == 3]
     project = [
@@ -311,6 +315,8 @@ struct Fixture: View {
         problems.append(f"clean lines flagged: {leaked}")
     if comment_hits:
         problems.append(f"comment line flagged: {comment_hits}")
+    if not destructive_red:
+        problems.append("tint(.red) on a destructive button not flagged as COLOR-1")
     same_line = 'ProgressView().controlSize(.small).accessibilityLabel(String(localized: "Syncing…"))\n}\n'
     if any(item["rule"] == "STATE-1" for item in review_text(same_line, "same-line.swift")):
         problems.append("same-line labelled ProgressView() flagged as STATE-1")

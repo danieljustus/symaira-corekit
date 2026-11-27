@@ -38,6 +38,16 @@ public enum SymairaFont {
             }
         }
 
+        /// The typeface's own line height as a multiple of the point size (hhea and typo
+        /// metrics: Figtree 950 + 250 on 1000 units, Google Sans Flex 1932 + 572 on 2000).
+        /// A role's `lineHeight` adds the difference as line spacing.
+        var naturalLineHeight: CGFloat {
+            switch self {
+            case .brand: 1.252
+            case .text: 1.2
+            }
+        }
+
         /// Fixed optical size used for every role of this family; `nil` when
         /// the typeface has no optical size axis.
         public var opticalSize: Double? {

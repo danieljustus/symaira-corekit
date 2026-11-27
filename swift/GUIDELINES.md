@@ -43,7 +43,8 @@ consumes `symaira-corekit` through an exact pin.
   never a text color or a state signal.
 - **NN-4** One primary action per screen (`.symairaButtonStyle(.primary)`),
   the only opaque Symaira button; every other action is secondary (native
-  Liquid Glass) or a toolbar control.
+  Liquid Glass) or a toolbar control. Where the screen's job is destructive, the
+  opaque action is `.symairaButtonStyle(.destructive)` instead (ACTION-4).
 - **NN-5** Every screen that loads data has loading, empty, error and
   unreachable states; none of them is a blank area or a spinner without words.
 - **NN-6** Status is text or icon plus color, never color alone
@@ -110,8 +111,12 @@ Six lines, kept in the pull request or issue:
 - **LAYOUT-1** Use `SymairaPage` for a stable title in
   `.symairaText(.display)` and a one-line subtitle, both `.topoProtected()`.
   The subtitle may be omitted; its line remains reserved to align controls.
-- **LAYOUT-2** Prose stays within `SymairaMetrics.readableContentWidth`;
-  dashboards and tables may use a wider product-owned budget.
+- **LAYOUT-2** Running text (paragraphs, notices, empty-state and onboarding
+  copy) stays within `SymairaMetrics.proseMeasure` (440 pt, about 71 to 73
+  characters of body text; the literature asks for 45 to 75).
+  `SymairaMetrics.readableContentWidth` (760 pt) is the page column for cards,
+  forms and lists, not a measure for text; dashboards and tables may use a wider
+  product-owned budget.
 - **LAYOUT-3** Content that carries text sits on `.symairaCard()`; sections
   inside a card are separated by `SymairaFormDivider()` and a
   `.sectionLabel`, not by a second card.
@@ -169,8 +174,8 @@ Six lines, kept in the pull request or issue:
   | Tier | Where | Controls |
   | --- | --- | --- |
   | Navigation | Sidebar, window toolbar (the workspace shell) | `SymairaNavigationButton` with animated Symaira icons, glass toolbar buttons |
-  | Page | `SymairaPage` toolbar, sheet footer, empty-state and error actions | One 36 pt capsule height: primary (opaque `ink`), secondary (glass), extra-large segments, menus and glass icon buttons |
-  | Workbench | `SymairaPage` content: inspectors, panels, lists, cards, form rows | Native solid controls in `.large` (28 pt, `SymairaMetrics.workbenchControlHeight`): `borderedProminent` primary in `ink`, `bordered` secondary and icon buttons, 28 pt text fields; no glass |
+  | Page | `SymairaPage` toolbar, sheet footer, empty-state and error actions | One 36 pt capsule height: primary (opaque `ink`), destructive (opaque `critical`), secondary (glass), Symaira text fields, extra-large segments, menus and glass icon buttons |
+  | Workbench | `SymairaPage` content: inspectors, panels, lists, cards, form rows | Native solid controls in `.large` (28 pt, `SymairaMetrics.workbenchControlHeight`): `borderedProminent` primary in `ink` and destructive in `critical`, `bordered` secondary and icon buttons, 28 pt text fields; no glass |
 
   `SymairaPage` sets `.symairaControlTier(.page)` on its toolbar and
   `.symairaControlTier(.workbench)` on its content; `SymairaPageEmpty` and the
@@ -197,7 +202,11 @@ Six lines, kept in the pull request or issue:
 - **ACTION-4** Prefer undo (`UndoManager`, ⌘Z) over confirmation for local,
   reversible deletes; mark the control with `role: .destructive`. A visible
   destructive button is `Button(role: .destructive)` with
-  `.buttonStyle(.borderedProminent).tint(.red)`.
+  `.symairaButtonStyle(.destructive)` (UI catalog E03, prominent red, revised
+  2026-11-27): opaque `critical` with an `on-critical` label in the primary's
+  geometry, 4.5:1 or more in both appearances. Never `.tint(.red)`: the system
+  red puts white labels below 4.5:1 (COLOR-1). Use it for the confirming step or
+  the one destructive page action; row-level deletes stay in the context menu.
 - **ACTION-5** Sheets are native: `.sheet { NavigationStack { Form { … } } }`
   with `ToolbarItem(placement: .cancellationAction)` and
   `.confirmationAction`; the system maps Esc and Return. The cancel button
@@ -240,6 +249,12 @@ Six lines, kept in the pull request or issue:
   `Picker(.menu)` whose first option is the unfiltered default; on/off is
   `Toggle(.switch)` with `.tint(SymairaTokens.selected)`; numbers use
   `Stepper`, dates a compact `DatePicker`, sliders `.tint(SymairaTokens.ink)`.
+- **FORM-6** Settings persist under the product's existing keys; previews and
+  tests write nothing.
+- **FORM-7** Group settings by task (Connection, Configuration, Appearance,
+  About); a section footer explains consequences where they exist.
+- **FORM-8** Onboarding uses `SymairaOnboardingScaffold` with
+  `SymairaOnboardingFlow`; steps are skippable unless they gate the product.
 - **FORM-9** The `SymairaPage` toolbar is the page tier and gets
   `.controlSize(.extraLarge)` from `SymairaPage` itself (CTRL-1): on macOS 26
   its native segments, menus, switches and glass icon buttons become 36 pt
@@ -260,19 +275,13 @@ Six lines, kept in the pull request or issue:
   Symaira controls (`SymairaFormSection`, `SymairaFilterMenu`, `.symairaSwitch`, `SymairaIconButton`,
   `SymairaProgressStyle`, `SymairaLoadingState`, `SymairaSheetScaffold`,
   `SymairaStatTile`) are flagged by `gui-review.py`.
-- **FORM-6** Settings persist under the product's existing keys; previews and
-  tests write nothing.
-- **FORM-7** Group settings by task (Connection, Configuration, Appearance,
-  About); a section footer explains consequences where they exist.
-- **FORM-8** Onboarding uses `SymairaOnboardingScaffold` with
-  `SymairaOnboardingFlow`; steps are skippable unless they gate the product.
 
 ## 8. Color, typography and icons
 
 - **COLOR-1** Use adaptive roles (`SymairaTokens.ink`, `ink2`, `ink3`,
-  `surface`, `raised`, `line`, `positive`, `warning`, `critical`); no
-  `Color(hex:)`, no `.red`, `.green`, `.orange`, no `Color.white` or
-  `Color.black` on surfaces.
+  `surface`, `raised`, `line`, `controlOutline`, `positive`, `warning`,
+  `critical`); no `Color(hex:)`, no `.red`, `.green`, `.orange`, no
+  `Color.white` or `Color.black` on surfaces.
 - **COLOR-2** `selected`, `onSelected` and `focus` carry state; `primary` is
   reserved for the brand accents the shared controls already apply. Glass
   buttons stay neutral: `.symairaButtonStyle(.toolbar)` and `.secondary` ignore
@@ -283,9 +292,11 @@ Six lines, kept in the pull request or issue:
   "Example". There is no informational hue: a message without a status is
   `.neutral` (`ink-2` plus the info icon), the default of `SymairaNotice`;
   `.informative` remains only as a neutral alias.
-- **COLOR-4** In light appearance, opaque controls placed directly on the
-  canvas carry the 1 pt `SymairaTheme.raisedOutline(for:)`; never rely on fill
-  alone. Native glass draws its own edge; its opaque fallback keeps the outline.
+- **COLOR-4** Opaque controls (Symaira text fields, the secondary button
+  without glass) carry a 1 pt `controlOutline` (`SymairaTheme.controlOutline(for:)`,
+  at least 3:1 against `raised`, `surface` and `canvas`) in both appearances;
+  never rely on fill alone. `line` stays the quiet stroke of cards, dividers and
+  tables. Native glass draws its own edge; its opaque fallback keeps the outline.
 - **TYPE-1** Fonts come from `SymairaTypography` roles or `.symairaText(_:)`
   (Google Sans Flex `opsz` 18 only for the wordmark, display and screen titles;
   Figtree for every other text: headings, metrics, running text, labels and
@@ -300,6 +311,10 @@ Six lines, kept in the pull request or issue:
   `.symairaText(.secondary)` or `.symairaText(.caption)`, not `.font(...)` plus
   a muted foreground: the role opens tracking by +0.01em in dark appearance.
   Never disable text antialiasing.
+- **TYPE-5** Wrapped text keeps the line height of its role (DESIGN.md
+  `lineHeight`: body 1.5, caption 1.4), which `.font(role)` and `.symairaText(_:)`
+  apply themselves; single lines and controls keep their height. Do not add
+  `.lineSpacing` to role-styled text.
 - **ICON-1** Icons are `SymairaIcon` cases through `SymairaIconView`,
   `Label(_:symairaIcon:)` and the `icon:` initializers of the shared
   components. An SF Symbol string is acceptable only where no case
@@ -423,6 +438,10 @@ Six lines, kept in the pull request or issue:
   `Label { Text(title) } icon: { Image(symairaIcon:) }`; both bars render only
   `Image`, so `Label(_:symairaIcon:)` shows no icon there (a toolbar shows the
   title instead).
+- **IOS-7** Type roles are `SymairaMetrics.textScale` (17 / 13.5) larger on
+  iOS, so body text is 17 pt at the default Dynamic Type size, as in Apple's
+  guidelines, and every role keeps its ratio to body. Spacing, radii and icon
+  sizes keep the shared scale; never size iOS text by hand to compensate.
 
 tvOS follows the iOS rules unless a TV rule says otherwise:
 
@@ -489,7 +508,7 @@ Run `scripts/check-strings.py` separately for COPY-1 catalog coverage.
   or undo.
 - Champagne text, champagne as a state, gradients, glass behind text, shadows
   on cards, tinted glass buttons, more than one opaque Symaira button per
-  screen.
+  screen, `.tint(.red)` on a destructive button, control boundaries in `line`.
 - SF Symbol strings where a `SymairaIcon` exists; `.font(.system(size:))`;
   hex colors.
 - Settings as a sidebar destination; the appearance control in the toolbar;

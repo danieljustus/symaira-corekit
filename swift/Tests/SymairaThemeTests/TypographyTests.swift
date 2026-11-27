@@ -26,9 +26,87 @@ final class TypographyTests: XCTestCase {
         XCTAssertEqual(SymairaMetrics.platformScale, 1)
         #endif
         XCTAssertEqual(SymairaSpacing.large, 16 * SymairaMetrics.platformScale)
-        XCTAssertEqual(SymairaRadius.card, 16 * SymairaMetrics.platformScale)
+        XCTAssertEqual(SymairaRadius.card, 14 * SymairaMetrics.platformScale)
         XCTAssertEqual(SymairaPageLayout.toolbarHeight, 44 * SymairaMetrics.platformScale)
         XCTAssertEqual(SymairaMetrics.readableContentWidth, 760 * SymairaMetrics.platformScale)
+    }
+
+    /// One radius scale: `SymairaRadius` is the token scale at the platform's size.
+    func testRadiiComeFromTheTokenScale() {
+        XCTAssertEqual(SymairaRadius.control, SymairaTokens.Radius.md * SymairaMetrics.platformScale)
+        XCTAssertEqual(SymairaRadius.card, SymairaTokens.Radius.lg * SymairaMetrics.platformScale)
+        XCTAssertEqual(SymairaRadius.panel, SymairaTokens.Radius.xl * SymairaMetrics.platformScale)
+    }
+
+    /// IOS-7: body text reaches Apple's 17 pt default on iOS; tvOS keeps the platform scale.
+    func testTextScaleReachesTheHIGBodySizeOnIOS() {
+        #if os(iOS)
+        XCTAssertEqual(13.5 * SymairaMetrics.textScale, 17, accuracy: 0.0001)
+        #else
+        XCTAssertEqual(SymairaMetrics.textScale, SymairaMetrics.platformScale)
+        #endif
+    }
+
+    /// Every bundled role matches its `typography` entry in DESIGN.md (family, size, weight,
+    /// line height), so web classes and Apple roles with one name never mean two styles.
+    func testRolesMatchTheTokenSpec() throws {
+        let spec = try String(contentsOf: ThemeTests.tokenSpec, encoding: .utf8)
+        let block = try XCTUnwrap(
+            spec.components(separatedBy: "\ntypography:\n").last?
+                .components(separatedBy: "\nrounded:\n").first)
+        var entries: [String: [String: String]] = [:]
+        var current: String?
+        for line in block.split(separator: "\n") where !line.trimmingCharacters(in: .whitespaces).hasPrefix("#") {
+            let parts = line.trimmingCharacters(in: .whitespaces).split(separator: ":", maxSplits: 1)
+            if line.hasPrefix("    "), let current, parts.count == 2 {
+                entries[current, default: [:]][String(parts[0])] =
+                    parts[1].trimmingCharacters(in: CharacterSet(charactersIn: " \""))
+            } else if line.hasPrefix("  ") {
+                current = String(parts[0])
+            }
+        }
+        let roles: [(String, SymairaFontRole)] = [
+            ("display", SymairaTypography.display), ("title", SymairaTypography.title),
+            ("heading", SymairaTypography.heading), ("subheading", SymairaTypography.subheading),
+            ("body", SymairaTypography.body), ("body-medium", SymairaTypography.bodyMedium),
+            ("body-emphasized", SymairaTypography.bodyEmphasized), ("label", SymairaTypography.label),
+            ("callout", SymairaTypography.callout), ("caption", SymairaTypography.caption),
+            ("micro", SymairaTypography.micro), ("readout", SymairaTypography.readout),
+            ("stat", SymairaTypography.stat),
+        ]
+        for (name, role) in roles {
+            let entry = try XCTUnwrap(entries[name], "DESIGN.md has no typography role \(name)")
+            guard case .bundled(let family, let size, let weight, _) = role.source else {
+                return XCTFail("\(name) must use a bundled font")
+            }
+            XCTAssertEqual(entry["fontFamily"], family == .brand ? "Google Sans Flex" : "Figtree", name)
+            let fontSize = entry["fontSize"].flatMap { Double($0.replacingOccurrences(of: "px", with: "")) }
+            XCTAssertEqual(fontSize, Double(size), name)
+            XCTAssertEqual(Double(entry["fontWeight"] ?? ""), weight, name)
+            XCTAssertEqual(Double(entry["lineHeight"] ?? ""), role.lineHeight.map { Double($0) }, name)
+        }
+    }
+
+    /// LAYOUT-2: running text at the prose measure holds 45 to 75 characters of body text, in
+    /// English and German, at this platform's body size.
+    func testProseMeasureKeepsBodyTextReadable() {
+        SymairaFont.register()
+        let font = SymairaFont.ctFont(size: 13.5 * SymairaMetrics.textScale, weight: 450, family: .text)
+        let samples = [
+            "Symaira keeps your requests in one place. Each request shows its current status, the broker it was sent to and the date of the last reply.",
+            "Symaira hält deine Anfragen an einem Ort zusammen. Jede Anfrage zeigt ihren aktuellen Status, den Datenhändler und das Datum der letzten Antwort.",
+        ]
+        for sample in samples {
+            let line = CTLineCreateWithAttributedString(
+                NSAttributedString(
+                    string: sample, attributes: [NSAttributedString.Key(kCTFontAttributeName as String): font]))
+            let perCharacter = CTLineGetTypographicBounds(line, nil, nil, nil) / Double(sample.count)
+            let characters = Double(SymairaMetrics.proseMeasure) / perCharacter
+            XCTAssertGreaterThanOrEqual(characters, 45, sample)
+            XCTAssertLessThanOrEqual(characters, 75, sample)
+        }
+        // The page column itself is no measure for running text (#512).
+        XCTAssertLessThan(SymairaMetrics.proseMeasure, SymairaMetrics.readableContentWidth)
     }
 
     func testWeightVariantsOfBodyAreDistinct() {
@@ -187,6 +265,23 @@ final class TypographyTests: XCTestCase {
     }
 
     #if os(macOS)
+    /// #512: wrapped body text sits 1.5 × the point size apart; the typeface alone gives 1.2.
+    @MainActor
+    func testWrappedTextKeepsTheTokenLineHeight() throws {
+        SymairaFont.register()
+        let sample = "Erste Zeile des Hinweises\nZweite Zeile des Hinweises"
+        for (role, size, lineHeight) in [
+            (SymairaTypography.body, 13.5, 1.5), (SymairaTypography.caption, 11.5, 1.4),
+        ] as [(SymairaFontRole, CGFloat, CGFloat)] {
+            guard case .bundled(let family, _, let weight, _) = role.source else { return XCTFail("bundled role") }
+            let plain = Font(SymairaFont.ctFont(size: size, weight: weight, family: family))
+            let styled = try XCTUnwrap(ImageRenderer(content: Text(sample).font(role)).cgImage)
+            let natural = try XCTUnwrap(ImageRenderer(content: Text(sample).font(plain)).cgImage)
+            let expected = size * (lineHeight - family.naturalLineHeight)
+            XCTAssertEqual(CGFloat(styled.height - natural.height), expected, accuracy: 1, "\(size) pt")
+        }
+    }
+
     @MainActor
     func testRolesPreserveMacOSRendering() throws {
         SymairaFont.register()

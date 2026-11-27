@@ -8,43 +8,120 @@ import UIKit
 #endif
 
 public enum SymairaTokens {
-    static func adaptive(_ l: (Double, Double, Double), _ d: (Double, Double, Double)) -> Color {
-        #if canImport(AppKit)
-        return Color(
-            nsColor: NSColor(name: nil) { a in
-                let c = a.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? d : l
-                return NSColor(srgbRed: c.0, green: c.1, blue: c.2, alpha: 1)
-            })
-        #else
-        return Color(
-            uiColor: UIColor { t in
-                let c = t.userInterfaceStyle == .dark ? d : l
-                return UIColor(red: c.0, green: c.1, blue: c.2, alpha: 1)
-            })
-        #endif
+    /// Hell- und Dunkelwert einer Farbrolle (sRGB, 0xRRGGBB), 1:1 aus DESIGN.md.
+    public struct Pair: Hashable, Sendable {
+        public let light: Int
+        public let dark: Int
+
+        init(_ light: Int, _ dark: Int) {
+            self.light = light
+            self.dark = dark
+        }
+
+        /// Der feste Wert dieser Rolle in einer Darstellung.
+        public func color(for colorScheme: ColorScheme) -> Color {
+            let c = Self.components(colorScheme == .dark ? dark : light)
+            return Color(.sRGB, red: c.red, green: c.green, blue: c.blue, opacity: 1)
+        }
+
+        /// Folgt der Darstellung des Fensters, in dem die Farbe gezeichnet wird.
+        var adaptive: Color {
+            let (l, d) = (Self.components(light), Self.components(dark))
+            #if canImport(AppKit)
+            return Color(
+                nsColor: NSColor(name: nil) { a in
+                    let c = a.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? d : l
+                    return NSColor(srgbRed: c.red, green: c.green, blue: c.blue, alpha: 1)
+                })
+            #else
+            return Color(
+                uiColor: UIColor { t in
+                    let c = t.userInterfaceStyle == .dark ? d : l
+                    return UIColor(red: c.red, green: c.green, blue: c.blue, alpha: 1)
+                })
+            #endif
+        }
+
+        static func components(_ hex: Int) -> (red: Double, green: Double, blue: Double) {
+            (Double((hex >> 16) & 0xFF) / 255, Double((hex >> 8) & 0xFF) / 255, Double(hex & 0xFF) / 255)
+        }
     }
 
-    public static let primary = adaptive((0.8784, 0.8235, 0.7294), (0.8784, 0.8235, 0.7294))
-    public static let onPrimary = adaptive((0.1020, 0.0941, 0.0784), (0.1020, 0.0941, 0.0784))
-    public static let primarySoft = adaptive((0.8863, 0.8706, 0.8353), (0.1922, 0.1843, 0.1686))
-    public static let selected = adaptive((0.0784, 0.0784, 0.0745), (0.8784, 0.8235, 0.7294))
-    public static let onSelected = adaptive((0.8824, 0.8784, 0.8549), (0.1020, 0.0941, 0.0784))
-    public static let focus = adaptive((0.0784, 0.0784, 0.0745), (0.8784, 0.8235, 0.7294))
-    public static let canvas = adaptive((0.9333, 0.9294, 0.9176), (0.1098, 0.1098, 0.1059))
-    public static let sidebar = adaptive((0.8824, 0.8784, 0.8549), (0.0902, 0.0902, 0.0863))
-    public static let surface = adaptive((0.8824, 0.8784, 0.8549), (0.0784, 0.0784, 0.0745))
-    public static let raised = adaptive((0.9333, 0.9294, 0.9176), (0.1686, 0.1686, 0.1647))
-    public static let selection = adaptive((0.6902, 0.6824, 0.6627), (0.1765, 0.1765, 0.1725))
-    public static let line = adaptive((0.6902, 0.6824, 0.6627), (0.1882, 0.1882, 0.1804))
-    public static let ink = adaptive((0.0784, 0.0784, 0.0745), (0.9333, 0.9294, 0.9176))
-    public static let ink2 = adaptive((0.1686, 0.1686, 0.1647), (0.6902, 0.6824, 0.6627))
-    public static let ink3 = adaptive((0.3843, 0.3804, 0.3647), (0.5922, 0.5843, 0.5608))
-    public static let positive = adaptive((0.2039, 0.4118, 0.2902), (0.5765, 0.7686, 0.6235))
-    public static let warning = adaptive((0.4941, 0.3255, 0.0627), (0.9137, 0.7373, 0.4510))
-    public static let critical = adaptive((0.6039, 0.2745, 0.2039), (0.8902, 0.6118, 0.5412))
-    public static let onCritical = adaptive((0.8824, 0.8784, 0.8549), (0.0784, 0.0784, 0.0745))
-    public static let criticalSoft = adaptive((0.9490, 0.8706, 0.8471), (0.2275, 0.1608, 0.1451))
-    public static let topo = adaptive((0.1686, 0.1686, 0.1647), (0.8824, 0.8784, 0.8549))
+    /// Alle Farbrollen als Hell/Dunkel-Paare; die adaptiven Farben unten und
+    /// `SymairaTheme.*(for:)` lesen ausschließlich hier.
+    public enum Palette {
+        public static let primary = Pair(0xE0D2BA, 0xE0D2BA)
+        public static let onPrimary = Pair(0x1A1814, 0x1A1814)
+        public static let primarySoft = Pair(0xE2DED5, 0x312F2B)
+        public static let selected = Pair(0x141413, 0xE0D2BA)
+        public static let onSelected = Pair(0xE1E0DA, 0x1A1814)
+        public static let focus = Pair(0x141413, 0xE0D2BA)
+        public static let canvas = Pair(0xEEEDEA, 0x1C1C1B)
+        public static let sidebar = Pair(0xE1E0DA, 0x171716)
+        public static let surface = Pair(0xE1E0DA, 0x141413)
+        public static let raised = Pair(0xEEEDEA, 0x2B2B2A)
+        public static let selection = Pair(0xB0AEA9, 0x2D2D2C)
+        public static let line = Pair(0xB0AEA9, 0x30302E)
+        public static let controlOutline = Pair(0x827F78, 0x74746F)
+        public static let ink = Pair(0x141413, 0xEEEDEA)
+        public static let ink2 = Pair(0x2B2B2A, 0xB0AEA9)
+        public static let ink3 = Pair(0x62615D, 0x97958F)
+        public static let positive = Pair(0x34694A, 0x93C49F)
+        public static let warning = Pair(0x7E5310, 0xE9BC73)
+        public static let critical = Pair(0x9A4634, 0xE39C8A)
+        public static let onCritical = Pair(0xE1E0DA, 0x141413)
+        public static let criticalSoft = Pair(0xF2DED8, 0x3A2925)
+        public static let topo = Pair(0x2B2B2A, 0xE1E0DA)
+
+        /// Rollenname aus DESIGN.md -> Paar; Tests gleichen damit gegen die Quelle ab.
+        static let byName: [String: Pair] = [
+            "primary": primary,
+            "on-primary": onPrimary,
+            "primary-soft": primarySoft,
+            "selected": selected,
+            "on-selected": onSelected,
+            "focus": focus,
+            "canvas": canvas,
+            "sidebar": sidebar,
+            "surface": surface,
+            "raised": raised,
+            "selection": selection,
+            "line": line,
+            "control-outline": controlOutline,
+            "ink": ink,
+            "ink-2": ink2,
+            "ink-3": ink3,
+            "positive": positive,
+            "warning": warning,
+            "critical": critical,
+            "on-critical": onCritical,
+            "critical-soft": criticalSoft,
+            "topo": topo,
+        ]
+    }
+
+    public static let primary = Palette.primary.adaptive
+    public static let onPrimary = Palette.onPrimary.adaptive
+    public static let primarySoft = Palette.primarySoft.adaptive
+    public static let selected = Palette.selected.adaptive
+    public static let onSelected = Palette.onSelected.adaptive
+    public static let focus = Palette.focus.adaptive
+    public static let canvas = Palette.canvas.adaptive
+    public static let sidebar = Palette.sidebar.adaptive
+    public static let surface = Palette.surface.adaptive
+    public static let raised = Palette.raised.adaptive
+    public static let selection = Palette.selection.adaptive
+    public static let line = Palette.line.adaptive
+    public static let controlOutline = Palette.controlOutline.adaptive
+    public static let ink = Palette.ink.adaptive
+    public static let ink2 = Palette.ink2.adaptive
+    public static let ink3 = Palette.ink3.adaptive
+    public static let positive = Palette.positive.adaptive
+    public static let warning = Palette.warning.adaptive
+    public static let critical = Palette.critical.adaptive
+    public static let onCritical = Palette.onCritical.adaptive
+    public static let criticalSoft = Palette.criticalSoft.adaptive
+    public static let topo = Palette.topo.adaptive
 
     public enum Radius {
         public static let sm: CGFloat = 6.0

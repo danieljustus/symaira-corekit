@@ -135,9 +135,11 @@ public struct SymairaNotice: View {
                         .foregroundStyle(SymairaTheme.foregroundPrimary(for: colorScheme))
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
+                // Running text keeps a readable measure even in a wide notice (LAYOUT-2).
                 Text(message)
                     .symairaText(.secondary)
                     .multilineTextAlignment(.leading)
+                    .frame(maxWidth: SymairaMetrics.proseMeasure, alignment: .leading)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
 
@@ -209,7 +211,7 @@ public struct SymairaEmptyState<Actions: View>: View {
                 .foregroundStyle(SymairaTheme.foregroundSecondary(for: colorScheme))
                 .multilineTextAlignment(.center)
                 .topoProtected()
-                .frame(maxWidth: 440)
+                .frame(maxWidth: SymairaMetrics.proseMeasure)
             actions
                 .topoProtected()
                 .padding(.top, SymairaSpacing.xSmall)

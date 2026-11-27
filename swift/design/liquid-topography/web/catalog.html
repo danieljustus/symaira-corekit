@@ -49,7 +49,7 @@ section > p.muted{max-width:62ch}
 .code{font:500 12.5px/1.65 var(--sym-font-mono);color:var(--sym-ink-2)}
 
 /* Buttons */
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:40px;padding:8px 16px;border-radius:var(--sym-radius-md);border:1px solid var(--sym-line);background:var(--sym-surface);color:var(--sym-ink);font:550 13px/1.4 var(--sym-font-text);cursor:pointer;text-decoration:none;white-space:nowrap}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:40px;padding:8px 16px;border-radius:var(--sym-radius-md);border:1px solid var(--sym-control-outline);background:var(--sym-surface);color:var(--sym-ink);font:550 13px/1.4 var(--sym-font-text);cursor:pointer;text-decoration:none;white-space:nowrap}
 .btn:hover:not(:disabled):not([aria-disabled="true"]){background:var(--sym-raised)}
 .btn:active:not(:disabled):not([aria-disabled="true"]){transform:translateY(1px)}
 .btn--primary{background:var(--sym-ink);color:var(--sym-surface);border-color:transparent}
@@ -67,7 +67,7 @@ section > p.muted{max-width:62ch}
 label,.label{font:550 12.5px/1.4 var(--sym-font-text)}
 .hint{font:450 12px/1.45 var(--sym-font-text);color:var(--sym-ink-2);letter-spacing:var(--sym-tracking-quiet)}
 .error{font:550 12px/1.4 var(--sym-font-text);color:var(--sym-critical)}
-.input{width:100%;min-height:40px;padding:8px 12px;font:450 13.5px/1.5 var(--sym-font-text);color:var(--sym-ink);background:var(--sym-canvas);border:1px solid var(--sym-ink-3);border-radius:var(--sym-radius-md)}
+.input{width:100%;min-height:40px;padding:8px 12px;font:450 13.5px/1.5 var(--sym-font-text);color:var(--sym-ink);background:var(--sym-canvas);border:1px solid var(--sym-control-outline);border-radius:var(--sym-radius-md)}
 textarea.input{resize:vertical}
 .input[aria-invalid="true"]{border-color:var(--sym-critical);box-shadow:inset 0 0 0 1px var(--sym-critical)}
 .input::placeholder{color:var(--sym-ink-3);opacity:1}
@@ -91,7 +91,7 @@ legend{font:650 13px/1.4 var(--sym-font-text);padding:0 0 6px}
 .notice{display:grid;gap:10px;padding:14px 16px;border-radius:var(--sym-radius-lg);background:var(--sym-surface);border:1px solid var(--sym-line)}
 .notice p{margin:0}
 .notice--critical{background:var(--sym-critical-soft);color:var(--sym-critical);border-color:transparent}
-.notice--critical .btn{color:var(--sym-ink);border-color:var(--sym-line)}
+.notice--critical .btn{color:var(--sym-ink);border-color:var(--sym-control-outline)}
 .notice--critical .btn:hover:not(:disabled){background:var(--sym-raised)}
 .notice ul{padding-left:18px}
 .badges{display:flex;flex-wrap:wrap;gap:8px}
@@ -207,11 +207,12 @@ dialog::backdrop{background:rgba(0,0,0,.35)}
         <div class="card">
           <div class="swatches" id="swatches"></div>
           <div style="display:grid;gap:10px">
-            <p class="sym-type-headline">Headline 16/700</p>
-            <p class="sym-type-title">Title 14/650</p>
-            <p class="sym-type-body">Body 13.5/500. Fließtext hat Gewicht 500 und ist auf Canvas und Surface mindestens 4.5:1 lesbar.</p>
-            <p class="sym-type-label">Label 12.5/600</p>
-            <p class="sym-type-caption" style="color:var(--sym-ink-2)">Caption 11.5/600</p>
+            <p class="sym-type-title">Title 20/700</p>
+            <p class="sym-type-heading">Heading 16/700</p>
+            <p class="sym-type-subheading">Subheading 14/650</p>
+            <p class="sym-type-body">Body 13.5/450, Zeilenhöhe 1.5. Fließtext ist auf Canvas und Surface mindestens 4.5:1 lesbar und bleibt unter etwa 75 Zeichen pro Zeile.</p>
+            <p class="sym-type-label">Label 12.5/550</p>
+            <p class="sym-type-caption" style="color:var(--sym-ink-2)">Caption 11.5/450</p>
           </div>
         </div>
       </section>

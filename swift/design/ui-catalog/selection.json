@@ -24,7 +24,7 @@
    "apple": "B",
    "web": "W1",
    "apple_title": "Prominent rot",
-   "apple_code": ".borderedProminent + .tint(.red)",
+   "apple_code": ".symairaButtonStyle(.destructive) (critical fill, on-critical label; was .borderedProminent + .tint(.red) until 2026-11-27)",
    "apple_kind": "apple-native",
    "web_title": "Browser-nativ",
    "web_code": "<button> rot"

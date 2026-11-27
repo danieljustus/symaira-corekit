@@ -63,6 +63,9 @@ never depend on a sibling checkout.
   on older systems. Both roles share font, horizontal padding and minimum
   height (36 pt capsule on macOS in the page tier, 44 pt iOS); switching roles must not shrink the action.
   A stateful label uses a stable full-width or explicitly reserved label area.
+  A visible destructive action uses `.destructive` with `Button(role: .destructive)`:
+  the primary's capsule in `critical` with an `on-critical` label (workbench:
+  `borderedProminent` in the same colors), never `.tint(.red)` (GUIDELINES ACTION-4).
 - `.toolbar` remains the compact, native glass button role. Glass buttons stay
   neutral; the selection tint belongs to segments and switches. Group adjacent
   glass controls in `SymairaGlassEffectContainer(spacing: 0)` rather than
@@ -93,8 +96,12 @@ never depend on a sibling checkout.
 - Use native `NavigationSplitView`, `TabView`, toolbars, sheets and touch targets
   where appropriate to the platform. The drag-resizable workspace is macOS-only;
   do not impose a desktop column on phone layouts.
-- Keep prose within `SymairaMetrics.readableContentWidth`; grids and dashboards
-  may choose a wider product-owned content budget.
+- Keep running text within `SymairaMetrics.proseMeasure` (about 71 to 73
+  characters); `SymairaMetrics.readableContentWidth` is the page column for cards,
+  forms and lists, and grids and dashboards may choose a wider product-owned budget.
+- Type roles carry the token line heights for wrapped text (body 1.5), and on iOS
+  they are `SymairaMetrics.textScale` larger so body text is 17 pt at the default
+  Dynamic Type size (GUIDELINES TYPE-5, IOS-7).
 
 - On tvOS, use the focus engine and a native top tab bar rather than pointer
   hover or the macOS workspace. Keep topography off dense content. Keyboard
@@ -109,6 +116,9 @@ never depend on a sibling checkout.
 ## Accessibility defaults
 
 - Adaptive text/status colors retain the canonical contrast checks.
+- Control boundaries use `control-outline` (at least 3:1 against `raised`,
+  `surface` and `canvas`, WCAG 1.4.11); `line` stays the quiet stroke of cards,
+  dividers and tables.
 - Reduce Transparency replaces chrome with an opaque sidebar surface.
 - Increase Contrast strengthens outlines; focus must not rely on color alone.
 - Reduce Motion disables decorative movement and button scale animations.
@@ -149,6 +159,8 @@ SPM dependencies are development state, not a published fleet upgrade.
 | Navigation hover/selection palette | `SymairaNavigationButtonStyle` |
 | Text-protection environment wrapper | `.topoProtected()` in a shared workspace |
 | Stateful prominent/secondary button | `.symairaButtonStyle(.primary)` (opaque) / `.secondary` (native glass) |
+| Red destructive button (`.tint(.red)`) | `.symairaButtonStyle(.destructive)` with `Button(role: .destructive)` |
+| Hand-set `.lineSpacing` on role text | Nothing: `.font(role)` and `.symairaText(_:)` apply the token line height |
 | Product-drawn meter palette | `SymairaBarColors` (progress itself: native `ProgressView(value:)`) |
 | Dashboard summary value | `Gauge(value:)` or `LabeledContent` (`SymairaStatTile` deprecated) |
 | Direct settings-window action | `SymairaSettingsButton` |

@@ -18,7 +18,15 @@ resulting view. Attributed-string font attributes cannot hold a role: apply
 it at the rendered View boundary instead. Do not turn roles back into cached
 point-sized fonts, since that reintroduces the live-scaling bug.
 
-On iOS the modifier uses public `@ScaledMetric` in the receiving view's
+Each bundled role also carries the `lineHeight` of its DESIGN.md entry. The
+modifier adds the difference to the typeface's own line height (Figtree 1.2,
+Google Sans Flex 1.252) as `.lineSpacing`, so wrapped body text sits 1.5 × the
+point size apart while single lines and controls keep their height (TYPE-5).
+A role without a line height leaves a surrounding `.lineSpacing` alone.
+
+On iOS the base size of every role is multiplied by `SymairaMetrics.textScale`
+(17 / 13.5) so body text is 17 pt at the default size, as in Apple's
+guidelines (IOS-7). The modifier then uses public `@ScaledMetric` in the receiving view's
 Dynamic Type environment. Only then does it construct the Core Text font
 with the approved family, weight and fixed optical size (`opsz` 18 for
 Google Sans Flex; Figtree has no optical size axis). The absent-font system fallback uses

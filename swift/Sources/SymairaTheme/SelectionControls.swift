@@ -16,7 +16,7 @@ public struct SymairaCardModifier: ViewModifier {
     }
 
     public func body(content: Content) -> some View {
-        let shape = RoundedRectangle(cornerRadius: SymairaTokens.Radius.lg, style: .continuous)
+        let shape = RoundedRectangle(cornerRadius: SymairaRadius.card, style: .continuous)
         content
             .padding(padding)
             .background(SymairaTheme.surfaceOpaque(for: colorScheme), in: shape)

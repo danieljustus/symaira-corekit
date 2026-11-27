@@ -11,11 +11,21 @@ public struct SymairaFontRole: Hashable, Sendable {
 
     let source: Source
     private(set) var tabularDigits = false
+    /// Line height of wrapped text as a multiple of the point size (DESIGN.md `lineHeight`);
+    /// `nil` keeps the typeface's own line height.
+    private(set) var lineHeight: CGFloat?
 
     /// Uses equal-width digits without changing the typeface or scaling curve.
     public func monospacedDigit() -> Self {
         var result = self
         result.tabularDigits = true
+        return result
+    }
+
+    /// Sets the line height of wrapped text; single lines keep their height.
+    func lineHeight(_ multiple: CGFloat) -> Self {
+        var result = self
+        result.lineHeight = multiple
         return result
     }
 }
@@ -28,17 +38,19 @@ private struct SymairaBrandFontModifier: ViewModifier {
     private let size: CGFloat
     private let weight: Double
     private let tabularDigits: Bool
+    private let lineHeight: CGFloat?
 
     nonisolated init(
         family: SymairaFont.Family, size: CGFloat, weight: Double, relativeTo textStyle: Font.TextStyle,
-        tabularDigits: Bool
+        tabularDigits: Bool, lineHeight: CGFloat? = nil
     ) {
         self.family = family
         self.size = size
         self.weight = weight
         self.tabularDigits = tabularDigits
+        self.lineHeight = lineHeight
         #if os(iOS)
-        _scaledSize = ScaledMetric(wrappedValue: size, relativeTo: textStyle)
+        _scaledSize = ScaledMetric(wrappedValue: size * SymairaMetrics.textScale, relativeTo: textStyle)
         #endif
     }
 
@@ -46,10 +58,24 @@ private struct SymairaBrandFontModifier: ViewModifier {
         #if os(iOS)
         let pointSize = scaledSize
         #else
-        let pointSize = size * SymairaMetrics.platformScale
+        let pointSize = size * SymairaMetrics.textScale
         #endif
         let font = SymairaFont.resolvedFont(size: pointSize, weight: weight, family: family)
-        content.font(tabularDigits ? font.monospacedDigit() : font)
+        let styled = content.font(tabularDigits ? font.monospacedDigit() : font)
+        // A role without a line height leaves a surrounding `.lineSpacing` alone.
+        if lineHeight != nil {
+            styled.lineSpacing(Self.extraLeading(pointSize: pointSize, lineHeight: lineHeight, family: family))
+        } else {
+            styled
+        }
+    }
+
+    /// Spacing added between wrapped lines so they sit `lineHeight` times the point size apart.
+    nonisolated static func extraLeading(pointSize: CGFloat, lineHeight: CGFloat?, family: SymairaFont.Family)
+        -> CGFloat
+    {
+        guard let lineHeight else { return 0 }
+        return max(0, pointSize * (lineHeight - family.naturalLineHeight))
     }
 }
 
@@ -62,7 +88,9 @@ extension View {
         case .bundled(let family, let size, let weight, let textStyle):
             modifier(
                 SymairaBrandFontModifier(
-                    family: family, size: size, weight: weight, relativeTo: textStyle, tabularDigits: role.tabularDigits
+                    family: family, size: size, weight: weight, relativeTo: textStyle,
+                    tabularDigits: role.tabularDigits,
+                    lineHeight: role.lineHeight
                 ))
         case .system(let font):
             self.font(role.tabularDigits ? font.monospacedDigit() : font)

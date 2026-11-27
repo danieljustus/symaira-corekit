@@ -52,6 +52,8 @@ CHECKS = [
     ("positive", "canvas", 4.5), ("critical", "canvas", 4.5), ("ink-3", "raised", 4.5),
     # nicht-textuelle Zustände (WCAG 1.4.11): Auswahl gegen Schiene und Karte, Fokus gegen Hintergrund
     ("selected", "raised", 3.0), ("selected", "surface", 3.0), ("focus", "canvas", 3.0), ("focus", "surface", 3.0),
+    # Kontur von Bedienelementen gegen jede Fläche, auf der sie stehen kann (#515)
+    ("control-outline", "raised", 3.0), ("control-outline", "surface", 3.0), ("control-outline", "canvas", 3.0),
 ]
 
 
@@ -112,27 +114,61 @@ def css(d, r, topo):
 
 
 def swift(d, r, topo):
-    def rgb(h):
-        return ", ".join(f"{int(h[i:i + 2], 16) / 255:.4f}" for i in (1, 3, 5))
+    def hexint(h):
+        return "0x" + h[1:].upper()
     out = ["// generiert von build.py aus DESIGN.md – nicht von Hand bearbeiten",
            "import SwiftUI", "", "#if canImport(AppKit)", "import AppKit", "#elseif canImport(UIKit)", "import UIKit", "#endif", "",
            "public enum SymairaTokens {",
-           "    static func adaptive(_ l: (Double, Double, Double), _ d: (Double, Double, Double)) -> Color {",
-           "        #if canImport(AppKit)",
-           "        return Color(",
-           "            nsColor: NSColor(name: nil) { a in",
-           "                let c = a.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? d : l",
-           "                return NSColor(srgbRed: c.0, green: c.1, blue: c.2, alpha: 1)",
-           "            })",
-           "        #else",
-           "        return Color(",
-           "            uiColor: UIColor { t in",
-           "                let c = t.userInterfaceStyle == .dark ? d : l",
-           "                return UIColor(red: c.0, green: c.1, blue: c.2, alpha: 1)",
-           "            })",
-           "        #endif", "    }", ""]
+           "    /// Hell- und Dunkelwert einer Farbrolle (sRGB, 0xRRGGBB), 1:1 aus DESIGN.md.",
+           "    public struct Pair: Hashable, Sendable {",
+           "        public let light: Int",
+           "        public let dark: Int",
+           "",
+           "        init(_ light: Int, _ dark: Int) {",
+           "            self.light = light",
+           "            self.dark = dark",
+           "        }",
+           "",
+           "        /// Der feste Wert dieser Rolle in einer Darstellung.",
+           "        public func color(for colorScheme: ColorScheme) -> Color {",
+           "            let c = Self.components(colorScheme == .dark ? dark : light)",
+           "            return Color(.sRGB, red: c.red, green: c.green, blue: c.blue, opacity: 1)",
+           "        }",
+           "",
+           "        /// Folgt der Darstellung des Fensters, in dem die Farbe gezeichnet wird.",
+           "        var adaptive: Color {",
+           "            let (l, d) = (Self.components(light), Self.components(dark))",
+           "            #if canImport(AppKit)",
+           "            return Color(",
+           "                nsColor: NSColor(name: nil) { a in",
+           "                    let c = a.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? d : l",
+           "                    return NSColor(srgbRed: c.red, green: c.green, blue: c.blue, alpha: 1)",
+           "                })",
+           "            #else",
+           "            return Color(",
+           "                uiColor: UIColor { t in",
+           "                    let c = t.userInterfaceStyle == .dark ? d : l",
+           "                    return UIColor(red: c.red, green: c.green, blue: c.blue, alpha: 1)",
+           "                })",
+           "            #endif",
+           "        }",
+           "",
+           "        static func components(_ hex: Int) -> (red: Double, green: Double, blue: Double) {",
+           "            (Double((hex >> 16) & 0xFF) / 255, Double((hex >> 8) & 0xFF) / 255, Double(hex & 0xFF) / 255)",
+           "        }",
+           "    }",
+           "",
+           "    /// Alle Farbrollen als Hell/Dunkel-Paare; die adaptiven Farben unten und",
+           "    /// `SymairaTheme.*(for:)` lesen ausschließlich hier.",
+           "    public enum Palette {"]
     for k, (l, dk) in r.items():
-        out.append(f"    public static let {kebab_to_camel(k)} = adaptive(({rgb(l)}), ({rgb(dk)}))")
+        out.append(f"        public static let {kebab_to_camel(k)} = Pair({hexint(l)}, {hexint(dk)})")
+    out += ["", "        /// Rollenname aus DESIGN.md -> Paar; Tests gleichen damit gegen die Quelle ab.",
+            "        static let byName: [String: Pair] = ["]
+    out += [f"            \"{k}\": {kebab_to_camel(k)}," for k in r]
+    out += ["        ]", "    }", ""]
+    for k in r:
+        out.append(f"    public static let {kebab_to_camel(k)} = Palette.{kebab_to_camel(k)}.adaptive")
     out += ["", "    public enum Radius {"]
     out += [f"        public static let {k}: CGFloat = {float(v[:-2])}" for k, v in d["rounded"].items()]
     out += ["    }", "    public enum Space {"]

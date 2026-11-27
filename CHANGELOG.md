@@ -4,6 +4,12 @@ The GitHub Releases page is the authoritative source for complete release notes.
 
 ## Unreleased
 
+- Swift design foundation, after a review against the UI literature
+  (Refactoring UI, Practical UI, Thinking with Type, Designing with the Mind in
+  Mind): readable running text (`proseMeasure`, token line heights), a 3:1
+  `control-outline` for control boundaries, a token-based destructive button
+  role, iOS type at Apple's 17 pt body size, and token spec, guidelines and code
+  aligned again (#512 to #516). Details in `swift/CHANGELOG.md`.
 - Consumers: `dependabot-corekit` also aligns nested Swift packages. When a
   root `Package.swift` depends on a local package (`.package(path:)`) that pins
   CoreKit too, Dependabot can move only the local package and the root stops

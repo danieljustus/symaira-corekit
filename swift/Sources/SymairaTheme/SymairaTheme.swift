@@ -44,80 +44,89 @@ public enum SymairaTheme {
 
     // MARK: Adaptive semantic colors (Liquid Topography)
     //
-    // These map to the Liquid Topography palette approved in the Cockpit design
-    // pilot (mirrors `SymairaTokens`, generated from the design kit). The fixed
-    // brand constants above stay as legacy API for clients that have not
-    // migrated yet; new code uses only these adaptive roles.
+    // Fixed per-appearance values of the Liquid Topography roles, read from the
+    // generated `SymairaTokens.Palette` so a palette change in DESIGN.md reaches
+    // these helpers through `build.py` alone. The fixed brand constants above
+    // stay as legacy API for clients that have not migrated yet; new code uses
+    // only these adaptive roles.
 
     /// Page canvas. Liquid Topography `canvas`.
     public static func backgroundPrimary(for colorScheme: ColorScheme) -> Color {
-        colorScheme == .dark ? Color(hex: "1C1C1B") : Color(hex: "EEEDEA")
+        SymairaTokens.Palette.canvas.color(for: colorScheme)
     }
 
     /// Sidebar. Liquid Topography `sidebar`.
     public static func backgroundSecondary(for colorScheme: ColorScheme) -> Color {
-        colorScheme == .dark ? Color(hex: "171716") : Color(hex: "E1E0DA")
+        SymairaTokens.Palette.sidebar.color(for: colorScheme)
     }
 
     /// Cards and panels. Liquid Topography `surface`.
     public static func surfaceOpaque(for colorScheme: ColorScheme) -> Color {
-        colorScheme == .dark ? Color(hex: "141413") : Color(hex: "E1E0DA")
+        SymairaTokens.Palette.surface.color(for: colorScheme)
     }
 
     /// Segment rails, secondary buttons, hover. Liquid Topography `raised`.
     public static func surfaceRaised(for colorScheme: ColorScheme) -> Color {
-        colorScheme == .dark ? Color(hex: "2B2B2A") : Color(hex: "EEEDEA")
+        SymairaTokens.Palette.raised.color(for: colorScheme)
     }
 
-    /// Outline for `raised` controls. Light `raised` equals `canvas`, so secondary buttons
-    /// and segment rails placed straight on the canvas would vanish; dark needs none.
+    /// Outline of opaque controls (text fields, the secondary button without glass) in both
+    /// appearances: Liquid Topography `control-outline`, at least 3:1 against `raised`,
+    /// `surface` and `canvas` (WCAG 1.4.11). Light `raised` equals `canvas`, so such a
+    /// control would otherwise vanish on the canvas.
     public static func raisedOutline(for colorScheme: ColorScheme) -> Color {
-        colorScheme == .dark ? .clear : line(for: colorScheme)
+        controlOutline(for: colorScheme)
     }
 
-    /// 1 px separators and card outlines. Liquid Topography `line`.
+    /// Boundary of an interactive control. Liquid Topography `control-outline` (COLOR-4).
+    public static func controlOutline(for colorScheme: ColorScheme) -> Color {
+        SymairaTokens.Palette.controlOutline.color(for: colorScheme)
+    }
+
+    /// 1 px separators and card outlines. Liquid Topography `line`: decorative, below 3:1 on
+    /// purpose; control boundaries use ``controlOutline(for:)``.
     public static func line(for colorScheme: ColorScheme) -> Color {
-        colorScheme == .dark ? Color(hex: "30302E") : Color(hex: "B0AEA9")
+        SymairaTokens.Palette.line.color(for: colorScheme)
     }
 
     /// Selected navigation row. Liquid Topography `selection`. Pair it with bold text:
     /// the fill alone is below 3:1 and is not a state cue.
     public static func navigationSelection(for colorScheme: ColorScheme) -> Color {
-        colorScheme == .dark ? Color(hex: "2D2D2C") : Color(hex: "B0AEA9")
+        SymairaTokens.Palette.selection.color(for: colorScheme)
     }
 
     public static func foregroundPrimary(for colorScheme: ColorScheme) -> Color {
-        colorScheme == .dark ? Color(hex: "EEEDEA") : Color(hex: "141413")
+        SymairaTokens.Palette.ink.color(for: colorScheme)
     }
 
     public static func foregroundSecondary(for colorScheme: ColorScheme) -> Color {
-        colorScheme == .dark ? Color(hex: "B0AEA9") : Color(hex: "2B2B2A")
+        SymairaTokens.Palette.ink2.color(for: colorScheme)
     }
 
     public static func foregroundMuted(for colorScheme: ColorScheme) -> Color {
-        colorScheme == .dark ? Color(hex: "97958F") : Color(hex: "62615D")
+        SymairaTokens.Palette.ink3.color(for: colorScheme)
     }
 
     /// Champagne brand accent, identical in both appearances. Never a state cue on
     /// light surfaces (about 1.2:1); use ``selected(for:)`` for selection.
     public static func accent(for colorScheme: ColorScheme) -> Color {
-        Color(hex: "E0D2BA")
+        SymairaTokens.Palette.primary.color(for: colorScheme)
     }
 
     /// Selected state: segments, switch on, checkmarks, slider thumbs.
     /// Dark: champagne. Light: ink (design decision A, 15.7:1 against the rail).
     public static func selected(for colorScheme: ColorScheme) -> Color {
-        colorScheme == .dark ? Color(hex: "E0D2BA") : Color(hex: "141413")
+        SymairaTokens.Palette.selected.color(for: colorScheme)
     }
 
     /// Text and glyphs on ``selected(for:)``.
     public static func onSelected(for colorScheme: ColorScheme) -> Color {
-        colorScheme == .dark ? Color(hex: "1A1814") : Color(hex: "E1E0DA")
+        SymairaTokens.Palette.onSelected.color(for: colorScheme)
     }
 
     /// 2 px keyboard focus ring.
     public static func focus(for colorScheme: ColorScheme) -> Color {
-        selected(for: colorScheme)
+        SymairaTokens.Palette.focus.color(for: colorScheme)
     }
 
     // Motion
@@ -148,10 +157,14 @@ public enum SymairaSpacing {
     public static let spacious: CGFloat = 48 * SymairaMetrics.platformScale
 }
 
+/// Radii of the token scale (`SymairaTokens.Radius`), multiplied by `SymairaMetrics.platformScale`.
 public enum SymairaRadius {
-    public static let control: CGFloat = 10 * SymairaMetrics.platformScale
-    public static let card: CGFloat = 16 * SymairaMetrics.platformScale
-    public static let panel: CGFloat = 20 * SymairaMetrics.platformScale
+    /// Fields, rows, notices, sidebar entries: `rounded.md`.
+    public static let control: CGFloat = SymairaTokens.Radius.md * SymairaMetrics.platformScale
+    /// Content cards: `rounded.lg`.
+    public static let card: CGFloat = SymairaTokens.Radius.lg * SymairaMetrics.platformScale
+    /// The workspace's main panel: `rounded.xl`.
+    public static let panel: CGFloat = SymairaTokens.Radius.xl * SymairaMetrics.platformScale
 }
 
 public enum SymairaMetrics {
@@ -165,6 +178,16 @@ public enum SymairaMetrics {
     public static let platformScale: CGFloat = 1
     #endif
 
+    /// Factor from the Symaira type scale to this platform's text sizes. The roles are set
+    /// for desk distance (body 13.5 pt on macOS). iOS is read at hand distance, where Apple's
+    /// default body size is 17 pt, so every role grows by 17 / 13.5 there before Dynamic Type
+    /// scales it (GUIDELINES IOS-7). tvOS follows `platformScale` like every other size.
+    #if os(iOS)
+    public static let textScale: CGFloat = 17 / 13.5
+    #else
+    public static let textScale: CGFloat = platformScale
+    #endif
+
     #if os(iOS)
     public static let minimumControlHeight: CGFloat = 44
     #else
@@ -176,7 +199,13 @@ public enum SymairaMetrics {
     public static let contentActionHeight: CGFloat = max(minimumControlHeight, 36 * platformScale)
     public static let contentActionHorizontalPadding: CGFloat = 20 * platformScale
 
+    /// Default width of a `SymairaPage` column, which carries cards, forms and lists. Running
+    /// text inside it keeps to ``proseMeasure``.
     public static let readableContentWidth: CGFloat = 760 * platformScale
+    /// Measure of running text (LAYOUT-2): about 71 to 73 characters of 13.5 pt Figtree, inside
+    /// the 45 to 75 characters the type literature recommends. A full page column would hold
+    /// about 115.
+    public static let proseMeasure: CGFloat = 440 * platformScale
     public static let glassGroupSpacing: CGFloat = 12 * platformScale
     /// One height for every segmented control, the 36 pt of the extra-large native controls.
     public static let segmentedControlHeight: CGFloat = 36 * platformScale

@@ -50,10 +50,11 @@ private struct SymairaTextFieldChrome: ViewModifier {
         }
         .font(SymairaTypography.body)
         .padding(.horizontal, SymairaSpacing.medium)
-        // A workbench field lines up with the native `.large` controls beside it (CTRL-1).
+        // A field lines up with the controls of its tier (CTRL-1): the native `.large` controls in
+        // the workbench, the 36 pt page actions in a page toolbar.
         .padding(.vertical, tier == .workbench ? SymairaSpacing.xSmall : SymairaSpacing.small)
         .frame(
-            minHeight: tier == .workbench ? SymairaMetrics.workbenchControlHeight : SymairaMetrics.minimumControlHeight
+            minHeight: tier == .workbench ? SymairaMetrics.workbenchControlHeight : SymairaMetrics.contentActionHeight
         )
         .background(shape.fill(fill))
         .overlay(shape.stroke(border, lineWidth: borderWidth))
@@ -73,7 +74,8 @@ private struct SymairaTextFieldChrome: ViewModifier {
         if contrast == .increased {
             return SymairaTheme.foregroundMuted(for: colorScheme)
         }
-        return SymairaTheme.line(for: colorScheme)
+        // A control boundary needs 3:1 against its fill and the surface below (COLOR-4).
+        return SymairaTheme.controlOutline(for: colorScheme)
     }
 
     private var borderWidth: CGFloat {
