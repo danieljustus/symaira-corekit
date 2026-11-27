@@ -107,10 +107,10 @@
     },
     {
       "repo": "danieljustus/symaira-eraseme",
-      "checkout_commit": "d7cf0e2003f4db19edac25d919e31b05568b8c77",
+      "checkout_commit": "0176661b41e2ee278c85055cad40c6d1daa36ac3",
       "consumer_release": {
-        "tag": "v0.17.1",
-        "commit": "d7cf0e2003f4db19edac25d919e31b05568b8c77"
+        "tag": "v0.18.0",
+        "commit": "0176661b41e2ee278c85055cad40c6d1daa36ac3"
       },
       "go_status": "retired",
       "pins": [],
@@ -118,14 +118,15 @@
         "status": "git",
         "package": "symaira-core-version",
         "version": "0.0.0",
-        "revision": "27177f25f551cecefa7bd6c4524abf175b3a75c7",
+        "revision": "d314b43572613ae6adacdcb40f2b67e40bfee19f",
+        "tag": "v0.28.0",
         "manifest_paths": [
           "Cargo.toml",
           "crates/symeraseme-core/Cargo.toml"
         ],
         "release": {
-          "tag": "v0.17.0",
-          "commit": "0c2c7769ac6074264e1c02fcdf903188b4f3fa08"
+          "tag": "v0.28.0",
+          "commit": "d314b43572613ae6adacdcb40f2b67e40bfee19f"
         },
         "release_source": "corekit",
         "registry": {
@@ -136,13 +137,13 @@
             "status": "verified",
             "report": "evidence/standalone.json",
             "artifact": "evidence/artifact/symeraseme",
-            "command": "env -i PATH=/usr/bin:/bin HOME=/var/folders/7v/7bpq0fjn44lflpxdylsx8qs40000gn/T/ev-home-1sacd5aw ./evidence/artifact/symeraseme version",
+            "command": "env -i PATH=/usr/bin:/bin HOME=/Volumes/1TB_NVMe_SN850X/Dev/Symaira_Dev/builds/symaira-eraseme/.worktrees/release-v0.18.0/tmp/ev-home-ga6t0s3t ./evidence/artifact/symeraseme version",
             "result": {
               "exit_code": 0,
-              "stdout": "symeraseme 0.17.1\n",
+              "stdout": "symeraseme 0.18.0\n",
               "stderr": ""
             },
-            "report_sha256": "4d71db0016aabe3f93e85da171f8ad1fbadcdf4096e89dc365fef21fa5d6b3fe"
+            "report_sha256": "832ab394e12e410702ecd70b3aba2398b32ad51bae779e0e71d1a803955c1a72"
           }
         }
       }
