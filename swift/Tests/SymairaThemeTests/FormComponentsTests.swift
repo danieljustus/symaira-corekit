@@ -159,6 +159,18 @@ final class FormComponentsTests: XCTestCase {
         ThemeRenderHost.render(row)
     }
 
+    #if os(iOS)
+    /// FORM-10 is a macOS fix; on iOS the control keeps its height, so a stacked row cannot overlap its label (#524).
+    func testFormRowControlKeepsItsHeightOnIOS() {
+        let control = Color.blue.frame(width: 120, height: 36)
+        let plain = UIHostingController(rootView: control).sizeThatFits(in: CGSize(width: 400, height: 400))
+        let modified = UIHostingController(rootView: control.symairaFormRowControl())
+            .sizeThatFits(in: CGSize(width: 400, height: 400))
+        XCTAssertEqual(modified.height, plain.height, accuracy: 0.5)
+        XCTAssertEqual(modified.height, 36, accuracy: 0.5)
+    }
+    #endif
+
     #if os(macOS)
     func testFormRowCentersControlsOnFirstLabelLine() throws {
         for label in ["Sync automatically", "Sync automatically\nAcross devices"] {

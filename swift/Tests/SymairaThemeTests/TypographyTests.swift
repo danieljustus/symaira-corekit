@@ -38,10 +38,10 @@ final class TypographyTests: XCTestCase {
         XCTAssertEqual(SymairaRadius.panel, SymairaTokens.Radius.xl * SymairaMetrics.platformScale)
     }
 
-    /// IOS-7: body text reaches Apple's 17 pt default on iOS; tvOS keeps the platform scale.
-    func testTextScaleReachesTheHIGBodySizeOnIOS() {
+    /// IOS-7: body text is 15 pt at the default Dynamic Type size on iOS; tvOS keeps the platform scale.
+    func testTextScaleSetsTheIOSBodySize() {
         #if os(iOS)
-        XCTAssertEqual(13.5 * SymairaMetrics.textScale, 17, accuracy: 0.0001)
+        XCTAssertEqual(13.5 * SymairaMetrics.textScale, 15, accuracy: 0.0001)
         #else
         XCTAssertEqual(SymairaMetrics.textScale, SymairaMetrics.platformScale)
         #endif

@@ -11,6 +11,16 @@ the releases of the former `symaira-appkit` repository.
 
 ## [Unreleased]
 
+### Changed
+- iOS: every type role is 15 / 13.5 larger instead of 17 / 13.5, so body text
+  is 15 pt at the default Dynamic Type size (#523, IOS-7). The 17 pt of 0.28.0
+  read as oversized in dense Symaira screens; Dynamic Type still scales on top.
+
+### Fixed
+- `symairaFormRowControl()` changes nothing outside macOS (#524, FORM-10). On
+  iOS a grouped form row stacks a wide control under its label, and the
+  one-line height let the control overlap the label.
+
 ## [0.28.0] - 2026-11-27
 
 ### Added

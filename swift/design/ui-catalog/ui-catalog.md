@@ -108,7 +108,7 @@ Web: W1 = natives HTML-Element (Browser-Standard), W2 = natives Element mit Syma
 
 - **E03 bleibt B (prominentes Rot), aber aus Tokens:** `.symairaButtonStyle(.destructive)` zeichnet `critical` mit `on-critical`-Schrift in der Geometrie der Primäraktion (4,81:1 hell, 8,24:1 dunkel). `.tint(.red)` setzte weiße Schrift auf Systemrot (3,55:1 bzw. 3,41:1) und verstieß gegen COLOR-1; `gui-review.py` meldet es weiter.
 - **Kontur von Bedienelementen:** neue Rolle `control-outline` (mindestens 3:1) für Symaira-Textfelder (E13, E14) und den deckenden Sekundär-Fallback (E02); Karten und Trenner bleiben bei `line`.
-- **Text:** Rollen tragen die Zeilenhöhen der Token-Spec (Fließtext 1,5), Fließtext bleibt in `SymairaMetrics.proseMeasure` (440 pt, etwa 72 Zeichen), und iOS skaliert alle Rollen um 17/13,5.
+- **Text:** Rollen tragen die Zeilenhöhen der Token-Spec (Fließtext 1,5), Fließtext bleibt in `SymairaMetrics.proseMeasure` (440 pt, etwa 72 Zeichen), und iOS skaliert alle Rollen um 15/13,5 (seit 0.28.1, #523; 0.28.0: 17/13,5).
 
 ## Umsetzungshinweise
 

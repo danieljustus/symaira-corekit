@@ -267,7 +267,8 @@ Six lines, kept in the pull request or issue:
   (`SymairaSegmentedControl`, a `.symairaButtonStyle` action) inside
   `LabeledContent` carries `.symairaFormRowControl()`: the row aligns label and
   control at the top and ignores alignment guides, so the control would hang
-  below the row title.
+  below the row title. The modifier changes nothing on other platforms, where a
+  row stacks a wide control under its label (#524).
 - **NATIVE-1** Apple platforms use the native control wherever the UI catalog
   (`design/ui-catalog/ui-catalog.md`, decided 2026-11-25) chose it: search
   `.searchable`, tabs `TabView` (iOS), tables `Table`, details
@@ -438,10 +439,11 @@ Six lines, kept in the pull request or issue:
   `Label { Text(title) } icon: { Image(symairaIcon:) }`; both bars render only
   `Image`, so `Label(_:symairaIcon:)` shows no icon there (a toolbar shows the
   title instead).
-- **IOS-7** Type roles are `SymairaMetrics.textScale` (17 / 13.5) larger on
-  iOS, so body text is 17 pt at the default Dynamic Type size, as in Apple's
-  guidelines, and every role keeps its ratio to body. Spacing, radii and icon
-  sizes keep the shared scale; never size iOS text by hand to compensate.
+- **IOS-7** Type roles are `SymairaMetrics.textScale` (15 / 13.5) larger on
+  iOS, so body text is 15 pt at the default Dynamic Type size and every role
+  keeps its ratio to body. Apple's 17 pt read as oversized in dense Symaira
+  screens (#523). Spacing, radii and icon sizes keep the shared scale; never
+  size iOS text by hand to compensate.
 
 tvOS follows the iOS rules unless a TV rule says otherwise:
 

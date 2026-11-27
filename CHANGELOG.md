@@ -4,6 +4,12 @@ The GitHub Releases page is the authoritative source for complete release notes.
 
 ## Unreleased
 
+- Swift design kit: iOS type roles are 15 / 13.5 larger instead of 17 / 13.5,
+  so body text is 15 pt at the default Dynamic Type size (#523); the 17 pt of
+  v0.28.0 read as oversized in dense screens. `symairaFormRowControl()` now
+  changes nothing outside macOS, where a stacked iOS form row let the control
+  overlap its label (#524).
+
 ## v0.28.0 — 2026-11-27
 
 - Swift design foundation, after a review against the UI literature

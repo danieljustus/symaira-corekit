@@ -178,8 +178,14 @@ extension View {
     /// Centres a control that is taller than one text line on the first line of a
     /// form row title (`LabeledContent` in a grouped `Form`, GUIDELINES FORM-10).
     /// The control keeps its full size and hit area; only the row sees one line.
-    public func symairaFormRowControl() -> some View {
+    /// macOS only: an iOS row stacks a wide control under its label, where the
+    /// one-line height let the control overlap the label (#524).
+    @ViewBuilder public func symairaFormRowControl() -> some View {
+        #if os(macOS)
         SymairaFormRowControlLayout { self }
+        #else
+        self
+        #endif
     }
 }
 
