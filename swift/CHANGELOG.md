@@ -11,6 +11,8 @@ the releases of the former `symaira-appkit` repository.
 
 ## [Unreleased]
 
+## [0.28.0] - 2026-11-27
+
 ### Added
 - `SymairaButtonRole.destructive` (#513): `Button(role: .destructive)` with
   `.symairaButtonStyle(.destructive)` draws the primary's 36 pt capsule in

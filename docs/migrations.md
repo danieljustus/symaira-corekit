@@ -10,6 +10,21 @@ also preserve historical removals, including `embedkit` in v0.12.0; those
 require migration. Otherwise "check" means a new capability to adopt or a
 behavior change worth confirming.
 
+## v0.28.0
+
+- **Swift consumers:** check iOS layouts. Every type role is 17 / 13.5 larger
+  on iOS (body 17 pt at the default Dynamic Type size), and wrapped role text
+  gets the token line heights; products that added `.lineSpacing` to role text
+  can drop it. Text fields and the opaque secondary fallback draw the new 3:1
+  `control-outline`, page-tier text fields are 36 pt, and `SymairaRadius.card`
+  is 14 pt. Replace `.tint(.red)` on destructive buttons with
+  `.symairaButtonStyle(.destructive)`. Details in `swift/CHANGELOG.md`.
+- **Rust consumers:** no library changes; moving the pin is optional.
+- **Consumer repositories:** the `dependabot-corekit` action also aligns nested
+  Swift packages and re-resolves partly moved Cargo lockfiles (including second
+  workspaces such as `fuzz/`). Let Dependabot move the action pin to this
+  release.
+
 ## v0.27.1
 
 - **Rust and Swift consumers:** no library changes; moving the pin is optional.

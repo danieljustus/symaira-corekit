@@ -4,6 +4,8 @@ The GitHub Releases page is the authoritative source for complete release notes.
 
 ## Unreleased
 
+## v0.28.0 — 2026-11-27
+
 - Swift design foundation, after a review against the UI literature
   (Refactoring UI, Practical UI, Thinking with Type, Designing with the Mind in
   Mind): readable running text (`proseMeasure`, token line heights), a 3:1
@@ -22,6 +24,11 @@ The GitHub Releases page is the authoritative source for complete release notes.
   such as `fuzz/`. `corekit_pins.py --fix` now sets every CoreKit tag to the
   highest one found and lets `cargo metadata` re-resolve each stale
   `Cargo.lock` minimally; only the CoreKit `source` lines move.
+- Rust migration: Desktop v0.13.3 is recorded as a Git-pinned Rust-only
+  consumer in `docs/consumers.json` (Go retired, standalone report pinned;
+  #370). Brain and Vault releases are still pending.
+- Swift design kit: the web catalogue test no longer races the dialog's queued
+  `close` event and documents its server root (#517).
 
 ## v0.27.1 — 2026-11-26
 
