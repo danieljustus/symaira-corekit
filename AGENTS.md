@@ -61,7 +61,13 @@ behind when nobody owned it.
   whichever comes first.
 - **Follow-up mechanism:** Dependabot opens a PR in each consumer whose pin it
   can bump (Cargo `tag`, `Package.swift`, tracked Xcode project; see the ADR
-  0002 amendment). `make consumer-drift` runs `port/consumer/verify.py` against
+  0002 amendment). Public consumers land those PRs with the composite action
+  `.github/actions/dependabot-corekit`: it syncs the pins Dependabot leaves
+  stale (`project.yml`, `[workspace.dependencies]` tags and their lockfiles,
+  nested Swift packages) and enables auto-merge behind the required checks.
+  Consumers pin the action to a release commit, so a fix to it reaches them
+  only with the next CoreKit release. Setup: `docs/consumer-dependabot.md`.
+  `make consumer-drift` runs `port/consumer/verify.py` against
   every record in `docs/consumers.json` and lists every CoreKit pin of the
   sibling checkouts with the releases it trails.
 - `docs/consumers.json` holds the Rust migration evidence records (RUST-016).
