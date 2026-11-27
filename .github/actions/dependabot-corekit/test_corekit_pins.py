@@ -29,7 +29,7 @@ class CorekitPinsTest(unittest.TestCase):
         return code, out.getvalue()
 
     def make_repo(self, files):
-        root = Path(tempfile.mkdtemp())
+        root = Path(tempfile.mkdtemp()).resolve()  # macOS: /var -> /private/var
         for name, body in files.items():
             (root / name).parent.mkdir(parents=True, exist_ok=True)
             (root / name).write_text(body)
@@ -80,6 +80,34 @@ class CorekitPinsTest(unittest.TestCase):
         self.assertIn('"version" : "0.27.1"', body)
         self.assertIn(f'"revision" : "{"c" * 40}"', body)
         self.assertIn('"version" : 3', body)  # file format version untouched
+        self.assertEqual(self.run_tool(root)[0], 0)
+
+    def test_fix_completes_a_partly_moved_lock_and_the_fuzz_lock(self):
+        # desktop #1412: Dependabot moved one of the workspace crates in
+        # Cargo.lock and left Cargo.toml and fuzz/Cargo.lock on the old tag.
+        def lock(*tags):
+            return "".join(f'source = "git+{URL}?tag={t}#{"a" * 40}"\n' for t in tags)
+        root = self.make_repo({
+            "Cargo.toml": CARGO.replace("v0.26.0", "v0.27.0"),
+            "Cargo.lock": lock("v0.27.1", "v0.27.0"),
+            "fuzz/Cargo.toml": '[dependencies]\ncore = { path = "../crates/core" }\n',
+            "fuzz/Cargo.lock": lock("v0.27.0"),
+        })
+        self.assertEqual(self.run_tool(root)[0], 1)
+        refreshed = []
+        def fake_refresh(manifest):  # what `cargo metadata` does to the lock
+            refreshed.append(manifest.relative_to(root).as_posix())
+            lockfile = manifest.with_name("Cargo.lock")
+            lockfile.write_text(lockfile.read_text().replace("v0.27.0", "v0.27.1"))
+        original = corekit_pins.refresh_lock
+        corekit_pins.refresh_lock = fake_refresh
+        try:
+            code, out = self.run_tool(root, "--fix")
+        finally:
+            corekit_pins.refresh_lock = original
+        self.assertEqual(code, 0, out)
+        self.assertEqual(sorted(refreshed), ["Cargo.toml", "fuzz/Cargo.toml"])
+        self.assertIn('tag = "v0.27.1"', (root / "Cargo.toml").read_text())
         self.assertEqual(self.run_tool(root)[0], 0)
 
     def test_rev_pin_is_an_error_even_with_fix(self):

@@ -7,7 +7,10 @@ Dependabot bumps a CoreKit pin in some files but not in all that must agree:
   (project.pbxproj, Package.resolved) but never the XcodeGen spec project.yml,
   so the next `xcodegen generate` would silently revert the bump.
 - Cargo: for a `tag = "vX.Y.Z"` pin under [workspace.dependencies] it rewrites
-  only Cargo.lock, so `cargo --locked` fails until Cargo.toml names the tag.
+  only Cargo.lock, and only partly (symaira-desktop #1412 moved one of seven
+  crates), so `cargo --locked` fails until Cargo.toml names the tag and the
+  lock is re-resolved. A second workspace (fuzz/) inherits the pins through
+  path dependencies and needs the same re-resolution.
 - Nested Swift packages: it updates each Package.swift directory on its own. A
   root package that depends on a local package (`.package(path:)`) which also
   pins CoreKit cannot move alone, so the local package moves and the root
@@ -170,8 +173,27 @@ def check_specs(root: Path, fix: bool, errors: list[str], fixed: list[str]) -> i
     return checked
 
 
+LOCK_TAG = re.compile(COREKIT + r"\?tag=(v[^#\"]+)")
+
+
+def refresh_lock(manifest: Path) -> None:
+    """Let Cargo re-resolve the lockfile minimally against the edited manifest."""
+    subprocess.run(
+        ["cargo", "metadata", "--format-version", "1", "--manifest-path", str(manifest)],
+        check=True, stdout=subprocess.DEVNULL,
+    )
+
+
 def check_cargo(root: Path, fix: bool, errors: list[str], fixed: list[str]) -> int:
-    checked = 0
+    """Every CoreKit Cargo pin and every tracked Cargo.lock names one release tag.
+
+    Dependabot leaves two kinds of stale state: a `[workspace.dependencies]` tag
+    it never rewrites, with a lockfile it moved only partly (one crate on the
+    new tag, the rest on the old one), and a second workspace such as fuzz/
+    whose lockfile inherits the pins through path dependencies. --fix sets every
+    pin to the highest tag found and lets Cargo re-resolve each stale lockfile.
+    """
+    manifests: dict[str, list[str]] = {}
     for manifest in tracked(root, "**/Cargo.toml", "Cargo.toml"):
         text = (root / manifest).read_text(errors="replace")
         pin_lines = [l for l in text.splitlines() if COREKIT in l and "git" in l and not l.lstrip().startswith("#")]
@@ -180,30 +202,44 @@ def check_cargo(root: Path, fix: bool, errors: list[str], fixed: list[str]) -> i
         for l in pin_lines:
             if re.search(r"\b(rev|branch)\s*=", l) or not re.search(r"\btag\s*=", l):
                 errors.append(f"{manifest}: CoreKit pin is not a release tag, Dependabot cannot bump it: {l.strip()}")
-        lock = str(Path(manifest).with_name("Cargo.lock"))
-        if not tracked(root, lock):
+        manifests[manifest] = sorted(set(re.findall(r'\btag\s*=\s*"(v[^"]+)"', "\n".join(pin_lines))))
+    locks = {
+        lock: sorted(set(LOCK_TAG.findall((root / lock).read_text(errors="replace"))))
+        for lock in tracked(root, "**/Cargo.lock", "Cargo.lock")
+    }
+    locks = {lock: tags for lock, tags in locks.items() if tags}
+    tags = {t for v in [*manifests.values(), *locks.values()] for t in v}
+    if not tags:
+        return 0
+    target = max(tags, key=lambda t: version_key(t.lstrip("v")))
+    for manifest, want in manifests.items():
+        if want in ([], [target]):
             continue
-        want = sorted(set(re.findall(r'\btag\s*=\s*"(v[^"]+)"', "\n".join(pin_lines))))
-        have = sorted(set(re.findall(COREKIT + r"\?tag=(v[^#\"]+)", (root / lock).read_text(errors="replace"))))
-        if not want or not have:
+        if not fix:
+            errors.append(f'{manifest} pins symaira-corekit tag {" ".join(want)}; set tag = "{target}"')
             continue
-        checked += 1
-        if want == have:
+        text = (root / manifest).read_text()
+        new = "\n".join(
+            re.sub(r'(\btag\s*=\s*")v[^"]+(")', rf"\g<1>{target}\g<2>", l)
+            if COREKIT in l and not l.lstrip().startswith("#") else l
+            for l in text.split("\n")
+        )
+        (root / manifest).write_text(new)
+        fixed.append(f"{manifest}: tag {' '.join(want)} -> {target}")
+    for lock, have in locks.items():
+        if have == [target]:
             continue
-        if fix and len(have) == 1:
-            new = "\n".join(
-                re.sub(r'(\btag\s*=\s*")v[^"]+(")', rf"\g<1>{have[0]}\g<2>", l)
-                if COREKIT in l and not l.lstrip().startswith("#") else l
-                for l in text.split("\n")
-            )
-            (root / manifest).write_text(new)
-            fixed.append(f"{manifest}: tag {' '.join(want)} -> {have[0]}")
+        manifest = Path(lock).with_name("Cargo.toml")
+        if not fix:
+            errors.append(f"{lock} resolves symaira-corekit {' '.join(have)}, not {target}; run cargo update for the CoreKit crates")
+            continue
+        refresh_lock(root / manifest)
+        after = sorted(set(LOCK_TAG.findall((root / lock).read_text(errors="replace"))))
+        if after == [target]:
+            fixed.append(f"{lock}: {' '.join(have)} -> {target}")
         else:
-            errors.append(
-                f"{manifest} pins symaira-corekit tag {' '.join(want)} but {lock} resolves {' '.join(have)}; "
-                f'set tag = "{have[-1]}" in {manifest}'
-            )
-    return checked
+            errors.append(f"{lock} still resolves symaira-corekit {' '.join(after)} after re-resolving; align it by hand")
+    return len(manifests) + len(locks)
 
 
 def main(argv: list[str] | None = None) -> int:

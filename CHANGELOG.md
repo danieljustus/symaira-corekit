@@ -10,6 +10,12 @@ The GitHub Releases page is the authoritative source for complete release notes.
   resolving (seen in symaira-cockpit #435). `corekit_pins.py --fix` now raises
   every tracked `Package.swift` to the highest CoreKit pin and rewrites a
   tracked `Package.resolved` next to it with the release tag's commit.
+- Consumers: `dependabot-corekit` repairs partly moved Cargo lockfiles. For
+  `[workspace.dependencies]` pins Dependabot moved one of seven crates in
+  `Cargo.lock` (symaira-desktop #1412) and never touches a second workspace
+  such as `fuzz/`. `corekit_pins.py --fix` now sets every CoreKit tag to the
+  highest one found and lets `cargo metadata` re-resolve each stale
+  `Cargo.lock` minimally; only the CoreKit `source` lines move.
 
 ## v0.27.1 — 2026-11-26
 
