@@ -64,22 +64,26 @@
     },
     {
       "repo": "danieljustus/symaira-desktop",
-      "checkout_commit": "49468514c27250fcdfcdd3f97132f32204ccc160",
-      "pins": [
-        "go.mod"
-      ],
+      "checkout_commit": "5fbaec440eb75482d29fab745acef940d7f5d685",
+      "consumer_release": {
+        "tag": "v0.13.3",
+        "commit": "5fbaec440eb75482d29fab745acef940d7f5d685"
+      },
+      "go_status": "retired",
+      "pins": [],
       "rust": {
         "status": "git",
         "package": "symaira-core-version",
         "version": "0.0.0",
-        "revision": "d382b8615ce879bac6f23c7250e13667934e8f93",
+        "revision": "a5b0c631b97d4472f7ea4eb145f67468f366340e",
+        "tag": "v0.23.0",
         "manifest_paths": [
           "Cargo.toml",
           "crates/symdesk-core/Cargo.toml"
         ],
         "release": {
-          "tag": "v0.17.0",
-          "commit": "0c2c7769ac6074264e1c02fcdf903188b4f3fa08"
+          "tag": "v0.23.0",
+          "commit": "a5b0c631b97d4472f7ea4eb145f67468f366340e"
         },
         "release_source": "corekit",
         "registry": {
@@ -90,23 +94,13 @@
             "status": "verified",
             "report": "evidence/standalone.json",
             "artifact": "evidence/artifact/symdesk",
-            "command": "env -i PATH=/usr/bin:/bin HOME=/var/folders/7v/7bpq0fjn44lflpxdylsx8qs40000gn/T/ev-home-standalone-hgsvqmfm ./evidence/artifact/symdesk version",
+            "command": "env -i PATH=/usr/bin:/bin HOME=/var/folders/7v/7bpq0fjn44lflpxdylsx8qs40000gn/T/ev-home-standalone-umtvc2do ./evidence/artifact/symdesk version",
             "result": {
               "exit_code": 0,
-              "stdout": "symdesk 0.12.3-0.20260922144040-e66c417f91fb\n",
+              "stdout": "symdesk 0.13.3\n",
               "stderr": ""
-            }
-          },
-          "rollback": {
-            "status": "verified",
-            "report": "evidence/rollback.json",
-            "artifact": "evidence/artifact/symdesk-rollback-v0.12.2",
-            "command": "env -i PATH=/usr/bin:/bin HOME=/var/folders/7v/7bpq0fjn44lflpxdylsx8qs40000gn/T/ev-home-rollback-2bqzy311 ./evidence/artifact/symdesk-rollback-v0.12.2 version",
-            "result": {
-              "exit_code": 0,
-              "stdout": "symdesk (devel)\n",
-              "stderr": ""
-            }
+            },
+            "report_sha256": "3a9820c889fa77a698e82805c3b6dfd178d98ddfe35ba2b205a8059827a80d33"
           }
         }
       }
