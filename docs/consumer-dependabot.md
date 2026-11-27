@@ -17,7 +17,9 @@ setup each consumer repository carries; [ADR 0002](adr/0002-rust-distribution-gi
    [`.github/actions/dependabot-corekit`](../.github/actions/dependabot-corekit/action.yml).
    For a pull request that bumps only CoreKit it copies the new version into
    the files Dependabot never edits (`project.yml`, a
-   `[workspace.dependencies]` tag in `Cargo.toml`), pushes that commit with a
+   `[workspace.dependencies]` tag in `Cargo.toml`, a root `Package.swift` and
+   its `Package.resolved` behind a local `.package(path:)` package that pins
+   CoreKit too), pushes that commit with a
    write deploy key of the repository and enables auto-merge. A push made with
    `GITHUB_TOKEN` starts no workflow; the deploy-key push makes the pull
    request's own CI run on the synced commit. The repository's required status

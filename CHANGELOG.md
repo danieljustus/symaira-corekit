@@ -4,6 +4,13 @@ The GitHub Releases page is the authoritative source for complete release notes.
 
 ## Unreleased
 
+- Consumers: `dependabot-corekit` also aligns nested Swift packages. When a
+  root `Package.swift` depends on a local package (`.package(path:)`) that pins
+  CoreKit too, Dependabot can move only the local package and the root stops
+  resolving (seen in symaira-cockpit #435). `corekit_pins.py --fix` now raises
+  every tracked `Package.swift` to the highest CoreKit pin and rewrites a
+  tracked `Package.resolved` next to it with the release tag's commit.
+
 ## v0.27.1 — 2026-11-26
 
 - Consumers: composite action `.github/actions/dependabot-corekit` lands a

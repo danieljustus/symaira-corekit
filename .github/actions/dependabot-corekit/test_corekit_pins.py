@@ -52,6 +52,36 @@ class CorekitPinsTest(unittest.TestCase):
         self.assertIn('tag = "v0.27.0"', (root / "Cargo.toml").read_text())
         self.assertEqual(self.run_tool(root)[0], 0)
 
+    def test_fix_raises_a_root_manifest_behind_its_local_package(self):
+        # cockpit: Package.swift depends on .package(path: "tuning"); Dependabot
+        # can bump only tuning/, so the root manifest and Package.resolved lag.
+        manifest = '.package(url: "{0}.git", exact: "{1}"),\n.package(path: "tuning"),\n'
+        resolved = (
+            '{\n  "pins" : [\n    {\n      "identity" : "symaira-corekit",\n'
+            f'      "location" : "{URL}.git",\n      "state" : {{\n'
+            f'        "revision" : "{"a" * 40}",\n        "version" : "0.27.0"\n'
+            "      }\n    }\n  ],\n  \"version\" : 3\n}\n"
+        )
+        root = self.make_repo({
+            "Package.swift": manifest.format(URL, "0.27.0"),
+            "Package.resolved": resolved,
+            "tuning/Package.swift": manifest.format(URL, "0.27.1"),
+        })
+        self.assertEqual(self.run_tool(root)[0], 1)
+        original = corekit_pins.tag_revision
+        corekit_pins.tag_revision = lambda version: "c" * 40
+        try:
+            code, out = self.run_tool(root, "--fix")
+        finally:
+            corekit_pins.tag_revision = original
+        self.assertEqual(code, 0, out)
+        self.assertIn('exact: "0.27.1"', (root / "Package.swift").read_text())
+        body = (root / "Package.resolved").read_text()
+        self.assertIn('"version" : "0.27.1"', body)
+        self.assertIn(f'"revision" : "{"c" * 40}"', body)
+        self.assertIn('"version" : 3', body)  # file format version untouched
+        self.assertEqual(self.run_tool(root)[0], 0)
+
     def test_rev_pin_is_an_error_even_with_fix(self):
         root = self.make_repo({"Cargo.toml": CARGO.replace('tag = "v0.26.0"', f'rev = "{"b" * 40}"')})
         code, out = self.run_tool(root, "--fix")

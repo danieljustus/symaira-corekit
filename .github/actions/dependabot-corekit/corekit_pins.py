@@ -8,8 +8,13 @@ Dependabot bumps a CoreKit pin in some files but not in all that must agree:
   so the next `xcodegen generate` would silently revert the bump.
 - Cargo: for a `tag = "vX.Y.Z"` pin under [workspace.dependencies] it rewrites
   only Cargo.lock, so `cargo --locked` fails until Cargo.toml names the tag.
+- Nested Swift packages: it updates each Package.swift directory on its own. A
+  root package that depends on a local package (`.package(path:)`) which also
+  pins CoreKit cannot move alone, so the local package moves and the root
+  manifest (and its Package.resolved) stays behind and stops resolving.
 
---fix copies the version Dependabot wrote into the stale file. Independently,
+--fix copies the version Dependabot wrote into the stale file; for Swift
+manifests that disagree it raises every one to the highest pinned version. Independently,
 every CoreKit Cargo pin must be a release tag: Dependabot never moves a `rev`
 or `branch` pin (ADR 0002, amendment 2026-11-16).
 
@@ -60,6 +65,63 @@ def pbxproj_pin(text: str) -> str | None:
 def resolved_pin(text: str) -> str | None:
     m = re.search(r'"identity"\s*:\s*"' + COREKIT + r'".*?"version"\s*:\s*"([^"]+)"', text, re.S)
     return m.group(1) if m else None
+
+
+def version_key(version: str) -> tuple:
+    return tuple(int(p) if p.isdigit() else -1 for p in re.split(r"[.+-]", version))
+
+
+def tag_revision(version: str) -> str:
+    """Commit SHA of the CoreKit release tag (peeled, so annotated tags work)."""
+    out = subprocess.run(
+        ["git", "ls-remote", f"https://github.com/danieljustus/{COREKIT}.git",
+         f"refs/tags/v{version}", f"refs/tags/v{version}^{{}}"],
+        check=True, capture_output=True, text=True,
+    ).stdout
+    refs = dict(reversed(line.split("\t")) for line in out.splitlines() if "\t" in line)
+    sha = refs.get(f"refs/tags/v{version}^{{}}") or refs.get(f"refs/tags/v{version}")
+    if not sha:
+        raise SystemExit(f"::error::CoreKit tag v{version} not found")
+    return sha
+
+
+def check_swift_manifests(root: Path, fix: bool, errors: list[str], fixed: list[str]) -> int:
+    """All tracked Package.swift files of one repository pin the same CoreKit."""
+    manifests = {}
+    for f in tracked(root, "**/Package.swift", "Package.swift"):
+        have = swift_pin((root / f).read_text(errors="replace"))
+        if have:
+            manifests[f] = have
+    versions = set(manifests.values())
+    if len(versions) < 2:
+        return len(manifests)
+    target = max(versions, key=version_key)
+    if not fix:
+        errors.append(f"Package.swift CoreKit pins disagree: {manifests}; set exact: \"{target}\" everywhere")
+        return len(manifests)
+    revision = None
+    for f, have in manifests.items():
+        if have == target:
+            continue
+        text = (root / f).read_text()
+        new = re.sub(COREKIT + r'((?:\.git)?"\s*,\s*exact:\s*")[^"]+(")',
+                     lambda m: f"{COREKIT}{m.group(1)}{target}{m.group(2)}", text, count=1)
+        (root / f).write_text(new)
+        fixed.append(f"{f}: exact {have} -> {target}")
+        resolved = str(Path(f).with_name("Package.resolved"))
+        if not tracked(root, resolved):
+            continue
+        body = (root / resolved).read_text()
+        if resolved_pin(body) in (None, target):
+            continue
+        revision = revision or tag_revision(target)
+        # SwiftPM re-resolves on the stale originHash; the pin itself must name the tag.
+        body = re.sub(
+            r'("identity"\s*:\s*"' + COREKIT + r'".*?"revision"\s*:\s*")[0-9a-f]+(".*?"version"\s*:\s*")[^"]+(")',
+            lambda m: f"{m.group(1)}{revision}{m.group(2)}{target}{m.group(3)}", body, count=1, flags=re.S)
+        (root / resolved).write_text(body)
+        fixed.append(f"{resolved}: {COREKIT} -> {target}")
+    return len(manifests)
 
 
 def check_specs(root: Path, fix: bool, errors: list[str], fixed: list[str]) -> int:
@@ -146,7 +208,7 @@ def check_cargo(root: Path, fix: bool, errors: list[str], fixed: list[str]) -> i
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("--fix", action="store_true", help="rewrite stale project.yml / Cargo.toml pins")
+    ap.add_argument("--fix", action="store_true", help="rewrite stale project.yml / Cargo.toml / Package.swift pins")
     ap.add_argument("--root", type=Path, default=Path("."), help="consumer checkout (default: cwd)")
     args = ap.parse_args(argv)
     root = Path(
@@ -155,7 +217,9 @@ def main(argv: list[str] | None = None) -> int:
     )
     errors: list[str] = []
     fixed: list[str] = []
-    checked = check_specs(root, args.fix, errors, fixed) + check_cargo(root, args.fix, errors, fixed)
+    # Manifests first: the project.yml check compares against the synced Package.swift.
+    checked = check_swift_manifests(root, args.fix, errors, fixed)
+    checked += check_specs(root, args.fix, errors, fixed) + check_cargo(root, args.fix, errors, fixed)
     for f in fixed:
         print(f"fixed: {f}")
     for e in errors:
