@@ -54,6 +54,12 @@ the releases of the former `symaira-appkit` repository.
   shipped capsules and outlines; the custom segment rail is gone (native picker,
   E07); component paddings sit on the 4 pt grid.
 
+### Fixed
+- Web catalogue test (#517): the two dialog status checks no longer race the
+  queued `close` event under the shader load. They wait for the `role=status`
+  region instead of a fixed 200 ms, and the test documents its server root
+  (`swift/`, where the fonts live).
+
 ## [0.27.1] - 2026-11-26
 
 No Swift changes. The release ships the consumer Dependabot action (root

@@ -40,8 +40,9 @@ Tabellen, Texte und Navigation bleiben geschützt und deckend. Der Schalter
 „Bewegung reduzieren“ pausiert auch den Hintergrund.
 
 ```sh
-# From this kit directory; requires an already installed Playwright/Chromium.
-CATALOG_URL=http://127.0.0.1:8765/web/catalog.html python3 web/test_catalog.py
+# Requires an already installed Playwright/Chromium. Serve swift/ (fonts live in swift/Sources/).
+python3 -I -m http.server 8765 --bind 127.0.0.1 --directory ../..   # from this kit directory
+CATALOG_URL=http://127.0.0.1:8765/design/liquid-topography/web/catalog.html python3 web/test_catalog.py
 # Optional existing Chromium binary: CHROMIUM_EXECUTABLE=/path/to/chrome
 python3 web/export_catalog.py /path/to/Liquid-Topography-Katalog.html
 ```

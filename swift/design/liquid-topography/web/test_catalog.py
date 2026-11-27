@@ -1,18 +1,42 @@
 """Catalogue browser checks; requires installed Playwright/Chromium.
 
-Run against a local kit server; no backend or production site is contacted.
+Run against a local static server whose root is the CoreKit `swift/` directory,
+because the catalogue loads its fonts from `swift/Sources/`:
+
+    python3 -I -m http.server 8765 --bind 127.0.0.1 --directory swift
+
+Serving `liquid-topography/` instead adds font 404 failures. No backend or
+production site is contacted.
 """
 import json
 import os
 import sys
-from playwright.sync_api import sync_playwright
+from playwright.sync_api import TimeoutError as PlaywrightTimeoutError, sync_playwright
 
-URL = os.environ.get("CATALOG_URL", "http://127.0.0.1:8765/web/catalog.html")
+URL = os.environ.get("CATALOG_URL", "http://127.0.0.1:8765/design/liquid-topography/web/catalog.html")
 results = []
 
 def check(name, ok, detail=""):
     results.append((name, bool(ok), detail))
     print(("PASS " if ok else "FAIL ") + name + (f" :: {detail}" if detail else ""), flush=True)
+
+def status_contains(page, selector, *needles, timeout=3000):
+    """Wait until the role=status region contains every needle.
+
+    The page writes these regions from queued events (a dialog's `close` event
+    runs after `open` is already false), so a fixed sleep races the shader load.
+    """
+    try:
+        page.wait_for_function(
+            """([sel, needles]) => {
+                const el = document.querySelector(sel);
+                return !!el && el.getAttribute('role') === 'status'
+                    && needles.every(n => el.textContent.includes(n));
+            }""",
+            arg=[selector, list(needles)], timeout=timeout)
+        return True
+    except PlaywrightTimeoutError:
+        return False
 
 def run(p):
     browser = p.chromium.launch(executable_path=os.environ.get("CHROMIUM_EXECUTABLE"),
@@ -228,15 +252,14 @@ def run(p):
     check("dialog: focus trap wraps to Abbrechen",
           page.evaluate("document.activeElement.textContent.trim()") == "Abbrechen")
     page.keyboard.press("Escape")
-    page.wait_for_timeout(200)
     check("dialog: Escape closes", page.evaluate("document.getElementById('confirm').open") is False)
-    check("dialog: Escape -> cancelled status", "Abgebrochen" in page.inner_text("#dialog-status"))
+    check("dialog: Escape -> cancelled status", status_contains(page, "#dialog-status", "Abgebrochen"),
+          page.inner_text("#dialog-status"))
     check("dialog: focus returned to opener", page.evaluate("document.activeElement.id") == "open-dialog")
     page.keyboard.press("Enter")
     page.click("#confirm button[value='confirm']")
-    page.wait_for_timeout(200)
     check("dialog: confirm -> demo status, nothing deleted",
-          "Bestätigt" in page.inner_text("#dialog-status") and "nichts gelöscht" in page.inner_text("#dialog-status"))
+          status_contains(page, "#dialog-status", "Bestätigt", "nichts gelöscht"), page.inner_text("#dialog-status"))
 
     # Settings
     page.click("label.setting:has-text('Bewegung reduzieren')")
