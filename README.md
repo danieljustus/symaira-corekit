@@ -48,7 +48,7 @@ reference products with `package: "symaira-corekit"`; see
 [`swift/README.md`](swift/README.md).
 
 ```swift
-.package(url: "https://github.com/danieljustus/symaira-corekit.git", exact: "0.28.0")
+.package(url: "https://github.com/danieljustus/symaira-corekit.git", exact: "0.28.1")
 ```
 
 **Rust:** pin an exact revision in the consumer's `Cargo.toml` and commit `Cargo.lock`:
@@ -115,9 +115,9 @@ a full Xcode toolchain themselves (see [`swift/README.md`](swift/README.md)).
 
 ## Versioning
 
-Rust consumers pin an immutable release tag (`tag = "v0.28.0"`) or an exact Git
+Rust consumers pin an immutable release tag (`tag = "v0.28.1"`) or an exact Git
 revision; `Cargo.lock` records the full revision either way. Swift consumers pin
-an exact tag (`exact: "0.28.0"`, SwiftPM accepts the `v` prefix). Repository
+an exact tag (`exact: "0.28.1"`, SwiftPM accepts the `v` prefix). Repository
 tags after `v0.18.3` on `main` describe the Rust workspace and, from `v0.20.0`,
 the Swift package; Go consumers stay on `v0.18.x`. Release tags cannot be moved
 or deleted (repository ruleset).

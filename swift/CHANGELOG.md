@@ -11,6 +11,8 @@ the releases of the former `symaira-appkit` repository.
 
 ## [Unreleased]
 
+## [0.28.1] - 2026-11-28
+
 ### Changed
 - iOS: every type role is 15 / 13.5 larger instead of 17 / 13.5, so body text
   is 15 pt at the default Dynamic Type size (#523, IOS-7). The 17 pt of 0.28.0

@@ -4,6 +4,8 @@ The GitHub Releases page is the authoritative source for complete release notes.
 
 ## Unreleased
 
+## v0.28.1 — 2026-11-28
+
 - Swift design kit: iOS type roles are 15 / 13.5 larger instead of 17 / 13.5,
   so body text is 15 pt at the default Dynamic Type size (#523); the 17 pt of
   v0.28.0 read as oversized in dense screens. `symairaFormRowControl()` now
