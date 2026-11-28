@@ -107,10 +107,10 @@
     },
     {
       "repo": "danieljustus/symaira-eraseme",
-      "checkout_commit": "0176661b41e2ee278c85055cad40c6d1daa36ac3",
+      "checkout_commit": "5524cd819e2bc94c97ba39a37d77c7d7cad61be3",
       "consumer_release": {
-        "tag": "v0.18.0",
-        "commit": "0176661b41e2ee278c85055cad40c6d1daa36ac3"
+        "tag": "v0.19.0",
+        "commit": "5524cd819e2bc94c97ba39a37d77c7d7cad61be3"
       },
       "go_status": "retired",
       "pins": [],
@@ -137,13 +137,13 @@
             "status": "verified",
             "report": "evidence/standalone.json",
             "artifact": "evidence/artifact/symeraseme",
-            "command": "env -i PATH=/usr/bin:/bin HOME=/Volumes/1TB_NVMe_SN850X/Dev/Symaira_Dev/builds/symaira-eraseme/.worktrees/release-v0.18.0/tmp/ev-home-ga6t0s3t ./evidence/artifact/symeraseme version",
+            "command": "env -i PATH=/usr/bin:/bin HOME=/Volumes/1TB_NVMe_SN850X/Dev/Symaira_Dev/builds/symaira-eraseme/tmp/ev-home-ansouynn ./evidence/artifact/symeraseme version",
             "result": {
               "exit_code": 0,
-              "stdout": "symeraseme 0.18.0\n",
+              "stdout": "symeraseme 0.19.0\n",
               "stderr": ""
             },
-            "report_sha256": "832ab394e12e410702ecd70b3aba2398b32ad51bae779e0e71d1a803955c1a72"
+            "report_sha256": "18ac1f2cee66b761dc98e4d929ef3c96754e7c2b8fe05276ec3d9e56329fe564"
           }
         }
       }
