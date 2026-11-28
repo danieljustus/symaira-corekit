@@ -4,6 +4,8 @@ The GitHub Releases page is the authoritative source for complete release notes.
 
 ## Unreleased
 
+## v0.28.2 — 2026-11-28
+
 - Swift design kit: iOS type roles keep the shared scale again
   (`SymairaMetrics.textScale` is 1), so body text is 13.5 pt at the default
   Dynamic Type size as before v0.28.0 (#525); the 15 pt of v0.28.1 still read

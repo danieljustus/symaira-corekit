@@ -11,6 +11,8 @@ the releases of the former `symaira-appkit` repository.
 
 ## [Unreleased]
 
+## [0.28.2] - 2026-11-28
+
 ### Changed
 - iOS: type roles keep the shared scale again (`SymairaMetrics.textScale` is 1),
   so body text is 13.5 pt at the default Dynamic Type size, as before 0.28.0
