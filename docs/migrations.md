@@ -10,6 +10,15 @@ also preserve historical removals, including `embedkit` in v0.12.0; those
 require migration. Otherwise "check" means a new capability to adopt or a
 behavior change worth confirming.
 
+## v0.28.2
+
+- **Swift consumers:** iOS text is smaller than in v0.28.1: body 13.5 pt
+  instead of 15 pt at the default Dynamic Type size, the size before v0.28.0
+  (`SymairaMetrics.textScale` is 1). Line heights and the prose measure from
+  v0.28.0 stay. Layouts that stacked or wrapped only under the larger text may
+  fit one row again; check them.
+- **Rust consumers:** no library changes; moving the pin is optional.
+
 ## v0.28.1
 
 - **Swift consumers:** iOS text is smaller than in v0.28.0: body 15 pt instead

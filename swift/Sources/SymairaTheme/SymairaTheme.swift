@@ -178,16 +178,12 @@ public enum SymairaMetrics {
     public static let platformScale: CGFloat = 1
     #endif
 
-    /// Factor from the Symaira type scale to this platform's text sizes. The roles are set
-    /// for desk distance (body 13.5 pt on macOS). iOS is read at hand distance, so every role
-    /// grows by 15 / 13.5 there before Dynamic Type scales it: body 15 pt at the default size
-    /// (GUIDELINES IOS-7). Apple's 17 pt read as oversized in dense Symaira screens (#523).
-    /// tvOS follows `platformScale` like every other size.
-    #if os(iOS)
-    public static let textScale: CGFloat = 15 / 13.5
-    #else
+    /// Factor from the Symaira type scale to this platform's text sizes. iOS uses the shared
+    /// scale unchanged, as macOS does: body text is 13.5 pt at the default Dynamic Type size,
+    /// and Dynamic Type scales every role from there (GUIDELINES IOS-7). Larger iOS text
+    /// (17 pt in 0.28.0, 15 pt in 0.28.1) read as oversized in dense Symaira screens (#523,
+    /// #525). tvOS follows `platformScale` like every other size.
     public static let textScale: CGFloat = platformScale
-    #endif
 
     #if os(iOS)
     public static let minimumControlHeight: CGFloat = 44

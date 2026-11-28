@@ -100,8 +100,8 @@ never depend on a sibling checkout.
   characters); `SymairaMetrics.readableContentWidth` is the page column for cards,
   forms and lists, and grids and dashboards may choose a wider product-owned budget.
 - Type roles carry the token line heights for wrapped text (body 1.5), and on iOS
-  they are `SymairaMetrics.textScale` larger so body text is 15 pt at the default
-  Dynamic Type size (GUIDELINES TYPE-5, IOS-7).
+  body text is 13.5 pt at the default Dynamic Type size, as on macOS
+  (GUIDELINES TYPE-5, IOS-7).
 
 - On tvOS, use the focus engine and a native top tab bar rather than pointer
   hover or the macOS workspace. Keep topography off dense content. Keyboard

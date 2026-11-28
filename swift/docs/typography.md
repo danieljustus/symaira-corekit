@@ -24,9 +24,10 @@ Google Sans Flex 1.252) as `.lineSpacing`, so wrapped body text sits 1.5 × the
 point size apart while single lines and controls keep their height (TYPE-5).
 A role without a line height leaves a surrounding `.lineSpacing` alone.
 
-On iOS the base size of every role is multiplied by `SymairaMetrics.textScale`
-(15 / 13.5) so body text is 15 pt at the default size (IOS-7); Apple's 17 pt
-read as oversized in dense Symaira screens (#523). The modifier then uses public `@ScaledMetric` in the receiving view's
+On iOS the base size of every role is multiplied by `SymairaMetrics.textScale`,
+which is 1, so body text is 13.5 pt at the default size as on macOS (IOS-7);
+17 pt (v0.28.0) and 15 pt (v0.28.1) read as oversized in dense Symaira screens
+(#523, #525). The modifier then uses public `@ScaledMetric` in the receiving view's
 Dynamic Type environment. Only then does it construct the Core Text font
 with the approved family, weight and fixed optical size (`opsz` 18 for
 Google Sans Flex; Figtree has no optical size axis). The absent-font system fallback uses

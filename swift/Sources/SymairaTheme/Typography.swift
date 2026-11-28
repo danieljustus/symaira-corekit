@@ -7,9 +7,9 @@ import SwiftUI
 /// other role (headings, metrics, running text, labels and captions) is set in Figtree.
 /// Names, sizes, weights and line heights follow the `typography` roles of
 /// `design/liquid-topography/DESIGN.md` (kebab-case there). Wrapped text keeps the
-/// role's line height; single lines keep the typeface's own. On iOS every role is
-/// `SymairaMetrics.textScale` (15 / 13.5) larger and scales with Dynamic Type relative to
-/// its text style; macOS has no Dynamic Type. If a bundled font cannot be registered, the
+/// role's line height; single lines keep the typeface's own. On iOS every role starts at
+/// its listed size and scales with Dynamic Type relative to its text style; macOS has no
+/// Dynamic Type. If a bundled font cannot be registered, the
 /// system font with the same size and weight is used. Monospaced roles stay on SF Mono.
 /// Values are `SymairaFontRole` recipes; `.font(role)` resolves them in the view.
 public enum SymairaTypography {

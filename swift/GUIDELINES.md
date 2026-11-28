@@ -439,11 +439,11 @@ Six lines, kept in the pull request or issue:
   `Label { Text(title) } icon: { Image(symairaIcon:) }`; both bars render only
   `Image`, so `Label(_:symairaIcon:)` shows no icon there (a toolbar shows the
   title instead).
-- **IOS-7** Type roles are `SymairaMetrics.textScale` (15 / 13.5) larger on
-  iOS, so body text is 15 pt at the default Dynamic Type size and every role
-  keeps its ratio to body. Apple's 17 pt read as oversized in dense Symaira
-  screens (#523). Spacing, radii and icon sizes keep the shared scale; never
-  size iOS text by hand to compensate.
+- **IOS-7** Type roles keep the shared scale on iOS (`SymairaMetrics.textScale`
+  is 1), so body text is 13.5 pt at the default Dynamic Type size and Dynamic
+  Type scales every role from there. Apple's 17 pt and the 15 pt of v0.28.1 read
+  as oversized in dense Symaira screens (#523, #525). Spacing, radii and icon
+  sizes keep the shared scale too; never size iOS text by hand to compensate.
 
 tvOS follows the iOS rules unless a TV rule says otherwise:
 

@@ -236,7 +236,7 @@ consumer or update dependency pins; EraseMe adoption is a separate follow-up.
 | Native splitter semantics, arrow keys and toolbar shortcut | Sidebar adapter + `SymairaSidebarToggle` | Localized labels/focus in product rows |
 | Stable action geometry across primary/secondary/destructive state | Button styles + `SymairaMetrics.contentAction*` | Stable label area, title and action callback |
 | Control boundaries at 3:1, decorative `line` below it | `SymairaTheme.controlOutline(for:)`, `SymairaTextFieldStyle`, opaque secondary fallback | Use the shared fields; draw no product-local outlines in `line` |
-| Readable running text: measure and line height | `SymairaMetrics.proseMeasure`, role line heights, iOS `textScale` | Keep paragraphs within the measure; no hand-set `.lineSpacing` |
+| Readable running text: measure and line height | `SymairaMetrics.proseMeasure`, role line heights, `textScale` | Keep paragraphs within the measure; no hand-set `.lineSpacing` |
 | Neutral rails and fills for product-drawn meters (`raised` groove + `line` outline, `ink` fill) | `SymairaBarColors` | Native `ProgressView(value:)` and `Slider` with `.tint(SymairaTokens.ink)`, units, warning text/icons |
 | Dashboard summary value | Native `Gauge` / `LabeledContent` (`SymairaStatTile` deprecated) | Values, labels and which values appear |
 | Navigation geometry, selection/hover/pressed colors, focus and AX | `SymairaNavigationButton` | Destination, clear label, symbol, selection and action |
